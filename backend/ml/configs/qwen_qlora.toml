@@ -1,0 +1,119 @@
+# Qwen3-8B — QLoRA supervised fine-tune for Nexo-specific reasoning.
+#
+# Memory arithmetic that constrains every value below:
+#   8B parameters at 4 bits            ~= 4 GB resident, the dominant fixed cost
+#   LoRA adapters in bf16 + AdamW      ~= 0.5 GB
+#   activations at 2048 tokens         = the term that decides whether we OOM
+# Activations do not shrink with quantisation, so the accelerator is spent by
+# keeping them small: one sequence at a time, recomputed in the backward pass,
+# and accumulated until the optimiser sees a batch of 16.
+
+# Base checkpoint. Kept frozen and 4-bit; only the LoRA adapters train.
+base_model = "Qwen/Qwen3-8B"
+
+# QLoRA only. Full fine-tuning of 8B parameters needs far more than the 24 GB
+# of VRAM this project has, and the brief rules it out.
+method = "qlora"
+
+# Quantise the frozen base on load. Turning this off is rejected by the config
+# validator rather than discovered as an out-of-memory error hours later.
+load_in_4bit = true
+
+# NF4 (normal float) beats plain FP4 at this model size and is what the
+# bitsandbytes kernels are tuned for; fp4 is accepted only for kernels without
+# NF4 support.
+bnb_quant_type = "nf4"
+
+# Matmuls and the adapter optimiser states run in bf16 rather than fp32: bf16 has
+# the same exponent range as fp32, so no range loss, and half the memory traffic.
+# fp16 would risk overflow in the attention logits.
+bnb_compute_dtype = "bfloat16"
+
+# Rank 16. Nexo contributes a few hundred supervised examples; a much larger
+# adapter has enough capacity to memorise them outright, which is a training
+# loss with no generalisation behind it. Below ~8 the adapter cannot represent
+# Nexo-specific vocabulary against a 8B base.
+lora_r = 16
+
+# Scaling 2x the rank, the conventional setting; it keeps the effective update
+# magnitude in the range the base model's activations were trained under.
+lora_alpha = 32
+
+# 0.05 dropout on the adapter inputs. At a few hundred examples this is the main
+# defence against memorising individual training prompts.
+lora_dropout = 0.05
+
+# All seven projections, attention and MLP alike. Nexo's behaviour changes are
+# not localised to attention — deciding that a task should be broken down
+# involves the MLP too — so restricting LoRA to q_proj/v_proj would leave the
+# adapter half-applied.
+lora_target_modules = [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj",
+]
+
+# 2048 tokens covers a Nexo reasoning answer with its system preamble and
+# evidence attached. Longer would exceed the context we can hold with one
+# sequence on the device; shorter would truncate mid-argument.
+max_seq_length = 2048
+
+# 2e-4 is 10x the encoder rate because only ~0.1% of parameters are trainable.
+# The adapter is small, so it can take a larger step than the full model can.
+learning_rate = 0.0002
+
+# Two epochs over a few hundred examples. Past that the adapter is reading back
+# its training prompts rather than generalising to new requests.
+num_train_epochs = 2
+
+# One sequence per forward pass. This is the memory term: activations for 2048
+# tokens are what the remaining ~19 GB of VRAM actually goes on.
+per_device_train_batch_size = 1
+
+# Accumulate 16 micro-batches to reach the effective batch of 16 the optimiser
+# needs. Gradient statistics are indistinguishable from a real batch of 16;
+# peak activation memory is not.
+gradient_accumulation_steps = 16
+
+# 3% warmup. The QLoRA literature converges faster than the encoder because so
+# few parameters move, so a long warmup wastes steps the adapter needs.
+warmup_ratio = 0.03
+
+# Cosine decay to near zero over the run, so the final adapter settles instead
+# of oscillating around the optimum at a constant step size.
+lr_scheduler_type = "cosine"
+
+# No weight decay. The adapter is ~0.1% of the model and heavily regularised by
+# dropout; decay on top of that shrinks the Nexo-specific signal it is learning.
+weight_decay = 0.0
+
+# Recompute activations in the backward pass instead of storing them. Combined
+# with micro-batch 1 this is what keeps a 2048-token sequence on one card.
+gradient_checkpointing = true
+
+# Clip at 0.3, tighter than the usual 1.0. A few hundred examples produce spiky
+# gradients from long structured answers, and an unclipped step can undo an
+# epoch of progress in one update.
+max_grad_norm = 0.3
+
+# Shared with the classifier and with the dataset split; see small_model.toml.
+seed = 20260101
+
+# Write a resumable segment every 250 steps. Kaggle sessions are killed on a
+# timer, and a segment boundary is where a run can resume from without losing
+# more than a few minutes of compute.
+segment_steps = 250
+
+# Checkpoint at twice the segment cadence: the adapter is small, but the
+# optimiser state is not, and keeping both is what makes a resume correct rather
+# than merely plausible.
+save_every_n_steps = 100
+
+# Evaluate every 100 steps. The eval pass on a few hundred held-out examples is
+# seconds, so there is no reason to go longer and lose the early signal on
+# whether the adapter is learning at all.
+eval_every_n_steps = 100

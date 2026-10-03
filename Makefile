@@ -29,6 +29,21 @@ PY_BIN     := $(wildcard $(BACKEND)/.venv/bin/python)
 PY ?= $(if $(PY_SCRIPTS),$(PY_SCRIPTS),$(PY_BIN))
 NPM ?= npm
 
+# Interpreter used for the Phase 10 training targets. `torch`, `transformers`
+# and `datasets` live in their own virtualenv at backend/ml/.venv so that a
+# contributor never has to pull a multi-gigabyte torch wheel into the backend
+# environment the test suite runs against. Same Windows/POSIX layout split as
+# $(PY), same relative-to-repository-root convention.
+#
+# Falls back to $(PY) when the ML environment has not been created. A missing
+# torch then surfaces as an ImportError naming the package, which tells the
+# operator what to build; "No such file or directory" on a path they were never
+# told about does not.
+#   make ml-train-small ML_PY=backend/ml/.venv/Scripts/python.exe
+ML_SCRIPTS := $(wildcard $(BACKEND)/ml/.venv/Scripts/python.exe)
+ML_BIN     := $(wildcard $(BACKEND)/ml/.venv/bin/python)
+ML_PY ?= $(if $(ML_SCRIPTS),$(ML_SCRIPTS),$(if $(ML_BIN),$(ML_BIN),$(PY)))
+
 # `make install` has to work before the virtualenv exists, so it probes for any
 # Python 3.13+ on PATH instead of using $(PY).
 PYTHON_BOOTSTRAP ?= $(shell command -v python3 2>/dev/null || command -v python 2>/dev/null || echo python3)
@@ -43,8 +58,16 @@ TEST_DB_FLAGS ?=
 # `alembic.ini` uses paths relative to backend/, so Alembic always runs there.
 ALEMBIC := cd $(BACKEND) && ../$(PY) -m alembic
 
+# Likewise, the ml package is imported as `ml` from the backend working
+# directory (pytest.ini sets pythonpath = . from backend/), so every ml target
+# runs there and prepends `../` to an interpreter path rooted at the repo.
+ML_RUN := cd $(BACKEND) && ../$(ML_PY) -m ml.train
+
 .PHONY: help install bootstrap up down logs migrate migrate-down revision \
-        db-wait test-db test test-backend test-frontend lint backend frontend clean
+        db-wait test-db test test-backend test-frontend lint backend frontend clean \
+        ml-help ml-prepare ml-datasets ml-validate ml-train-small \
+        ml-train-small-resume ml-eval ml-train-qwen ml-probe-remote ml-eval-qwen \
+        ml-qwen-status ml-all ml-test
 
 help: ## Show this help
 	@echo "NEXUS — available targets:"
@@ -113,3 +136,70 @@ clean: ## Remove build artefacts and tooling caches (never touches .env or data)
 	rm -rf $(FRONTEND)/dist $(FRONTEND)/coverage
 	rm -f $(FRONTEND)/*.tsbuildinfo
 	@echo "cleaned build artefacts"
+
+# =============================================================================
+# Phase 10 — ML training pipeline
+# =============================================================================
+# Split in two by what they need, because the two halves have nothing in common
+# except a package name:
+#
+#   * The data half (ml-prepare, ml-validate, ml-eval) is stdlib-only and runs
+#     on any interpreter, because everything under ml/ is stdlib-only. That is
+#     what keeps the test suite fast and CI dependency-free.
+#   * The training half (ml-train-small, ml-train-qwen) imports torch. It needs
+#     $(ML_PY), whose environment carries the torch wheel the backend one does
+#     not.
+#
+# `ml-train-qwen` is deliberately not part of `ml-all`: Qwen3-8B under QLoRA
+# does not fit the 4 GB of VRAM on this machine and the remote kernel has no
+# working GPU, so folding it into the local pipeline would mean "all" that
+# cannot actually run.
+
+ml-help: ## Show the Phase 10 ML targets
+	@grep -E '^ml-[a-z-]*:.*?## ' $(MAKEFILE_LIST) \
+		| awk 'BEGIN {FS = ":.*?## "} {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+	@echo
+	@echo "ML_PY defaults to the interpreter inside backend/ml/.venv/ (Scripts/ on"
+	@echo "Windows, bin/ on POSIX), falling back to backend/.venv when the ML"
+	@echo "environment has not been created yet. To pin it:"
+	@echo "  make ml-train-small ML_PY=backend/ml/.venv/Scripts/python.exe"
+
+ml-prepare: ## Build, validate and split the datasets (stdlib only, no GPU)
+	$(ML_RUN) --prepare
+
+ml-datasets: ml-prepare ## Alias for `make ml-prepare`
+
+ml-validate: ml-prepare ## Prepare the datasets, then print the validation reports
+	@found=0; for report in $(BACKEND)/ml/reports/*.md; do \
+		[ -e "$$report" ] || continue; \
+		found=1; echo "==> $$report"; cat "$$report"; echo; \
+	done; \
+	if [ "$$found" -eq 0 ]; then \
+		echo "no reports in $(BACKEND)/ml/reports/ - run 'make ml-prepare' first"; \
+	fi
+
+ml-train-small: ## Fine-tune the routing classifier locally on CPU (needs torch)
+	$(ML_RUN) --train-small
+
+ml-train-small-resume: ## Resume the classifier from its latest local checkpoint
+	$(ML_RUN) --train-small --resume
+
+ml-eval: ## Evaluate the trained classifier and write the evaluation reports
+	$(ML_RUN) --evaluate
+
+ml-train-qwen: ## Push the QLoRA fine-tune of Qwen3-8B to a remote Kaggle kernel
+	$(ML_RUN) --train-qwen
+
+ml-probe-remote: ## Push a one-cell kernel that records whether Kaggle gave us a GPU
+	$(ML_RUN) --probe-remote
+
+ml-eval-qwen: ## Compare the base Qwen against the fine-tuned adapter (paired)
+	$(ML_RUN) --eval-qwen
+
+ml-qwen-status: ## Report the state of the remote Qwen kernel
+	$(ML_RUN) --qwen-status
+
+ml-all: ml-prepare ml-train-small ml-eval ## Run the whole local Phase 10 pipeline
+
+ml-test: ## Run the ml test modules only
+	cd $(BACKEND) && ../$(PY) -m pytest tests/test_ml_*.py

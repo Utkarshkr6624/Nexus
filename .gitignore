@@ -73,6 +73,22 @@ postgres-data/
 # ---------------------------------------------------------------------------
 mlruns/
 artifacts/
+# Phase 10 pipeline state. The generators in backend/ml/datasets/ are source
+# and must stay tracked — ignoring that directory wholesale would untrack
+# routing.py, schema.py, taxonomy.py and the rest of the package, which is the
+# same trap `/models/` is anchored below to avoid. What is ignored here is the
+# ML virtualenv and everything the pipeline *emits*: the JSONL datasets, the
+# capability inventory, the run manifests, checkpoints and reports.
+backend/ml/.venv/
+backend/ml/datasets/*.jsonl
+backend/ml/datasets/*.jsonl.*
+backend/ml/datasets/*.json
+backend/ml/artifacts/
+backend/ml/reports/
+# Notebooks are rendered artifacts, not source. `backend/ml/artifacts/` already
+# covers the ones Phase 10 writes today; this catches a notebook rendered
+# somewhere else before someone commits a multi-megabyte generated JSON blob.
+*.ipynb
 # Anchored to the repository root on purpose. Unanchored, `models/` matched
 # `backend/app/models/` as well, so every ORM model was silently untracked and a
 # clone would have been missing its entire schema.

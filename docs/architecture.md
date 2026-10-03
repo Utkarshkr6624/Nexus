@@ -44,13 +44,17 @@ against Phase 2 and still describe that slice where the text is phase-specific;
 | [16. Design decisions](#16-design-decisions) | Decision → rationale → cost |
 | [17. Developer, Learning and Career](#17-developer-learning-and-career) | The three subsystems Phase 8 and 9 added: git scanning, and two surfaces that describe a person |
 | [18. Remediation pass over Phases 1–9](#18-remediation-pass-over-phases-19) | What the audit found, what shipped, and what in this document moved because of it |
+| [19. Phase 10 — ML training](#19-phase-10--ml-training) | The `backend/ml/` package: a second process with a second interpreter, two models, and one execution boundary |
 
 ---
 
 ## 1. System context
 
-Three processes, all on one machine. There is no external service, no cloud
-account, no third-party API.
+Three processes, all on one machine. The application calls no external service, has no
+cloud account and no third-party API. Phase 10 adds one outbound path that is *not* on
+the request path: `make ml-train-qwen` pushes a QLoRA fine-tune to a Kaggle kernel over
+the `kaggle` CLI. It is a build step, it never runs inside the API process, and nothing
+downstream of it is loaded by the application.
 
 | Process | Host port | Started by | Notes |
 | --- | --- | --- | --- |
@@ -1714,6 +1718,7 @@ The seams below exist today. None of the *destinations* is implemented; the
 | Module data | `catalog.ts` registry | the remaining placeholder modules (Search, AI Assistant, Experiments) | add a route entry and a catalog entry; nothing else |
 | Role set | `user` / `admin` in a Python map | custom roles, per-tenant roles, delegated scopes | call sites ask for a `Permission`, never a role, so only `ROLE_PERMISSIONS` and the duplicated role constants change |
 | Module permissions | eleven capabilities, all granted to `user`; every module router guards its reads and writes | none outstanding | `require_permission()` is the only place a capability is checked |
+| ML training | **in flight since Phase 10** — `backend/ml/` is a separate package with its own entry point and its own interpreter; see [§19](#19-phase-10--ml-training) | a model registry, and serving a trained model from the API | nothing under `backend/app/` imports `backend/ml/`, so the trained artifact can be introduced later without the API depending on torch |
 
 Phase numbering is not invented here — it is the `phase` field in
 `frontend/src/features/modules/catalog.ts`, and the module list it drives is the
@@ -1939,11 +1944,13 @@ be duplicated. Phase 9 uses a full constraint because unlike a risk, evidence ha
 
 Three feature vectors ship, one per phase, each stamped with a closed schema version:
 `developer_features.v1`, `learning_features.v1`, `career_features.v1`. Nothing is trained,
-loaded, served or registered. The rule between them is one sentence — **a figure that could
-not be computed is `null`, never `0`** — and `career_features.v1.project_activity` is its
-worked example: it is null when no repository has ever been scanned, because `0` would assert
-that a repository exists and carries no commits when the truth is that nobody has looked.
-Inside a training matrix a fabricated zero is indistinguishable from an observed one.
+loaded, served or registered. (Phase 10 is the first phase to break that, from outside this
+package — see [§19](#19-phase-10--ml-training).) The rule between them is one sentence — **a
+figure that could not be computed is `null`, never `0`** — and
+`career_features.v1.project_activity` is its worked example: it is null when no repository has
+ever been scanned, because `0` would assert that a repository exists and carries no commits
+when the truth is that nobody has looked. Inside a training matrix a fabricated zero is
+indistinguishable from an observed one.
 
 #### Conventions the three subsystems established
 
@@ -2063,6 +2070,58 @@ ceiling. The only commits that do not count are those with `files_changed = 0`.
 
 ---
 
+## 19. Phase 10 — ML training
+
+Phase 10 is the first phase that trains a model, and it is structured to keep that fact
+from touching the API. Everything it owns lives in `backend/ml/`, a sibling of `backend/app/`,
+not a subpackage of it.
+
+### 19.1 The boundary
+
+| Rule | Why |
+| --- | --- |
+| Nothing under `backend/app/` imports `backend/ml/` | The API process must start on an interpreter that has no torch wheel, and it must not go down because a training import does |
+| The data half is stdlib-only | `make ml-prepare`, `ml-validate` and `ml-eval` run on any interpreter, so the test suite stays fast and dependency-free |
+| The training half needs its own interpreter | `backend/ml/.venv/` carries the torch wheel; `make` selects it through `ML_PY` |
+| One entry point, seven stages | `python -m ml.train --prepare / --train-small / --evaluate / --train-qwen / --probe-remote / --eval-qwen / --qwen-status`; the `make ml-*` targets are thin wrappers over those flags. `--all` — or no flag at all — runs all seven, always in that order |
+| `ml-train-qwen` is not part of `ml-all` | "All" that cannot actually run is worse than a target that states what it needs |
+
+The Makefile defines twelve `ml-*` targets: `ml-help`, `ml-prepare`, `ml-datasets`,
+`ml-validate`, `ml-train-small`, `ml-train-small-resume`, `ml-eval`, `ml-train-qwen`,
+`ml-probe-remote`, `ml-qwen-status`, `ml-all` and `ml-test`. Seven wrap a stage flag one
+for one; `--eval-qwen` has no target of its own and is run as
+`python -m ml.train --eval-qwen`, and `--resume` is spelled `ml-train-small-resume`.
+
+### 19.2 Two models, two places
+
+| Model | Runs on | Purpose |
+| --- | --- | --- |
+| `microsoft/deberta-v3-base`, fine-tuned | this machine, CPU, `backend/ml/.venv` | routing / intent classification over the 14 Nexo intents |
+| `Qwen/Qwen3-8B` under QLoRA | a **remote Kaggle GPU** | the larger fine-tune; it does not fit this machine's VRAM, so the run is pushed out and its state polled back |
+
+The small model's role is **routing, not answering**. It decides which capability should
+handle an utterance, and twelve of the fourteen intents are handled by the deterministic
+services in `app/services/`, which are faster and more reliable than any language model.
+Only `code_assist` and `deep_reasoning` route to the large model; `out_of_scope` is
+trained so that abstaining is a class the model can be right about. The classifier
+therefore exists to keep the cheap intents cheap and to escalate what genuinely needs
+generation — it does not displace the rules.
+
+Phase 10 ends at artifacts, and nothing in the application loads either model. Nothing
+under `backend/app/` imports `backend/ml/`, no route reads a checkpoint, and the
+deterministic path stays the answer whenever a model is absent, unevaluated or unsure.
+Serving a trained model is later work — see the *ML training* row of §15 and
+[`specifications/phase-10-architecture.md`](specifications/phase-10-architecture.md).
+
+### 19.3 The honesty rules carry over
+
+A training matrix makes a fabricated zero indistinguishable from an observed one, so the
+`null`-not-`0` rule of §17.4 is a precondition here rather than a nicety: the corpora are
+generated and counted in `backend/ml/reports/`, and each stage writes a manifest rather than a
+claim. A stage that did not run is reported as not run.
+
+---
+
 ## See also
 
 | Document | Contents |
@@ -2072,3 +2131,5 @@ ceiling. The only commits that do not count are those with `files_changed = 0`.
 | [`development.md`](development.md) | Clean-machine setup, daily workflow, adding an endpoint or a page, testing and style conventions |
 | [`specifications/phase-8-developer-report.md`](specifications/phase-8-developer-report.md) | What Phase 8 shipped, the four git tables, and the two defects three agents independently reported |
 | [`specifications/phase-9-learning-career-report.md`](specifications/phase-9-learning-career-report.md) | What Phase 9 shipped, the six learning/career tables, and the contract disagreements |
+| [`specifications/phase-10-architecture.md`](specifications/phase-10-architecture.md) | Where the Phase 10 `backend/ml/` package sits, its two interpreters, and its execution boundary |
+| [`specifications/phase-10-training.md`](specifications/phase-10-training.md) | The Phase 10 routing classifier and the Qwen3-8B QLoRA run, with what was executed and what was not |

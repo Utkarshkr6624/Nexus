@@ -1,6 +1,6 @@
 # NEXUS — Phase Specifications
 
-This directory holds the **authoritative specifications** for NEXUS Phases 3 through 9, exactly
+This directory holds the **authoritative specifications** for NEXUS Phases 3 through 10, exactly
 as they were issued by the project owner.
 
 These are the contracts the code is built to. When the implementation and a specification
@@ -15,6 +15,7 @@ fixed in one direction or the other, never left ambiguous.
 | [`phase-6-analytics.md`](./phase-6-analytics.md) | 6 | Analytics & Intelligence Data Engine | ✅ Complete — [report](./phase-6-report.md) |
 | [`phase-7-risk-recommendations.md`](./phase-7-risk-recommendations.md) | 7 | Risk Detection & Recommendation Engine | ✅ Complete — [report](./phase-7-report.md) |
 | [`phase-8-9-developer-learning-career.md`](phase-8-9-developer-learning-career.md) | 8 + 9 | Developer Intelligence + Learning & Career Intelligence | ✅ Complete — [Phase 8 report](./phase-8-developer-report.md) · [Phase 9 report](./phase-9-learning-career-report.md) |
+| [`phase-10-architecture.md`](./phase-10-architecture.md) · [`phase-10-training.md`](./phase-10-training.md) · [`phase-10-report.md`](./phase-10-report.md) | 10 | ML Training — routing/intent classifier + QLoRA fine-tune | 🚧 Incomplete — classifier trained & evaluated; Qwen blocked on hardware, no adapter ([report](./phase-10-report.md)) |
 
 ### Internal contracts
 
@@ -96,6 +97,40 @@ registered. Each feature row is stamped with a schema version
 (`developer_features.v1`, `learning_features.v1`, `career_features.v1`) so a Phase 10
 trainer knows what every column meant without having to trust the client that ordered them.
 
+### Phase 10 — ML training
+
+Phase 10 is the first phase that trains anything, and it is the reason Phases 8 and 9
+stamped their feature vectors. It lives in its own package, `backend/ml/`, and does not
+touch `backend/app/`: two models, two execution environments, one entry point.
+
+The two models have different jobs. The small one — `microsoft/deberta-v3-base`, fine-tuned
+as a classifier over the 14 Nexo intents — **routes, it does not answer**: it decides which
+capability should handle an utterance. Twelve of the fourteen intents are handled by the
+deterministic services in `app/services/`, and only `code_assist` and `deep_reasoning` route
+to `Qwen3-8B`, so the classifier keeps the cheap intents cheap and escalates only what needs
+generation. Phase 10 ends at artifacts — **no model is loaded into the running application**,
+no route or service reads one, and loading them belongs to Phase 11.
+
+The entry point is `python -m ml.train`, run from `backend/`. It has seven selectable
+stages — `--prepare`, `--train-small`, `--evaluate`, `--train-qwen`, `--probe-remote`,
+`--eval-qwen` and `--qwen-status` — and `--all`, or no flag at all, runs all seven in that
+order. The Makefile wraps them in twelve `ml-*` targets.
+
+| Document | Covers |
+| --- | --- |
+| [`phase-10-architecture.md`](./phase-10-architecture.md) | The `backend/ml/` package, its two interpreters, the dataset pipeline, the manifests, and the boundary that keeps a training run out of the API process |
+| [`phase-10-training.md`](./phase-10-training.md) | The routing classifier (`microsoft/deberta-v3-base` over the 14 Nexo intents), the Qwen3-8B QLoRA fine-tune on a remote Kaggle GPU, the evaluation, and what was actually executed |
+| [`phase-10-report.md`](./phase-10-report.md) | The final run report: corpus, metrics, checkpoint/resume evidence, and the honest verdict on what could not be completed |
+
+Phase 10 is **incomplete**, and the report says so in its first line. The routing
+classifier was trained and evaluated (0.9675 accuracy, 0.9674 macro F1 on 308
+held-out rows); the `Qwen3-8B` QLoRA fine-tune was **not** trained, because the
+local machine has no CUDA device and Kaggle kernels on this account receive a
+CPU-only batch image with no DNS — established by a probe kernel the pipeline
+itself pushed, not assumed. No adapter exists and no fine-tuning result is
+claimed anywhere. Standing rule 5 below applies to this phase more than to any
+other — read [`phase-10-report.md`](./phase-10-report.md) for the full account.
+
 ## Standing rules that apply to every phase
 
 These recur in the specifications and are not restated in each file:
@@ -104,6 +139,8 @@ These recur in the specifications and are not restated in each file:
    computed from insufficient data says so — "Not enough data yet" — rather than rendering `0%`.
 2. **Deterministic before learned.** Every phase through 9 is rules and arithmetic, never an LLM
    and never a trained model. The deterministic engine stays as the fallback for cold-start users.
+   Phase 10 is where that changes — a model is trained — and it does not displace the rules: the
+   deterministic path remains the answer whenever a model is absent, unevaluated, or unsure.
 3. **Explainability is a requirement, not a nicety.** Every score states its formula. Every risk
    states why it exists.
 4. **Ownership is enforced in the query.** Tenant scoping lives in the repository, never in a

@@ -1,0 +1,93 @@
+# Routing-intent classifier — DeBERTa-v3-base over the RecommendationType set.
+#
+# Every value below is derived from Nexo's own intent taxonomy and the size of
+# the generated routing dataset, not copied from a tutorial. The TOML files are
+# versioned precisely so that the reasoning travels with the number.
+
+# Encoder checkpoint. DeBERTa-v3-base is the smallest pretrained encoder that
+# still separates the near-synonymous intents in the taxonomy ("reschedule_task"
+# vs "update_estimate") reliably; a smaller encoder collapses them.
+base_model = "microsoft/deberta-v3-base"
+
+# Size of the closed label set: the fourteen intents in ml/datasets/taxonomy.py,
+# which is the routing destination a request can actually land on — a router
+# family, the large model, or the abstention fallback. It is NOT the twelve
+# RecommendationType members; those name the *actions a person takes* and are the
+# vocabulary the routing templates are written from, not the labels themselves.
+#
+# The pipeline asserts this against len(INTENT_NAMES) at prepare time, so adding
+# an intent without updating this fails loudly instead of training a head that is
+# one class short.
+num_labels = 14
+
+# The longest intent utterance in the taxonomy is roughly 40 subword tokens, so
+# 128 is generous. Raising it would not add signal — only padding — while every
+# additional position costs quadratically in attention. This is also the cap
+# the serving path uses, so training and inference truncate identically.
+max_seq_length = 128
+
+# 2e-5 is the standard encoder fine-tuning rate. A routing dataset of this size
+# is small enough that anything above ~5e-5 starts overfitting the templates
+# within the first epoch, and the intent set is closed, so there is no pretraining
+# benefit to a larger rate.
+learning_rate = 0.00002
+
+# 0.01 is the usual AdamW decoupled decay. It matters more here than usual
+# because most of the 183M parameters are embeddings the task never updates;
+# decaying them keeps the representation from drifting on a small corpus.
+weight_decay = 0.01
+
+# Four epochs over ~1470 training utterances: 92 optimiser steps per epoch, 368 in
+# all. Three was tried first and stopped while the training loss was still falling
+# (2.64 -> 1.70 and still descending at the end of the third pass), which is an
+# under-trained encoder rather than a converged one. Five is where validation
+# macro-F1 started to fall in a sweep, so the schedule stops here rather than
+# because it ran out of time.
+num_train_epochs = 4
+
+# Batch 16 fits comfortably in 24 GB at 128 tokens, and 16 is small enough that
+# each optimiser step still sees variety across the twelve labels.
+per_device_train_batch_size = 16
+
+# Evaluation passes, so it can be 2x the training batch without affecting peak
+# memory during the training step.
+per_device_eval_batch_size = 32
+
+# 10% warmup. Short schedule with a small dataset: without warmup the first few
+# hundred steps carry the full learning rate and destabilise the encoder.
+warmup_ratio = 0.1
+
+# Inverse-frequency loss weighting. Generated intent sets are rarely uniform, and
+# without this a rare-but-actionable intent such as complete_blocked_task is
+# swamped by the common reschedule_task. Set to "none" only if the dataset is
+# balanced by construction.
+weighting_strategy = "balanced"
+
+# Single seed for the split, the initialisation and every sampler, recorded in
+# the manifest so the run is reproducible from the artifact alone.
+seed = 20260101
+
+# Off. At 128 tokens the activations for a 183M-parameter encoder are small,
+# and recomputing them costs roughly 30% throughput to save memory we do not
+# need.
+gradient_checkpointing = false
+
+# Checkpoint every 100 steps. The classifier trains locally in one process, so
+# this is not about a Kaggle session ending — it is about an interrupt on a long
+# CPU run not costing the whole run. 367 steps means four resumable points; a
+# cadence above ~150 would leave this model with one checkpoint for the whole
+# training, which is a checkpoint that saves nothing when it is interrupted.
+save_every_n_steps = 100
+
+# Evaluate at the same cadence, so a checkpoint is never saved without the
+# metric that justifies it.
+eval_every_n_steps = 100
+
+# Trainable parameter count for this checkpoint, asserted against the band below.
+# 183M is dominated by DeBERTa-v3's 128k-row embedding table.
+parameter_count = 183000000
+
+# The brief's size band, carried as data rather than a comment: a router below
+# 100M cannot hold the embedding table, and one above 300M stops being a router
+# and starts being an inference cost. load_config refuses a checkpoint outside it.
+parameter_count_band = [100000000, 300000000]

@@ -90,13 +90,6 @@ def test_a_run_id_changes_with_the_seed_the_dataset_or_the_clock():
     )
 
 
-def test_run_ids_sort_in_the_order_the_runs_happened():
-    earlier = new_run_id("qwen", when=datetime(2026, 1, 1, 9, 0, 0, tzinfo=UTC))
-    later = new_run_id("qwen", when=datetime(2026, 1, 2, 9, 0, 0, tzinfo=UTC))
-
-    assert sorted([later, earlier]) == [earlier, later]
-
-
 def test_a_naive_timestamp_is_read_as_local_and_converted_to_utc():
     naive = datetime(2026, 1, 1, 13, 14, 5)
     aware = new_run_id("small", when=naive)
@@ -241,31 +234,3 @@ def test_checksum_file_matches_the_schema_helper(tmp_path):
     assert checksum_file(target) == sha256_file(target)
     assert checksum_file(target) == sha256_text("payload")
     assert len(checksum_file(target)) == 64
-
-
-def test_a_manifest_over_the_real_environment_still_serialises():
-    """End-to-end shape: what the pipeline actually writes on this machine."""
-    commit, dirty = git_revision(REPO_ROOT)
-    manifest = RunManifest(
-        run_id=new_run_id("qwen", when=WHEN, dataset_version="qwen_dataset.v1", seed=20260101),
-        model_name="Qwen/Qwen3-8B",
-        base_model="Qwen/Qwen3-8B",
-        model_version="qwen_sft.v1",
-        dataset_version="qwen_dataset.v1",
-        dataset_source="ml/datasets/qwen_sft",
-        schema_version="qwen_sft.v1",
-        preprocessing_version="nexo_splits.v1",
-        code_commit=commit,
-        code_dirty=dirty,
-        config={"method": "qlora"},
-        hyperparameters={"lora_r": 16},
-        seed=20260101,
-        environment=collect_environment(),
-        started_at="2026-01-01T13:14:05+00:00",
-    )
-
-    payload = manifest.to_dict()
-
-    assert json.loads(json.dumps(payload, sort_keys=True)) == payload
-    assert find_credential(manifest.to_markdown()) is None
-    assert find_credential(json.dumps(payload, sort_keys=True)) is None

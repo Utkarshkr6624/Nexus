@@ -5,8 +5,8 @@
 the local half of this pipeline has to stay importable on a bare interpreter so
 that a contributor can build a dataset, validate it, split it and score a
 checkpoint without a 2 GB wheelhouse standing between them and a test run. The
-heavy half — training ``deberta-v3-base`` and the QLoRA fine-tune of Qwen3-8B —
-runs on remote GPUs and never imports this module. Every metric below is a
+half — the classifier's training loop — runs under a separate
+interpreter that carries torch. Every metric below is a
 handful of divisions over a confusion matrix, so pulling in a dependency to
 compute them would cost the pipeline more than it would save.
 

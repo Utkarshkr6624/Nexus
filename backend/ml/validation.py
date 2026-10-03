@@ -59,11 +59,9 @@ from typing import Any
 from ml.datasets.schema import (
     KNOWN_SCHEMA_VERSIONS,
     SCHEMA_VERSION_FEATURES,
-    SCHEMA_VERSION_QWEN,
     SCHEMA_VERSION_ROUTING,
     DataValidationError,
     FeatureRow,
-    QwenExample,
     RoutingExample,
 )
 from ml.preprocessing.normalize import (
@@ -693,103 +691,6 @@ def validate_routing_dataset(
     )
 
 
-def validate_qwen_dataset(records: Iterable[Mapping[str, Any]]) -> ValidationReport:
-    """Validate the supervised fine-tuning dataset for Qwen3-8B.
-
-    The failure this dataset is most exposed to is the contradiction, and it
-    looks different here: not one text with two labels, but one instruction with
-    two different responses. A QLoRA run fitted on that pair will reproduce
-    whichever target it saw last and the comparison against the base model will
-    look like a result. Near-duplicate instructions get the same treatment they
-    get in the routing set, and responses are checked for credential-shaped text
-    because a system preamble is exactly the kind of thing someone edits by hand.
-
-    Args:
-        records: Decoded ``qwen_sft.v1`` records.
-
-    Returns:
-        A report carrying the provenance and template histograms.
-    """
-    rows = list(records)
-    parsed, findings, _ = _parse_or_flag(
-        rows,
-        parser=QwenExample.from_dict,
-        required=("instruction", "response", "system"),
-        text_fields=("instruction", "response", "system"),
-        schema_version=SCHEMA_VERSION_QWEN,
-    )
-    examples: list[QwenExample] = parsed
-
-    duplicated = [
-        pair
-        for pair, count in Counter((e.instruction, e.response) for e in examples).items()
-        if count > 1
-    ]
-    if duplicated:
-        findings.append(
-            Finding(
-                "duplicate_example",
-                Severity.ERROR,
-                f"{len(duplicated)} instruction/response pair(s) appear more than once",
-                _escape_and_cap(
-                    f"{instruction}\n-> {response}" for instruction, response in duplicated
-                ),
-            )
-        )
-
-    responses_by_instruction: dict[str, set[str]] = defaultdict(set)
-    for example in examples:
-        responses_by_instruction[normalize_text(example.instruction)].add(example.response)
-    contradictions = {
-        instruction: sorted(responses)
-        for instruction, responses in responses_by_instruction.items()
-        if len(responses) > 1
-    }
-    if contradictions:
-        findings.append(
-            Finding(
-                "contradictory_response",
-                Severity.ERROR,
-                (
-                    f"{len(contradictions)} instruction(s) pair with more than one response "
-                    "after normalisation"
-                ),
-                _escape_and_cap(
-                    f"{instruction!r} -> {len(responses)} distinct responses"
-                    for instruction, responses in sorted(contradictions.items())
-                ),
-            )
-        )
-
-    contradicted_keys = {near_duplicate_key(i) for i in contradictions}
-    findings.extend(
-        _near_duplicate_findings(
-            [
-                e.instruction
-                for e in examples
-                if near_duplicate_key(e.instruction) not in contradicted_keys
-            ]
-        )
-    )
-
-    provenance = Counter(str(example.provenance) for example in examples)
-    templates = Counter(example.template_id for example in examples if example.template_id)
-    counts: dict[str, int] = {
-        "records": len(rows),
-        "usable": len(examples),
-        "distinct_instructions": len(responses_by_instruction),
-        "contradictions": len(contradictions),
-        "templates": len(templates),
-    }
-    counts.update({f"provenance:{key}": value for key, value in sorted(provenance.items())})
-    return ValidationReport(
-        name="qwen_sft.v1",
-        schema_version=SCHEMA_VERSION_QWEN,
-        findings=tuple(findings),
-        counts=counts,
-    )
-
-
 def validate_feature_dataset(records: Iterable[Mapping[str, Any]]) -> ValidationReport:
     """Validate the wrapped feature rows the tabular models train on.
 
@@ -1017,7 +918,6 @@ __all__ = [
     "assert_clean",
     "validate_feature_dataset",
     "validate_no_credentials",
-    "validate_qwen_dataset",
     "validate_routing_dataset",
     "validate_splits",
 ]

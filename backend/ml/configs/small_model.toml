@@ -37,13 +37,18 @@ learning_rate = 0.00002
 # decaying them keeps the representation from drifting on a small corpus.
 weight_decay = 0.01
 
-# Four epochs over ~1470 training utterances: 92 optimiser steps per epoch, 368 in
-# all. Three was tried first and stopped while the training loss was still falling
-# (2.64 -> 1.70 and still descending at the end of the third pass), which is an
-# under-trained encoder rather than a converged one. Five is where validation
-# macro-F1 started to fall in a sweep, so the schedule stops here rather than
-# because it ran out of time.
-num_train_epochs = 4
+# Five epochs over ~1960 training utterances: 123 optimiser steps per epoch,
+# 615 in all.
+#
+# Four was tried first and produced 0.9675 accuracy / 0.9674 macro F1 on the
+# held-out split, with the training loss still falling (2.63 -> 0.056) and the
+# remaining errors concentrated on two genuinely adjacent intent pairs. Raising
+# both the corpus (150 -> 200 rows per intent) and the epoch count is the
+# experiment. If the ceiling is the *data* rather than the schedule, more steps
+# over more rows should move it; if it does not, the boundary between
+# `knowledge_capture` and `knowledge_lookup` is a property of the taxonomy and
+# not something more compute will fix.
+num_train_epochs = 5
 
 # Batch 16 fits comfortably in 24 GB at 128 tokens, and 16 is small enough that
 # each optimiser step still sees variety across the twelve labels.
@@ -72,9 +77,8 @@ seed = 20260101
 # need.
 gradient_checkpointing = false
 
-# Checkpoint every 100 steps. The classifier trains locally in one process, so
-# this is not about a Kaggle session ending — it is about an interrupt on a long
-# CPU run not costing the whole run. 367 steps means four resumable points; a
+# Checkpoint every 100 steps. The classifier trains locally in one long CPU
+# process, so this is about an interrupt not costing the whole run. 367 steps means four resumable points; a
 # cadence above ~150 would leave this model with one checkpoint for the whole
 # training, which is a checkpoint that saves nothing when it is interrupted.
 save_every_n_steps = 100

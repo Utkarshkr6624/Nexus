@@ -1,4 +1,4 @@
-"""The generated training corpora: routing intents and Qwen SFT rows.
+"""The generated routing corpus: intents, balance, determinism and validation.
 
 Both builders are pure template generators seeded from one integer, and the
 properties that matter are therefore not "the sentences read well" — they are
@@ -24,12 +24,6 @@ from collections import Counter
 
 import pytest
 
-from ml.datasets.qwen_sft import (
-    NEXO_SYSTEM_PROMPT,
-    QWEN_DATASET_VERSION,
-    build_qwen_dataset,
-    build_qwen_records,
-)
 from ml.datasets.routing import (
     ROUTING_DATASET_VERSION,
     build_routing_dataset,
@@ -37,18 +31,16 @@ from ml.datasets.routing import (
     label_map,
 )
 from ml.datasets.schema import (
-    SCHEMA_VERSION_QWEN,
     SCHEMA_VERSION_ROUTING,
     Provenance,
     stable_json_dumps,
 )
 from ml.datasets.taxonomy import INTENT_NAMES
 from ml.preprocessing.normalize import normalize_text
-from ml.validation import assert_clean, validate_qwen_dataset, validate_routing_dataset
+from ml.validation import assert_clean, validate_routing_dataset
 
 SEED = 20260101
 PER_INTENT = 3
-PER_CATEGORY = 2
 MAX_CLASS_RATIO = 3.0
 
 
@@ -58,10 +50,6 @@ def routing_records() -> list[dict]:
 
 
 @pytest.fixture(scope="module")
-def qwen_records() -> list[dict]:
-    return build_qwen_records(seed=SEED, per_category=PER_CATEGORY)
-
-
 def test_the_routing_corpus_is_one_row_per_intent_placeholder(routing_records):
     assert len(routing_records) == PER_INTENT * len(INTENT_NAMES)
     assert len(routing_records) == 42
@@ -147,46 +135,6 @@ def test_the_label_map_covers_the_taxonomy_in_taxonomy_order():
     assert mapping == {name: index for index, name in enumerate(INTENT_NAMES)}
 
 
-def test_the_qwen_corpus_is_small_but_covers_every_category(qwen_records):
-    categories = Counter(row["metadata"]["category"] for row in qwen_records)
-
-    assert len(qwen_records) == PER_CATEGORY * len(categories)
-    assert set(categories.values()) == {PER_CATEGORY}
-    assert len(categories) >= 8
-
-
-def test_every_qwen_row_declares_its_provenance_and_carries_the_system_prompt(qwen_records):
-    for row in qwen_records:
-        assert row["provenance"] == Provenance.SYNTHETIC
-        assert row["schema_version"] == SCHEMA_VERSION_QWEN
-        assert row["instruction"].strip()
-        assert row["response"].strip()
-        assert row["template_id"]
-        assert row["system"] == NEXO_SYSTEM_PROMPT
-
-
-def test_no_two_qwen_rows_share_an_instruction(qwen_records):
-    instructions = [row["instruction"] for row in qwen_records]
-
-    assert len(set(instructions)) == len(instructions)
-
-
-def test_the_qwen_corpus_is_byte_identical_on_a_rebuild():
-    first = build_qwen_records(seed=SEED, per_category=PER_CATEGORY)
-    second = build_qwen_records(seed=SEED, per_category=PER_CATEGORY)
-
-    assert stable_json_dumps(first) == stable_json_dumps(second)
-
-
-def test_qwen_build_stats_report_the_category_histogram():
-    examples, stats = build_qwen_dataset(seed=SEED, per_category=PER_CATEGORY)
-
-    assert len(examples) == stats.total
-    assert stats.seed == SEED
-    assert set(stats.to_dict()["per_category"]) == set(stats.per_category)
-    assert stats.to_dict()["dataset_version"] == QWEN_DATASET_VERSION
-
-
 def test_the_routing_corpus_validates_clean(routing_records):
     report = validate_routing_dataset(
         routing_records, known_intents=INTENT_NAMES, max_class_ratio=MAX_CLASS_RATIO
@@ -198,28 +146,6 @@ def test_the_routing_corpus_validates_clean(routing_records):
     assert report.counts["contradictions"] == 0
     assert report.counts["invalid_labels"] == 0
     assert_clean(report)
-
-
-def test_the_qwen_corpus_validates_clean(qwen_records):
-    report = validate_qwen_dataset(qwen_records)
-
-    assert report.passed, report.codes()
-    assert report.errors() == ()
-    assert report.counts["contradictions"] == 0
-    assert report.counts["usable"] == len(qwen_records)
-    assert_clean(report)
-
-
-def test_both_corpora_validate_clean_together(routing_records, qwen_records):
-    """`assert_clean` is the gate a run passes before it is allowed to start."""
-    reports = (
-        validate_routing_dataset(
-            routing_records, known_intents=INTENT_NAMES, max_class_ratio=MAX_CLASS_RATIO
-        ),
-        validate_qwen_dataset(qwen_records),
-    )
-
-    assert_clean(*reports)
 
 
 def test_the_routing_corpus_splits_and_validates_without_leakage(routing_records):

@@ -98,7 +98,7 @@ def new_run_id(
 
     Args:
         prefix: A short human discriminator — the model family, e.g. ``"small"``
-            or ``"qwen"``.
+            or ``"dataset-build"``.
         when: The instant the run started.
         dataset_version: The dataset the run consumes, folded into the digest so
             a rerun on different data gets a different id.

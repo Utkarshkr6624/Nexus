@@ -52,9 +52,10 @@ against Phase 2 and still describe that slice where the text is phase-specific;
 
 Three processes, all on one machine. The application calls no external service, has no
 cloud account and no third-party API. Phase 10 adds one outbound path that is *not* on
-the request path: `make ml-train-qwen` pushes a QLoRA fine-tune to a Kaggle kernel over
-the `kaggle` CLI. It is a build step, it never runs inside the API process, and nothing
-downstream of it is loaded by the application.
+the request path: the one-off download of the classifier's pretrained checkpoint from
+Hugging Face, the first time `make ml-train-small` runs. After that the pipeline is
+entirely local, it never runs inside the API process, and nothing downstream of it is
+loaded by the application.
 
 | Process | Host port | Started by | Notes |
 | --- | --- | --- | --- |
@@ -2083,31 +2084,30 @@ not a subpackage of it.
 | Nothing under `backend/app/` imports `backend/ml/` | The API process must start on an interpreter that has no torch wheel, and it must not go down because a training import does |
 | The data half is stdlib-only | `make ml-prepare`, `ml-validate` and `ml-eval` run on any interpreter, so the test suite stays fast and dependency-free |
 | The training half needs its own interpreter | `backend/ml/.venv/` carries the torch wheel; `make` selects it through `ML_PY` |
-| One entry point, seven stages | `python -m ml.train --prepare / --train-small / --evaluate / --train-qwen / --probe-remote / --eval-qwen / --qwen-status`; the `make ml-*` targets are thin wrappers over those flags. `--all` — or no flag at all — runs all seven, always in that order |
-| `ml-train-qwen` is not part of `ml-all` | "All" that cannot actually run is worse than a target that states what it needs |
+| One entry point, three stages | `python -m ml.train --prepare / --train-small / --evaluate`; the `make ml-*` targets are thin wrappers over those flags. `--all` — or no flag at all — runs all three, always in that order |
 
-The Makefile defines twelve `ml-*` targets: `ml-help`, `ml-prepare`, `ml-datasets`,
-`ml-validate`, `ml-train-small`, `ml-train-small-resume`, `ml-eval`, `ml-train-qwen`,
-`ml-probe-remote`, `ml-qwen-status`, `ml-all` and `ml-test`. Seven wrap a stage flag one
-for one; `--eval-qwen` has no target of its own and is run as
-`python -m ml.train --eval-qwen`, and `--resume` is spelled `ml-train-small-resume`.
+The Makefile defines nine `ml-*` targets: `ml-help`, `ml-prepare`, `ml-datasets`,
+`ml-validate`, `ml-train-small`, `ml-train-small-resume`, `ml-eval`, `ml-all` and
+`ml-test`. Three wrap a stage flag one for one, and `--resume` is spelled
+`ml-train-small-resume`. `ml-all` covers the whole pipeline, because the classifier
+trains on CPU in about 66 minutes and there is no remote half to leave out.
 
-### 19.2 Two models, two places
+### 19.2 One model, one place
 
 | Model | Runs on | Purpose |
 | --- | --- | --- |
 | `microsoft/deberta-v3-base`, fine-tuned | this machine, CPU, `backend/ml/.venv` | routing / intent classification over the 14 Nexo intents |
-| `Qwen/Qwen3-8B` under QLoRA | a **remote Kaggle GPU** | the larger fine-tune; it does not fit this machine's VRAM, so the run is pushed out and its state polled back |
 
-The small model's role is **routing, not answering**. It decides which capability should
+The model's role is **routing, not answering**. It decides which capability should
 handle an utterance, and twelve of the fourteen intents are handled by the deterministic
 services in `app/services/`, which are faster and more reliable than any language model.
-Only `code_assist` and `deep_reasoning` route to the large model; `out_of_scope` is
-trained so that abstaining is a class the model can be right about. The classifier
-therefore exists to keep the cheap intents cheap and to escalate what genuinely needs
-generation — it does not displace the rules.
+`out_of_scope` is trained so that abstaining is a class the model can be right about.
+`code_assist` and `deep_reasoning` carry the destination `large-model:unavailable`: NEXUS
+runs no language model, and those two classes are kept precisely so the router can
+recognise a request it cannot serve rather than being blind to it. The classifier
+therefore exists to keep the cheap intents cheap — it does not displace the rules.
 
-Phase 10 ends at artifacts, and nothing in the application loads either model. Nothing
+Phase 10 ends at artifacts, and nothing in the application loads the model. Nothing
 under `backend/app/` imports `backend/ml/`, no route reads a checkpoint, and the
 deterministic path stays the answer whenever a model is absent, unevaluated or unsure.
 Serving a trained model is later work — see the *ML training* row of §15 and
@@ -2132,4 +2132,4 @@ claim. A stage that did not run is reported as not run.
 | [`specifications/phase-8-developer-report.md`](specifications/phase-8-developer-report.md) | What Phase 8 shipped, the four git tables, and the two defects three agents independently reported |
 | [`specifications/phase-9-learning-career-report.md`](specifications/phase-9-learning-career-report.md) | What Phase 9 shipped, the six learning/career tables, and the contract disagreements |
 | [`specifications/phase-10-architecture.md`](specifications/phase-10-architecture.md) | Where the Phase 10 `backend/ml/` package sits, its two interpreters, and its execution boundary |
-| [`specifications/phase-10-training.md`](specifications/phase-10-training.md) | The Phase 10 routing classifier and the Qwen3-8B QLoRA run, with what was executed and what was not |
+| [`specifications/phase-10-training.md`](specifications/phase-10-training.md) | The Phase 10 routing classifier: its corpus, validation, splits, training configuration and evaluation |

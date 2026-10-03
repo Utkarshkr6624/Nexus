@@ -15,7 +15,7 @@ fixed in one direction or the other, never left ambiguous.
 | [`phase-6-analytics.md`](./phase-6-analytics.md) | 6 | Analytics & Intelligence Data Engine | ✅ Complete — [report](./phase-6-report.md) |
 | [`phase-7-risk-recommendations.md`](./phase-7-risk-recommendations.md) | 7 | Risk Detection & Recommendation Engine | ✅ Complete — [report](./phase-7-report.md) |
 | [`phase-8-9-developer-learning-career.md`](phase-8-9-developer-learning-career.md) | 8 + 9 | Developer Intelligence + Learning & Career Intelligence | ✅ Complete — [Phase 8 report](./phase-8-developer-report.md) · [Phase 9 report](./phase-9-learning-career-report.md) |
-| [`phase-10-architecture.md`](./phase-10-architecture.md) · [`phase-10-training.md`](./phase-10-training.md) · [`phase-10-report.md`](./phase-10-report.md) | 10 | ML Training — routing/intent classifier + QLoRA fine-tune | 🚧 Incomplete — classifier trained & evaluated; Qwen blocked on hardware, no adapter ([report](./phase-10-report.md)) |
+| [`phase-10-architecture.md`](./phase-10-architecture.md) · [`phase-10-training.md`](./phase-10-training.md) · [`phase-10-report.md`](./phase-10-report.md) | 10 | ML Training — routing/intent classifier | ✅ Complete — the classifier was trained and evaluated ([report](./phase-10-report.md)) |
 
 ### Internal contracts
 
@@ -101,35 +101,39 @@ trainer knows what every column meant without having to trust the client that or
 
 Phase 10 is the first phase that trains anything, and it is the reason Phases 8 and 9
 stamped their feature vectors. It lives in its own package, `backend/ml/`, and does not
-touch `backend/app/`: two models, two execution environments, one entry point.
+touch `backend/app/`: one model, two execution environments, one entry point.
 
-The two models have different jobs. The small one — `microsoft/deberta-v3-base`, fine-tuned
-as a classifier over the 14 Nexo intents — **routes, it does not answer**: it decides which
-capability should handle an utterance. Twelve of the fourteen intents are handled by the
-deterministic services in `app/services/`, and only `code_assist` and `deep_reasoning` route
-to `Qwen3-8B`, so the classifier keeps the cheap intents cheap and escalates only what needs
-generation. Phase 10 ends at artifacts — **no model is loaded into the running application**,
-no route or service reads one, and loading them belongs to Phase 11.
+The model — `microsoft/deberta-v3-base`, fine-tuned as a classifier over the 14 Nexo
+intents — **routes, it does not answer**: it decides which capability should handle an
+utterance. Twelve of the fourteen intents are handled by the deterministic services in
+`app/services/`, and the remaining two, `code_assist` and `deep_reasoning`, are marked
+`large-model:unavailable` — NEXUS runs no language model, so those two are trained and
+predicted anyway, so that the router can recognise a request it cannot serve rather than
+being blind to it. `out_of_scope` is a trained class too, so abstention is something the
+model can be *right* about. Phase 10 ends at artifacts — **no model is loaded into the
+running application**, no route or service reads one, and loading it belongs to Phase 11.
 
-The entry point is `python -m ml.train`, run from `backend/`. It has seven selectable
-stages — `--prepare`, `--train-small`, `--evaluate`, `--train-qwen`, `--probe-remote`,
-`--eval-qwen` and `--qwen-status` — and `--all`, or no flag at all, runs all seven in that
-order. The Makefile wraps them in twelve `ml-*` targets.
+An earlier draft of this phase specified a second trained model as well. It was removed
+from the repository outright — not disabled — and nothing in this document or in the code
+refers to it as though it existed. The report records what was deleted and why.
+
+The entry point is `python -m ml.train`, run from `backend/`. It has three selectable
+stages — `--prepare`, `--train-small` and `--evaluate` — and `--all`, or no flag at all,
+runs all three in that order. The Makefile wraps them in nine `ml-*` targets.
 
 | Document | Covers |
 | --- | --- |
 | [`phase-10-architecture.md`](./phase-10-architecture.md) | The `backend/ml/` package, its two interpreters, the dataset pipeline, the manifests, and the boundary that keeps a training run out of the API process |
-| [`phase-10-training.md`](./phase-10-training.md) | The routing classifier (`microsoft/deberta-v3-base` over the 14 Nexo intents), the Qwen3-8B QLoRA fine-tune on a remote Kaggle GPU, the evaluation, and what was actually executed |
-| [`phase-10-report.md`](./phase-10-report.md) | The final run report: corpus, metrics, checkpoint/resume evidence, and the honest verdict on what could not be completed |
+| [`phase-10-training.md`](./phase-10-training.md) | The routing classifier (`microsoft/deberta-v3-base` over the 14 Nexo intents), the evaluation, and what was actually executed |
+| [`phase-10-report.md`](./phase-10-report.md) | The final run report: corpus, metrics, checkpoint/resume evidence, and the limitations |
 
-Phase 10 is **incomplete**, and the report says so in its first line. The routing
-classifier was trained and evaluated (0.9675 accuracy, 0.9674 macro F1 on 308
-held-out rows); the `Qwen3-8B` QLoRA fine-tune was **not** trained, because the
-local machine has no CUDA device and Kaggle kernels on this account receive a
-CPU-only batch image with no DNS — established by a probe kernel the pipeline
-itself pushed, not assumed. No adapter exists and no fine-tuning result is
-claimed anywhere. Standing rule 5 below applies to this phase more than to any
-other — read [`phase-10-report.md`](./phase-10-report.md) for the full account.
+Phase 10 is **complete**, and the report says so in its first line. The routing
+classifier was trained on CPU and evaluated on 308 held-out rows — **0.9675 accuracy,
+0.9674 macro F1**, worst per-intent F1 0.927, from `microsoft/deberta-v3-base` at
+184,432,910 parameters. A retrain over a larger corpus is in flight and has no result
+yet; the numbers above are the last run that finished. Standing rule 5 below applies to
+this phase more than to any other — read
+[`phase-10-report.md`](./phase-10-report.md) for the full account.
 
 ## Standing rules that apply to every phase
 

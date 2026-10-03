@@ -22,10 +22,11 @@ on ``api/v1/knowledge``, because the write path (capture, ingest, tag, link)
 and the read path (search, snippet, source) fail in different ways and a single
 class would average their errors together.
 
-**``CODE_ASSIST`` and ``DEEP_REASONING`` exist to protect the 8B model.** They
+**``CODE_ASSIST`` and ``DEEP_REASONING`` exist to protect the slow paths.** They
 are the only two classes with ``DestinationKind.LARGE_MODEL``, and they are
 listed in the taxonomy *before* the router classes exist precisely so that
-"route this to Qwen" is a narrow, learnable decision rather than the default.
+"route this to a large model" is a narrow, learnable decision rather than
+the default.
 If every class could reach the model, the classifier would be decorative and
 every trivial *"mark it done"* would pay generation latency to be answered by a
 router that already exists. Keeping the model classes few and explicit is what
@@ -76,7 +77,17 @@ class DestinationKind(StrEnum):
     """An existing NEXUS API router handles it; no generation is involved."""
 
     LARGE_MODEL = "large_model"
-    """Qwen3-8B answers it in text; no router call follows."""
+    """Generation-only: no existing router can answer it.
+
+    NEXUS runs **no** large language model. These classes are still trained,
+    and still predicted, because recognising "this request needs free-form
+    generation that NEXUS does not perform" is a useful answer: the router can
+    say so plainly instead of either force-fitting the request onto a router
+    that cannot serve it or dropping it silently. They are what a Phase 11
+    router would escalate to *if* a generation model is ever adopted, and
+    deleting them would leave the model blind to exactly the requests it most
+    needs to recognise as out of reach.
+    """
 
     FALLBACK = "fallback"
     """No router fits. Escalate or ask, per the spec's stated policy."""
@@ -258,7 +269,7 @@ INTENT_SPECS: tuple[IntentSpec, ...] = (
         destination_kind=DestinationKind.ROUTER,
         examples=(
             "What did we decide about the risk scoring thresholds?",
-            "Find the note where I wrote down the Qwen dataset plan",
+            "Find the note where I wrote down the migration plan",
             "Search my knowledge base for anything about time estimation",
             "Which sources did I save about feature stores?",
             "Look up that Postgres partitioning doc I saved",
@@ -475,11 +486,11 @@ INTENT_SPECS: tuple[IntentSpec, ...] = (
         description=(
             "Writing, reading or debugging source code: generating a function, "
             "explaining an error, refactoring a snippet. One of only two classes "
-            "that may reach the 8B model, and the cheaper of the two — the "
+            "that would need generation, and the cheaper of the two — the "
             "answer is code-shaped and the prompt does not need to be reasoned "
             "out at length."
         ),
-        destination="qwen3-8b",
+        destination="large-model:unavailable",
         destination_kind=DestinationKind.LARGE_MODEL,
         examples=(
             "Write a Python function that parses an ISO timestamp with an offset",
@@ -511,7 +522,7 @@ INTENT_SPECS: tuple[IntentSpec, ...] = (
             "and is the most expensive class, so the router must be confident "
             "before paying for it."
         ),
-        destination="qwen3-8b",
+        destination="large-model:unavailable",
         destination_kind=DestinationKind.LARGE_MODEL,
         examples=(
             "Compare three ways to model scheduling conflicts and argue which one I'd pick",
@@ -541,11 +552,10 @@ INTENT_SPECS: tuple[IntentSpec, ...] = (
             "An utterance NEXUS has no surface for — weather, news, sport, "
             "chat. Trained explicitly so abstention is a *correct* prediction "
             "the evaluation can score rather than a dropped row. Fallback "
-            "policy, in order: escalate to qwen3-8b when the utterance is "
-            "plausibly answerable in context and carries no false commitment to "
-            "Nexo data; otherwise ask the user to clarify and name the surfaces "
-            "they may have meant. Never drop the turn and never guess a router "
-            "— a wrong write into the calendar is worse than an admitted gap."
+            "policy, in order: say plainly that NEXUS has no surface for this "
+            "and name the surfaces the user may have meant, rather than guessing "
+            "a router. Never drop the turn and never force-fit a router — a "
+            "wrong write into the calendar is worse than an admitted gap."
         ),
         destination="abstain",
         destination_kind=DestinationKind.FALLBACK,
@@ -577,7 +587,7 @@ INTENTS: tuple[Intent, ...] = tuple(spec.intent for spec in INTENT_SPECS)
 
 INTENT_NAMES: tuple[str, ...] = tuple(str(intent) for intent in INTENTS)
 
-#: The only classes allowed to reach the 8B model. Derived from the specs rather
+#: The only classes allowed to reach a generation path. Derived from the specs rather
 #: than re-declared, so the enum and the data can never disagree about which
 #: classes are expensive.
 LARGE_MODEL_INTENTS: frozenset[Intent] = frozenset(

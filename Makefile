@@ -66,8 +66,7 @@ ML_RUN := cd $(BACKEND) && ../$(ML_PY) -m ml.train
 .PHONY: help install bootstrap up down logs migrate migrate-down revision \
         db-wait test-db test test-backend test-frontend lint backend frontend clean \
         ml-help ml-prepare ml-datasets ml-validate ml-train-small \
-        ml-train-small-resume ml-eval ml-train-qwen ml-probe-remote ml-eval-qwen \
-        ml-qwen-status ml-all ml-test
+        ml-train-small-resume ml-eval ml-all ml-test
 
 help: ## Show this help
 	@echo "NEXUS — available targets:"
@@ -140,20 +139,17 @@ clean: ## Remove build artefacts and tooling caches (never touches .env or data)
 # =============================================================================
 # Phase 10 — ML training pipeline
 # =============================================================================
-# Split in two by what they need, because the two halves have nothing in common
-# except a package name:
+# Split in two by what they need:
 #
 #   * The data half (ml-prepare, ml-validate, ml-eval) is stdlib-only and runs
 #     on any interpreter, because everything under ml/ is stdlib-only. That is
 #     what keeps the test suite fast and CI dependency-free.
-#   * The training half (ml-train-small, ml-train-qwen) imports torch. It needs
-#     $(ML_PY), whose environment carries the torch wheel the backend one does
-#     not.
+#   * The training half (ml-train-small) imports torch. It needs $(ML_PY), whose
+#     environment carries the torch wheel the backend one does not.
 #
-# `ml-train-qwen` is deliberately not part of `ml-all`: Qwen3-8B under QLoRA
-# does not fit the 4 GB of VRAM on this machine and the remote kernel has no
-# working GPU, so folding it into the local pipeline would mean "all" that
-# cannot actually run.
+# The classifier trains on CPU in about 66 minutes (2,800 rows, 5 epochs, 615
+# steps, measured), so `ml-all` covers the whole pipeline and there is no remote
+# half to leave out.
 
 ml-help: ## Show the Phase 10 ML targets
 	@grep -E '^ml-[a-z-]*:.*?## ' $(MAKEFILE_LIST) \
@@ -187,17 +183,9 @@ ml-train-small-resume: ## Resume the classifier from its latest local checkpoint
 ml-eval: ## Evaluate the trained classifier and write the evaluation reports
 	$(ML_RUN) --evaluate
 
-ml-train-qwen: ## Push the QLoRA fine-tune of Qwen3-8B to a remote Kaggle kernel
-	$(ML_RUN) --train-qwen
 
-ml-probe-remote: ## Push a one-cell kernel that records whether Kaggle gave us a GPU
-	$(ML_RUN) --probe-remote
 
-ml-eval-qwen: ## Compare the base Qwen against the fine-tuned adapter (paired)
-	$(ML_RUN) --eval-qwen
 
-ml-qwen-status: ## Report the state of the remote Qwen kernel
-	$(ML_RUN) --qwen-status
 
 ml-all: ml-prepare ml-train-small ml-eval ## Run the whole local Phase 10 pipeline
 

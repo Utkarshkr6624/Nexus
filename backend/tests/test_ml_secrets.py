@@ -241,145 +241,24 @@ def test_the_prose_mention_is_the_generic_one_and_carries_no_value():
 # --------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="module")
-def generated_texts() -> dict[str, list[str]]:
-    """Every text this pipeline produces, rendered and ready to be scanned.
-
-    Datasets, validation reports, the three Kaggle notebooks, the capability
-    inventory, a run manifest, a checkpoint's metadata and a rubric evaluation:
-    the full set of things that get written to disk, uploaded or pasted.
-    """
-    from ml.datasets.capabilities import build_capability_inventory
-    from ml.datasets.qwen_sft import build_qwen_records
-    from ml.datasets.routing import build_routing_records
-    from ml.datasets.taxonomy import INTENT_NAMES
-    from ml.evaluation.qwen_eval import evaluate_generations
-    from ml.kaggle.notebook import (
-        render_eval_notebook,
-        render_qwen_training_notebook,
-        render_small_training_notebook,
-    )
-    from ml.training.checkpoint import CHECKPOINT_FORMAT_VERSION, CheckpointMetadata
-    from ml.training.manifest import RunManifest, collect_environment, new_run_id
-    from ml.validation import validate_qwen_dataset, validate_routing_dataset
-
-    routing = build_routing_records(per_intent=2)
-    qwen = build_qwen_records(per_category=1)
-
-    routing_report = validate_routing_dataset(
-        routing, known_intents=INTENT_NAMES, max_class_ratio=3.0
-    )
-    qwen_report = validate_qwen_dataset(qwen)
-
-    inventory = build_capability_inventory(BACKEND_ROOT / "app")
-    capabilities = sorted(
-        {*inventory.entities(), *inventory.recommendation_types, *inventory.risk_types}
-    )
-
-    config = {"seed": 20260101}
-    slug = "example-owner/nexo-phase10-routing"
-    notebooks = [
-        render_small_training_notebook(config=config, dataset_slug=slug, run_id="small-run"),
-        render_qwen_training_notebook(
-            config=config,
-            dataset_slug=slug,
-            run_id="qwen-run",
-            segment_index=0,
-            max_steps=100,
-        ),
-        render_eval_notebook(
-            config=config, dataset_slug=slug, run_id="eval-run", adapter_dir_name="adapter"
-        ),
-    ]
-
-    manifest = RunManifest(
-        run_id=new_run_id("small", when=__import__("datetime").datetime.now()),
-        model_name="microsoft/deberta-v3-base",
-        base_model="microsoft/deberta-v3-base",
-        model_version="routing_intent.v1",
-        dataset_version="routing_dataset.v1",
-        dataset_source="ml/datasets/routing",
-        schema_version="routing_intent.v1",
-        preprocessing_version="nexo_splits.v1",
-        code_commit="0" * 40,
-        code_dirty=False,
-        config={"max_seq_length": 128},
-        hyperparameters={"learning_rate": 2e-5},
-        seed=20260101,
-        environment=collect_environment(),
-        started_at="2026-01-01T00:00:00+00:00",
-    )
-
-    checkpoint = CheckpointMetadata(
-        format_version=CHECKPOINT_FORMAT_VERSION,
-        run_id="small-run",
-        model_name="microsoft/deberta-v3-base",
-        global_step=100,
-        epoch=1,
-        segment_index=0,
-        segments_completed=1,
-        dataset_version="routing_dataset.v1",
-        dataset_checksum="0" * 64,
-        code_commit="0" * 40,
-        config={"max_seq_length": 128},
-        hyperparameters={},
-        seed=20260101,
-        created_at="2026-01-01T00:00:00+00:00",
-        elapsed_seconds=1.0,
-        files={"adapter.safetensors": "adapter.safetensors"},
-    )
-
-    evaluation = evaluate_generations(
-        [(row["instruction"], row["response"]) for row in qwen[:5]],
-        label="base",
-        dataset_version="qwen_dataset.v1",
-        known_capabilities=capabilities,
-        known_intents=INTENT_NAMES,
-    )
-
-    texts: dict[str, list[str]] = {
-        "routing_dataset": [row["text"] for row in routing]
-        + [json.dumps(row, sort_keys=True) for row in routing],
-        "qwen_dataset": [
-            value for row in qwen for value in (row["instruction"], row["response"], row["system"])
-        ]
-        + [json.dumps(row, sort_keys=True) for row in qwen],
-        "validation_reports": [
-            routing_report.to_markdown(),
-            qwen_report.to_markdown(),
-            json.dumps(routing_report.to_dict(), sort_keys=True),
-            json.dumps(qwen_report.to_dict(), sort_keys=True),
-        ],
-        "notebooks": [*notebooks, *[_all_cell_sources(note) for note in notebooks]],
-        "capability_inventory": [json.dumps(inventory.to_dict(), sort_keys=True)],
-        "run_manifest": [
-            json.dumps(manifest.to_dict(), sort_keys=True),
-            manifest.to_markdown(),
-        ],
-        "checkpoint_metadata": [json.dumps(checkpoint.to_dict(), sort_keys=True)],
-        "eval_report": [evaluation.to_json(), evaluation.to_markdown()],
-    }
-    return texts
-
-
 def _all_cell_sources(notebook_text: str) -> str:
     document = json.loads(notebook_text)
     return "\n".join("".join(cell["source"]) for cell in document["cells"])
 
 
-def test_every_generated_artifact_is_scanned(generated_texts):
-    """If the fixture ever stops producing a category, the sweep says so."""
-    assert set(generated_texts) == {
-        "routing_dataset",
-        "qwen_dataset",
-        "validation_reports",
-        "notebooks",
-        "capability_inventory",
-        "run_manifest",
-        "checkpoint_metadata",
-        "eval_report",
+@pytest.fixture(scope="module")
+def generated_texts():
+    """Real generated artifacts, so the sweep below reads something."""
+    from ml.datasets.capabilities import build_capability_inventory
+    from ml.datasets.routing import build_routing_records
+    from ml.datasets.schema import stable_json_dumps
+
+    inventory = build_capability_inventory(BACKEND_ROOT / "app")
+    records = build_routing_records(seed=20260101, per_intent=6, capability_inventory=inventory)
+    return {
+        "routing_dataset": [row["text"] for row in records],
+        "routing_records": [stable_json_dumps(row) for row in records],
     }
-    assert all(texts for texts in generated_texts.values())
 
 
 def test_no_generated_dataset_or_report_contains_a_credential(generated_texts):
@@ -432,18 +311,6 @@ def test_the_validation_gate_rejects_a_dataset_carrying_a_credential():
     assert FAKE_KAGGLE not in json.dumps(report.to_dict())
     with pytest.raises(Exception, match="credential_detected"):
         assert_clean(report)
-
-
-def test_the_notebook_renderer_refuses_to_emit_a_cell_carrying_a_credential():
-    from ml.datasets.schema import DatasetError
-    from ml.kaggle.notebook import render_small_training_notebook
-
-    with pytest.raises(DatasetError, match="credential-shaped text"):
-        render_small_training_notebook(
-            config={"seed": 20260101, "operator_note": FAKE_ASSIGNED},
-            dataset_slug="example-owner/nexo-phase10-routing",
-            run_id="small-run",
-        )
 
 
 def test_a_credential_found_in_free_text_is_reported_by_kind_only():

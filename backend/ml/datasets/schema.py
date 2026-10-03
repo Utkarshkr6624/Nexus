@@ -29,7 +29,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -37,8 +37,6 @@ from typing import Any
 #: Version of the routing/intent record shape. Bump on any field rename.
 SCHEMA_VERSION_ROUTING = "routing_intent.v1"
 
-#: Version of the Qwen supervised-fine-tuning record shape.
-SCHEMA_VERSION_QWEN = "qwen_sft.v1"
 
 #: Version of the feature-row record shape. Distinct from the four
 #: ``*_features.v1`` contracts it carries, because this is the *training* row
@@ -48,9 +46,7 @@ SCHEMA_VERSION_FEATURES = "nexo_feature_rows.v1"
 #: Every schema version this module knows how to read. A record stamped with
 #: anything else is a hard validation failure rather than a best-effort guess:
 #: silently coercing an unknown layout is how a v2 gets fitted as a v1.
-KNOWN_SCHEMA_VERSIONS = frozenset(
-    {SCHEMA_VERSION_ROUTING, SCHEMA_VERSION_QWEN, SCHEMA_VERSION_FEATURES}
-)
+KNOWN_SCHEMA_VERSIONS = frozenset({SCHEMA_VERSION_ROUTING, SCHEMA_VERSION_FEATURES})
 
 
 class Provenance(StrEnum):
@@ -153,70 +149,6 @@ class RoutingExample:
             provenance=provenance,
             template_id=str(raw.get("template_id", "")),
             source=str(raw.get("source", "")),
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class QwenExample:
-    """One supervised-fine-tuning example for Qwen3-8B.
-
-    ``system`` carries the Nexo-specific operating instructions the adapter is
-    meant to internalise, so the trainer can present base and fine-tuned models
-    the *same* prompt and the comparison measures the fine-tune rather than a
-    different system preamble.
-    """
-
-    instruction: str
-    response: str
-    system: str
-    provenance: Provenance = Provenance.SYNTHETIC
-    template_id: str = ""
-    metadata: Mapping[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> dict[str, Any]:
-        """Serialise deterministically.
-
-        Returns:
-            A JSON-ready mapping with sorted keys.
-        """
-        return {
-            "schema_version": SCHEMA_VERSION_QWEN,
-            "instruction": self.instruction,
-            "response": self.response,
-            "system": self.system,
-            "provenance": str(self.provenance),
-            "template_id": self.template_id,
-            "metadata": dict(self.metadata),
-        }
-
-    @classmethod
-    def from_dict(cls, raw: Mapping[str, Any]) -> QwenExample:
-        """Rebuild a record from its serialised form.
-
-        Args:
-            raw: A decoded JSON object.
-
-        Returns:
-            The parsed example.
-
-        Raises:
-            DataValidationError: A required field is missing or malformed.
-        """
-        provenance = raw.get("provenance", Provenance.SYNTHETIC)
-        try:
-            provenance = Provenance(str(provenance))
-        except ValueError as exc:
-            raise DataValidationError(f"unknown provenance {provenance!r}") from exc
-        metadata = raw.get("metadata", {})
-        if not isinstance(metadata, Mapping):
-            raise DataValidationError(f"metadata must be an object, got {metadata!r}")
-        return cls(
-            instruction=_require_str(raw, "instruction"),
-            response=_require_str(raw, "response"),
-            system=_require_str(raw, "system"),
-            provenance=provenance,
-            template_id=str(raw.get("template_id", "")),
-            metadata=dict(metadata),
         )
 
 
@@ -445,13 +377,11 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 __all__ = [
     "KNOWN_SCHEMA_VERSIONS",
     "SCHEMA_VERSION_FEATURES",
-    "SCHEMA_VERSION_QWEN",
     "SCHEMA_VERSION_ROUTING",
     "DataValidationError",
     "DatasetError",
     "FeatureRow",
     "Provenance",
-    "QwenExample",
     "RoutingExample",
     "read_jsonl",
     "sha256_file",

@@ -7,7 +7,6 @@ from ml.datasets.schema import (
     DataValidationError,
     FeatureRow,
     Provenance,
-    QwenExample,
     RoutingExample,
 )
 
@@ -16,6 +15,5 @@ __all__ = [
     "DatasetError",
     "FeatureRow",
     "Provenance",
-    "QwenExample",
     "RoutingExample",
 ]

@@ -23,7 +23,8 @@ described as a template-trained baseline rather than as a model of real demand.
 
 **The two large-model classes exist so trivial requests never reach the 8B
 model.** ``code_assist`` and ``deep_reasoning`` are the only two intents whose
-destination is Qwen3-8B, and they are correspondingly *heavy* here: multi-step,
+destination would be a generation model, and they are correspondingly
+*heavy* here: multi-step,
 technical, design-argument utterances. Widening them to include trivia — "what
 is 2 + 2", "fix my typo" — would pay generation latency for an answer a router
 could already give, which is exactly the failure the standing rule exists to
@@ -306,7 +307,7 @@ _PROJECT_NAMES: tuple[str, ...] = (
     "mobile redesign",
     "payments integration",
     "auth refactor",
-    "Qwen dataset plan",
+    "the migration plan",
     "API contract cleanup",
     "onboarding funnel",
     "observability rollout",
@@ -397,7 +398,7 @@ _ARTIFACTS: tuple[str, ...] = (
     "the ADR on deterministic scoring",
     "the Postgres partitioning guide",
     "the notes from the architecture review",
-    "the Qwen fine-tuning plan",
+    "the fine-tuning plan",
     "the risk scoring thresholds doc",
     "the meeting summary from Tuesday",
     "the article on query planning",
@@ -608,7 +609,7 @@ _REPOS: tuple[str, ...] = (
     "the migration repo",
     "the worker repo",
     "the cli repo",
-    "the qwen fine tune repo",
+    "the fine tune repo",
     "the validator repo",
     "the frontend design system repo",
     "the alerting repo",
@@ -1975,7 +1976,7 @@ def routing_dataset_version() -> str:
 def build_routing_dataset(
     *,
     seed: int = 20260101,
-    per_intent: int = 150,
+    per_intent: int = 200,
     capability_inventory: CapabilityInventory | None = None,
 ) -> tuple[list[RoutingExample], BuildStats]:
     """Build the labelled routing corpus.
@@ -2025,7 +2026,7 @@ def build_routing_dataset(
 def build_routing_records(
     *,
     seed: int = 20260101,
-    per_intent: int = 150,
+    per_intent: int = 200,
     capability_inventory: CapabilityInventory | None = None,
 ) -> list[dict[str, Any]]:
     """Build the corpus in its serialised ``routing_intent.v1`` form.

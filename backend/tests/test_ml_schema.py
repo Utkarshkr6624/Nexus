@@ -21,15 +21,12 @@ import json
 import pytest
 
 from ml.datasets.schema import (
-    KNOWN_SCHEMA_VERSIONS,
     SCHEMA_VERSION_FEATURES,
-    SCHEMA_VERSION_QWEN,
     SCHEMA_VERSION_ROUTING,
     DatasetError,
     DataValidationError,
     FeatureRow,
     Provenance,
-    QwenExample,
     RoutingExample,
     read_jsonl,
     sha256_file,
@@ -40,13 +37,6 @@ from ml.datasets.schema import (
 
 # sha256 of the empty string, fixed by the standard rather than by this code.
 EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-
-
-def test_every_schema_version_is_declared_and_known():
-    assert SCHEMA_VERSION_ROUTING in KNOWN_SCHEMA_VERSIONS
-    assert SCHEMA_VERSION_QWEN in KNOWN_SCHEMA_VERSIONS
-    assert SCHEMA_VERSION_FEATURES in KNOWN_SCHEMA_VERSIONS
-    assert len(KNOWN_SCHEMA_VERSIONS) == 3
 
 
 def test_routing_example_round_trips():
@@ -94,40 +84,6 @@ def test_routing_example_refuses_an_unknown_provenance():
         RoutingExample.from_dict(
             {"text": "Add a task", "intent": "task_manage", "provenance": "hallucinated"}
         )
-
-
-def test_qwen_example_round_trips_with_metadata():
-    original = QwenExample(
-        instruction="Mark the API contract task as done",
-        response="The tasks router can mark it once you confirm the title.",
-        system="You are NEXUS.",
-        provenance=Provenance.SYNTHETIC,
-        template_id="intent-interpretation-7",
-        metadata={"category": "intent_interpretation", "expected_intent": "task_manage"},
-    )
-
-    restored = QwenExample.from_dict(original.to_dict())
-
-    assert restored == original
-    assert restored.to_dict() == original.to_dict()
-    assert restored.to_dict()["schema_version"] == SCHEMA_VERSION_QWEN
-
-
-def test_qwen_example_refuses_metadata_that_is_not_an_object():
-    with pytest.raises(DataValidationError, match="metadata"):
-        QwenExample.from_dict(
-            {
-                "instruction": "Mark the task done",
-                "response": "Confirm the title first.",
-                "system": "You are NEXUS.",
-                "metadata": ["not", "an", "object"],
-            }
-        )
-
-
-def test_qwen_example_refuses_a_missing_response():
-    with pytest.raises(DataValidationError, match="response"):
-        QwenExample.from_dict({"instruction": "Mark the task done", "system": "You are NEXUS."})
 
 
 def test_feature_row_reports_its_unavailable_columns():

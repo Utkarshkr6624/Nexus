@@ -27,7 +27,6 @@ import pytest
 
 from ml.datasets.schema import (
     SCHEMA_VERSION_FEATURES,
-    SCHEMA_VERSION_QWEN,
     SCHEMA_VERSION_ROUTING,
     DataValidationError,
 )
@@ -40,7 +39,6 @@ from ml.validation import (
     assert_clean,
     validate_feature_dataset,
     validate_no_credentials,
-    validate_qwen_dataset,
     validate_routing_dataset,
     validate_splits,
 )
@@ -58,18 +56,6 @@ def _routing(text: str, intent: str, **extra) -> dict:
         "provenance": "synthetic",
         "template_id": extra.get("template_id", "t-1"),
         "source": extra.get("source", "unit-test"),
-    }
-
-
-def _qwen(instruction: str, response: str, **extra) -> dict:
-    return {
-        "schema_version": SCHEMA_VERSION_QWEN,
-        "instruction": instruction,
-        "response": response,
-        "system": extra.get("system", "You are NEXUS."),
-        "provenance": "synthetic",
-        "template_id": extra.get("template_id", "q-1"),
-        "metadata": extra.get("metadata", {}),
     }
 
 
@@ -228,22 +214,6 @@ def test_a_credential_in_a_record_is_an_error_and_is_never_reproduced():
     assert "[REDACTED]" in serialised
 
 
-def test_a_credential_in_a_qwen_system_preamble_is_caught():
-    records = [
-        _qwen(
-            "Mark the task done",
-            "Confirm the title first.",
-            system=f"You are NEXUS. Your token is {FAKE_KAGGLE}.",
-        )
-    ]
-
-    report = validate_qwen_dataset(records)
-
-    assert not report.passed
-    assert "credential_detected" in report.codes()
-    assert FAKE_KAGGLE not in report.to_markdown()
-
-
 def test_near_duplicates_are_a_warning_rather_than_an_error():
     records = [
         _routing("Review deadline for migration plan", "task_manage"),
@@ -254,42 +224,6 @@ def test_near_duplicates_are_a_warning_rather_than_an_error():
 
     assert report.passed
     assert report.codes() == ("near_duplicate_text",)
-
-
-def test_a_repeated_qwen_instruction_response_pair_is_an_error():
-    records = [
-        _qwen("Mark the task done", "Confirm the title first.", template_id="q-1"),
-        _qwen("Mark the task done", "Confirm the title first.", template_id="q-2"),
-    ]
-
-    report = validate_qwen_dataset(records)
-
-    assert not report.passed
-    assert "duplicate_example" in report.codes()
-
-
-def test_one_qwen_instruction_with_two_responses_is_a_contradiction():
-    records = [
-        _qwen("Mark the task done", "Confirm the title first."),
-        _qwen("mark the task done!", "The tasks router will need the exact title."),
-    ]
-
-    report = validate_qwen_dataset(records)
-
-    assert not report.passed
-    assert "contradictory_response" in report.codes()
-    assert report.counts["contradictions"] == 1
-
-
-def test_a_clean_qwen_dataset_passes_and_counts_its_provenance():
-    records = [_qwen(f"request number {index}", f"Response number {index}.") for index in range(4)]
-
-    report = validate_qwen_dataset(records)
-
-    assert report.passed
-    assert report.counts["records"] == 4
-    assert report.counts["distinct_instructions"] == 4
-    assert report.counts["provenance:synthetic"] == 4
 
 
 def test_a_feature_row_dataset_reports_incompleteness_as_a_warning():

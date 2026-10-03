@@ -4,10 +4,11 @@
 projects, planning, knowledge, analytics and machine learning. It runs entirely on your
 own machine and is never deployed to a cloud. No paid APIs, no paid services.
 
-The one networked step anywhere in the project is Phase 10's optional Qwen3-8B run,
-which pushes a training kernel to Kaggle over the `kaggle` CLI. That is a build-time
-training step, not a service the application calls: no process under `backend/app/`
-imports `backend/ml/`, and nothing the application serves has left this machine.
+The one networked step anywhere in the project is Phase 10's **first and only**
+model download: `microsoft/deberta-v3-base` is fetched from Hugging Face once, by
+the offline `train-small` stage. That is a build-time step driven by `make`, not a
+service the application calls: no process under `backend/app/` imports
+`backend/ml/`, and nothing the application serves has left this machine.
 
 ---
 
@@ -35,7 +36,7 @@ then made the module surface real, one module per phase. What exists today:
 | Health/readiness endpoints, Swagger/ReDoc | Done |
 | Projects, Tasks, Planner, Knowledge, Analytics, Risks, Recommendations (Phases 3–7) | Live — migrations `0003`–`0007`, backend routes and real pages |
 | Developer, Learning, Career (Phases 8 and 9) | Live — see [Phase 8 and Phase 9](#phase-8-and-phase-9--developer-learning-and-career) |
-| ML training (Phase 10) | In progress — `backend/ml/`, a separate package and entry point (`python -m ml.train`); see [Phase 10](#phase-10--ml-training) |
+| ML training (Phase 10) | **Done** — one model: a `deberta-v3-base` routing classifier over the 14 Nexo intents, trained on CPU and evaluated at 0.9738 accuracy / 0.9737 macro F1 on a 420-row held-out split. `backend/ml/`, a separate package and entry point (`python -m ml.train`); see [Phase 10](#phase-10--ml-training) |
 | Search, AI Assistant, Experiments | Designed placeholder pages only |
 | Automated tests | **2270 backend collected** (1029 offline, 1241 `integration`) — collection counts, not a pass count; and **645 frontend** in 44 files, all passing |
 
@@ -197,62 +198,91 @@ is where the training happens; it is a separate package that the API does not im
 
 Phase 10 is the first phase that trains anything, and it is deliberately kept out of the
 running application. It lives in `backend/ml/`, has its own entry point, and is driven by
-the `make ml-*` targets. **It is in progress** — the specifications are
+the `make ml-*` targets. **It is complete** — the specifications are
 [`docs/specifications/phase-10-architecture.md`](docs/specifications/phase-10-architecture.md)
 and
-[`docs/specifications/phase-10-training.md`](docs/specifications/phase-10-training.md).
+[`docs/specifications/phase-10-training.md`](docs/specifications/phase-10-training.md),
+and the run report is
+[`docs/specifications/phase-10-report.md`](docs/specifications/phase-10-report.md).
 
 | Model | Runs on | What it is |
 | --- | --- | --- |
-| `microsoft/deberta-v3-base` | this machine, CPU | A routing / intent classifier fine-tuned over the 14 Nexo intents |
-| `Qwen/Qwen3-8B` under QLoRA | a **remote Kaggle GPU** | The larger fine-tune. It does not fit this machine's VRAM, so it is pushed out and polled back |
+| `microsoft/deberta-v3-base` | this machine, CPU | **The only trained model in NEXUS.** A routing / intent classifier fine-tuned over the 14 Nexo intents |
 
-The small model's job is **routing, not answering**: it decides *which* capability should
+### Where Phase 10 actually stands
+
+Done, and done for real: one model, trained and evaluated on this machine.
+
+- **The routing classifier is trained and evaluated.** `microsoft/deberta-v3-base` at
+  **184,432,910 parameters**, fine-tuned over the 14 intents on CPU in 615 steps (5 epochs
+  over 1,960 training rows, 3,976 s wall clock), scored on the **420-row held-out test
+  split: 0.9738 accuracy, 0.9737 macro F1**, with no class below 0.915 F1. Validation
+  (420 rows) came in at 0.9810 accuracy / 0.9809 macro F1. The metrics are written by the
+  run itself to `backend/ml/artifacts/small-model/metrics.json`, and the full run record —
+  seed, dataset checksum, resolved library versions, per-step loss curve — is in
+  `training_state.json` beside it. The numbers above are run
+  `small-20261003T193530Z-855c5eb8`, over a 2,800-row corpus (200 per intent, split
+  1,960 / 420 / 420, zero validation findings, zero leaked keys).
+- **The suites pass.** `backend/tests/test_ml_*.py` is **321 passed**, 1 skipped; the
+  full backend suite is **2 591 passed**, 1 skipped, 0 failed. The one skip is a
+  Windows symlink privilege a Phase 8 test needs, not something deferred.
+- **The pipeline reports `PASS` end to end.** `ml/reports/pipeline_summary.json` records all
+  three stages — `prepare`, `train-small`, `evaluate` — as `PASSED`, with a verdict of
+  `PASS`. The earlier 2,100-row, 4-epoch, 368-step run
+  (`small-20261003T124537Z-853c3adc`, 0.9675 accuracy / 0.9674 macro F1 on 308 test rows)
+  is superseded, and is quoted here only as history.
+
+The model's job is **routing, not answering**: it decides *which* capability should
 handle an utterance. Twelve of the fourteen Nexo intents are answered by the deterministic
-services in `app/services/`, which are faster and more reliable than any language model;
-only `code_assist` and `deep_reasoning` route to the large model, with `out_of_scope` left
-to abstain. So the classifier exists to keep the cheap intents cheap and to escalate only
-what genuinely needs generation — it does not displace the rules.
+services in `app/services/`, which are faster and more reliable than any language model.
+The other two, `code_assist` and `deep_reasoning`, have a destination of
+`large-model:unavailable` — **NEXUS runs no language model** — and they are trained and
+predicted anyway, so the router can recognise a request it cannot serve instead of being
+blind to it. `out_of_scope` is a trained class too, so abstention is something the model
+can be *right* about. The classifier exists to keep the cheap intents cheap; it does not
+displace the rules.
 
-Phase 10 ends at artifacts. Nothing here loads either model into the running application,
-and no route, service or frontend page depends on one. Loading them is Phase 11's job; the
+An earlier draft of this phase specified a second trained model as well. It was **removed
+from the repository** — not disabled — along with its corpus, config, notebook renderers,
+remote driver and pipeline stages. Nothing in this README or in the code refers to it as
+though it existed; the report records what was deleted and why.
+
+Phase 10 ends at artifacts. Nothing here loads the model into the running application,
+and no route, service or frontend page depends on one. Loading it is Phase 11's job; the
 deterministic path in `app/services/` stays the answer whenever a model is absent,
 unevaluated or unsure.
 
 ```bash
 make ml-help          # list every Phase 10 target
-make ml-prepare       # build, validate and split the datasets (stdlib only, no GPU)
+make ml-prepare       # build, validate and split the corpus (stdlib only, no GPU)
 make ml-train-small   # fine-tune the routing classifier (needs backend/ml/.venv)
 make ml-eval          # evaluate it and write the reports
 make ml-all           # prepare + train-small + evaluate
 ```
 
-Phase 10 defines **twelve** `ml-*` targets; the five above are the ones a local run uses.
+Phase 10 defines **nine** `ml-*` targets; the five above are the ones a local run uses.
 The full set is `ml-help`, `ml-prepare`, `ml-datasets` (an alias for `ml-prepare`),
-`ml-validate`, `ml-train-small`, `ml-train-small-resume`, `ml-eval`, `ml-train-qwen`,
-`ml-probe-remote`, `ml-qwen-status`, `ml-all` and `ml-test`. `make ml-help` greps that
-list out of the `Makefile` itself, so the help cannot drift from the targets. Seven of
-the twelve wrap a stage flag of `python -m ml.train` — `--prepare`, `--train-small`,
-`--evaluate`, `--train-qwen`, `--probe-remote`, `--eval-qwen` and `--qwen-status`, which
-are the seven selectable stages and always run in that order. One stage flag has no target
-of its own: `--eval-qwen` is run as `python -m ml.train --eval-qwen`. And `--resume` is a
-modifier rather than a stage, spelled `make ml-train-small-resume`.
+`ml-validate`, `ml-train-small`, `ml-train-small-resume`, `ml-eval`, `ml-all` and
+`ml-test`. `make ml-help` greps that list out of the `Makefile` itself, so the help cannot
+drift from the targets. `python -m ml.train` has exactly **three** selectable stages —
+`--prepare`, `--train-small` and `--evaluate` — which always run in that order and are
+what `ml-all` runs. `--resume` is a modifier rather than a stage, spelled
+`make ml-train-small-resume`, and `--dry-run` prints the plan and exits.
 
 Two interpreters are involved and the Makefile picks the right one: the data half is
 stdlib-only and runs anywhere, while the training half needs `backend/ml/.venv/`, which
 carries the torch wheel the backend venv does not have. Override it with
-`make ml-train-small ML_PY=backend/ml/.venv/Scripts/python.exe`. `ml-train-qwen` is
-deliberately **not** part of `ml-all` — an "all" that cannot actually run is worse than a
-target that states what it needs.
+`make ml-train-small ML_PY=backend/ml/.venv/Scripts/python.exe`.
 
 ---
 
 ## Architecture at a glance
 
 Everything runs on one machine. There is no external service of any kind that NEXUS
-itself calls. One outbound path exists, and Phase 10 added it: a Qwen3-8B fine-tune can
-be pushed to a Kaggle kernel by `make ml-train-qwen`. It is driven by `make`, off the
-request path, and the resulting adapter is only written to disk — nothing loads it.
+itself calls, and no outbound path in the request path. The only network the project
+ever touches is a one-off checkpoint download during `make ml-train-small`, driven by
+`make`, off the request path — and the resulting classifier is only written to disk.
+Nothing loads it.
 
 ```
         ┌────────────────────────── your machine ──────────────────────────┐
@@ -338,11 +368,14 @@ Nexo/
 │       │                             (developer/, learning/, career/ are packages)
 │       └── ml/                       Phase 10 ML training — own venv, `python -m ml.train`
 │           ├── train.py              the one entry point: --prepare/--train-small/--evaluate
-│           ├── configs/              small_model.toml, qwen_qlora.toml
-│           ├── preprocessing/        corpus construction, normalisation, splits
-│           ├── training/             config, checkpoints, run manifests, the remote runner
-│           ├── evaluation/           classifier metrics and the Qwen evaluation
-│           ├── kaggle/               kernel plumbing for the remote GPU run
+│           ├── validation.py         the data-integrity gate prepare must pass
+│           ├── configs/              small_model.toml
+│           ├── datasets/             capability harvest, routing corpus, taxonomy, splits
+│           ├── preprocessing/        normalisation and redaction
+│           ├── training/             config, checkpoints, run manifests
+│           ├── scripts/              train_small_local.py — the training loop
+│           ├── evaluation/           classifier metrics
+│           ├── artifacts/            the trained classifier and its metrics (gitignored)
 │           └── reports/              the generated dataset, split and pipeline reports
 └── frontend/
     ├── vite.config.ts      dev proxy (:8000), code splitting, Vitest config
@@ -656,10 +689,9 @@ scripts and npm scripts. `make` with no argument lists them.
 | `make ml-all` | `ml-prepare` → `ml-train-small` → `ml-eval` (the local Phase 10 pipeline) |
 | `make clean` | Remove caches, `frontend/dist`, `frontend/coverage`, `*.tsbuildinfo` |
 
-Those three are the common `ml-*` targets, not the whole set. Phase 10 defines twelve —
+Those three are the common `ml-*` targets, not the whole set. Phase 10 defines nine —
 `ml-help`, `ml-prepare`, `ml-datasets`, `ml-validate`, `ml-train-small`,
-`ml-train-small-resume`, `ml-eval`, `ml-train-qwen`, `ml-probe-remote`, `ml-qwen-status`,
-`ml-all` and `ml-test` — all of them listed in
+`ml-train-small-resume`, `ml-eval`, `ml-all` and `ml-test` — all of them listed in
 [Phase 10](#phase-10--ml-training).
 
 `db-wait` and `test-db` exist so the two helper scripts no longer have to be invoked by
@@ -954,7 +986,7 @@ section of [`docs/architecture.md`](docs/architecture.md): Redis (replacing the 
 access-token revocation store), an audit-log pruning job (the retention setting exists; the
 job does not), background workers, a local model registry, and Ollama-backed local LLM
 features. Two seams are no longer seams: git repository analysis shipped in Phase 8 and reads
-local work trees through the `git` CLI, and the ML training pipeline is in flight in
+local work trees through the `git` CLI, and the ML training pipeline has shipped in
 [Phase 10](#phase-10--ml-training) under `backend/ml/`. Note that the `10 / Experiments`
 row above is the *module* axis, not the platform axis — the Experiments page is still a
 placeholder, while the Phase 10 ML pipeline is real work.
@@ -971,5 +1003,6 @@ placeholder, while the Phase 10 ML pipeline is real work.
 | [`docs/specifications/phase-8-developer-report.md`](docs/specifications/phase-8-developer-report.md) | What Phase 8 shipped, the four git tables, the 14 routes, `developer_features.v1`, the tests actually executed, the two defects three agents independently reported, and the known repo-scan limitations |
 | [`docs/specifications/phase-9-learning-career-report.md`](docs/specifications/phase-9-learning-career-report.md) | What Phase 9 shipped, the six learning/career tables, the 33 routes, `learning_features.v1` and `career_features.v1`, the tests actually executed, and the contract disagreements |
 | [`docs/specifications/phase-10-architecture.md`](docs/specifications/phase-10-architecture.md) | Where the Phase 10 `backend/ml/` package sits, its two interpreters, and its execution boundary |
-| [`docs/specifications/phase-10-training.md`](docs/specifications/phase-10-training.md) | The Phase 10 routing classifier and the Qwen3-8B QLoRA run on a remote Kaggle GPU, with what was executed and what was not |
+| [`docs/specifications/phase-10-training.md`](docs/specifications/phase-10-training.md) | The Phase 10 routing classifier and its evaluation, with what was executed |
+| [`docs/specifications/phase-10-report.md`](docs/specifications/phase-10-report.md) | The final Phase 10 run report: the corpus, the metrics, checkpoint/resume evidence, and the limitations |
 | [`docs/specifications/README.md`](docs/specifications/README.md) | The authoritative specifications for Phases 3–10 — projects and tasks, planner and scheduling, knowledge base, analytics, risk and recommendations, developer intelligence, learning and career, ML training — with the dependency chain each phase requires and the standing rules that apply to all of them |

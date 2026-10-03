@@ -8,6 +8,7 @@ other module reads ``os.environ`` directly.
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 from urllib.parse import quote
 
@@ -19,6 +20,29 @@ Environment = Literal["development", "test", "production"]
 #: Placeholder used when no SECRET_KEY is supplied. The validator below refuses
 #: to start a production process with this value.
 INSECURE_DEV_SECRET_KEY = "dev-insecure-change-me"
+
+#: The backend package root — the directory that contains ``app/`` — derived from
+#: this file's own location rather than from ``__file__`` at the call site. Every
+#: on-disk default resolves against it, so a checkout moved to another machine
+#: or another drive still finds its own artifacts and no absolute path from the
+#: developer's workstation is ever baked in.
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+#: Where Phase 10 writes the trained intent classifier. Relative to
+#: :data:`BACKEND_ROOT` because ``backend/ml/artifacts`` is gitignored: the
+#: checkpoint is produced by a training run on the machine that will serve it and
+#: is never part of the repository.
+DEFAULT_MODEL_PATH = BACKEND_ROOT / "ml" / "artifacts" / "small-model" / "final"
+
+#: The only device names the runtime accepts. ``auto`` resolves to CUDA when a
+#: CUDA build of torch sees a GPU and to CPU otherwise, which is what makes the
+#: same configuration correct on a workstation and in a CPU-only container.
+ML_DEVICES = ("auto", "cpu", "cuda")
+
+#: The trained context length, in subword tokens. Recorded here because it is the
+#: fact that bounds everything else about submitted text: the tokeniser truncates
+#: here, so anything past it cannot change the prediction, only the latency.
+ML_MAX_SEQUENCE_LENGTH = 128
 
 
 class Settings(BaseSettings):
@@ -258,6 +282,77 @@ class Settings(BaseSettings):
     #: short enough that a habit has visibly lapsed.
     career_stale_inactive_days: int = 21
 
+    # -- ML integration (Phase 11) -------------------------------------------
+    #: Master switch for the intent classifier. Off means NEXUS never loads a
+    #: model: the ML endpoints answer 503 with the reason ``disabled`` and every
+    #: deterministic router is untouched. It exists because the checkpoint is a
+    #: 703 MiB local artifact and a deployment without one — a fresh clone, a CI
+    #: container, another machine — must still serve every other surface rather
+    #: than failing to boot over a feature it does not have.
+    ml_enabled: bool = True
+    #: Whether a failed load stops the process. Off by default, because the
+    #: degraded runtime degrades *cleanly*: the app boots, the routers work, and
+    #: the ML endpoints answer 503 with a machine-readable reason. A deployment
+    #: that cannot serve its own contract at all (a host whose production config
+    #: points at a checkpoint that is not there) should turn this on so the
+    #: failure is a boot failure instead of a silent feature that quietly 503s.
+    ml_fail_fast: bool = False
+    #: Directory holding the Phase 10 ``final/`` checkpoint. EMPTY means "use the
+    #: default below", which is resolved relative to the repository rather than
+    #: hard-coded, so a moved checkout keeps working. Note that
+    #: ``backend/ml/artifacts`` is gitignored — this path names something a
+    #: training run produces locally, never something the repository ships.
+    ml_model_path: str = ""
+    #: ``auto`` | ``cpu`` | ``cuda``. ``auto`` means "use a GPU when this build of
+    #: torch sees one, CPU otherwise", which is what keeps one configuration
+    #: correct on both a workstation and the CPU-only container this runs in.
+    ml_device: str = "auto"
+    #: Confidence below which the classifier's answer is treated as a refusal to
+    #: name a router, rather than as a router to call.
+    #:
+    #: **This number is an integration threshold, not a calibrated probability.**
+    #: It was chosen by re-running the Phase 10 checkpoint over the 420-row
+    #: held-out test split and tabulating precision against coverage:
+    #:
+    #:   threshold | kept | precision | coverage | errors remaining
+    #:   ----------+------+-----------+----------+----------------
+    #:      0.00   | 420  |  0.9738   |  100.0%  | 11
+    #:      0.60   | 416  |  0.9784   |   99.0%  |  9
+    #:      0.80   | 407  |  0.9853   |   96.9%  |  6
+    #:    * 0.90 * | 400  | *0.9900*  | * 95.2%* |  4
+    #:      0.95   | 396  |  0.9924   |   94.3%  |  3
+    #:      0.98   | 377  |  0.9947   |   89.8%  |  2
+    #:
+    #: 0.90 keeps 95.2% of utterances while lifting precision on accepted
+    #: requests from 0.9738 to 0.9900 and rejecting 7 of the 11 errors. The rows
+    #: above it trade badly for a router whose failure mode is refusing a
+    #: legitimate request: 0.95 buys one error for a point of coverage, 0.98 buys
+    #: one more for five.
+    #:
+    #: **That corpus is synthetic and template-generated.** These are not
+    #: measurements of real user text, and this is not a claim about real-world
+    #: accuracy. Real utterances are messier than the templates, so expect both a
+    #: lower mean confidence and a worse hit rate than the table above — which
+    #: makes 0.90 conservative in the right direction (more refusals, fewer wrong
+    #: writes) and simultaneously an over-estimate of how often NEXUS will
+    #: answer at all. Re-derive it against real traffic before trusting it.
+    ml_confidence_threshold: float = 0.90
+    #: Hard ceiling on the length of text submitted for classification, applied
+    #: before inference. The trained context is 128 subword tokens, so a few
+    #: thousand characters is already pure truncation — past that point extra
+    #: characters cannot change the prediction, they only cost tokenisation time
+    #: and make the request body a place to park something the router will never
+    #: read. Two thousand characters is comfortably more than any utterance the
+    #: training corpus contains.
+    ml_max_input_chars: int = 2000
+    #: Whether incoming text is screened for credential-shaped content before it
+    #: reaches the classifier. On by default because a user utterance is exactly
+    #: the untrusted free text that
+    #: :func:`ml.preprocessing.normalize.find_credential` was written to scan, and
+    #: because nothing downstream of here may echo what was submitted. The refusal
+    #: names the *kind* of credential and never the matched value.
+    ml_reject_credentials: bool = True
+
     # -- Logging -------------------------------------------------------------
     log_level: str = "INFO"
     log_json: bool = True
@@ -343,7 +438,84 @@ class Settings(BaseSettings):
     def is_testing(self) -> bool:
         return self.environment == "test"
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def ml_resolved_model_path(self) -> Path:
+        """The absolute checkpoint directory, configured or defaulted.
+
+        ``computed_field`` rather than a value assigned in a validator so there
+        is exactly one answer to "where would we load from", and every caller —
+        the runtime, the health check, an operator reading ``/health`` — gets the
+        same one. It deliberately does **not** touch the filesystem: a deployment
+        that has not run training yet must still be able to construct its
+        settings, report that the checkpoint is absent, and serve every non-ML surface.
+
+        An explicitly configured relative path resolves against the process's
+        working directory — which is where an operator writing one into a unit
+        file means it to point. Only the *default* is anchored to the repository.
+        """
+        configured = self.ml_model_path.strip()
+        if configured:
+            return Path(configured).expanduser().resolve()
+        return DEFAULT_MODEL_PATH
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def ml_checkpoint_exists(self) -> bool:
+        """Whether the resolved checkpoint directory is present on this machine.
+
+        ``artifacts/`` is gitignored, so this is False on any checkout that has
+        not run Phase 10. That is a supported state, not a broken install: the
+        app boots without it and the ML endpoints answer 503.
+        """
+        return self.ml_resolved_model_path.is_dir()
+
     # -- Validation ----------------------------------------------------------
+
+    @model_validator(mode="after")
+    def _validate_ml_settings(self) -> Settings:
+        """Refuse ML settings that would misroute rather than merely fail.
+
+        Each rule below stops a configuration whose *failure* is silent. An
+        out-of-range threshold does not raise at request time — it accepts every
+        utterance, or refuses every utterance, and both look like a working
+        router. A mistyped device name does not raise either; it falls back to
+        CPU and the operator learns about it from a queue instead of from here.
+        A character ceiling of zero refuses every request with a message that
+        names a length the caller cannot satisfy. So like
+        :meth:`_validate_productivity_weights`, this **raises**: ``Settings`` is
+        constructed once per process via :func:`get_settings`, so the refusal
+        happens at boot where an operator will see it.
+        """
+        if not 0.0 < self.ml_confidence_threshold <= 1.0:
+            raise ValueError(
+                "ML_CONFIDENCE_THRESHOLD must be in (0, 1]; "
+                f"it is {self.ml_confidence_threshold}. Zero would accept every "
+                "utterance whatever the model said, and a value above one would "
+                "refuse every request as unconfident."
+            )
+        if self.ml_device not in ML_DEVICES:
+            raise ValueError(
+                f"ML_DEVICE must be one of {ML_DEVICES}; it is {self.ml_device!r}. "
+                "An unrecognised device would silently fall back to CPU, which "
+                "turns a configuration typo into a latency regression nobody "
+                "attributed to the typo."
+            )
+        if self.ml_max_input_chars <= 0:
+            raise ValueError(
+                f"ML_MAX_INPUT_CHARS must be positive; it is {self.ml_max_input_chars}. "
+                "A ceiling of zero or less refuses every classification with an "
+                "error the caller has no way to satisfy."
+            )
+        if self.ml_max_input_chars > 10_000:
+            raise ValueError(
+                "ML_MAX_INPUT_CHARS must not exceed 10000; "
+                f"it is {self.ml_max_input_chars}. The trained context is "
+                f"{ML_MAX_SEQUENCE_LENGTH} subword tokens, so text this long is "
+                "truncated before the model sees it: the bound would accept a "
+                "large request body and charge for it while changing nothing."
+            )
+        return self
 
     @model_validator(mode="after")
     def _reject_insecure_production_secrets(self) -> Settings:

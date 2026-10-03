@@ -7,17 +7,23 @@ own machine and is never deployed to a cloud. No paid APIs, no paid services.
 The one networked step anywhere in the project is Phase 10's **first and only**
 model download: `microsoft/deberta-v3-base` is fetched from Hugging Face once, by
 the offline `train-small` stage. That is a build-time step driven by `make`, not a
-service the application calls: no process under `backend/app/` imports
-`backend/ml/`, and nothing the application serves has left this machine.
+service the application calls. Phase 11 does put a model on the request path, but
+nothing about it leaves this machine: `backend/app/ml/` imports the 14-intent
+taxonomy from `backend/ml/datasets/taxonomy.py`, and that module is stdlib-only —
+it imports no torch, so importing it costs nothing on a machine that has no torch
+at all. The trained weights are read from the local filesystem
+(`backend/ml/artifacts/small-model/final/`, gitignored), never fetched. **Nothing
+the application serves makes a network call.**
 
 ---
 
-## Status: Phases 1 through 9 are delivered
+## Status: Phases 1 through 11 are delivered
 
 Phase 1 built the technical foundation and Phase 2 turned authentication into a real
 account system: persistent device sessions, a password policy, password recovery,
 role-based permissions, an audit trail, and a five-tab settings surface. Phases 3 to 9
-then made the module surface real, one module per phase. What exists today:
+then made the module surface real, one module per phase. Phase 10 trained the model and
+Phase 11 put it on the request path. What exists today:
 
 | Area | State |
 | --- | --- |
@@ -37,6 +43,7 @@ then made the module surface real, one module per phase. What exists today:
 | Projects, Tasks, Planner, Knowledge, Analytics, Risks, Recommendations (Phases 3–7) | Live — migrations `0003`–`0007`, backend routes and real pages |
 | Developer, Learning, Career (Phases 8 and 9) | Live — see [Phase 8 and Phase 9](#phase-8-and-phase-9--developer-learning-and-career) |
 | ML training (Phase 10) | **Done** — one model: a `deberta-v3-base` routing classifier over the 14 Nexo intents, trained on CPU and evaluated at 0.9738 accuracy / 0.9737 macro F1 on a 420-row held-out split. `backend/ml/`, a separate package and entry point (`python -m ml.train`); see [Phase 10](#phase-10--ml-training) |
+| ML integration (Phase 11) | **Delivered** — `backend/app/ml/` loads the Phase 10 checkpoint from the local filesystem and routes an utterance to an existing `app/services/` module. torch is imported lazily, so the app boots and serves every non-ML route without it; the ML endpoints answer `503 ml_unavailable` when the checkpoint or torch is missing, and the checkpoint is gitignored, so the feature is off on a fresh clone by design. No Phase 11 accuracy, test-count or latency figure is claimed here — see [Phase 11](#phase-11--ml-integration) |
 | Search, AI Assistant, Experiments | Designed placeholder pages only |
 | Automated tests | **2270 backend collected** (1029 offline, 1241 `integration`) — collection counts, not a pass count; and **645 frontend** in 44 files, all passing |
 
@@ -186,11 +193,11 @@ change:
 | `LEARNING_MIN_EVIDENCE_FOR_ESTIMATE` | `3` | Below this many activities, NEXUS offers **no** level estimate at all and says so |
 | `CAREER_STALE_INACTIVE_DAYS` | `21` | After this many days with no recorded activity, a target skill counts as dormant and is eligible for a nudge |
 
-**These two phases run no model.** Both produce *feature vectors* —
-`developer_features.v1`, `learning_features.v1`, `career_features.v1` — which are named
-numbers stamped with a schema version, ready for the Phase 10 trainer. Nothing on these
-surfaces is trained, loaded, served or registered, and no endpoint infers anything. Phase 10
-is where the training happens; it is a separate package that the API does not import.
+**These three surfaces run no model.** They produce *feature vectors* —
+`developer_features.v1`, `learning_features.v1`, `career_features.v1` — which are
+named numbers stamped with a schema version. Phase 11's router does not infer anything
+on them; it only *selects* one of them, and the work behind the selection is still the
+deterministic code in `app/services/`.
 
 ---
 
@@ -247,8 +254,10 @@ from the repository** — not disabled — along with its corpus, config, notebo
 remote driver and pipeline stages. Nothing in this README or in the code refers to it as
 though it existed; the report records what was deleted and why.
 
-Phase 10 ends at artifacts. Nothing here loads the model into the running application,
-and no route, service or frontend page depends on one. Loading it is Phase 11's job; the
+Phase 10 itself still ends at artifacts — nothing in `backend/ml/` loads a model into the
+running application. Phase 11 is what changed that, and it is a separate package
+(`backend/app/ml/`) rather than an edit to `backend/ml/`; see
+[Phase 11](#phase-11--ml-integration). The rule Phase 10 set still holds: the
 deterministic path in `app/services/` stays the answer whenever a model is absent,
 unevaluated or unsure.
 
@@ -270,9 +279,47 @@ what `ml-all` runs. `--resume` is a modifier rather than a stage, spelled
 `make ml-train-small-resume`, and `--dry-run` prints the plan and exits.
 
 Two interpreters are involved and the Makefile picks the right one: the data half is
-stdlib-only and runs anywhere, while the training half needs `backend/ml/.venv/`, which
-carries the torch wheel the backend venv does not have. Override it with
-`make ml-train-small ML_PY=backend/ml/.venv/Scripts/python.exe`.
+stdlib-only and runs anywhere, while the training half is pointed at `backend/ml/.venv/`
+by default. Override it with `make ml-train-small ML_PY=backend/ml/.venv/Scripts/python.exe`.
+
+---
+
+## Phase 11 — ML integration
+
+Phase 11 wires the one model Phase 10 trained into the running API. It adds no second
+model, no retraining, and no language model of any kind: the 14-class intent classifier
+decides *which* existing NEXO capability should handle an utterance, and
+`app/services/` does the actual work exactly as it did before.
+
+The boundary is `backend/app/ml/`, deliberately separate from the training package in
+`backend/ml/`. Three properties are worth stating before anything else:
+
+- **The taxonomy is imported; the weights are only read.** `app/ml/` imports the
+  14-intent label contract from `backend/ml/datasets/taxonomy.py`, which is
+  stdlib-only and pulls in no torch. It is the single source of truth for the
+  intent names and their destinations, so the API cannot drift from what the model
+  was trained on. The trained weights are read from the local filesystem at
+  `backend/ml/artifacts/small-model/final/`.
+- **torch is imported lazily**, at the moment the classifier loads. The application
+  imports, boots and serves every non-ML route on a machine with no torch
+  installed; the ML endpoints answer `503 ml_unavailable` there. The app starting
+  is not the same question as the model being available, and the code keeps them
+  apart.
+- **The checkpoint is gitignored**, so a fresh clone has no model and the feature is
+  off. That is a property of a 703 MiB artifact, not an oversight. Tests that need
+  the real weights carry the `ml_model` marker and skip cleanly when either the
+  checkpoint or torch is absent.
+
+The value objects that cross the boundary are in `backend/app/ml/schemas.py` and are
+free of `torch`: `IntentPrediction` (what the model said), `ServiceTarget` (which
+service an intent lands on), and `RoutingDecision` (both, plus the threshold verdict).
+The router's job is the mapping from intent to *existing* service, and the
+`large-model:unavailable` and `abstain` destinations stay exactly where Phase 10 put
+them — NEXUS runs no language model, and a request it cannot serve is recognised and
+declined rather than silently dropped.
+
+The user utterance is never logged. What is logged is the intent, the confidence, the
+latency, and at most a length.
 
 ---
 
@@ -280,9 +327,10 @@ carries the torch wheel the backend venv does not have. Override it with
 
 Everything runs on one machine. There is no external service of any kind that NEXUS
 itself calls, and no outbound path in the request path. The only network the project
-ever touches is a one-off checkpoint download during `make ml-train-small`, driven by
-`make`, off the request path — and the resulting classifier is only written to disk.
-Nothing loads it.
+ever touches is the one-off checkpoint download during `make ml-train-small`, driven by
+`make`, off the request path. Since Phase 11 the resulting classifier *is* loaded — from
+the local filesystem, in-process, by a lazily-imported torch — but it is still read from
+disk and never fetched at runtime.
 
 ```
         ┌────────────────────────── your machine ──────────────────────────┐
@@ -337,7 +385,7 @@ Nexo/
 │   ├── migrations/         Alembic env + versions (0001 … 0009, single head)
 │   ├── requirements.txt    runtime deps above the DEV MARKER, dev deps below
 │   ├── pyproject.toml      ruff configuration
-│   ├── pytest.ini          testpaths, asyncio mode, `integration` marker
+│   ├── pytest.ini          testpaths, asyncio mode, `integration` and `ml_model` markers
 │   ├── Dockerfile          multi-stage; strips dev deps at the DEV MARKER
 │   ├── tests/              pytest suite
 │   └── app/
@@ -366,7 +414,10 @@ Nexo/
 │       ├── schemas/                  common, health, user, session, security + one per module
 │       ├── services/                 auth, session, user, audit + one per module
 │       │                             (developer/, learning/, career/ are packages)
-│       └── ml/                       Phase 10 ML training — own venv, `python -m ml.train`
+│       └── ml/                       Phase 11 ML integration (app/ml/) — the classifier
+│       │                             and the intent → service router; torch lazy
+│       ml/                           Phase 10 ML training (backend/ml/, sibling of app/)
+│       │                             own venv, `python -m ml.train`
 │           ├── train.py              the one entry point: --prepare/--train-small/--evaluate
 │           ├── validation.py         the data-integrity gate prepare must pass
 │           ├── configs/              small_model.toml
@@ -420,6 +471,7 @@ Nexo/
 | Auth | PyJWT 2.15 + bcrypt 5.0 | HS256, access + refresh, in-process access-token denylist plus database-backed device sessions |
 | Database | PostgreSQL 16 (`postgres:16-alpine`) | `pg_trgm`, `unaccent` enabled on first init |
 | Lint / format (backend) | ruff 0.16 | `check` + `format --check`, line length 100 |
+| ML runtime (backend) | torch 2.14.1+cpu + transformers 5.18 | CPU-only, the same build Phase 10 trained with; imported lazily, so the app boots without it |
 | Tests (backend) | pytest 9.1 + pytest-asyncio + httpx | 2270 collected — 1029 run with the database down, 1241 are `integration`-marked and run against PostgreSQL |
 | Framework (frontend) | React 19 | function components, StrictMode |
 | Language (frontend) | TypeScript 5.7 | `strict`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax` |
@@ -457,6 +509,22 @@ signal that something page-specific has crept into it.
 `make` is not shipped with Windows. Either install it (Git Bash make package, Chocolatey,
 Scoop) or run the raw commands listed under [Development commands](#development-commands) —
 the Makefile contains nothing the scripts and npm do not already do.
+
+> **Installing the backend requirements needs the PyTorch CPU index.** Phase 11 pins
+> `torch==2.14.1+cpu`, and the `+cpu` local version exists only on
+> `https://download.pytorch.org/whl/cpu` — a plain
+> `pip install -r backend/requirements.txt` fails with *"No matching distribution found
+> for torch==2.14.1+cpu"*. Install with:
+>
+> ```bash
+> backend/.venv/bin/python -m pip install -r backend/requirements.txt \
+>     --extra-index-url https://download.pytorch.org/whl/cpu
+> ```
+>
+> `--extra-index-url` rather than `--index-url` so the other pins still resolve from
+> PyPI. If you only need the app and not the classifier, torch can be skipped — it is
+> imported lazily, and the ML endpoints report `503 ml_unavailable` without it — but
+> then the install is not what `requirements.txt` says, which is worth knowing.
 
 ---
 
@@ -609,6 +677,18 @@ directory. Every variable is case-insensitive.
 | Docker Compose | `BIND_HOST` (see below), `POSTGRES_CONTAINER_NAME`, `POSTGRES_VOLUME_NAME`, `BACKEND_CONTAINER_NAME`, `FRONTEND_CONTAINER_NAME` |
 | Developer intelligence (Phase 8) | `DEVELOPER_GIT_TIMEOUT_SECONDS` (30), `DEVELOPER_MAX_COMMITS_PER_SCAN` (2000), `DEVELOPER_MAX_REPOSITORIES` (100), `DEVELOPER_DEFAULT_WINDOW_DAYS` (30), `DEVELOPER_MAX_WINDOW_DAYS` (366), `DEVELOPER_ACTIVITY_GRANULARITY_DEFAULT` (`day`), `DEVELOPER_PATH_ALLOWLIST` (unset) |
 | Learning and career (Phase 9) | `LEARNING_DEFAULT_WINDOW_DAYS` (30), `LEARNING_MAX_WINDOW_DAYS` (366), `LEARNING_MAX_GOALS` (200), `LEARNING_MAX_SKILLS` (100), `LEARNING_MIN_EVIDENCE_FOR_ESTIMATE` (3), `CAREER_MAX_EVIDENCE` (500), `CAREER_STALE_INACTIVE_DAYS` (21) |
+| ML integration (Phase 11) | `ML_ENABLED` (true — off means no checkpoint is loaded and the ML endpoints answer `503 ml_unavailable`), `ML_MODEL_PATH` (**empty**, which resolves `<backend>/ml/artifacts/small-model/final` relative to the repository; never a hard-coded absolute path), `ML_DEVICE` (`auto` — CUDA when the machine has a working build, CPU otherwise), `ML_CONFIDENCE_THRESHOLD` (0.90 — see below), `ML_MAX_INPUT_CHARS` (2000), `ML_REJECT_CREDENTIALS` (true), `ML_FAIL_FAST` (false) |
+
+`ML_CONFIDENCE_THRESHOLD` deserves its own note, because 0.90 is easy to misread. It is an
+**integration threshold, not a calibrated probability**. It was chosen by re-running the
+Phase 10 checkpoint over the 420-row held-out split and measuring what each threshold
+costs and buys: at 0.90 NEXO keeps 95.2% of utterances while lifting precision on the
+requests it *accepts* from 0.9738 to 0.9900. That measurement was taken on synthetic,
+template-generated text. On real user input the model will be less confident and less
+often right, so 0.90 is a starting point to tune against real traffic, not a claim about
+how well the classifier generalises. See
+[Phase 11](#phase-11--ml-integration) for the full table and for what the number does
+*not* mean.
 
 `BIND_HOST` (default `127.0.0.1`) prefixes every published port mapping in
 `docker-compose.yml` — the database, the API and the Vite dev server. The default keeps all
@@ -978,18 +1058,20 @@ Phase 2 was *infrastructure*, not product surface: it made the accounts behind t
 real and added no module. Note also that the module phases above are the ones recorded in
 `frontend/src/features/modules/catalog.ts` and describe when each **module** ships — they
 are not the same axis as the platform work recorded in the
-[Status](#status-phases-1-through-9-are-delivered) table, which is why both carry a
+[Status](#status-phases-1-through-11-are-delivered) table, which is why both carry a
 "Phase 2".
 
 Behind those modules sit infrastructure seams that are described in the extension-roadmap
 section of [`docs/architecture.md`](docs/architecture.md): Redis (replacing the in-process
 access-token revocation store), an audit-log pruning job (the retention setting exists; the
 job does not), background workers, a local model registry, and Ollama-backed local LLM
-features. Two seams are no longer seams: git repository analysis shipped in Phase 8 and reads
-local work trees through the `git` CLI, and the ML training pipeline has shipped in
-[Phase 10](#phase-10--ml-training) under `backend/ml/`. Note that the `10 / Experiments`
-row above is the *module* axis, not the platform axis — the Experiments page is still a
-placeholder, while the Phase 10 ML pipeline is real work.
+features. Three seams are no longer seams: git repository analysis shipped in Phase 8 and
+reads local work trees through the `git` CLI, the ML training pipeline shipped in
+[Phase 10](#phase-10--ml-training) under `backend/ml/`, and Phase 11
+([ML integration](#phase-11--ml-integration)) loaded that checkpoint on the request path
+rather than leaving it on disk. Note that the `10 / Experiments` row above is the *module*
+axis, not the platform axis — the Experiments page is still a placeholder, while the Phase
+10 pipeline and the Phase 11 wiring are real work.
 
 ---
 

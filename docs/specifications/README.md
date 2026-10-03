@@ -1,6 +1,6 @@
 # NEXUS — Phase Specifications
 
-This directory holds the **authoritative specifications** for NEXUS Phases 3 through 10, exactly
+This directory holds the **authoritative specifications** for NEXUS Phases 3 through 11, exactly
 as they were issued by the project owner.
 
 These are the contracts the code is built to. When the implementation and a specification
@@ -16,6 +16,7 @@ fixed in one direction or the other, never left ambiguous.
 | [`phase-7-risk-recommendations.md`](./phase-7-risk-recommendations.md) | 7 | Risk Detection & Recommendation Engine | ✅ Complete — [report](./phase-7-report.md) |
 | [`phase-8-9-developer-learning-career.md`](phase-8-9-developer-learning-career.md) | 8 + 9 | Developer Intelligence + Learning & Career Intelligence | ✅ Complete — [Phase 8 report](./phase-8-developer-report.md) · [Phase 9 report](./phase-9-learning-career-report.md) |
 | [`phase-10-architecture.md`](./phase-10-architecture.md) · [`phase-10-training.md`](./phase-10-training.md) · [`phase-10-report.md`](./phase-10-report.md) | 10 | ML Training — routing/intent classifier | ✅ Complete — the classifier was trained and evaluated ([report](./phase-10-report.md)) |
+| [`phase-11-ml-integration.md`](./phase-11-ml-integration.md) · [`phase-11-report.md`](./phase-11-report.md) | 11 | ML Integration — the trained classifier, served | ✅ Complete — two endpoints, and the Phase 10 checkpoint answers them ([report](./phase-11-report.md)) |
 
 ### Internal contracts
 
@@ -97,6 +98,11 @@ registered. Each feature row is stamped with a schema version
 (`developer_features.v1`, `learning_features.v1`, `career_features.v1`) so a Phase 10
 trainer knows what every column meant without having to trust the client that ordered them.
 
+That chain ends at Phase 11 rather than at Phase 10: Phase 10 trains the routing classifier
+and writes artifacts, and Phase 11 is what loads one inside the API process. The two are
+one pipeline with two boundaries, and the second boundary is where a model that was only
+ever measured becomes one that answers requests.
+
 ### Phase 10 — ML training
 
 Phase 10 is the first phase that trains anything, and it is the reason Phases 8 and 9
@@ -135,6 +141,51 @@ yet; the numbers above are the last run that finished. Standing rule 5 below app
 this phase more than to any other — read
 [`phase-10-report.md`](./phase-10-report.md) for the full account.
 
+### Phase 11 — ML integration
+
+Phase 11 is the other half of Phase 10, and it is deliberately the smaller one. Phase 10
+produced a checkpoint; Phase 11 puts that checkpoint inside the running application and
+stops there. The boundary it drew is the whole of its design:
+
+```text
+user text
+  → app/api/v1/ml.py        POST /api/v1/ml/route   (auth + analytics.read)
+  → app/ml/runtime.py       one model per process, loaded in the FastAPI lifespan
+  → app/ml/classifier.py    predict() — validation, raw text, tokenizer, model, softmax
+  → app/ml/model_loader.py  checkpoint resolution, label cross-validation, device
+  → IntentPrediction        intent + confidence + alternatives + latency
+  → app/ml/router.py        threshold verdict, destination, existing service
+  → RoutingDecision         status + destination + ServiceTarget + reason
+  → response
+```
+
+**It routes; it does not answer, and it does not call anything.** The decision names the
+service an utterance belongs to and the entry point on it; the caller makes the call,
+through the same authenticated, owner-scoped route they would have used had they typed
+the request. There is no second model and no generative model: `code_assist` and
+`deep_reasoning` are trained classes that reach the destination `large-model:unavailable`
+and no service at all, because NEXUS runs no language model and would rather say so than
+answer a code question with a confident non-answer.
+
+**Degradation is an answer, not a crash.** `backend/ml/artifacts/` is gitignored, so a
+fresh clone has no checkpoint. That is a supported state: the runtime records a
+machine-readable reason, the app boots, every other route keeps working, and
+`POST /api/v1/ml/route` answers **503 `ml_unavailable`** rather than a fabricated intent.
+`ML_FAIL_FAST=true` turns that into a refusal to boot, for a deployment that would rather
+fail loudly than run with its headline feature quietly missing.
+
+**Two endpoints, and the count is the design.** `POST /ml/route` already returns the
+intent *and* the confidence, so a separate `/ml/predict` would be the same payload under a
+second URL — and a second URL is a second thing to authenticate, version, document and
+eventually deprecate. `GET /ml/status` answers **200 even when ML is broken**, which is the
+health-endpoint precedent verbatim: the endpoint reporting that a dependency is degraded
+is itself healthy.
+
+| Document | Covers |
+| --- | --- |
+| [`phase-11-ml-integration.md`](./phase-11-ml-integration.md) | The serving boundary: `app/ml/`, the two endpoints, the configuration surface, the label contract, and the rules about what may cross it |
+| [`phase-11-report.md`](./phase-11-report.md) | What was executed: the routing threshold and the measurements behind it, the generalisation results including the 75.0% that must not be softened, latency, and the limits of all three |
+
 ## Standing rules that apply to every phase
 
 These recur in the specifications and are not restated in each file:
@@ -145,6 +196,10 @@ These recur in the specifications and are not restated in each file:
    and never a trained model. The deterministic engine stays as the fallback for cold-start users.
    Phase 10 is where that changes — a model is trained — and it does not displace the rules: the
    deterministic path remains the answer whenever a model is absent, unevaluated, or unsure.
+   Phase 11 is where that promise is cashed in. The trained classifier is now served inside the
+   running application, and the deterministic service behind an intent is still the thing that is
+   actually called: a prediction below `ML_CONFIDENCE_THRESHOLD` names no service at all, and a
+   deployment with no checkpoint answers 503 rather than guessing.
 3. **Explainability is a requirement, not a nicety.** Every score states its formula. Every risk
    states why it exists.
 4. **Ownership is enforced in the query.** Tenant scoping lives in the repository, never in a

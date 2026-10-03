@@ -41,8 +41,15 @@ APP_DIR = Path(app.__file__).parent
 # Verified against this repository. A change to any of these is a change to the
 # backend surface the training data is written for, and the number here is the
 # record of what that surface was when the datasets were generated.
-EXPECTED_TOTAL_ROUTES = 185
-EXPECTED_DOMAINS = 19
+#
+# Phase 11 added the ``/ml`` domain and its two endpoints, which is what took the
+# totals from 185/19 to 187/20. Note what that means for the corpus: the
+# classifier's label set was written for the 185-route surface, and the two new
+# routes are intent *diagnostics*, not a new destination any intent routes to —
+# so nothing in the training data is stale, but the counts below now describe a
+# backend one generation newer than the corpus was drawn from.
+EXPECTED_TOTAL_ROUTES = 187
+EXPECTED_DOMAINS = 20
 EXPECTED_RECOMMENDATION_TYPES = 12
 EXPECTED_RISK_TYPES = 7
 EXPECTED_PERMISSIONS = 11

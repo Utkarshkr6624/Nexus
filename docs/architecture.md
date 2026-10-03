@@ -18,7 +18,8 @@ Recommendations, Developer, Learning and Career. Each has a router, a repository
 service, a migration and pages that read real rows. **Search, AI Assistant and
 Experiments remain placeholder pages** and have no API at all. Sections 1–16 were written
 against Phase 2 and still describe that slice where the text is phase-specific;
-§17 covers what the later phases added.
+§17 covers what Phases 8 and 9 added, §19 the Phase 10 training pipeline, and §20 the
+Phase 11 serving boundary.
 
 ---
 
@@ -45,6 +46,7 @@ against Phase 2 and still describe that slice where the text is phase-specific;
 | [17. Developer, Learning and Career](#17-developer-learning-and-career) | The three subsystems Phase 8 and 9 added: git scanning, and two surfaces that describe a person |
 | [18. Remediation pass over Phases 1–9](#18-remediation-pass-over-phases-19) | What the audit found, what shipped, and what in this document moved because of it |
 | [19. Phase 10 — ML training](#19-phase-10--ml-training) | The `backend/ml/` package: a second process with a second interpreter, two models, and one execution boundary |
+| [20. Phase 11 — ML integration](#20-phase-11--ml-integration) | The `app/ml/` serving boundary: one model per process, loaded in the lifespan, answering over HTTP |
 
 ---
 
@@ -54,8 +56,10 @@ Three processes, all on one machine. The application calls no external service, 
 cloud account and no third-party API. Phase 10 adds one outbound path that is *not* on
 the request path: the one-off download of the classifier's pretrained checkpoint from
 Hugging Face, the first time `make ml-train-small` runs. After that the pipeline is
-entirely local, it never runs inside the API process, and nothing downstream of it is
-loaded by the application.
+entirely local. Phase 11 changed one thing here and it is worth being precise about: the
+*training* pipeline still never runs inside the API process, but the artifact it produced
+is now loaded there — one 703 MiB checkpoint, in memory, once per worker, with `torch`
+imported lazily so a machine without it still boots and still serves every other route.
 
 | Process | Host port | Started by | Notes |
 | --- | --- | --- | --- |
@@ -169,7 +173,7 @@ outermost first.
 | 3 | `CORSMiddleware` | `app.add_middleware` | Preflight and header work. `X-Request-ID` is in `expose_headers`; credentials are allowed. |
 | 4 | `RateLimitMiddleware` | `app.add_middleware`, added **first** | Fixed-window counters keyed by client address and concrete path; answers 429 with the shared envelope plus `Retry-After`. Added by the final remediation pass; skips `OPTIONS`, and treats a missing client address as one shared `unknown` bucket |
 | 5 | `ServerErrorMiddleware` | Starlette, in `build_middleware_stack` | Catches anything escaping layer 6 and renders it through the catch-all handler. |
-| 6 | `ExceptionMiddleware` → router → dependencies | Starlette, in `build_middleware_stack` | Registered handlers, routing, `app/api/v1/router.py` — which now mounts nineteen routers (`health`, `auth`, `users`, `projects`, `tasks`, `tags`, `activity`, `calendar`, `work_sessions`, `planner`, `availability`, `knowledge`, `analytics`, `developer`, `risks`, `recommendations`, `intelligence`, `learning`, `career`) — mounted at `settings.api_v1_prefix`. |
+| 6 | `ExceptionMiddleware` → router → dependencies | Starlette, in `build_middleware_stack` | Registered handlers, routing, `app/api/v1/router.py` — which now mounts twenty routers (`health`, `auth`, `users`, `projects`, `tasks`, `tags`, `activity`, `calendar`, `work_sessions`, `planner`, `availability`, `knowledge`, `analytics`, `developer`, `risks`, `recommendations`, `intelligence`, `learning`, `career`, `ml`) — mounted at `settings.api_v1_prefix`. |
 
 `add_middleware` inserts outermost-last, so the order above is the *reverse* of the order
 `create_app` registers in: it adds the rate limiter first, then CORS, then body capture, and
@@ -273,7 +277,8 @@ implementation of it inside this backend.
 | `not_found` | 404 | `NotFoundError` |
 | `method_not_allowed` | 405 | `StarletteHTTPException` mapping |
 | `conflict` | 409 | `ConflictError` |
-| `rate_limited` | 429 | `StarletteHTTPException` mapping (code reserved; no limiter is implemented) |
+| `rate_limited` | 429 | `RateLimitMiddleware` |
+| `ml_unavailable` | 503 | `MLUnavailableError` and its subclasses — no checkpoint, no `torch`, or a failed load. Nothing about the *request* is wrong, so it is 503 and not 422 |
 | `internal_error` | any 5xx | catch-all handler, and any `StarletteHTTPException` at 5xx — traceback and detail stay in the log |
 
 Two rules in that table are worth stating separately, because both are deliberate
@@ -299,6 +304,15 @@ our side" path. `_status_code_to_code` now returns `bad_request` for any 4xx
 with no explicit mapping and reserves `internal_error` for 5xx;
 `tests/test_errors.py::test_error_codes_are_stable_snake_case` asserts the
 invariant `not code.startswith("internal") or status >= 500`.
+
+**A 503 has its own code, and it is not `internal_error`.** Phase 11 added
+`ml_unavailable` for a deployment that cannot classify: no checkpoint on disk, no `torch`,
+or a load that failed. Letting it fall through to the 5xx mapping would have been wrong
+twice over — the frontend's "something is broken on our side" path is precisely the wrong
+diagnosis for a feature that configuration can switch off, and a caller cannot write a
+sensible retry against an outage it cannot tell from a mistake. `details` carries the
+runtime's reason (`disabled`, `checkpoint_missing`, `load_failed`, …) and never the
+filesystem path the checkpoint would have had.
 
 The mapping from HTTP status to `code` lives in one dict
 (`_STATUS_CODE_TO_ERROR_CODE`), so a handler never invents a code. Domain errors
@@ -338,6 +352,13 @@ the reason a wedged server produces `degraded` quickly instead of hanging.
 The container healthchecks use `/health`, not the detailed endpoint, for exactly
 the reason above — `docker-compose.yml`'s `backend` healthcheck and the
 `HEALTHCHECK` line in `backend/Dockerfile` both curl `127.0.0.1:$NEXUS_PORT/health`.
+
+Phase 11 reused the rule verbatim one level up: `GET /api/v1/ml/status` reports a
+classifier that is disabled, unloaded or broken as a **200**, with `available: false`
+and a machine-readable `unavailable_reason`. A 503 there would be the outage describing
+itself, and every caller that asked *what is wrong* would get *something is wrong*
+instead of the reason. The route that does fail closed is `/api/v1/ml/route`, and it
+fails with `ml_unavailable` — see [§20](#20-phase-11--ml-integration).
 
 The Dashboard health card on the frontend polls `/api/v1/health` every 30 s with
 a 5 s `staleTime` (`frontend/src/features/health/use-health.ts`). In Phase 1 it
@@ -646,7 +667,7 @@ POST /auth/password/reset       → 204, every session revoked
 | Storage | `password_reset_tokens.token_hash` is the SHA-256 digest. Rows are never deleted on use or on expiry — the `users` foreign key cascade stays the only way a row disappears, and an attempt to reuse a spent token stays distinguishable from one that never existed |
 | Redemption | Unknown, spent, expired and wrong-type tokens all answer with the identical 401 |
 | Sessions | **Every** session is ended, including ones that existed when the reset was requested. This is the recovery path for a compromised account; leaving one behind would leave the compromise in place behind a new password |
-| Why no email enumeration defence by throttling | `rate_limited` is still a reserved code with no limiter; the equal-body guarantee is doing the work instead |
+| Why no email enumeration defence by throttling | `/auth/password/forgot` shares the login credential budget — 120 requests per address per 60-second window by default — so the equal-body guarantee is the second of two defences rather than the only one |
 
 ### The audit trail
 
@@ -1008,6 +1029,36 @@ they feed a list of *suggested* period lengths and a typo in one of them should
 cost the user that suggestion rather than take the app down. The difference is
 the difference between an invariant and a preference.
 
+### The ML settings, and the three that refuse process start
+
+Phase 11 added seven settings, all additive, all read at construction time through the same
+singleton every other setting uses. Their defaults and their prose are in
+[`.env.example`](../.env.example) and in [`development.md`](development.md) §11.6; what
+belongs here is that **three of the seven are validated**, and every one of those three
+refuses process start rather than degrading.
+
+| Setting | Default | What a wrong value would do |
+| --- | --- | --- |
+| `ml_enabled` | `true` | Off means NEXUS never loads the checkpoint. Every other route keeps working and the ML endpoints answer 503 |
+| `ml_fail_fast` | `false` | On turns a failed load into a refusal to boot rather than a feature that quietly refuses every request |
+| `ml_model_path` | `""` | Empty means the Phase 10 default, resolved relative to the repository rather than the working directory, so a moved checkout keeps working |
+| `ml_device` | `auto` | **`auto` \| `cpu` \| `cuda`, validated.** An unrecognised device would otherwise fall back to CPU silently, which turns a configuration typo into a latency regression nobody attributes to the typo. `cuda` on a machine without a working CUDA build **raises** rather than downgrading, because an operator who asked for the GPU deserves to know they did not get one |
+| `ml_confidence_threshold` | `0.90` | **Must be in (0, 1].** Zero would accept every utterance whatever the model said; above one would refuse every request as unconfident |
+| `ml_max_input_chars` | `2000` | **Must be positive and at most 10000.** The trained context is 128 subword tokens, so text longer than that is truncated before the model sees it: a larger bound would accept a large request body and charge for it while changing nothing |
+| `ml_reject_credentials` | `true` | Off screens credential-shaped text out of the classifier and into the logs |
+
+The three refusals are the same argument as the productivity weights above, in a smaller
+place: each configuration whose *failure* is silent is turned into a configuration whose
+failure is a refused process start with a message naming the number. `Settings` is built
+once per process through `get_settings()`, so the refusal happens at boot where an
+operator will see it, rather than as a routing decision made by a model that was handed a
+nonsense threshold.
+
+Two computed fields sit alongside them. `ml_resolved_model_path` is the absolute
+directory the loader will look in — configured, or the repository-anchored default — and
+`ml_checkpoint_exists` says whether it is there. On any checkout that has not run Phase 10
+the second one is `False`, and that is a supported state rather than a broken install.
+
 ### Bounds that refuse an unbounded query
 
 Fifteen settings from Phases 4 and 6 bound a computation rather than describe a
@@ -1184,6 +1235,14 @@ it follows from two per-process pieces of state:
 | --- | --- |
 | `RevocationStore` singleton | An **access-token** logout recorded in worker A is invisible to worker B, so that access token stays usable until it expires. |
 | Lazy engine + session factory | One pool per worker; `NEXUS_RELOAD=true` forks a second process that would carry its own pool and its own empty denylist. |
+
+Phase 11 added a third, and it is the expensive one: the `MLRuntime` owns **one 703 MiB
+checkpoint per process**. A second worker is a second copy of those weights, a second
+4.50-second load at boot, and a second answer to "is ML up" that could disagree with the
+first. Worse, the forward pass is serialised by a lock inside the classifier — held per
+process — so two workers would give concurrency across the *request* path and duplicate
+the *memory* path, which is the trade least worth making. The rule is unchanged; the cost
+of breaking it is now measured in hundreds of megabytes rather than in a connection pool.
 
 Phase 2 shrank the first row considerably: refresh tokens and sessions are
 database-backed, so *session* revocation is shared across workers by construction
@@ -1431,15 +1490,21 @@ python -m pytest                        # 2270 collected, needs nexus_test
 python -m pytest -m "not integration"   # 1029 collected, 1241 deselected, no database required
 ```
 
-Those are **collection** counts, from `pytest --collect-only`. The last full run before the
-final remediation pass was 2136 passed and 9 failed; the nine were fixed by the engineers who
-own those files, and one full run is scheduled once the pass lands. Collection says what the
-suite contains, not that it passes, and this document does not conflate the two.
+Those are **collection** counts, from `pytest --collect-only`, and they are a snapshot
+taken before Phases 10 and 11 added anything. The table below and the split quoted here
+therefore understate the suite as it stands today; what each figure was, and when it was
+measured, is stated with it. Collection says what the suite contains, not that it passes,
+and this document does not conflate the two. The most recent **pass** count is in
+[development.md](development.md) §10.
 
 `pytest.ini` sets `testpaths = tests`, `pythonpath = .`, `asyncio_mode = auto`,
 function-scoped event loops (`asyncio_default_fixture_loop_scope` and
 `asyncio_default_test_loop_scope`), `--strict-markers --strict-config`, and
-registers the `integration` marker.
+registers two markers: `integration` (needs a live PostgreSQL) and `ml_model` (needs the
+trained checkpoint on disk and `torch`). The second exists because Phase 11 is the first
+suite in this repository that a clean clone cannot run — `backend/ml/artifacts/` is
+gitignored — and a test that hard-fails for want of a 703 MiB file would be worse than one
+that skips with a reason.
 
 **A `DeprecationWarning` from `app.*` is an error**, and the filter order is what
 makes that true:
@@ -1541,6 +1606,16 @@ Phase 9 report left it; the twelve below them are what the remediation wave adde
 one of those twelve exists because a real defect was found — the three blockers, the Phases 3–5
 coverage gap, and the honesty rules the Phase 10 contract depends on.
 
+**The Phase 11 suite is not in that table either**, and the reason is a property of the
+phase rather than an omission: `tests/test_ml_integration_loading.py`,
+`_classification.py`, `_routing.py`, `_api.py` and `_config.py` need the trained
+checkpoint and `torch`, so they are `ml_model`-marked and skip on a checkout that has
+never run Phase 10. They run `pytest tests/test_ml_integration_*.py` and were **630
+passed, 14 xfailed** on the machine that has the checkpoint. The fourteen `xfail`s are
+not missing coverage — they are measured generalisation failures, pinned so they cannot
+quietly disappear or quietly turn green; the report in
+`specifications/phase-11-report.md` names all fourteen and what each one got wrong.
+
 The whole of `test_migrations.py` is `integration`-marked, so even the chain-shape
 assertion is deselected offline; `test_migration_ddl.py` is the database-free
 substitute for the *DDL agreement* half of it, and with 154 tests it is now the largest
@@ -1627,7 +1702,10 @@ touches no database and does not contend for the `nexus_test` advisory lock.
 
 Single-user local-first product: no load, concurrency, migration-from-an-older-
 schema, or browser-matrix testing. No audit-log retention test, because there is no
-retention job to test.
+retention job to test. And no Phase 11 measurement on anything but a CPU: the routing
+threshold, the generalisation sets and every latency figure in
+[§20](#20-phase-11--ml-integration) come from one CPU-only machine, and CUDA latency was
+not measured at all rather than estimated.
 
 ### What has not been run
 
@@ -1714,12 +1792,12 @@ The seams below exist today. None of the *destinations* is implemented; the
 | Horizontal scaling | one worker per container | more containers behind a load balancer | sessions and reset tokens are already database-backed and shared; the access-token denylist is what still forces the single worker |
 | Background work | none | worker process | `scripts/` for process orchestration; jobs need the same event-loop factory |
 | Search | `pg_trgm` + `unaccent` enabled | retrieval index over Knowledge — **Phase 5 shipped the knowledge tables, the retrieval index itself did not** | extension availability is already a prerequisite, and the extensions are already installed |
-| Local LLM | none | Ollama-backed assistant | never leaves the machine; the catalog already fixes the Phase 9 contract |
+| Local LLM | none — and the router says so out loud | Ollama-backed assistant | never leaves the machine; the catalog already fixes the Phase 9 contract, and `code_assist` / `deep_reasoning` now answer `large-model:unavailable` rather than pretending |
 | Repository analysis | **live since Phase 8** — see [§17](#17-developer-learning-and-career) | background rescans | read-only, from disk; `git_scan_runs` is the seam a scheduler writes to |
 | Module data | `catalog.ts` registry | the remaining placeholder modules (Search, AI Assistant, Experiments) | add a route entry and a catalog entry; nothing else |
 | Role set | `user` / `admin` in a Python map | custom roles, per-tenant roles, delegated scopes | call sites ask for a `Permission`, never a role, so only `ROLE_PERMISSIONS` and the duplicated role constants change |
 | Module permissions | eleven capabilities, all granted to `user`; every module router guards its reads and writes | none outstanding | `require_permission()` is the only place a capability is checked |
-| ML training | **in flight since Phase 10** — `backend/ml/` is a separate package with its own entry point and its own interpreter; see [§19](#19-phase-10--ml-training) | a model registry, and serving a trained model from the API | nothing under `backend/app/` imports `backend/ml/`, so the trained artifact can be introduced later without the API depending on torch |
+| ML training | **live since Phase 11** — `backend/ml/` still trains on its own interpreter and its own entry point, and its artifacts are now served by `app/ml/`; see [§19](#19-phase-10--ml-training) and [§20](#20-phase-11--ml-integration) | a model registry, a second checkpoint, and anything that would put a generative model behind `large-model:unavailable` | the taxonomy and the checkpoint's `id2label` are cross-validated on **every** load, so a reorder or a rename refuses the load instead of misrouting traffic; `torch` stays a lazy import so the app still boots without it |
 
 Phase numbering is not invented here — it is the `phase` field in
 `frontend/src/features/modules/catalog.ts`, and the module list it drives is the
@@ -1782,6 +1860,12 @@ table, which is why both are called "Phase 2".
 | **The hand-rolled dialog/tabs/progress/alert/switch primitives** | No Radix package exists for them in `frontend/package.json`, and no new dependency was in scope | Each one carries accessibility behaviour Radix would have handled — focus trap, roving tabindex, ARIA wiring — and each is now code this repository must maintain and test |
 | **A native `<select>` rather than a hand-built listbox** | Type-ahead, `Home`/`End`, wrap-around and screen-reader announcements are all hard to get right, and the platform gets them right | It cannot be styled like the rest of the system on every platform, which is the correct trade for a colour-scheme picker |
 | **Security and Sessions are separate settings tabs** | A password change revokes every other session, so the consequence of the action and the list it affects should be on screen together | One more tab to navigate |
+| **`torch` and `transformers` are imported inside functions, never at module scope** | A module-level `import torch` turns "this deployment has no classifier" into "this application will not start" — a strictly worse failure with a strictly worse error message | Every heavy import has to be re-checked by hand, and `import app.main` alone is no longer evidence that the app loads |
+| **The checkpoint path is reported and never accepted** | A caller able to choose `ML_MODEL_PATH` would be choosing which weights answer them, and the label cross-validation that refuses a mismatched checkpoint would be defeated at the door | An operator cannot route one caller at one checkpoint |
+| **The taxonomy's `id2label` is cross-validated against the checkpoint on every load** | A silent reorder of the class indices does not raise — it routes `schedule_plan` utterances to the knowledge router with a confident-looking 0.99 and nothing anywhere reports an error | A retrain that renames or reorders a class fails at boot rather than at evaluation, which is the correct order to find out |
+| **A below-threshold prediction names no service** | A low-confidence request must never reach a service, least of all a mutating one, so `target` is null for **all** fourteen intents under `uncertain` | More refusals than the model strictly requires, and coverage that has to be re-measured against real traffic |
+| **The router decides; the caller acts** | Slot-filling an utterance into `TaskService.create(...)` needs a second model or hand-written per-utterance parsers, and this phase owns neither | Every routed request costs the caller a second round trip, and NEXUS cannot guarantee the two calls agree |
+| **The ML endpoints reuse `analytics.read`** | Phases 7–9 gate new surfaces on existing capabilities, and `tests/test_permissions.py` asserts the `Permission` member set literally, so an `ml.*` member would be a test edit as well as a grant decision | Naming the permission `analytics.read` on an ML route reads oddly; a capability granted to exactly the roles `analytics.read` already names is not a new capability |
 
 ---
 
@@ -2081,10 +2165,27 @@ not a subpackage of it.
 
 | Rule | Why |
 | --- | --- |
-| Nothing under `backend/app/` imports `backend/ml/` | The API process must start on an interpreter that has no torch wheel, and it must not go down because a training import does |
+| Nothing under `backend/app/` imports the *training* half of `backend/ml/` | The API process must start on an interpreter that has no torch wheel, and it must not go down because a training import does. Phase 11 relaxed exactly this rule and no more than this rule — see below |
 | The data half is stdlib-only | `make ml-prepare`, `ml-validate` and `ml-eval` run on any interpreter, so the test suite stays fast and dependency-free |
 | The training half needs its own interpreter | `backend/ml/.venv/` carries the torch wheel; `make` selects it through `ML_PY` |
 | One entry point, three stages | `python -m ml.train --prepare / --train-small / --evaluate`; the `make ml-*` targets are thin wrappers over those flags. `--all` — or no flag at all — runs all three, always in that order |
+
+**What Phase 11 changed, stated precisely, because "nothing imports `backend/ml/`" is no
+longer true and the exception is deliberate.** Three modules under `backend/app/` read the
+`ml` package at serving time, and all three read the stdlib-only half:
+
+| Importer | Reads | Why the inversion is the right way round |
+| --- | --- | --- |
+| `app/ml/classifier.py` | `ml.validation.find_credential` | The credential detector was written for exactly this shape of untrusted input, and rewriting it inside `app/` would be a second implementation of a rule that already exists |
+| `app/ml/router.py` | `ml.datasets.taxonomy` (`Intent`, `INTENT_SPECS`, `DestinationKind`) | The label set is a *contract*, not a training detail: the router's destinations are read from the same table the classifier's labels are validated against |
+| `app/ml/model_loader.py` | `ml.datasets.routing.label_map`, derived from `ml.datasets.taxonomy.Intent`, imported inside the function that validates the labels | The checkpoint's `id2label` is checked index-by-index against it on every load |
+
+Because that half of `ml` imports nothing outside `ast`, `json` and `pathlib`, none of
+this drags `torch` into the orchestrator. The heavy dependency arrives through
+`app/ml/model_loader.py`, which imports `torch` and `transformers` **inside functions** —
+so `import app.ml`, `import app.main` and `import app.api.deps` all leave `sys.modules`
+free of torch, and the application boots, and every non-ML route works, on a machine where
+torch is not installed. That property is pinned by a test rather than left to inspection.
 
 The Makefile defines nine `ml-*` targets: `ml-help`, `ml-prepare`, `ml-datasets`,
 `ml-validate`, `ml-train-small`, `ml-train-small-resume`, `ml-eval`, `ml-all` and
@@ -2107,10 +2208,12 @@ runs no language model, and those two classes are kept precisely so the router c
 recognise a request it cannot serve rather than being blind to it. The classifier
 therefore exists to keep the cheap intents cheap — it does not displace the rules.
 
-Phase 10 ends at artifacts, and nothing in the application loads the model. Nothing
-under `backend/app/` imports `backend/ml/`, no route reads a checkpoint, and the
-deterministic path stays the answer whenever a model is absent, unevaluated or unsure.
-Serving a trained model is later work — see the *ML training* row of §15 and
+Phase 10 ends at artifacts. As written, nothing in the application loaded the model and
+the deterministic path stayed the answer whenever a model was absent, unevaluated or
+unsure. **Phase 11 kept the second half of that sentence and broke the first:** the
+checkpoint is loaded once per process and answers over HTTP, while the deterministic
+service behind an intent is still the thing that is actually called. The boundary it drew
+is [§20](#20-phase-11--ml-integration); the training side of it is
 [`specifications/phase-10-architecture.md`](specifications/phase-10-architecture.md).
 
 ### 19.3 The honesty rules carry over
@@ -2119,6 +2222,319 @@ A training matrix makes a fabricated zero indistinguishable from an observed one
 `null`-not-`0` rule of §17.4 is a precondition here rather than a nicety: the corpora are
 generated and counted in `backend/ml/reports/`, and each stage writes a manifest rather than a
 claim. A stage that did not run is reported as not run.
+
+---
+
+## 20. Phase 11 — ML integration
+
+Phase 10 produced exactly one artifact: a `microsoft/deberta-v3-base` classifier over the
+fourteen Nexo intents, **184,432,910 parameters**, trained on CPU in 615 steps over 5
+epochs, evaluated at **0.9738 accuracy / 0.9737 macro F1** on a 420-row held-out split.
+Phase 10 stopped there on purpose. This section is the other half — the boundary that puts
+that checkpoint inside the running application — and it is the half that decides what the
+number above is allowed to mean.
+
+**One model, no fallback.** NEXUS runs a classifier and nothing else. There is no second
+model, no generative LLM, no cloud inference, and no path by which a request that needs
+generation is answered by anything other than an honest `large-model:unavailable`.
+
+### 20.1 The request path
+
+```text
+user text
+  → app/api/v1/ml.py          POST /api/v1/ml/route   (auth + Permission.ANALYTICS_READ)
+  → app/ml/runtime.py         MLRuntime — one model per process, loaded in the FastAPI
+                              lifespan, off the event loop
+  → app/ml/classifier.py      IntentClassifier.predict() — validation, raw text,
+                              tokenizer, model, softmax
+  → app/ml/model_loader.py    checkpoint resolution + label cross-validation + device
+  → IntentPrediction          intent + confidence + alternatives + truncated + latency_ms
+  → app/ml/router.py          IntentRouter.route() — threshold verdict, destination,
+                              existing service
+  → RoutingDecision           status + destination + ServiceTarget + reason
+  → response
+```
+
+Every arrow is a plain value. The classifier turns tensors into dataclasses before
+returning, so nothing downstream of it knows what a logit is, and the router takes a
+dataclass and nothing else.
+
+### 20.2 Where the code lives
+
+```text
+app/ml/__init__.py        the architectural summary; four modules, four jobs
+app/ml/schemas.py         IntentPrediction, ServiceTarget, RoutingDecision, ModelIdentity
+app/ml/model_loader.py    checkpoint → (tokenizer, model, device), label cross-validation
+app/ml/classifier.py      predict(text) → IntentPrediction
+app/ml/router.py          predict → RoutingDecision; SERVICE_TARGETS; lazy service imports
+app/ml/runtime.py         MLRuntime: load once, reuse forever, degrade explicitly
+app/ml/exceptions.py      MLUnavailableError (503) / InferenceError (500) /
+                          InvalidUtteranceError (422)
+app/api/v1/ml.py          two routes: GET /ml/status, POST /ml/route
+app/schemas/ml.py         RouteRequest, RoutingDecisionRead, MLStatusRead, …
+app/api/deps.py           get_ml_runtime / MLRuntimeDep
+app/main.py               _lifespan loads it, stores it on app.state.ml_runtime
+```
+
+### 20.3 Four modules, four jobs, and no module doing another's
+
+`app/ml/__init__.py` states the split and the split is load-bearing:
+
+| Module | Owns | Refuses to |
+| --- | --- | --- |
+| `model_loader` | weights, tokenizer, device, the label check | Know anything about thresholds, destinations or HTTP |
+| `classifier` | the tensor work, and the credential/length validation in front of it | Apply policy; whether a confidence is *enough* is not its question |
+| `router` | the policy: threshold verdict, destination, service, reason | Import a service at module scope, or call one |
+| `runtime` | the process-wide owner, its load, its shutdown, its failure reason | Import torch |
+
+Three of those refusals are worth the sentence they cost.
+
+**The loader imports nothing heavy at module scope.** `torch` and `transformers` are
+reached for inside functions. `ModelRuntimeError` carries the *name* of the missing
+package, so an operator is told what to install rather than handed a tensor traceback.
+
+**The router imports services lazily.** Every module under `app/services/` imports the
+ORM session machinery, so importing them at module scope would make the classifier half of
+`app.ml` unimportable without a database — turning a routing table into a test that needs
+the full stack. The table is strings; `resolve_service` imports on demand. A renamed module
+therefore fails at resolve time with a named exception instead of quietly pointing at
+nothing.
+
+**The classifier holds a lock across the forward pass and nothing else.** The model is
+703 MiB of shared mutable state and requests arrive from FastAPI's thread pool. The lock
+bounds the resident set to one in-flight forward pass instead of letting N threads each
+allocate activation buffers, and it makes `latency_ms` mean something. It is deliberately
+narrow: nothing is logged, no caller state is touched and no `IntentPrediction` is built
+while it is held, because a lock held across a JSON formatter serialises the whole queue
+behind it. Time spent waiting for the lock is excluded from `latency_ms` — queueing delay
+is a capacity fact, not this classifier's inference cost.
+
+**No per-request state on the instance.** Everything `predict()` computes lives in locals
+for the call. A test asserts the exact attribute set before and after concurrent calls,
+because the failure this rule prevents is two threads observing each other's tensor.
+
+### 20.4 Lifecycle
+
+Loading 703 MiB is seconds of blocked CPU, so `_lifespan` does it through
+`run_in_threadpool` and stores the runtime on `app.state.ml_runtime`: a loop stalled
+during startup is a loop that cannot answer the probe waiting on it.
+`app/api/deps.py::get_ml_runtime` reads the runtime from `request.app.state`, falling back
+to the module singleton when there is none — which is the case in every test, because
+`ASGITransport` clients never run a lifespan. The fallback leaves that singleton
+*unloaded*, which is honest: nothing in that process loaded a model either.
+
+`GET /api/v1/ml/status` reports the result, and it reports a broken runtime as a **200**
+(see [§5](#5-health-and-readiness)). The route that fails closed is `/ml/route`, and it
+fails with `ml_unavailable`.
+
+### 20.5 Degradation is an answer, not a crash
+
+| Condition | `available` | `unavailable_reason` |
+| --- | --- | --- |
+| `ML_ENABLED=false` | false | `disabled` |
+| No checkpoint at the resolved path — the state of every fresh clone, because `backend/ml/artifacts` is gitignored | false | `checkpoint_missing` |
+| `torch` or `transformers` not importable | false | `load_failed` |
+| Lifespan never ran (in-process test client) | false | `runtime_missing` |
+
+The reasons are a closed vocabulary rather than prose, because they are what a health
+check branches on and what a caller is told when it gets a 503: "the checkpoint is
+missing" is an operator-actionable fact and "something went wrong" is not. None of them
+carries a filesystem path — that is deployment information, and
+`GET /api/v1/ml/status` is the place it is reported to someone allowed to have it.
+
+`ML_FAIL_FAST=true` inverts the default and refuses process start instead. That is the
+right trade for a deployment whose production configuration points at a checkpoint that is
+not there, and the wrong one for every other deployment: a feature that quietly 503s is
+better than an application that will not boot.
+
+### 20.6 The label contract
+
+`ml/datasets/taxonomy.py` (`Intent`, `INTENT_SPECS`, `DestinationKind`,
+`TAXONOMY_VERSION = "nexo_intents.v1"`) is the source of truth, and the checkpoint's
+`id2label` is cross-validated against it **on every load**. A silent reorder of the class
+indices does not raise: it routes `schedule_plan` utterances to the knowledge router with a
+confident-looking 0.99, and nothing anywhere reports an error. A rename or a reorder of a
+single class raises `ModelCheckpointError` instead, at boot, naming the disagreement.
+
+Class-id order is therefore a contract, not an implementation detail:
+
+| id | intent | destination | destination_kind | service reached |
+| --- | --- | --- | --- | --- |
+| 0 | `task_manage` | `api/v1/tasks` | router | `TaskService.list` |
+| 1 | `project_manage` | `api/v1/projects` | router | `ProjectService.list` |
+| 2 | `schedule_plan` | `api/v1/planner` | router | `PlannerService.week` |
+| 3 | `knowledge_capture` | `api/v1/knowledge` | router | `KnowledgeService.create_note` |
+| 4 | `knowledge_lookup` | `api/v1/knowledge` | router | `KnowledgeService.search` |
+| 5 | `analytics_insight` | `api/v1/analytics` | router | `AnalyticsService.overview` |
+| 6 | `risk_query` | `api/v1/risks` | router | `RiskDetectionService.evaluate` |
+| 7 | `developer_intel` | `api/v1/developer` | router | `DeveloperIntelligenceService.summary` |
+| 8 | `learning_track` | `api/v1/learning` | router | `LearningIntelligenceService.summary` |
+| 9 | `career_track` | `api/v1/career` | router | `CareerIntelligenceService.summary` |
+| 10 | `account_admin` | `api/v1/users` | router | `UserService.get_active_by_id` |
+| 11 | `code_assist` | `large-model:unavailable` | large_model | none |
+| 12 | `deep_reasoning` | `large-model:unavailable` | large_model | none |
+| 13 | `out_of_scope` | `abstain` | fallback | none |
+
+All eleven service targets and their entrypoint names resolve against the real classes in
+`app/services/`, and a test asserts it — a table that has drifted from the code would be a
+routing table that silently points at nothing.
+
+### 20.7 Routing outcomes, and the one that is a safety property
+
+`RoutingStatus` is a closed set of four, and three of them are answers the classifier gave
+on purpose:
+
+| Status | Destination | `target` | Meaning |
+| --- | --- | --- | --- |
+| `accepted` | an `api/v1/...` prefix | the service and its first call | at or above threshold, and a router intent |
+| `generation_unavailable` | exactly `large-model:unavailable` | null | `code_assist` or `deep_reasoning`: recognised as a generative class, which NEXUS does not serve |
+| `out_of_scope` | `abstain` | null | NEXUS has no surface for this |
+| `uncertain` | the winning intent's prefix | **null, for all fourteen intents** | below threshold |
+
+The last row is the safety property and it is the reason the threshold is enforced in the
+router rather than in the classifier: a low-confidence request can never reach a service,
+least of all a mutating one. Its `reason` names the runner-up intents, so a caller can
+offer "did you mean…?" instead of a flat refusal.
+
+**The decision names a service; it does not call one.** Turning *"add a task to draft the
+migration plan for Friday"* into `TaskService.create_task(title=…, due_date=…)` is slot
+filling, and it needs either a second model or hand-written per-utterance parsers.
+Everything the classifier is allowed to influence is the deterministic half: a class name
+in, a named existing service out.
+
+### 20.8 Preprocessing parity: the raw string goes straight to the tokenizer
+
+No normalisation, no lower-casing, no punctuation stripping, no whitespace collapsing.
+Phase 10 trained on the raw `text` values of the routing dataset;
+`ml/preprocessing/normalize.py` was used to detect duplicate rows and near-duplicate
+leakage and was **never** fed to the tokenizer. Trimming here would look like tidying and
+is a distribution shift: the model was fitted on capitalised, punctuated, occasionally
+mistyped requests. What Phase 11 *did* take from that module is the credential detector —
+for screening, never for rewriting an utterance (§20.9).
+
+Truncation is at the trained **128** subword tokens (`max_seq_length` in
+`ml/configs/small_model.toml` and in `training_state.json`); `token_type_ids` is dropped
+because DeBERTa-v3 declares none (`type_vocab_size: 0`) and the training code pops it; and
+the forward pass runs inside `torch.inference_mode()`.
+
+### 20.9 Credential screening
+
+Incoming text is scanned with `ml.validation.find_credential` before inference when
+`ML_REJECT_CREDENTIALS` is on, which is the default. The detector returns the **kind** of
+credential and never the matched value, so a refusal is a 422 `validation_error` whose
+`details` carry `reason: "credential_shaped"` and the kind. A user who has pasted a live
+secret into a chat box has already lost control of it, and classifying the request only
+makes the loss quieter.
+
+The submitted text is never logged either — only the intent, the confidence, the latency
+and the character count. An utterance is untrusted free text, and it is the one thing in
+this system that must not be copied anywhere durable.
+
+### 20.10 Device
+
+`ML_DEVICE=auto` resolves to CUDA when `torch.cuda.is_available()` and to CPU otherwise,
+which is what keeps one configuration correct on a workstation and in a CPU-only
+container. An explicit `cuda` on a machine without CUDA **raises** rather than silently
+downgrading, because an operator who requested a GPU and received a CPU has a capacity
+problem nobody notices until the p99.
+
+The measurements below were taken on a CPU-only machine. **No CUDA latency was measured
+and none is estimated anywhere in this documentation set.**
+
+### 20.11 The threshold, and what 0.90 is not
+
+`ML_CONFIDENCE_THRESHOLD` defaults to **0.90**, chosen by re-running the checkpoint over
+the 420-row held-out split and measuring what each threshold would have cost:
+
+| threshold | requests kept | precision on kept | coverage | errors remaining |
+| --- | --- | --- | --- | --- |
+| 0.00 | 420 | 0.9738 | 100% | 11 |
+| 0.50 | 419 | 0.9737 | 99.8% | 11 |
+| 0.60 | 416 | 0.9784 | 99.0% | 9 |
+| 0.70 | 411 | 0.9830 | 97.9% | 7 |
+| 0.80 | 407 | 0.9853 | 96.9% | 6 |
+| **0.90** | **400** | **0.9900** | **95.2%** | **4** |
+| 0.95 | 396 | 0.9924 | 94.3% | 3 |
+| 0.98 | 377 | 0.9947 | 89.8% | 2 |
+| 0.99 | 247 | 1.0000 | 58.8% | 0 |
+
+0.90 keeps 95.2% of utterances while lifting precision on accepted requests from 0.9738 to
+0.9900, rejecting 7 of the 11 errors. 0.95 buys one further error rejected for one more
+point of coverage; 0.98 buys one more for five points; 0.99 refuses more than 40% of
+requests to buy nothing at all — a bad trade for a router whose failure mode is refusing a
+legitimate request.
+
+**What 0.90 is not.** It is an *integration* threshold measured on synthetic,
+template-generated text. It is not a calibrated probability threshold, not a claim about
+real-world accuracy, and it is not derivable from the 0.9738 test accuracy — that figure is
+an aggregate over a held-out set, not a per-utterance probability. The two are different
+quantities, the Phase 10 report says so, and re-derive this one against real traffic before
+trusting it.
+
+### 20.12 Accuracy, including the number that must not be softened
+
+Two sets were measured in this phase, and they disagree.
+
+**Set A — held-out representative phrasings.** 34 utterances covering all fourteen
+intents, hand-written for this phase and not copied from the training corpus:
+**34/34 correct**.
+
+**Set B — natural-language generalisation.** 56 utterances written specifically to break
+the model: lower-case and ALL-CAPS, trailing or absent punctuation, questions with no
+question mark, terse mobile phrasing, first person, politeness filler, and vocabulary
+deliberately away from the domain nouns the synthetic corpus leans on. **42/56 correct —
+75.0%.**
+
+That is the phase's most important number. Phase 10's own report warned that 97.4% was
+measured on synthetic text; Set B is the first measurement of what happens when that
+caveat bites, and it bites hard. The fourteen misses are not spread evenly:
+
+- **Seven of the fourteen collapse into `risk_query`.** The taxonomy's `out_of_scope`
+  class was intended to absorb "nothing here fits", but the model treats `risk_query` as
+  the sink for anything conversational, uncertain or reflective it cannot place. The
+  damage is a wrong *read* rather than a wrong write — `RiskDetectionService.evaluate`
+  reads and never mutates — but it is a wrong answer delivered confidently.
+- **The threshold does not catch them.** Seven of the fourteen misses were predicted at
+  0.82 or above and five of those at 0.90 or above — at or past the threshold.
+
+Low-confidence routing to `uncertain` is a real safety property and it is **not** a general
+accuracy defence. A model that is confidently wrong is confidently wrong. This is the
+single most important limitation of Phase 11, and it is why the fourteen generalisation
+failures are pinned as `xfail` rather than deleted: they are the measurement, and a
+measurement that cannot fail has stopped being one.
+
+Worst per-intent accuracy from the Phase 10 held-out evaluation, for the record:
+`project_manage` 0.915, `analytics_insight` 0.933, `developer_intel` 0.947, `risk_query`
+0.952 — and three intents at 1.000.
+
+### 20.13 Performance
+
+Measured on a CPU-only machine, 14 torch threads, no GPU present:
+
+| | |
+| --- | --- |
+| `import torch` (cold) | 0.30 s |
+| Model load from checkpoint (tokenizer + 703 MiB of weights + `.eval()`) | **4.50 s** |
+| First inference after load (cold) | **109.1 ms** |
+| Warm inference, median of 30 | **60.2 ms** (range 56.3–64.3 ms) |
+| Inference on a ~2,900-character input (truncated to 128 tokens) | 140.6 ms |
+| fp32 weight footprint | 704 MB |
+| CUDA latency | **not measured — no CUDA device on this machine** |
+
+The 4.50 s load happens once per process, in the lifespan, off the event loop. It is why
+`POST /api/v1/ml/route` answers ~60 ms warm rather than ~5 s per request, and why the test
+suite loads the checkpoint in a session-scoped fixture rather than per test. The ~2,900
+character row is the shape of a body that is mostly truncation: 140.6 ms against 60.2 ms,
+for text the model cannot see past 128 tokens. That is what `ML_MAX_INPUT_CHARS` bounds.
+
+### 20.14 The suite
+
+`tests/test_ml_integration_loading.py`, `_classification.py`, `_routing.py`, `_api.py` and
+`_config.py` — **630 passed, 14 xfailed**. They are `ml_model`-marked and skip cleanly
+when the gitignored checkpoint or torch is absent. The Phase 10 regression suite
+(`tests/test_ml_*.py`) is unchanged at **321 passed**, and the full backend suite is
+**3,221 passed, 14 xfailed, 1 skipped** — the skip being the pre-existing Windows
+symlink-privilege skip in `test_developer_git.py`.
 
 ---
 
@@ -2133,3 +2549,5 @@ claim. A stage that did not run is reported as not run.
 | [`specifications/phase-9-learning-career-report.md`](specifications/phase-9-learning-career-report.md) | What Phase 9 shipped, the six learning/career tables, and the contract disagreements |
 | [`specifications/phase-10-architecture.md`](specifications/phase-10-architecture.md) | Where the Phase 10 `backend/ml/` package sits, its two interpreters, and its execution boundary |
 | [`specifications/phase-10-training.md`](specifications/phase-10-training.md) | The Phase 10 routing classifier: its corpus, validation, splits, training configuration and evaluation |
+| [`specifications/phase-11-ml-integration.md`](specifications/phase-11-ml-integration.md) | The Phase 11 serving boundary: `app/ml/`, the two endpoints, the configuration surface and the label contract |
+| [`specifications/phase-11-report.md`](specifications/phase-11-report.md) | What Phase 11 executed: the threshold measurements, the generalisation results, latency, and the limits of each |

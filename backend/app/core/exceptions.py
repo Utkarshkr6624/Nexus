@@ -59,6 +59,12 @@ class ErrorCode:
     INTERNAL_ERROR = "internal_error"
     BAD_REQUEST = "bad_request"
     METHOD_NOT_ALLOWED = "method_not_allowed"
+    #: Phase 11. Raised when ML classification was asked for and the classifier
+    #: is not serving — no checkpoint, no torch, or a failed load. 503 rather
+    #: than 404 because nothing about the *request* is wrong: the deployment is,
+    #: and a client retrying once the operator has loaded a checkpoint is
+    #: behaving correctly.
+    ML_UNAVAILABLE = "ml_unavailable"
 
 
 class NexusError(Exception):

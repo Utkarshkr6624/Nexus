@@ -40,6 +40,12 @@ MIN_PYTHON = (3, 13)
 MIN_NODE_MAJOR = 20
 VENV_DIR = BACKEND_DIR / ".venv"
 
+#: PyTorch publishes its CPU wheels on its own index, not on PyPI. The backend
+#: pins ``torch==2.14.1+cpu`` — the exact build Phase 10 trained and evaluated the
+#: classifier with — and that local version identifier exists nowhere else, so
+#: every install path needs this URL.
+TORCH_CPU_INDEX = "https://download.pytorch.org/whl/cpu"
+
 
 def step(title: str) -> None:
     """Print a step heading."""
@@ -154,8 +160,22 @@ def ensure_venv() -> Path:
 def install_backend(python: Path) -> None:
     """Install the pinned backend requirements into the virtualenv."""
     info("installing backend/requirements.txt (pinned, incl. dev tooling)")
+    # The torch pin carries a `+cpu` local version, which is published only on
+    # PyTorch's own CPU index and not on PyPI. Without the extra index pip
+    # reports "No matching distribution found" and the install fails before any
+    # of the ML code can be exercised. `--extra-index-url` rather than
+    # `--index-url` because every other pin still has to come from PyPI.
     completed = subprocess.run(
-        [str(python), "-m", "pip", "install", "-r", str(BACKEND_DIR / "requirements.txt")],
+        [
+            str(python),
+            "-m",
+            "pip",
+            "install",
+            "--extra-index-url",
+            TORCH_CPU_INDEX,
+            "-r",
+            str(BACKEND_DIR / "requirements.txt"),
+        ],
         cwd=BACKEND_DIR,
     )
     if completed.returncode != 0:

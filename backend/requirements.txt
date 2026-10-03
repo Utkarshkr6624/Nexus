@@ -2,11 +2,20 @@
 #
 # Fully pinned: reproducible builds, and a known-good set on Python 3.13.
 #
-#   pip install -r requirements.txt
+#   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 #
 # The file is split into two sections. The Dockerfile extracts the runtime
-# section only (everything above the DEV marker), so development tooling is
-# never baked into the runtime image.
+# section only (everything above the DEV marker) by awk-ing up to the marker
+# line, so development tooling is never baked into the runtime image. Phase 11
+# puts the ML stack ABOVE the marker because inference runs in production.
+#
+#   pip install -r requirements.txt \
+#       --extra-index-url https://download.pytorch.org/whl/cpu
+#
+# The --extra-index-url is required, not a suggestion: torch below is pinned to
+# the CPU build, whose `+cpu` local version suffix is published only on the
+# PyTorch CPU index. A plain `pip install -r requirements.txt` fails with
+# "No matching distribution found for torch==2.14.1+cpu".
 #
 # Deliberately absent: structlog — the stdlib logging module plus the JSON
 # formatter in app/core/logging.py covers Phase 1 without a new dependency —
@@ -33,6 +42,53 @@ pyjwt==2.15.1
 # bcrypt used directly. Do NOT reintroduce passlib: unmaintained, and its
 # bcrypt backend errors out on bcrypt >= 4.1.
 bcrypt==5.0.0
+
+# --- Machine learning (Phase 11) -------------------------------------------
+# The routing classifier from Phase 10 now runs in-process, so the API runtime
+# needs torch and transformers here rather than in the ml/ virtualenv.
+#
+# Pinned to the exact build Phase 10 trained AND evaluated the checkpoint with:
+# artifacts/small-model/final/training_state.json records
+# torch_version 2.14.1+cpu and transformers_version 5.18.0. Those versions
+# produced the 0.9738 test accuracy in the Phase 10 report, and a different
+# build can shift numerics under that number without raising anything — the
+# model would still load, still return a valid intent, and be quietly a
+# different classifier than the one that was measured.
+#
+# The `+cpu` suffix is a local version identifier published only on the PyTorch
+# CPU index, so a clean install needs
+#   --extra-index-url https://download.pytorch.org/whl/cpu
+# (`--index-url` also works but replaces PyPI, so the other pins in this file
+# would have to come from the CPU index too). Without it, pip reports
+# "No matching distribution found for torch==2.14.1+cpu" — verified, not
+# assumed. The CPU build is deliberate: NEXUS runs no GPU and the checkpoint is
+# loaded once per process.
+#
+# Required for the ML feature, NOT for the app to start. torch is imported
+# lazily, at the moment the classifier loads, so the application imports, boots
+# and serves every non-ML route on a machine with no torch at all; the ML
+# endpoints answer 503 ml_unavailable there. That is the same property the
+# offline Phase 10 suite had, and it is why this pair sits in the runtime
+# section without being a hard boot requirement.
+#
+# tokenizers and safetensors are NOT pinned separately: transformers depends on
+# both, and the checkpoint is a model.safetensors file that transformers reads
+# through that transitive pin. Pinning them here would be a second thing to
+# forget to update.
+#
+# Deliberately still absent: ollama, any Qwen/QLoRA package, the Kaggle CLI and
+# every cloud LLM SDK. NEXUS runs no language model — code_assist and
+# deep_reasoning are trained classes whose destination is
+# "large-model:unavailable" precisely because nothing can serve them.
+#
+# KNOWN GAP, now closed: both install paths that read this file add the
+# --extra-index-url above. `backend/Dockerfile` passes it on its runtime-section
+# install, and `scripts/bootstrap.py` (which is what `make install` runs) passes
+# it too. If you add a third install path, it needs the flag as well — the pin
+# below is unresolvable from PyPI alone.
+
+torch==2.14.1+cpu
+transformers==5.18.0
 
 # ============================ DEV MARKER ====================================
 # Everything below this line is development-only tooling. The runtime Docker

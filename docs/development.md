@@ -48,7 +48,7 @@ Two consequences worth stating plainly:
 | [8. Code conventions](#8-code-conventions) | ruff, docstrings, TypeScript strictness, the react-refresh constraint |
 | [9. Before you open a pull request](#9-before-you-open-a-pull-request) | The checklist |
 | [10. Verified baseline and known limits](#10-verified-baseline-and-known-limits) | What was actually executed, and what was not |
-| [11. Developer, Learning and Career settings](#11-developer-learning-and-career-settings) | Registering and scanning a local repository, the fourteen environment variables Phases 8 and 9 added, rate limiting, and the Phase 4 / Phase 6 settings |
+| [11. Developer, Learning, Career and ML settings](#11-developer-learning-career-and-ml-settings) | Registering and scanning a local repository, the fourteen environment variables Phases 8 and 9 added, rate limiting, the Phase 4 / Phase 6 settings, and the seven `ML_*` settings Phase 11 added (§11.6) |
 
 ---
 
@@ -67,6 +67,16 @@ Two consequences worth stating plainly:
 
 `make` is not shipped with Windows. Run the raw commands instead; the README's
 [Development commands](../README.md#development-commands) table has all of them.
+
+**Phase 11 added a dependency the rest of the backend does not need.** `torch` and
+`transformers` are now pinned in `backend/requirements.txt` and are installed like any
+other runtime dependency — with the caveat in [§1.2](#12-bootstrap) about the index URL.
+They are still imported *lazily*, so an environment without them boots, serves every other
+route, and answers the two `/ml` endpoints with 503 `ml_unavailable`; a developer who only
+wants the API surface can leave them out. A developer who wants to run
+`pytest tests/test_ml_integration_*.py`, or `POST /api/v1/ml/route` against a real model,
+needs both **and** the trained checkpoint from Phase 10 under `backend/ml/artifacts/` —
+which is gitignored, so a fresh clone has neither.
 
 ### 1.2 Bootstrap
 
@@ -88,7 +98,7 @@ it is what creates the environment everything else depends on. In order
 | Checkout layout (`backend/requirements.txt`, `backend/alembic.ini`, `frontend/package.json`) | `check_repository` | fatal |
 | `.env` from `.env.example` | `ensure_env_file` | never overwrites an existing `.env` |
 | `backend/.venv` | `ensure_venv` | reuses an existing virtualenv |
-| `pip install -r backend/requirements.txt` | `install_backend` | fatal, names proxy/network as the usual cause |
+| `pip install -r backend/requirements.txt` | `install_backend` | fatal, names proxy/network as the usual cause. **See the known gap below: this command needs `--extra-index-url` for the Phase 11 torch pin** |
 | `npm install` in `frontend/` | `install_frontend` | fatal; warns if `package-lock.json` is missing |
 | Docker availability | `report_docker` | **never fatal** — the stack also runs natively |
 
@@ -98,6 +108,39 @@ problem.
 **What it deliberately does not do:** it does not start PostgreSQL, create
 `nexus_test`, run migrations, or start any server. Those are the next three
 steps, in that order.
+
+#### The ML stack needs a second index, and the bootstrap does not pass it
+
+**Known gap, found while writing this section and not yet fixed.** Phase 11 made
+`torch==2.14.1+cpu` and `transformers==5.18.0` runtime dependencies: the trained classifier
+now runs *inside* the API process, so they belong above the `DEV MARKER` in
+`backend/requirements.txt` and are baked into the runtime image. The `+cpu` suffix is a
+**local version identifier published only on the PyTorch CPU index**, so a clean install
+must name that index:
+
+```bash
+# from the repository root, after bootstrap has created backend/.venv
+backend/.venv/Scripts/pip install -r backend/requirements.txt \
+  --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
+Two places do not pass it today, and both fail the same way:
+
+| Location | Command as shipped | Consequence |
+| --- | --- | --- |
+| `scripts/bootstrap.py:157-160` | `python -m pip install -r backend/requirements.txt` | `pip` reports *"No matching distribution found for torch==2.14.1+cpu"* and `install_backend` aborts as fatal |
+| `Makefile:80-81` (`install`, aliased by `bootstrap`) | runs `$(PYTHON_BOOTSTRAP) scripts/bootstrap.py` | inherits the failure above — `make install` does not currently produce a working ML environment |
+| `backend/Dockerfile:26-29` | awk-extracts the runtime section, then `pip install -r requirements.runtime.txt` | the same failure at image build time; `requirements.txt` records this as its own known gap |
+
+Both call sites are one flag away from correct, and neither has been changed here because
+this document does not edit the installer or the build. Until they are, install the
+requirements yourself with `--extra-index-url` after a bootstrap run — or after a failed
+one, since the virtualenv and `.env` are already in place and the script is idempotent.
+
+The failure is loud rather than silent, which is the only reason it is a bug and not a
+mystery: pip will not quietly install the CUDA build of a different version and leave you
+with a classifier whose numerics have silently moved away from the ones the 0.9738 was
+measured with.
 
 ### 1.3 The database, in the right order
 
@@ -202,6 +245,7 @@ worker carries its own connection pool and its own empty revocation denylist.
 | --- | --- |
 | Python, no schema or data | `python -m pytest -m "not integration"` — 1029 tests, no database |
 | A model, a repository, or anything touching data | `python -m pytest` — the full 2270, needs PostgreSQL |
+| `app/ml/`, or the `/ml` routes | `python -m pytest tests/test_ml_integration_*.py` — needs the trained checkpoint and torch, and skips cleanly without either (§6.1) |
 | TypeScript | `npm run typecheck && npm test` |
 | A component's markup or a route | `npm test`, plus `npm run build` — `tsc -b` catches types and import paths, but only a real build proves the module graph resolves |
 
@@ -687,13 +731,15 @@ number is not backed by a query, it is an em dash.
 
 ## 6. Testing conventions
 
-### 6.1 The `integration` marker
+### 6.1 The markers
 
-Registered in `backend/pytest.ini`:
+Two are registered in `backend/pytest.ini`:
 
 ```ini
 markers =
     integration: requires a live PostgreSQL instance
+    ml_model: requires the trained Phase 10 checkpoint on disk and torch installed;
+              skipped when either is absent
 ```
 
 `--strict-markers` is on, so an unregistered marker is an error rather than a
@@ -704,11 +750,31 @@ no-op.
 | What to mark | Any test that touches the database — which in practice means any test whose signature pulls in `client`, `db_session` or `truncated_database` |
 | How | Module-level `pytestmark = pytest.mark.integration`, as in `test_auth.py`, `test_repositories.py`, `test_errors.py`, `test_migrations.py`; per-test `@pytest.mark.integration` where only one test needs it |
 | What must pass offline | `python -m pytest -m "not integration"` with PostgreSQL stopped |
-| Current split | 2270 collected — 1029 offline, 1241 `integration`. The integration half needs a native PostgreSQL 16; both halves were green on the last full run before the remediation pass |
+| Current split | 2270 collected — 1029 offline, 1241 `integration`. The integration half needs a native PostgreSQL 16 |
 
 Mark a test `integration` because it genuinely needs a database — not because it
 is easier to get green that way. The offline subset is the fast inner loop; a
 contributor who cannot run it cannot iterate.
+
+#### The `ml_model` marker, and why it had to be added
+
+Phase 11 is the **first suite in this repository that a clean clone cannot run**.
+`backend/ml/artifacts/` is gitignored — a 703 MiB checkpoint is a training output, not
+something the repository ships — and `torch` is a large, separate install. The Phase 10
+suite was deliberately 100% offline and torch-free, so without a marker these tests would
+have been the first in the project to hard-fail on a fresh checkout, on a machine that had
+done nothing wrong.
+
+The marker follows the same philosophy as `integration`: **name the environmental
+precondition, and skip cleanly with a reason when it does not hold.** A test that silently
+stops covering the classifier is worse than one that says why it could not run.
+
+| Rule | Detail |
+| --- | --- |
+| How to run it | `python -m pytest tests/test_ml_integration_*.py` — five files, **630 passed, 14 xfailed** on the machine that has the checkpoint |
+| What it skips on | No checkpoint at `backend/ml/artifacts/small-model/final/`, or no `torch`. The skip message names which of the two |
+| The `xfail`s | Measured generalisation failures, pinned on purpose — see [§6.7](#67-the-phase-11-suite-and-its-fourteen-xfails) |
+| What still runs without either | Everything else. `import app.main`, `import app.ml` and `import app.api.deps` never import torch, so the rest of the suite is unaffected |
 
 ### 6.2 Choosing a client fixture
 
@@ -802,6 +868,51 @@ In practice that means a new test that:
   component render — rather than a mock of it;
 - and, for an envelope failure path, uses `assert_error_envelope` so it also
   guards the shape.
+
+### 6.7 The Phase 11 suite and its fourteen xfails
+
+`tests/test_ml_integration_*.py` is five files and it is structured by layer, not by
+feature, because that is the order in which a failure means something:
+
+| File | What it is the only place that proves |
+| --- | --- |
+| `test_ml_integration_loading.py` | Checkpoint resolution, the label cross-validation, device selection, the failure modes, and that importing the app leaves `sys.modules` free of torch |
+| `test_ml_integration_classification.py` | All fourteen intents end to end, confidence integrity, truncation at 128 tokens, and the validation rules |
+| `test_ml_integration_routing.py` | The routing policy, the threshold table, and the guard that stops a second model being introduced |
+| `test_ml_integration_api.py` | The HTTP surface: auth, permissions, the error envelope, and a live end-to-end request |
+| `test_ml_integration_config.py` | The seven `ML_*` settings, the lifespan, single-load, concurrency, and that the submitted text never reaches a log |
+
+**The fourteen `xfail`s are not skipped coverage.** They are measured generalisation
+failures, pinned with `pytest.mark.xfail(strict=…)` so they cannot quietly disappear — and
+so that a *fix* to one of them turns the suite red until the pin is removed deliberately,
+which is the point: a measurement that cannot fail has stopped being one.
+
+Two sets of utterances were measured, and they disagree:
+
+| Set | What it is | Result |
+| --- | --- | --- |
+| A — 34 held-out representative phrasings | Hand-written for this phase, all fourteen intents, **not** copied from the training corpus | **34/34 correct** |
+| B — 56 natural-language phrasings | Written specifically to break the model: lower case, ALL CAPS, no question mark, terse mobile phrasing, first person, vocabulary away from the domain nouns the synthetic corpus leans on | **42/56 — 75.0%** |
+
+The second figure is the one to remember and the one not to soften. Two findings sit
+behind it, and both belong in the mind of anyone who writes UI over this endpoint:
+
+- **Seven of the fourteen misses collapse into `risk_query`.** The `out_of_scope` class was
+  meant to absorb "nothing here fits", but the model treats `risk_query` as the sink for
+  anything conversational, uncertain or reflective it cannot place. It is a wrong *read*
+  rather than a wrong write — `RiskDetectionService.evaluate` does not mutate — but it is a
+  wrong answer delivered confidently.
+- **The confidence threshold does not catch them.** Seven of the fourteen were predicted at
+  0.82 or above and five at 0.90 or above — at or past the shipped threshold of 0.90.
+
+So low-confidence routing to `uncertain` is a real safety property and it is **not** a
+general accuracy defence. Branch on `status`, show `reason` and `alternatives`, and never
+treat `accepted` as a command to issue. The full table of the fourteen misses, with the
+confidence each one drew, is in
+[`specifications/phase-11-report.md`](specifications/phase-11-report.md).
+
+The Phase 10 regression suite (`tests/test_ml_*.py`, thirteen files, **321 passed**) is
+unchanged by all of this and still runs with no checkpoint and no torch.
 
 ---
 
@@ -1056,11 +1167,14 @@ friction: it makes the decision visible.
 | 4 | Frontend types | `npm run typecheck` | `frontend/` |
 | 5 | Backend tests | `python -m pytest -m "not integration"` | `backend/` |
 | 6 | Backend tests, full | `python -m pytest` — only if PostgreSQL is running | `backend/` |
+| 6a | ML tests | `python -m pytest tests/test_ml_integration_*.py` — only if the checkpoint and torch are present; otherwise it skips and says why | `backend/` |
 | 7 | Frontend tests | `npm test` | `frontend/` |
 | 8 | Migration drift | `python -m alembic check` — **required if you touched a model** | `backend/` |
 | 9 | Build | `npm run build` — required if you touched routing, imports or a chunk rule | `frontend/` |
 
-`make lint` covers 1–4 and `make test` covers 5–7.
+`make lint` covers 1–4 and `make test` covers 5–7. Row 6a is manual on purpose: it needs a
+703 MiB checkpoint a fresh checkout does not have, so making it part of `make test` would
+mean the target skips on a clean tree.
 
 And, not command-shaped:
 
@@ -1086,6 +1200,10 @@ And, not command-shaped:
       README's environment-variable table, with its default. `backend/tests/test_documentation_claims.py`
       fails the build if one is missed — fifteen settings went undocumented through
       nine phases before that test existed.
+- [ ] If you touched `app/ml/`, the two ML endpoints or their schemas,
+      `pytest tests/test_ml_integration_*.py` was run — or the skip reason is stated
+      in the change. "It skipped" is an answer; "it was skipped and nobody said why"
+      is not.
 - [ ] Any number you changed in a document was **measured**, not estimated, and the
       measurement command is named next to it.
 
@@ -1095,28 +1213,31 @@ And, not command-shaped:
 
 These are the numbers this document was written against. They are results, not
 projections: every row was produced by running the command in the environment
-described immediately below the table, during the final remediation pass over
-Phases 1–9.
+described immediately below the table. The first three rows were captured during the
+final remediation pass over Phases 1–9 and therefore **predate Phases 10 and 11**; the
+Phase 11 rows were run afterwards, on the same machine, and both sets are labelled with
+which is which.
 
 | Command | Working directory | Result |
 | --- | --- | --- |
-| `python -m pytest --collect-only -q` | `backend/` | **2270 collected** — the full suite |
+| `python -m pytest --collect-only -q` | `backend/` | **2270 collected** — the full suite, as of the Phases 1–9 remediation pass |
 | `python -m pytest --collect-only -q -m "not integration"` | `backend/` | **1029 collected**, 1241 deselected |
 | `python -m pytest --collect-only -q -m integration` | `backend/` | **1241 collected**, 1029 deselected |
+| `python -m pytest` | `backend/` | **3,221 passed, 14 xfailed, 1 skipped** — after Phase 11. The skip is the pre-existing Windows symlink-privilege skip in `test_developer_git.py`; the xfails are the measured generalisation failures of §6.7 |
+| `python -m pytest tests/test_ml_integration_*.py` | `backend/` | **630 passed, 14 xfailed** — needs the trained checkpoint |
+| `python -m pytest tests/test_ml_*.py` | `backend/` | **321 passed** — the Phase 10 ML regression suite, unchanged by Phase 11 |
 | `ruff check .` | `backend/` | clean |
 | `ruff format --check .` | `backend/` | 189 files already formatted, none to rewrite |
 | `npm test` | `frontend/` | 44 files, **645 tests** passing |
 | `python scripts/verify_compose.py` | repository root | passes — 3 services, every Compose variable documented in `.env.example` |
 
-**The backend rows are collection counts, and the difference matters.**
+**The first three rows are collection counts, and the difference matters.**
 `pytest --collect-only` proves what the suite *contains*; it does not prove the
-suite *passes*. The last full run before this remediation wave was
-**2136 passed, 9 failed**, and the nine failures were the defects this pass
-addressed; they were fixed by the engineers who own those files, and a single
-full run is scheduled once this wave lands. Nothing in this table claims a green
-backend run that has not happened. The frontend row is a real pass count —
-`npm test` touches no database and does not contend for the `nexus_test`
-advisory lock, so it was run end to end.
+suite *passes*. They are quoted unchanged because they are the figures the
+documentation set pins, and they now understate a suite that has grown by two
+phases — the full **run** above is the current answer to "does it pass", and it is a
+pass count. The frontend row is a real pass count too: `npm test` touches no database
+and does not contend for the `nexus_test` advisory lock, so it was run end to end.
 
 `ruff format --check .` reported 22 files to rewrite when this section was first
 written — 10 under `app/` and 12 under `tests/`, every one of them a Phase 8 or
@@ -1158,8 +1279,9 @@ The environment this baseline was captured in has a working **native PostgreSQL 
 | Not run | Why it matters |
 | --- | --- |
 | `docker compose up` | `docker-compose.yml` has never been executed by `docker compose`. `scripts/verify_compose.py` validates it statically — Compose v2 syntax, three services, real build contexts, existing bind mounts, every `${VAR}` documented — and cannot tell you the stack starts. Treat the first run as untested, and note that the images themselves have never been built either |
-| The containers in the production configuration | Nothing here says the `backend` or `frontend` Dockerfile works; only that the repository they build from lints, type-checks, tests and builds |
+| The containers in the production configuration | Nothing here says the `backend` or `frontend` Dockerfile works; only that the repository they build from lints, type-checks, tests and builds. `backend/Dockerfile:29` also installs the runtime requirements **without** `--extra-index-url`, so the image build currently fails on the `torch==2.14.1+cpu` pin for the reason in [§1.2](#12-bootstrap) |
 | `postgresql:16-alpine` | The suite runs against native PostgreSQL 16.2 on Windows. The Compose path uses the Alpine image and its `docker/postgres/init/` extension script, which nothing here has executed |
+| Any GPU | Every Phase 11 figure — load time, cold and warm inference, the long-input case — comes from a **CPU-only** machine with 14 torch threads. `ML_DEVICE=cuda` is implemented and fails loudly when CUDA is absent, but no CUDA latency was measured and none is estimated anywhere in this documentation set |
 
 Everything database-backed **was** run, and against the real thing: the 1241
 `integration` tests cover the repositories, sessions, account deletion, RBAC, password
@@ -1183,16 +1305,18 @@ that none is mistaken for a bug to route around:
 
 ---
 
-## 11. Developer, Learning and Career settings
+## 11. Developer, Learning, Career and ML settings
 
 Phases 8 and 9 added fourteen environment variables and one workflow — registering a local
 git repository — that has no analogue anywhere else in this codebase. Both are described
 here; both are also in [`.env.example`](../.env.example) with the same wording.
 
-Two things about *settings as a whole* also belong here, because neither had anywhere else to
-live and both were found undocumented by the audit that preceded this pass: the six rate-limiting
-variables the remediation wave added (§11.4), and the fifteen Phase 4 and Phase 6 settings that
-were absent from every document (§11.5).
+Three things about *settings as a whole* also belong here, because none of them had anywhere
+else to live: the six rate-limiting variables the remediation wave added (§11.4), the fifteen
+Phase 4 and Phase 6 settings that were absent from every document until the audit that
+preceded that wave found them (§11.5), and the seven `ML_*` settings Phase 11 added (§11.6),
+whose installation requirement is in [§1.2](#12-bootstrap) and whose behaviour is in
+§6.7.
 
 ### 11.1 Registering and scanning a local repository
 
@@ -1451,6 +1575,63 @@ typo in one of them should cost the user that suggestion rather than stop the pr
 empty result is still honest — it renders as "no comparison periods" instead of as a
 fabricated default.
 
+### 11.6 ML settings (Phase 11)
+
+Seven settings, all additive, all documented with the same wording in
+[`.env.example`](../.env.example). They configure the trained intent classifier that Phase
+11 put inside the API process; see
+[`architecture.md` §20](architecture.md#20-phase-11--ml-integration) for what they govern.
+
+| Variable | Default | What it controls |
+| --- | --- | --- |
+| `ML_ENABLED` | `true` | Master switch. Off means NEXUS never loads the Phase 10 checkpoint: every other route keeps working and the two `/ml` endpoints answer 503 `ml_unavailable` |
+| `ML_MODEL_PATH` | `""` | Directory holding the Phase 10 `final/` checkpoint. Empty resolves the Phase 10 default — `<backend>/ml/artifacts/small-model/final` — relative to the **repository**, so a moved checkout keeps working. Deployment configuration, deliberately not settable per request |
+| `ML_DEVICE` | `auto` | `auto` \| `cpu` \| `cuda`. `auto` uses CUDA when this build of torch sees a GPU and CPU otherwise. `cuda` on a machine without one is a **start-up failure, not a silent downgrade** |
+| `ML_CONFIDENCE_THRESHOLD` | `0.90` | Confidence a prediction must reach before NEXUS will name a service for it. See the warning below |
+| `ML_MAX_INPUT_CHARS` | `2000` | Hard ceiling on submitted text, enforced before the model sees it. The model was trained at a 128-token context, so this is a rendering and cost bound well above it, not a way to tune accuracy |
+| `ML_REJECT_CREDENTIALS` | `true` | Refuse credential-shaped text (a live API key, a private key block, a bearer token) before it is classified |
+| `ML_FAIL_FAST` | `false` | When true, a checkpoint that will not load refuses process start instead of degrading to a reportable "unavailable" state |
+
+Four of these deserve the warning before, not after, you change them.
+
+- **`ML_CONFIDENCE_THRESHOLD` is an integration threshold, not a calibrated probability.**
+  It was chosen by re-running the checkpoint over the 420-row held-out split and measuring
+  the trade directly: at 0.90 NEXUS keeps 95.2% of utterances while lifting precision on
+  accepted requests from 0.9738 to 0.9900, rejecting 7 of the 11 errors. At 0.99 it refuses
+  more than 40% of requests to buy nothing at all. It was measured on synthetic,
+  template-generated text, so real user input will be **less** confident and **less** often
+  right — lowering the threshold makes that worse, not better. Raise it only knowing you are
+  trading coverage for precision.
+- **`ML_CONFIDENCE_THRESHOLD` does not stop confident mistakes.** On deliberately
+  adversarial phrasings the classifier was wrong 14 times out of 56, and five of those
+  misses were predicted at 0.90 or above. The threshold is a routing guard, not an accuracy
+  defence — see [§6.7](#67-the-phase-11-suite-and-its-fourteen-xfails).
+- **`ML_MAX_INPUT_CHARS` is a bound with a reason.** The validator refuses a value above
+  10 000 as well as a non-positive one, because the trained context is 128 subword tokens
+  and text longer than that is truncated before the model sees it: a larger bound would
+  accept a large request body and charge for it while changing nothing.
+- **`ML_REJECT_CREDENTIALS=false` turns off a screen, not a filter.** With it off, an
+  utterance carrying a live secret reaches the classifier, and the classifier is a neural
+  network with no promise not to. Turn it off only if you routinely phrase account requests
+  in a way the detector reads as a secret — which is the one case the setting exists for.
+
+### 11.7 Verifying the ML environment
+
+```bash
+# the Phase 11 suite — five files, needs torch and the checkpoint
+python -m pytest tests/test_ml_integration_*.py
+
+# is a checkpoint on this machine at all?
+python -c "from app.core.config import get_settings; \
+           s = get_settings(); print(s.ml_resolved_model_path, s.ml_checkpoint_exists)"
+```
+
+`ml_checkpoint_exists` is `False` on any checkout that has not run the Phase 10 training
+pipeline, because `backend/ml/artifacts/` is gitignored. That is a supported state, not a
+broken install — but it is also why a fresh clone cannot exercise the `/ml` routes without
+first training a checkpoint (§1.1). The live check is `GET /api/v1/ml/status`, which answers
+200 either way and names the reason.
+
 ---
 
 ## See also
@@ -1462,3 +1643,5 @@ fabricated default.
 | [`api-conventions.md`](api-conventions.md) | Base URL and versioning, the error envelope and its code table, request ids, pagination, the endpoint checklist |
 | [`specifications/phase-8-developer-report.md`](specifications/phase-8-developer-report.md) | What Phase 8 shipped and what was actually executed |
 | [`specifications/phase-9-learning-career-report.md`](specifications/phase-9-learning-career-report.md) | What Phase 9 shipped and what was actually executed |
+| [`specifications/phase-11-ml-integration.md`](specifications/phase-11-ml-integration.md) | The Phase 11 serving boundary: `app/ml/`, the two endpoints, the configuration surface and the label contract |
+| [`specifications/phase-11-report.md`](specifications/phase-11-report.md) | What Phase 11 executed: the threshold measurements, the generalisation results including the 75.0%, and the limits of each |

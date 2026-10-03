@@ -23,10 +23,19 @@ COPY requirements.txt ./
 
 # Everything above the DEV marker in requirements.txt is runtime; awk extracts
 # exactly that, so pytest/ruff can never leak into the runtime image.
+# The extra index is what makes the torch pin resolvable: `torch==2.14.1+cpu`
+# carries a local version identifier published only on PyTorch's CPU index, and
+# without it pip fails with "No matching distribution found". It is an *extra*
+# index rather than a replacement because every other pin still comes from PyPI.
+# The image therefore grows by roughly a gigabyte and ML stays a runtime
+# requirement; ML itself still degrades to a 503 if the checkpoint is absent,
+# because the app never imports torch until it decides to load a model.
 RUN awk '/^# =+ DEV MARKER/{exit} {print}' requirements.txt > requirements.runtime.txt \
     && python -m venv /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip setuptools wheel \
-    && /opt/venv/bin/pip install -r requirements.runtime.txt
+    && /opt/venv/bin/pip install \
+         --extra-index-url https://download.pytorch.org/whl/cpu \
+         -r requirements.runtime.txt
 
 # --- Stage 2: runtime --------------------------------------------------------
 FROM python:3.13-slim AS runtime

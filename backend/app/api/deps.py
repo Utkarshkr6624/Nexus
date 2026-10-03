@@ -41,6 +41,8 @@ from app.core.deps import (
 )
 from app.core.exceptions import UnauthorizedError
 from app.core.security import TokenType, decode_token
+from app.ml.runtime import MLRuntime
+from app.ml.runtime import get_ml_runtime as get_process_ml_runtime
 from app.models.user import User
 from app.repositories.activity import ActivityRepository
 from app.repositories.analytics import AnalyticsRepository
@@ -937,6 +939,46 @@ def get_career_service(
 CareerIntelligenceServiceDep = Annotated[CareerIntelligenceService, Depends(get_career_service)]
 
 
+def get_ml_runtime(request: Request) -> MLRuntime:
+    """Provide the process-wide Phase 11 intent classifier runtime.
+
+    **A provider function, not ``Depends(MLRuntime)``,** for the same reason as
+    every other ``Dep`` alias in this file: the return type is a plain object
+    that is not a Pydantic model, and handing FastAPI a class is what produces
+    ``Invalid args for response field`` at import time.
+
+    The runtime is read from ``request.app.state`` because the lifespan is what
+    loads the model, and a router asking for the classifier must be asking the
+    instance the server actually loaded rather than constructing a second one —
+    two would mean two copies of 703 MiB of weights.
+
+    **The fallback exists because the test suite has no lifespan.** Clients built
+    on ``ASGITransport`` never execute one, so ``app.state.ml_runtime`` is simply
+    absent there; falling back to the module singleton keeps those routes
+    importable and callable, and leaves the singleton *unloaded* — which is
+    honest, because nothing in that process loaded a model either. The endpoint
+    then reports the runtime's reason instead of pretending ML is up.
+
+    Importing this module therefore must not import ``torch``:
+    :mod:`app.ml.runtime` reaches for the classifier inside a function, so a
+    server with ML switched off never pays for the dependency at startup.
+
+    Args:
+        request: The in-flight request, carrying the application the lifespan
+            configured.
+
+    Returns:
+        The loaded runtime, or a degraded one whose ``is_available`` is False.
+    """
+    runtime: MLRuntime | None = getattr(request.app.state, "ml_runtime", None)
+    if runtime is None:
+        runtime = get_process_ml_runtime()
+    return runtime
+
+
+MLRuntimeDep = Annotated[MLRuntime, Depends(get_ml_runtime)]
+
+
 def get_client_context(request: Request) -> tuple[str | None, str | None]:
     """Return ``(ip_address, user_agent)`` for the calling request.
 
@@ -1116,6 +1158,8 @@ __all__ = [
     "LearningIntelligenceServiceDep",
     "LearningRepository",
     "LearningRepositoryDep",
+    "MLRuntime",
+    "MLRuntimeDep",
     "NoteRepository",
     "NoteRepositoryDep",
     "PasswordResetRepository",
@@ -1183,6 +1227,7 @@ __all__ = [
     "get_knowledge_service",
     "get_learning_repository",
     "get_learning_service",
+    "get_ml_runtime",
     "get_note_repository",
     "get_optional_user",
     "get_password_reset_repository",

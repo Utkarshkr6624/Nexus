@@ -116,6 +116,7 @@ def test_git_revision_degrades_rather_than_failing_outside_a_repository(tmp_path
 
 
 def test_collect_environment_describes_the_machine_without_importing_torch():
+    import subprocess
     import sys
 
     environment = collect_environment()
@@ -127,10 +128,33 @@ def test_collect_environment_describes_the_machine_without_importing_torch():
         "torch_version",
     }
     assert environment["torch_available"] == ("torch" in sys.modules or _torch_importable())
-    assert "torch" not in sys.modules, "collect_environment must not import torch to describe it"
     assert isinstance(environment["platform"], str)
     assert environment["python_version"].count(".") == 2
     assert (environment["torch_version"] is None) != environment["torch_available"]
+
+    # Whether the *call* imported torch is only observable in an interpreter that
+    # has not already imported it, so the tripwire runs in a subprocess. Phase 11
+    # installed torch into the backend environment for serving, and the ML test
+    # suite imports it; asserting `"torch" not in sys.modules` here from inside
+    # the test session would now be asserting something about test ordering rather
+    # than anything about `collect_environment`, which is the failure mode this
+    # line exists to prevent.
+    probe = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys;"
+            "from ml.training.manifest import collect_environment;"
+            "collect_environment();"
+            "print('torch' in sys.modules)",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert probe.stdout.strip() == "False", (
+        "collect_environment must not import torch to describe it"
+    )
 
 
 def _torch_importable() -> bool:

@@ -12,6 +12,13 @@ then fails on every query with ``InterfaceError: Psycopg cannot use the
 'ProactorEventLoop' to run in async mode``.
 
 Run in Docker with a single worker; the engine is created per process.
+
+Startup also loads the Phase 11 intent classifier when ``ML_ENABLED`` is on,
+which reads ~703 MiB of weights from ``ml/artifacts``. It runs in a worker
+thread so the event loop is not blocked while that happens, and it degrades
+rather than crashing: without a checkpoint the server still starts and the ML
+endpoints answer 503. Set ``ML_FAIL_FAST=true`` to make a failed load stop the
+process instead.
 """
 
 from __future__ import annotations
@@ -23,6 +30,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
@@ -31,6 +39,7 @@ from app.core.logging import configure_logging, get_logger, log_event
 from app.core.middleware import RateLimitMiddleware, add_request_context_middleware
 from app.db import session as db_session
 from app.db.session import check_database_connection
+from app.ml.runtime import MLRuntime, get_ml_runtime
 
 __all__ = ["app", "create_app"]
 
@@ -78,7 +87,22 @@ _OPENAPI_TAGS: list[dict[str, object]] = [
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Stamp the uptime clock, configure logging, probe the database, dispose on exit."""
+    """Stamp the uptime clock, configure logging, probe the database, load ML, dispose on exit.
+
+    Startup does three things beyond the clock, and all three are advisory: the
+    database probe, the ML load, and the settings they are both given. A
+    deployment without a Postgres instance still serves, and a deployment
+    without a Phase 10 checkpoint still serves — it simply answers the ML
+    endpoints with 503 and a reason. Only ``ML_FAIL_FAST`` turns the second of
+    those into a refusal to boot.
+
+    The ML runtime is stored on ``app.state`` so a route can reach the one
+    loaded instance from the request rather than importing it. Note that the
+    test suite builds clients on ``ASGITransport`` **without running a
+    lifespan**, so ``app.state.ml_runtime`` is absent there; the provider in
+    :mod:`app.api.deps` falls back to the module singleton for that case, and
+    the shutdown below tolerates a runtime that was never attached.
+    """
     # `create_app` may have been handed settings that differ from the global
     # singleton, and those are the ones CORS, the docs URLs and the API prefix
     # were built from — logging and the probe must agree with them.
@@ -111,6 +135,38 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         database="connected" if database_ready else "unavailable",
     )
 
+    # Reading 703 MiB of weights takes seconds of blocked CPU. That happens in a
+    # worker thread rather than on the event loop, because a loop stalled during
+    # startup is a loop that cannot answer the probe that is waiting on it.
+    # The runtime is process state from the global settings singleton, exactly
+    # as the engine below is: an app built with its own `Settings` still shares
+    # the one model, because two would mean two copies of the weights and two
+    # answers to "is ML up" that could disagree.
+    runtime = get_ml_runtime()
+    app.state.ml_runtime = runtime
+    try:
+        status = await run_in_threadpool(runtime.load)
+    except Exception:
+        # Only reachable under ML_FAIL_FAST, where the runtime re-raises by
+        # design. Swallowing it here would turn a strict deployment into a
+        # silently degraded one and defeat the flag, so the status is read back
+        # for the log line and the process exits through the server's own
+        # lifespan failure handling.
+        status = runtime.status
+        log_event(logger, logging.ERROR, "ml_runtime_startup_failed", reason=status.reason)
+    # The runtime logs its own attempt with the checkpoint path and the load
+    # time; this line answers the different question "was ML ready by the time
+    # the server started serving", which is what an operator reads a boot log
+    # for. It duplicates nothing, and it is emitted whether the load came from
+    # here or from the first request to touch the classifier.
+    log_event(
+        logger,
+        logging.INFO if status.available else logging.WARNING,
+        "ml_runtime_ready",
+        available=status.available,
+        reason=status.reason,
+    )
+
     try:
         yield
     finally:
@@ -119,6 +175,12 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         engine = db_session._engine
         if engine is not None:
             await engine.dispose()
+        # The same rule for the model: an app whose lifespan never ran has no
+        # runtime on its state, and releasing "whatever the singleton is" would
+        # tear down a process that never took ownership of it.
+        runtime_on_state: MLRuntime | None = getattr(app.state, "ml_runtime", None)
+        if runtime_on_state is not None:
+            runtime_on_state.shutdown()
         logger.info("service_stopped")
 
 

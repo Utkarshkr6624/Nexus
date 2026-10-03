@@ -7,12 +7,14 @@ looks like once it is running.
 **Status.** The conventions below are the contract the whole API follows, and they were
 established by the Phase 2 identity slice — **16 paths and 17 operations** — which is
 described in full in the [Endpoint catalogue](#endpoint-catalogue). Phases 3 through 9
-added 170 further operations across 19 routers, for **140 paths and 187 operations** in
-total (`app.openapi()`, counted per path and method). The catalogue has **not** been
-extended to cover them; their per-module inventories live in the phase reports, and the
-conventions those phases established that were not already written down are in
-[Conventions from Phase 8 and Phase 9](#conventions-from-phase-8-and-phase-9). Three
-modules — Search, AI Assistant and Experiments — still have no API at all.
+added 170 further operations across 19 routers, and Phase 11 added 2 more across the
+twentieth, for **142 paths and 189 operations** in total (`app.openapi()`, counted per path
+and method). The catalogue has **not** been extended to cover them; their per-module
+inventories live in the phase reports, and the conventions those phases established that
+were not already written down are in
+[Conventions from Phase 8 and Phase 9](#conventions-from-phase-8-and-phase-9) and
+[Conventions from Phase 11](#conventions-from-phase-11-intent-routing). Three modules —
+Search, AI Assistant and Experiments — still have no API at all.
 
 The last remediation pass over Phases 1–9 changed three of those numbers and closed four
 gaps; both are recorded in [Remediation pass over Phases 1–9](#remediation-pass-over-phases-19).
@@ -34,6 +36,7 @@ gaps; both are recorded in [Remediation pass over Phases 1–9](#remediation-pas
 - [Rate limiting](#rate-limiting) | The 429 envelope, the two credential routes, and why `X-Forwarded-For` is off by default
 - [Pagination](#pagination)
 - [Conventions from Phase 8 and Phase 9](#conventions-from-phase-8-and-phase-9) | Route order, page-size caps as rejections, partial PATCH, one-producer stamps, unmodifiable identity columns, null-not-zero |
+- [Conventions from Phase 11](#conventions-from-phase-11-intent-routing) | The two intent-routing endpoints: what they return, what they refuse, and what a caller cannot do |
 - [Health semantics](#health-semantics)
 - [The client contract](#the-client-contract) | `ApiClient`, the services layer, the wire types, the codes only the client manufactures |
 - [Checklist for a new endpoint](#checklist-for-a-new-endpoint) | The rules a new route must satisfy |
@@ -92,12 +95,12 @@ README's troubleshooting section.
 ## Endpoint catalogue
 
 **The Phase 2 slice.** Health, auth and users — 17 operations across 16 paths, and the
-part of the API this document inventories route by route. The API as a whole serves 140
-paths and 187 operations; the other 170 operations belong to the modules Phases 3 through 9
-added (projects, tasks, tags, activity, calendar, work sessions, planner, availability,
+part of the API this document inventories route by route. The API as a whole serves 142
+paths and 189 operations; the other 172 operations belong to the modules Phases 3 through
+9 added (projects, tasks, tags, activity, calendar, work sessions, planner, availability,
 knowledge, analytics, developer, risks, recommendations, intelligence, learning, career)
-and are catalogued in the phase reports. Everything here still applies to every one of
-them unchanged.
+and to Phase 11's intent router, and are catalogued in the phase reports. Everything here
+still applies to every one of them unchanged.
 
 ### Unauthenticated
 
@@ -354,13 +357,19 @@ rest resolve through `_status_code_to_code`:
 | `bad_request` | 400 | Fallback for any unmapped 4xx; reserved as a domain code | Malformed request that is not schema-invalid |
 | `method_not_allowed` | 405 | `StarletteHTTPException` | Wrong verb on a known path |
 | `rate_limited` | 429 | `RateLimitMiddleware` | The client address exceeded its budget for this route inside the current window. See [Rate limiting](#rate-limiting) |
+| `ml_unavailable` | 503 | `MLUnavailableError` and its subclasses | ML is switched off, the trained checkpoint is not on disk, `torch` is missing, or a load failed. See [Conventions from Phase 11](#conventions-from-phase-11-intent-routing) |
 | `internal_error` | 500 | `NexusError` default, `StarletteHTTPException` 5xx, the catch-all handler | Unexpected failure; the client is told nothing |
 
 The code table is unchanged by Phase 2 — and by Phases 3 through 9, which added 170
 operations without needing a tenth code. The remediation pass did not add one either:
-`rate_limited` was already in the enum, and the limiter finally produces it. A new feature
-never needed a new code. What changed is **which situations produce the existing ones**, and
-one of them is a rule worth stating on its own:
+`rate_limited` was already in the enum, and the limiter finally produces it. **Phase 11
+did add one**, `ml_unavailable`, and it is worth saying why that took nine phases of
+deferring: a deployment with no classifier is a normal state, not an error, and folding it
+into `internal_error` would have sent every client down its "something is broken on our
+side" path for a feature an operator can switch back on with one environment variable. A
+503 with its own code is the only answer that tells a client *retry later* rather than
+*stop asking us*. What changed in the earlier phases is **which situations produce the
+existing codes**, and one of them is a rule worth stating on its own:
 
 - **A resource the caller does not own is `not_found` (404), never `forbidden` (403).**
   `DELETE /auth/sessions/{session_id}` answers 404 when the id belongs to another account,
@@ -871,10 +880,10 @@ returns `204` instead, which is the stronger signal. Prefer `204`.
 ## Conventions from Phase 8 and Phase 9
 
 Phases 3–9 added 170 operations that are **not** in the catalogue above, which was last
-revised for Phase 2. Rather than restate a catalogue that is already behind, this section
-records the conventions those phases established that are *not* already written down
-somewhere in this document. Everything else — the envelope, the code table, `404` over
-`403` — still applies unchanged.
+revised for Phase 2, and Phase 11 added two more. Rather than restate a catalogue that is
+already behind, this section records the conventions those phases established that are *not*
+already written down somewhere in this document. Everything else — the envelope, the code
+table, `404` over `403` — still applies unchanged.
 
 | Subsystem | Routes | Report |
 | --- | --- | --- |
@@ -885,6 +894,7 @@ somewhere in this document. Everything else — the envelope, the code table, `4
 | Risk and recommendations (Phase 7) | `/risks/*`, `/recommendations/*`, `/intelligence/*` | [`phase-7-report.md`](specifications/phase-7-report.md) |
 | Developer (Phase 8) | 14 under `/developer` | [`phase-8-developer-report.md`](specifications/phase-8-developer-report.md) |
 | Learning and career (Phase 9) | 19 under `/learning`, 12 under `/career` | [`phase-9-learning-career-report.md`](specifications/phase-9-learning-career-report.md) |
+| Intent routing (Phase 11) | `/ml/status`, `/ml/route` | [`phase-11-report.md`](specifications/phase-11-report.md) |
 
 Operation counts for every row — including the two Phase 8 and 9 figures, which the phase
 reports state as 15, 20 and 13 — were read off the generated OpenAPI document with
@@ -900,12 +910,12 @@ reports state as 15, 20 and 13 — were read off the generated OpenAPI document 
 | `/tasks` | 16 | `/developer` | 14 |
 | `/tags` | 5 | `/learning` | 19 |
 | `/activity` | 2 | `/career` | 12 |
-| `/planner` | 5 | | |
+| `/planner` | 5 | `/ml` | 2 |
 | `/calendar` | 5 | | |
 | `/work-sessions` | 7 | | |
 | `/availability` | 2 | | |
 
-That is **140 paths and 187 operations**, of which 16 paths and 17 operations are the Phase 2
+That is **142 paths and 189 operations**, of which 16 paths and 17 operations are the Phase 2
 slice catalogued above. The 15-versus-20-versus-13 figures in the two phase reports were
 counted before the remediation pass and are superseded by this table; each report carries the
 correction in its own remediation section rather than being quietly edited.
@@ -1065,6 +1075,149 @@ No route in either phase takes a user id — not as a path segment, not as a que
 not in a body. Every read and write resolves its row through an owner-scoped lookup, so
 another account's row is **404, never 403**, identically to an id nobody ever issued. See
 [Ownership answers 404](#ownership-answers-404-not-403).
+
+---
+
+## Conventions from Phase 11 — intent routing
+
+Phase 11 added two operations under `/ml` and one error code. They are described here
+rather than in the Phase 2 catalogue for the reason the Phases 3–9 routers are: the
+catalogue was last revised for a slice this document inventories route by route, and the
+interesting part of these two is what they refuse to do.
+
+### The two routes
+
+| Method | Path | Auth | Success | Notes |
+| --- | --- | --- | --- | --- |
+| `GET` | `/api/v1/ml/status` | bearer + `analytics.read` | 200, `MLStatusRead` — **including when ML is broken** | 401 unauthenticated, 403 without the permission, and nothing else. A disabled, unloaded or failed classifier is a 200 with `available: false` |
+| `POST` | `/api/v1/ml/route` | bearer + `analytics.read` | 200, `RoutingDecisionRead` | 503 `ml_unavailable` when nothing can classify; 422 `validation_error` for text that is blank, over-long or credential-shaped; 500 if inference fails on a request it should have been able to answer |
+
+Both take `AuthenticatedUser` rather than the plain current-user alias, because
+`/ml/route` accepts arbitrary free text and answers "which of NEXUS's surfaces does this
+mean" — an oracle over the taxonomy, free for an anonymous caller to enumerate, and
+exactly the shape of a model-extraction probe. The session-aware alias is used because it
+also honours revocation: a user who signed a device out must not keep routing through it
+for as long as the access token is still valid.
+
+Both are gated on `analytics.read`, which is a deliberate reuse rather than a missing
+`ml.*`. Phases 7, 8 and 9 all gate new surfaces on existing capabilities, and
+`tests/test_permissions.py` pins the `Permission` member set as a literal, so a new member
+would be a test edit as well as a grant decision.
+
+### `GET /api/v1/ml/status`
+
+A degraded classifier is a **200**, and that is the health-endpoint precedent verbatim: the
+endpoint reporting that a dependency is degraded is itself healthy. A 503 here would make
+the one route that could explain an outage part of the outage, and every caller that asked
+*what is wrong* would get *something is wrong* instead of the reason.
+
+| Field | Notes |
+| --- | --- |
+| `enabled` | Whether ML is switched on for this deployment (`ML_ENABLED`) |
+| `available` | Whether a working classifier can serve a prediction right now |
+| `unavailable_reason` | `disabled`, `checkpoint_missing`, `runtime_missing`, `load_failed`, … — a closed vocabulary rather than prose, because it is the string an operator branches on. Null when available |
+| `model` | The loaded checkpoint's identity, or `null` when nothing is loaded. An absent identity is a fact, not a hole in the response |
+| `threshold` | The `ML_CONFIDENCE_THRESHOLD` this process routes with |
+| `taxonomy_version` | `nexo_intents.v1` — the label set in use |
+| `intents` | Every class the classifier predicts, with its description, destination, destination kind and service |
+
+`intents` is the same table the router routes with, joined from the taxonomy rather than
+written out, so a client that renders "surfaces NEXUS offers" from this response cannot
+advertise a capability the router would refuse to route to.
+
+### `POST /api/v1/ml/route`
+
+The request body is one field, and nothing else is accepted:
+
+```json
+{ "text": "add a task to draft the migration plan for friday" }
+```
+
+| Rule | Why |
+| --- | --- |
+| `text` is required, `min_length=1`, `max_length=ML_MAX_INPUT_CHARS` (2000 by default) | The trained context is 128 subword tokens, so text past a couple of thousand characters is pure truncation: the bound exists to cap the request body, not to tune accuracy |
+| The text is passed through byte for byte | Phase 10 trained on the raw dataset strings; trimming or lower-casing here would be a distribution shift the model has never seen |
+| **Unknown keys are refused, not dropped** | Pydantic's default is to ignore an extra field, which would answer `{"text": …, "intent": …}` with a cheerful 200 and no sign that the client had tried to steer the classifier |
+| The caller's text is never logged | Only the intent, the confidence, the latency, the truncation flag and the character count are recorded |
+
+A second, higher ceiling of 4 000 characters lives in the classifier itself rather than in
+the schema, so that every caller — the route, a batch path, a script — is held to the same
+rule. The route's own bound is lower, so on HTTP the schema answers first.
+
+The response:
+
+| Field | Notes |
+| --- | --- |
+| `intent` | The winning intent name; always one of the fourteen |
+| `confidence` | **This utterance's** softmax probability. Not the model's test-set accuracy, and not a calibrated probability of being right |
+| `threshold` | The confidence below which NEXUS declines to name a service |
+| `status` | **The field to branch on.** One of `accepted`, `uncertain`, `out_of_scope`, `generation_unavailable` |
+| `destination` | An `api/v1/...` prefix, `large-model:unavailable`, or `abstain` |
+| `destination_kind` | `router`, `large_model`, or `fallback` |
+| `target` | `{service, module, entrypoint}` — a **pointer**, or `null` |
+| `reason` | Human-readable and safe to render. On `uncertain` it names the runner-up intents, so a client can offer "did you mean…?" |
+| `alternatives` | Up to three runner-up intents with their probabilities, highest first |
+
+All four statuses are **200**. `uncertain`, `out_of_scope` and `generation_unavailable`
+are answers the classifier gave on purpose, and each carries a `reason` the caller can
+show. Only a runtime that cannot classify at all is an error, and it fails closed:
+
+> `target` is `null` for `uncertain`, `out_of_scope` and `generation_unavailable` — for
+> **all fourteen intents**. That is the safety property: a low-confidence request can never
+> reach a service, least of all a mutating one.
+
+### The failures, precisely
+
+| Condition | Status | `code` | `details` |
+| --- | --- | --- | --- |
+| No working classifier — `ML_ENABLED=false`, no checkpoint on disk, no `torch`, or a load that failed | **503** | `ml_unavailable` | `reason`: the runtime's own vocabulary. Never a filesystem path |
+| `text` empty or whitespace-only | 422 | `validation_error` | `reason: "blank"`, `max_characters` |
+| `text` longer than the configured bound | 422 | `validation_error` | `max_characters`, `characters` |
+| `text` contains credential-shaped content (a live API key, a private-key block, a bearer token) and `ML_REJECT_CREDENTIALS` is on | 422 | `validation_error` | `reason: "credential_shaped"` and the **kind**. Never the matched value |
+| The model loaded and then failed on this request | 500 | `internal_error` | `null` — the fixed message, per [5xx is deliberately opaque](#5xx-is-deliberately-opaque) |
+
+The 503 is the important one, and it is a refusal rather than a failure: NEXUS will not
+answer with an invented intent. A caller's next move is to call a service on the strength
+of the answer, so a fabricated prediction would be NEXUS inventing a user's instruction and
+then acting on it.
+
+### What this surface will not do
+
+Four refusals, each of which is a rule rather than an omission:
+
+- **No logits, no tensors, no tokenizer ids, no stack frames, no absolute paths.** The
+  classifier's internals stop at a plain dataclass before anything leaves the process. A
+  client that could see them would be coupled to the checkpoint, and a checkpoint can be
+  retrained without a client changing. The resolved checkpoint path appears in exactly one
+  place — `model.checkpoint` on the diagnostics route — for an authenticated operator.
+- **The caller cannot choose which checkpoint answers.** `ML_MODEL_PATH` is deployment
+  configuration, reported on `/ml/status` and never accepted on `/ml/route`; a caller
+  able to set it would be choosing which weights answer them.
+- **The decision names a service; it does not call one.** Slot-filling an utterance into
+  `TaskService.create(...)` would need a second model or hand-written per-utterance
+  parsers. The caller makes the call, through the same authenticated, owner-scoped route
+  they would have used had they typed the request themselves.
+- **Two intents reach no service at all.** `code_assist` and `deep_reasoning` are trained
+  classes the model *will* return, and their destination is exactly
+  `large-model:unavailable`. NEXUS runs no generative model and says so rather than
+  answering a code question with a confident non-answer.
+
+### What `confidence` is not
+
+`confidence` is a softmax probability for this utterance. The threshold shipped with it,
+**0.90**, is an *integration* threshold: it was chosen by re-running the checkpoint over
+the 420-row held-out training split and measuring the trade between coverage and precision
+(0.90 keeps 95.2% of utterances and lifts precision on accepted requests from 0.9738 to
+0.9900). That is a number about the synthetic, template-generated corpus of Phase 10.
+
+On natural-language phrasings written specifically to break the classifier — lower case,
+ALL CAPS, no question mark, terse mobile phrasing, vocabulary away from the domain nouns
+the synthetic corpus leans on — it was right **42 of 56 times, 75.0%**. Seven of those
+fourteen misses were predicted at 0.82 or above and four at 0.90 or above, so the
+threshold does not catch them: **a model that is confidently wrong is confidently wrong.**
+A client should therefore branch on `status` and present `reason` and `alternatives` to the
+user, not treat `accepted` as a command. The full measurement and the fourteen misses are
+in [`specifications/phase-11-report.md`](specifications/phase-11-report.md).
 
 ---
 
@@ -1359,10 +1512,15 @@ Conventions that the suite encodes:
 **What is verified and what is not.** The frontend figures above are a real pass count —
 `npm test` was run end to end during the final remediation pass and reports **44 files,
 645 tests, all passing**. The backend figures are **collection** counts, taken from
-`pytest --collect-only` in this repository, and are labelled that way on purpose: the last
-full run before this pass was 2136 passed / 9 failed, the nine were fixed by the engineers
-who own those files, and one full run is scheduled once the pass lands. Collection proves
-what the suite contains, not that it passes, and this document does not claim otherwise.
+`pytest --collect-only`, and are labelled that way on purpose: collection proves what the
+suite contains, not that it passes. They were captured before Phases 10 and 11 added
+anything, so they understate the suite today; the most recent full backend run is recorded
+in [`development.md`](development.md) §10.
+
+```bash
+# Phase 11 — needs the trained checkpoint and torch; skips cleanly without them
+python -m pytest tests/test_ml_integration_*.py
+```
 
 What is **not** verified here is anything that needs a container. `docker compose up` has
 never been run: Docker is not installed in this environment, so `docker-compose.yml`
@@ -1400,7 +1558,8 @@ paragraph they remember.
   `meta` nesting for some time and is consumed by every knowledge, planner and work service.
   Both errors are gone.
 - **Operation counts were stale.** The file said 136 paths and 183 operations; the live
-  schema has **140 paths and 187 operations**. The per-prefix table under
+  schema had **140 paths and 187 operations** when this pass landed, and Phase 11 has since
+  taken it to 142 and 189. The per-prefix table under
   [Conventions from Phase 8 and Phase 9](#conventions-from-phase-8-and-phase-9) was rewritten
   from `app.openapi()`.
 - **`rate_limited` was listed as a known gap.** It is implemented.
@@ -1423,8 +1582,8 @@ drifted.
 
 ## Known gaps
 
-The first five of these are Phase 2 omissions, and none of them was closed by Phases 3–9.
-Two more that used to sit in this list — the claim that `rate_limited` had no producer, and
+Most of these are Phase 2 omissions, and none of them was closed by Phases 3–11. Two that
+used to sit in this list — the claim that `rate_limited` had no producer, and
 the claim that the frontend's `Paginated<T>` disagreed with the backend's `Page[T]` — were
 **false**, not open, and the [Remediation pass](#remediation-pass-over-phases-19) removed
 them. Read what is left
@@ -1434,6 +1593,13 @@ which records what the later phases added:
 - **Error responses are absent from the OpenAPI schema.** Operations declare only
   their success codes, so Swagger UI does not render the envelope. Fix by adding
   a shared `responses={...}` model and referencing it from each route.
+- **The ML endpoints are unusable on a fresh clone, by design.**
+  `backend/ml/artifacts/` is gitignored, so a checkout that has never run the Phase 10
+  training pipeline has no checkpoint and `POST /api/v1/ml/route` answers **503
+  `ml_unavailable`** with `reason: "checkpoint_missing"`. `GET /api/v1/ml/status` is the
+  route that explains it. This is a supported state, not a broken install, but it does mean
+  the ML surface is the one part of the API a new contributor cannot exercise without first
+  training a 703 MiB checkpoint.
 - **`GET /api/v1/users/` is a fixture, not a feature.** It exists so the role →
   permission wiring has a route whose refusal is observable end to end. It
   returns an unbounded list with no pagination, because a fixture that could

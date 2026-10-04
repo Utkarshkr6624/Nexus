@@ -1,7 +1,7 @@
 # NEXUS — Phase Specifications
 
-This directory holds the **authoritative specifications** for NEXUS Phases 3 through 11, exactly
-as they were issued by the project owner.
+This directory holds the **authoritative specifications** for NEXUS Phases 3 through 12,
+exactly as they were issued by the project owner.
 
 These are the contracts the code is built to. When the implementation and a specification
 disagree, the specification is what the work is measured against — and the disagreement should be
@@ -17,6 +17,15 @@ fixed in one direction or the other, never left ambiguous.
 | [`phase-8-9-developer-learning-career.md`](phase-8-9-developer-learning-career.md) | 8 + 9 | Developer Intelligence + Learning & Career Intelligence | ✅ Complete — [Phase 8 report](./phase-8-developer-report.md) · [Phase 9 report](./phase-9-learning-career-report.md) |
 | [`phase-10-architecture.md`](./phase-10-architecture.md) · [`phase-10-training.md`](./phase-10-training.md) · [`phase-10-report.md`](./phase-10-report.md) | 10 | ML Training — routing/intent classifier | ✅ Complete — the classifier was trained and evaluated ([report](./phase-10-report.md)) |
 | [`phase-11-ml-integration.md`](./phase-11-ml-integration.md) · [`phase-11-report.md`](./phase-11-report.md) | 11 | ML Integration — the trained classifier, served | ✅ Complete — two endpoints, and the Phase 10 checkpoint answers them ([report](./phase-11-report.md)) |
+| [`../phase-12-voice.md`](../phase-12-voice.md) | 12 | Voice — the browser's own Web Speech APIs as the interface to the one classifier | ✅ Complete — documented at [`docs/phase-12-voice.md`](../phase-12-voice.md), the path the Phase 12 brief specified |
+
+> **Where the Phase 12 document lives.** Phase 12 is indexed here because it is a phase,
+> but the document itself sits one directory up, at
+> [`docs/phase-12-voice.md`](../phase-12-voice.md), because that is the path the Phase 12
+> brief specified. It is deliberately *not* duplicated into `docs/specifications/` — two
+> copies of one document is one copy that will eventually be wrong. If a
+> `phase-12-voice.md` is ever added to this directory, this row is what should point at it
+> instead.
 
 ### Internal contracts
 
@@ -98,10 +107,10 @@ registered. Each feature row is stamped with a schema version
 (`developer_features.v1`, `learning_features.v1`, `career_features.v1`) so a Phase 10
 trainer knows what every column meant without having to trust the client that ordered them.
 
-That chain ends at Phase 11 rather than at Phase 10: Phase 10 trains the routing classifier
-and writes artifacts, and Phase 11 is what loads one inside the API process. The two are
-one pipeline with two boundaries, and the second boundary is where a model that was only
-ever measured becomes one that answers requests.
+That chain ends at Phase 12 rather than at Phase 10: Phase 10 trains the routing classifier
+and writes artifacts, Phase 11 is what loads one inside the API process, and Phase 12 is the
+interface in front of it. The first two are one pipeline with two boundaries, and the second
+boundary is where a model that was only ever measured becomes one that answers requests.
 
 ### Phase 10 — ML training
 
@@ -186,6 +195,49 @@ is itself healthy.
 | [`phase-11-ml-integration.md`](./phase-11-ml-integration.md) | The serving boundary: `app/ml/`, the two endpoints, the configuration surface, the label contract, and the rules about what may cross it |
 | [`phase-11-report.md`](./phase-11-report.md) | What was executed: the routing threshold and the measurements behind it, the generalisation results including the 75.0% that must not be softened, latency, and the limits of all three |
 
+### Phase 12 — Voice
+
+Phase 12 adds an interface, not a model. NEXO still runs exactly one — the Phase 10
+classifier, served by Phase 11 — and the voice layer is the thing a person talks to.
+
+```text
+microphone → SpeechRecognition (the browser's own, vendor-transcribed)
+              │  one final utterance, nothing else
+              ▼
+            /assistant  ──►  POST /api/v1/ml/route   (auth + analytics.read)
+              │                { text } — exactly one field, never the history
+              ▼
+            Phase 11 → the 14-class classifier → a routing decision
+              │
+              └──────────►  window.speechSynthesis  (local, the OS voice)
+```
+
+**No second model, no LLM, no Whisper, no cloud AI API, no paid service.** Speech-to-text
+uses the Web Speech API and text-to-speech uses `window.speechSynthesis`; neither is a model
+NEXO trains, serves or pays for, and that is precisely why they were chosen.
+
+**The one-model rule is what forced the privacy limitation.** Chrome and Edge transcribe on
+the browser vendor's servers — **your microphone audio leaves your machine** — and Firefox
+implements `SpeechRecognition` not at all. The only fully-local alternative is a local
+speech-recognition model, and adding one would breach the constraint the whole project is
+built on. So the trade is stated in the product: `speech-recognition.ts` exports a canonical
+`RECOGNITION_PRIVACY_NOTICE` the UI renders verbatim, the typed field is always available,
+and it is labelled as the only way in on a browser with no recogniser.
+
+**One utterance per turn, forever.** The classifier has no dialogue state, so history is
+never sent — a test asserts the request body is exactly `{ text }`. It exists only to render
+the log and to offer a "you last routed X" chip when a turn comes back `uncertain`.
+**NEXO routes, it does not answer**: a spoken request yields a named service and entrypoint
+(`TaskService.list`), and `code_assist` / `deep_reasoning` come back
+`generation_unavailable`, which is a stated capability gap. Executing the named action is
+Phase 13's Command Center and does not exist yet. And Phase 11's 75.0% carries forward
+unchanged — **voice is the same model behind a different input method, and improves nothing
+about it.**
+
+| Document | Covers |
+| --- | --- |
+| [`../phase-12-voice.md`](../phase-12-voice.md) | The whole phase: the microphone privacy limitation and why NEXO accepts it, the six-state lifecycle, both browser wrappers, the bounded conversation store, the API and status codes, security, testing, and the limitations that are not bugs |
+
 ## Standing rules that apply to every phase
 
 These recur in the specifications and are not restated in each file:
@@ -200,6 +252,10 @@ These recur in the specifications and are not restated in each file:
    running application, and the deterministic service behind an intent is still the thing that is
    actually called: a prediction below `ML_CONFIDENCE_THRESHOLD` names no service at all, and a
    deployment with no checkpoint answers 503 rather than guessing.
+   Phase 12 does not cash it in any further, and says so: the voice layer adds an interface
+   to the same classifier, sends it one utterance at a time, and names a service rather than
+   executing anything. A browser with no speech recogniser is a rendered state, not a broken
+   product, because the typed path is always there.
 3. **Explainability is a requirement, not a nicety.** Every score states its formula. Every risk
    states why it exists.
 4. **Ownership is enforced in the query.** Tenant scoping lives in the repository, never in a

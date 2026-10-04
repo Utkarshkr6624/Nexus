@@ -15,15 +15,25 @@ at all. The trained weights are read from the local filesystem
 (`backend/ml/artifacts/small-model/final/`, gitignored), never fetched. **Nothing
 the application serves makes a network call.**
 
+**One exception, and it is Phase 12's, not the application's.** When you press the
+microphone on `/assistant`, the *browser* streams your audio to the browser vendor for
+transcription — Google for Chrome, Microsoft for Edge. Firefox implements speech
+recognition not at all, so voice input does not exist there and the typed field is
+the only way in. This is a property of the Web Speech API, not of NEXO: there is no
+paid service, no cloud AI API, and no second model behind it. The full reasoning is
+in [`docs/phase-12-voice.md`](docs/phase-12-voice.md) §1, and the disclosure is
+rendered on the page itself.
+
 ---
 
-## Status: Phases 1 through 11 are delivered
+## Status: Phases 1 through 12 are delivered
 
 Phase 1 built the technical foundation and Phase 2 turned authentication into a real
 account system: persistent device sessions, a password policy, password recovery,
 role-based permissions, an audit trail, and a five-tab settings surface. Phases 3 to 9
-then made the module surface real, one module per phase. Phase 10 trained the model and
-Phase 11 put it on the request path. What exists today:
+then made the module surface real, one module per phase. Phase 10 trained the model,
+Phase 11 put it on the request path, and Phase 12 gave it a voice interface. What
+exists today:
 
 | Area | State |
 | --- | --- |
@@ -44,16 +54,20 @@ Phase 11 put it on the request path. What exists today:
 | Developer, Learning, Career (Phases 8 and 9) | Live — see [Phase 8 and Phase 9](#phase-8-and-phase-9--developer-learning-and-career) |
 | ML training (Phase 10) | **Done** — one model: a `deberta-v3-base` routing classifier over the 14 Nexo intents, trained on CPU and evaluated at 0.9738 accuracy / 0.9737 macro F1 on a 420-row held-out split. `backend/ml/`, a separate package and entry point (`python -m ml.train`); see [Phase 10](#phase-10--ml-training) |
 | ML integration (Phase 11) | **Delivered** — `backend/app/ml/` loads the Phase 10 checkpoint from the local filesystem and routes an utterance to an existing `app/services/` module. torch is imported lazily, so the app boots and serves every non-ML route without it; the ML endpoints answer `503 ml_unavailable` when the checkpoint or torch is missing, and the checkpoint is gitignored, so the feature is off on a fresh clone by design. No Phase 11 accuracy, test-count or latency figure is claimed here — see [Phase 11](#phase-11--ml-integration) |
-| Search, AI Assistant, Experiments | Designed placeholder pages only |
-| Automated tests | **2270 backend collected** (1029 offline, 1241 `integration`) — collection counts, not a pass count; and **645 frontend** in 44 files, all passing |
+| Voice assistant (Phase 12) | **Live** — `frontend/src/features/assistant/`. Speak or type one request on `/assistant`; the Phase 10/11 classifier returns one intent, a confidence and the validated service behind it. **⚠️ Chrome and Edge transcribe your audio on the browser vendor's servers — the audio leaves your machine. Firefox has no speech recognition at all.** Browser Web Speech API only: no second model, no LLM, no paid service. See [Phase 12](#phase-12--voice) |
+| Search, Experiments | Designed placeholder pages only |
+| Automated tests | **3 227 backend passed**, 14 xfailed, 1 skipped — a pass count; and **52 frontend test files, 799 passing**, of which 8 (156 cases) cover the voice feature |
 
 The backend figure is a **collection** count from `pytest --collect-only` in `backend/`, and
 it is labelled that way on purpose. The last full run before the final remediation pass was
 2136 passed and 9 failed; the nine were real defects — three of them lost user data — and
 they have been fixed by the engineers who own those files. One full run is scheduled once this
 pass lands, so nothing here claims a green backend run that has not happened. The frontend
-figure *is* a pass count: `npm test` touches no database, was run end to end, and reports 44
-files and 645 tests passing. Docker is still not installed on this machine, so
+figure is a **file count**, taken by counting `*.test.ts` / `*.test.tsx` under
+`frontend/src`: **52 files**, up from 44 before Phase 12, which added the eight assistant
+test files. The **pass count is 799, all green**, from a full `npm test` after Phase 12 —
+the previously quoted "645 tests in 44 files" described the suite before the assistant
+existed. Docker is still not installed on this machine, so
 `docker compose up` remains untested — see
 [Troubleshooting](#docker-compose-up-fails-before-anything-starts).
 
@@ -68,11 +82,17 @@ of zeros. Each of those has a regression test, each is recorded in
 [`docs/architecture.md` §18](docs/architecture.md#18-remediation-pass-over-phases-19) and in
 both phase reports, and the counts above were recounted rather than carried forward.
 
-**What does not exist yet.** Search, AI Assistant and Experiments are *designed
-placeholder pages only*. They render a real module description, the planned capabilities
+**What does not exist yet.** Search and Experiments are *designed placeholder pages
+only*. They render a real module description, the planned capabilities
 and the phase in which they ship — but they store nothing, compute nothing, and read no
 data. Every metric tile on those pages renders an em dash on purpose; no sample data is
 fabricated.
+
+**What is now different about the AI Assistant.** It used to be the third placeholder on that
+list. Phase 12 built it. It speaks and it types, it calls the one classifier NEXO runs, and
+it names the service a request maps to rather than answering the request — nothing behind
+that microphone could write prose, and no copy on the page pretends otherwise. It also
+executes nothing: naming `TaskService.list` is Phase 12, calling it is Phase 13.
 
 The rest of the routed surface is live. Login, Register, Forgot password and Reset
 password call the real auth endpoints; Dashboard polls service health from the API;
@@ -80,7 +100,8 @@ Settings carries profile, password, active sessions with per-device revoke and "
 everywhere", theme, and a password-protected account deletion. Projects, Project detail,
 Tasks, Planner, Month, Knowledge, Note detail, Concept detail, Analytics, Risk center,
 Recommendations, Developer, Developer repository, Learning and Career are all backed by
-real routes and real tables. The backend serves **140 paths and 187 operations**; the
+real routes and real tables. The AI Assistant is backed by the real `/api/v1/ml` routes and
+stores nothing of its own. The backend serves **140 paths and 187 operations**; the
 per-module inventories live in the phase reports and in
 [`docs/api-conventions.md`](docs/api-conventions.md).
 
@@ -323,6 +344,69 @@ latency, and at most a length.
 
 ---
 
+## Phase 12 — Voice
+
+Phase 12 gives the one model a voice. It adds **no model at all** — no second
+classifier, no LLM, no Whisper, no cloud AI API, no paid service — and it adds nothing
+to the backend. Speech-to-text is the browser's Web Speech API and text-to-speech is
+`window.speechSynthesis`; both are facilities the browser already ships.
+
+| Piece | What it does |
+| --- | --- |
+| `frontend/src/features/assistant/speech-recognition.ts` | A callback handle over `SpeechRecognition`, the browser-error-code table, the 15 s deadline, and the canonical privacy notice |
+| `frontend/src/features/assistant/speech-synthesis.ts` | A handle over `window.speechSynthesis`; overlap prevention, and blank text refused outright |
+| `frontend/src/features/assistant/use-voice-assistant.ts` | The six-state lifecycle, the one-request mutation, and the failure mapping |
+| `frontend/src/features/assistant/assistant-store.ts` | The conversation log — bounded at 20 turns, in memory, never persisted |
+| `frontend/src/features/assistant/components/` | The record button, the state pill, the routing outcome and the conversation log |
+| `frontend/src/pages/assistant-page.tsx` | The `/assistant` route, which used to render a placeholder |
+
+### ⚠️ The microphone leaves your device
+
+**In Chrome and Edge, speech recognition is not local.** `SpeechRecognition` streams your
+microphone audio to the browser vendor's own servers — Google for Chrome, Microsoft for
+Edge — and transcribes there. **Firefox implements `SpeechRecognition` not at all**, so
+voice input does not exist there at all.
+
+That is a real, unresolved limitation, and NEXO accepts it for one reason: the only
+fully-local alternative is a local speech-recognition **model**, and Phase 12's hard
+constraint is one model only — the Phase 10 classifier. Shipping Whisper would breach it.
+The disclosure is not left in a source file: `speech-recognition.ts` exports
+`RECOGNITION_PRIVACY_NOTICE` and the page renders that string verbatim, and a test asserts
+it still says the audio leaves the device.
+
+**What you can do:** use Chrome or Edge and accept the trade-off, or use the typed field,
+which never touches the microphone, works in every browser, and is labelled as the only way
+in where there is no recogniser. Nothing on `/assistant` claims recognition is local. The
+full account is in [`docs/phase-12-voice.md`](docs/phase-12-voice.md) §1.
+
+### Three things it does not do
+
+- **It does not remember.** The classifier has no dialogue state, so conversation history
+  is **never sent** — a test asserts the request body is exactly `{ text }`. History renders
+  the log and, when a turn comes back `uncertain`, offers a *"you last routed Tasks"* chip.
+  Referential follow-ups like *"tell me more about it"* are a known weak point; the UI
+  surfaces the previous surface rather than pretending to resolve the pronoun.
+- **It does not answer.** There is no generative model, so a spoken request produces a
+  routing decision naming an existing service (`TaskService.list`), not prose. `code_assist`
+  and `deep_reasoning` come back `generation_unavailable` — a stated capability gap, not a
+  fault, and reported as such.
+- **It does not execute.** The classifier produces a validated, named action against a
+  closed set of fourteen intents; calling it is Phase 13's Command Center and does not exist
+  yet.
+
+**Phase 11's accuracy finding carries forward unchanged:** 42/56 (75.0%) on hand-written
+natural language, seven misses collapsing into `risk_query`, five of them predicted at or
+above the 0.90 threshold. The confidence gate is a routing guard, not an accuracy defence.
+**Voice is the same model behind a different input method — it improves none of this.**
+
+### Configuration
+
+**There is none.** Phase 12 added no environment variable, no setting and no `.env` line.
+The existing `ML_*` settings govern the classifier; microphone permission is a
+browser-level grant that no server configuration can influence.
+
+---
+
 ## Architecture at a glance
 
 Everything runs on one machine. There is no external service of any kind that NEXUS
@@ -331,6 +415,11 @@ ever touches is the one-off checkpoint download during `make ml-train-small`, dr
 `make`, off the request path. Since Phase 11 the resulting classifier *is* loaded — from
 the local filesystem, in-process, by a lazily-imported torch — but it is still read from
 disk and never fetched at runtime.
+
+**The single exception is Phase 12's microphone, and it is not NEXUS's network.** When you
+press the record button, the browser sends your audio to its vendor — this project's
+"no outbound path" claim is about the application, and voice is the one place a browser
+NEXUS runs on reaches outside it. Nothing NEXO serves, fetches or bills for changes.
 
 ```
         ┌────────────────────────── your machine ──────────────────────────┐
@@ -438,9 +527,10 @@ Nexo/
         ├── main.tsx        React root
         ├── app/            providers, query client, theme provider, auth bootstrap
         ├── routes/         router, layouts, guards, lazy route table
-        ├── pages/          one file per route (search, assistant and experiments are placeholders)
+        ├── pages/          one file per route (search and experiments are placeholders)
         ├── features/       domain logic: auth, health, modules, settings, palette, work,
-        │                   planner, knowledge, analytics, risk, developer, learning, career
+        │                   planner, knowledge, analytics, risk, assistant, developer,
+        │                   learning, career
         ├── components/
         │   ├── ui/         design-system primitives (shadcn-style; some hand-rolled)
         │   ├── layout/     app shell, sidebar, top bar, menus, palette
@@ -481,7 +571,7 @@ Nexo/
 | Client state | Zustand 5 | auth session, theme, command palette, toasts |
 | Styling | Tailwind CSS 3.4 + shadcn/ui conventions | `cva` variants, lucide icons, and a small number of hand-rolled primitives where no Radix package is installed |
 | Charts | recharts 2.15 | reserved for the Analytics module |
-| Tests (frontend) | Vitest 3.2 + React Testing Library | 645 tests in 44 files |
+| Tests (frontend) | Vitest 3.2 + React Testing Library | **52 test files, 799 tests, all passing** (44 files and 645 before Phase 12) |
 
 Production bundle is code-split per route and by vendor group. Current build, uncompressed
 `frontend/dist/assets/` sizes, as produced by `npx vite build`: entry chunk `index`
@@ -489,9 +579,15 @@ Production bundle is code-split per route and by vendor group. Current build, un
 113,444 B, `router` 92,238 B and `data` 37,965 B. The largest real page chunk is now
 `learning-page` at 67,842 B, followed by `career-page` at 52,538 B, `developer-page` at
 35,303 B, `knowledge-page` at 34,610 B and `planner-page` at 32,662 B; `settings-page` is
-31,313 B. The shared `module-page` chunk the three remaining placeholder routes render is
+31,313 B. The shared `module-page` chunk the two remaining placeholder routes render is
 2,754 B, and `not-found-page` 2,314 B. A placeholder chunk growing by kilobytes is the
-signal that something page-specific has crept into it.
+signal that something page-specific has crept into it. `not-found-page` is 2,314 B.
+
+Phase 12 moved `/assistant` off `module-page`, and `assistant-page` is now a real
+page chunk at 26,510 B (8,970 B gzipped) — the voice feature, code-split so it
+loads only when the route does. That is the chunk to watch: it is the one place
+a browser API could quietly pull a dependency in, and the budget is what makes
+that visible.
 
 ---
 
@@ -815,7 +911,7 @@ Frontend — run from `frontend/`:
 npm run dev            # Vite dev server on :5173
 npm run build          # tsc -b && vite build
 npm run preview        # serve dist/ on :4173
-npm test               # vitest run (645 tests in 44 files)
+npm test               # vitest run (52 files, 799 tests, all passing)
 npm run test:watch     # vitest
 npm run test:coverage  # vitest run --coverage
 npm run lint           # eslint .
@@ -1051,27 +1147,31 @@ today.
 | 7 | Risks, Recommendations | Live | The risk register and the drafts derived from it |
 | 8 | Learning | **Delivered in Phase 9** | Goals, tracked skills, skill gaps |
 | 9 | Career | **Delivered in Phase 9** | Profile, dated records, portfolio evidence |
-| 9 | AI Assistant | Placeholder | Grounded local-LLM answers via Ollama, proposed actions |
 | 10 | Experiments | Placeholder | Hypothesis, bounded scope, keep-or-kill verdict |
+| 12 | AI Assistant | **Delivered in Phase 12** | Voice and typed input over the single intent classifier — it names the service a request maps to and routes it; it never answers, and executes nothing yet |
 
 Phase 2 was *infrastructure*, not product surface: it made the accounts behind the shell
 real and added no module. Note also that the module phases above are the ones recorded in
 `frontend/src/features/modules/catalog.ts` and describe when each **module** ships — they
 are not the same axis as the platform work recorded in the
-[Status](#status-phases-1-through-11-are-delivered) table, which is why both carry a
+[Status](#status-phases-1-through-12-are-delivered) table, which is why both carry a
 "Phase 2".
 
 Behind those modules sit infrastructure seams that are described in the extension-roadmap
 section of [`docs/architecture.md`](docs/architecture.md): Redis (replacing the in-process
 access-token revocation store), an audit-log pruning job (the retention setting exists; the
 job does not), background workers, a local model registry, and Ollama-backed local LLM
-features. Three seams are no longer seams: git repository analysis shipped in Phase 8 and
+features. Four seams are no longer seams: git repository analysis shipped in Phase 8 and
 reads local work trees through the `git` CLI, the ML training pipeline shipped in
-[Phase 10](#phase-10--ml-training) under `backend/ml/`, and Phase 11
+[Phase 10](#phase-10--ml-training) under `backend/ml/`, Phase 11
 ([ML integration](#phase-11--ml-integration)) loaded that checkpoint on the request path
-rather than leaving it on disk. Note that the `10 / Experiments` row above is the *module*
-axis, not the platform axis — the Experiments page is still a placeholder, while the Phase
-10 pipeline and the Phase 11 wiring are real work.
+rather than leaving it on disk, and Phase 12
+([voice](#phase-12--voice)) gave it an interface without adding a model. Note that the
+`10 / Experiments` row above is the *module* axis, not the platform axis — the Experiments
+page is still a placeholder, while the Phase 10 pipeline, the Phase 11 wiring and the Phase
+12 surface are real work. Note also that "Ollama-backed local LLM features" above is still a
+seam and still refused: **NEXO runs one model**, and the Phase 12 assistant routes to that
+model rather than generating with it.
 
 ---
 
@@ -1087,4 +1187,5 @@ axis, not the platform axis — the Experiments page is still a placeholder, whi
 | [`docs/specifications/phase-10-architecture.md`](docs/specifications/phase-10-architecture.md) | Where the Phase 10 `backend/ml/` package sits, its two interpreters, and its execution boundary |
 | [`docs/specifications/phase-10-training.md`](docs/specifications/phase-10-training.md) | The Phase 10 routing classifier and its evaluation, with what was executed |
 | [`docs/specifications/phase-10-report.md`](docs/specifications/phase-10-report.md) | The final Phase 10 run report: the corpus, the metrics, checkpoint/resume evidence, and the limitations |
-| [`docs/specifications/README.md`](docs/specifications/README.md) | The authoritative specifications for Phases 3–10 — projects and tasks, planner and scheduling, knowledge base, analytics, risk and recommendations, developer intelligence, learning and career, ML training — with the dependency chain each phase requires and the standing rules that apply to all of them |
+| [`docs/phase-12-voice.md`](docs/phase-12-voice.md) | Phase 12 — the voice interface over the one classifier: **the microphone privacy limitation and why NEXO accepts it**, the six-state lifecycle, both browser wrappers, the bounded conversation store, the API and status codes, security, testing, and the limitations that are not bugs |
+| [`docs/specifications/README.md`](docs/specifications/README.md) | The authoritative specifications for Phases 3–12 — projects and tasks, planner and scheduling, knowledge base, analytics, risk and recommendations, developer intelligence, learning and career, ML training, ML integration and voice — with the dependency chain each phase requires and the standing rules that apply to all of them |

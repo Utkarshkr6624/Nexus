@@ -379,3 +379,19 @@ export type {
   SkillRead,
   SkillUpdatePayload,
 } from './learning'
+
+export type {
+  DestinationKind,
+  IntentAlternative,
+  IntentName,
+  IntentRouteRead,
+  MlStatusRead,
+  ModelIdentityRead,
+  RouteUtterancePayload,
+  RoutingDecisionRead,
+  RoutingStatus,
+  ServiceTargetRead,
+} from './ml'
+
+// A value, so it cannot ride in the `export type` block above.
+export { ROUTING_TIMEOUT_MS } from './ml'

@@ -452,30 +452,33 @@ export const MODULES: ModuleDefinition[] = [
     to: '/assistant',
     label: 'AI Assistant',
     summary:
-      'A local-first assistant that answers from your own records and proposes work, not from a generic model.',
+      'A voice and typed interface over NEXO’s single intent classifier: it decides which part of NEXUS you meant and names the call.',
     vision:
-      'The assistant is the reason the rest of NEXUS stores data in a structured way. It reads across projects, tasks, notes and decisions you created, cites what it used, and proposes actions you approve rather than actions it takes. Inference runs against a model you control, and nothing leaves the machine unless you say so.',
-    phase: 9,
+      'NEXO runs one model — microsoft/deberta-v3-base, a fourteen-class intent classifier trained in Phase 10 — and this surface is the voice interface for it. It hears one utterance, returns one intent with a confidence and the validated NEXUS service behind it, and the interface says exactly that. It routes rather than answers, because there is no generative model behind it: code assistance and deep reasoning both come back as needing generation, and NEXO reports that rather than improvising. Recognition comes from the browser’s own Web Speech API, which adds no model NEXO does not already run, and each request is classified alone — a single-utterance classifier has no use for a history and no business being sent one.',
+    phase: 12,
     icon: Sparkles,
     keywords: ['ai', 'assistant', 'ask', 'copilot', 'llm'],
     capabilities: [
       {
-        title: 'Grounded answers',
-        description: 'Every answer cites the note, task or decision it was drawn from.',
+        title: 'Speak or type one request',
+        description:
+          'Chrome and Edge supply the microphone, Firefox does not, and typing works everywhere — so voice is never the only way in.',
       },
       {
-        title: 'Proposed actions',
-        description: 'Suggests changes for you to approve; it does not write silently.',
+        title: 'A named destination',
+        description:
+          'An accepted intent names the service and the call it would make — TaskService.list — so the decision is visible before anything runs.',
       },
       {
-        title: 'Local inference',
-        description: 'Runs against a model you host, with no external calls by default.',
+        title: 'Gaps reported as gaps',
+        description:
+          'Out-of-scope requests and the two generation-only intents are reported as what they are. NEXO runs no generative model and does not pretend to.',
       },
     ],
     metrics: [
-      { label: 'Conversations', hint: 'Requires assistant sessions' },
-      { label: 'Grounded answers', hint: 'Requires citation tracking' },
-      { label: 'Local model', hint: 'Requires a configured backend' },
+      { label: 'Turns in this session', hint: 'Kept in your browser, never sent as history' },
+      { label: 'Intents', hint: 'Fourteen classes, from Phase 10 training' },
+      { label: 'Routing threshold', hint: 'Below it the classifier abstains' },
     ],
   },
   {

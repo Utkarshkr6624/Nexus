@@ -81,6 +81,14 @@ class Settings(BaseSettings):
     # Lifetime of a password-reset token; short because the token is a bearer
     # credential for a full account takeover.
     password_reset_expire_minutes: int = 30
+    # Whether `POST /auth/password/forgot` may hand the raw reset token back in
+    # its response. Off by default: the endpoint answers identically for a
+    # registered and an unregistered address so it cannot enumerate accounts,
+    # and returning the token for one of them defeats that immediately — it
+    # turns a "forgot my password" call into an unauthenticated takeover for
+    # anyone who knows the address. A local install with no mail transport can
+    # turn it on to finish the flow by hand.
+    dev_expose_reset_token: bool = False
     # Hard ceiling on the age of a session row, independent of token rotation.
     # Without it a user who never logs out could keep rotating refresh tokens
     # indefinitely, so a session would outlive any actual sign-in event.
@@ -161,6 +169,14 @@ class Settings(BaseSettings):
     # this is the only bound that keeps a filtered port from hanging the probe
     # until the OS gives up.
     db_probe_timeout_seconds: float = 3.0
+    # Wall-clock budget for the TCP/TLS handshake itself, applied to every
+    # connection the application opens. Without it psycopg substitutes its own
+    # default of 130 seconds, so a database that is down — or a port that is
+    # filtered rather than refused — turned every request that touches it into
+    # a two-minute stall instead of a prompt failure. `pool_timeout` cannot
+    # cover this: it bounds the wait for a free pool slot, and a new physical
+    # connection is opened outside that wait.
+    db_connect_timeout_seconds: int = 5
 
     # -- Planner (Phase 4) ---------------------------------------------------
     # IANA zone used when a request does not pass `tz`. Every stored instant is
@@ -195,10 +211,10 @@ class Settings(BaseSettings):
     analytics_productivity_weight_deadline: float = 25.0
     analytics_productivity_weight_consistency: float = 20.0
     analytics_productivity_weight_focus: float = 25.0
-    # Period lengths the API offers for period-over-period comparison, as a
-    # comma-separated string so it is pleasant to set in .env (the same reason
-    # `cors_origins` is one). Parsed by `analytics_comparison_window_days`,
-    # which is what the code reads.
+    # Period lengths the API offers for period-over-period comparison. The
+    # analytics endpoints derive each comparison period from the range the
+    # caller asked for, so this is not read anywhere; it is kept only so an
+    # existing .env carrying it does not fail validation.
     analytics_comparison_windows: str = "7,30,90"
     # Default window when a request names no dates. A week is the shortest span
     # that can distinguish a habit from a one-off.
@@ -409,23 +425,6 @@ class Settings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def analytics_comparison_window_days(self) -> list[int]:
-        """``analytics_comparison_windows`` parsed into usable day counts.
-
-        Unparsable entries are dropped rather than raising: this feeds a list of
-        suggested period lengths, and a typo in one of them should cost the user
-        that suggestion rather than stop the process from booting. An empty
-        result is still honest — it renders as "no comparison periods" instead of
-        as a fabricated default.
-        """
-        windows: list[int] = []
-        for part in self.analytics_comparison_windows.split(","):
-            candidate = part.strip()
-            if candidate.isdigit() and int(candidate) > 0:
-                windows.append(int(candidate))
-        return windows
-
-    @property
     def cors_origin_list(self) -> list[str]:
         """Parsed CORS origins, empty strings removed."""
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
@@ -523,6 +522,13 @@ class Settings(BaseSettings):
             if self.secret_key == INSECURE_DEV_SECRET_KEY:
                 raise ValueError(
                     "SECRET_KEY must be set to a strong random value when ENVIRONMENT=production."
+                )
+            if "*" in self.cors_origin_list:
+                raise ValueError(
+                    "CORS_ORIGINS must not contain '*' when ENVIRONMENT=production. "
+                    "Credentials are allowed on every API response, so a wildcard "
+                    "lets any site on the internet make authenticated, "
+                    "cookie-bearing requests against this API."
                 )
             if self.debug:
                 raise ValueError("DEBUG must be false when ENVIRONMENT=production.")

@@ -44,7 +44,7 @@ import {
 } from '@/features/career/components/career-vocabulary'
 import { NO_VALUE, formatNumber } from '@/features/analytics/format'
 import { ApiError } from '@/lib/api-client'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import type {
   CareerEvidenceListRead,
@@ -206,12 +206,7 @@ function createTestClient(): QueryClient {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

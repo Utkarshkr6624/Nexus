@@ -375,22 +375,33 @@ function OverviewTab({
               isEmpty={overview.daily.length === 0}
               emptyMetric="overview"
             />
-            <TrendChart
-              title="Tasks completed against the previous period"
-              subtitle={rangeLabel}
-              kind="line"
-              isLoading={completedTrend.isPending}
-              data={(completedTrend.data ?? []).map((point) => ({
-                label: point.bucket ? formatMetricDate(point.bucket) : point.label,
-                completed: point.value,
-                previous: point.previous,
-              }))}
-              series={[
-                { key: 'completed', label: 'This period' },
-                { key: 'previous', label: 'Previous period', colorIndex: 4 },
-              ]}
-              emptyMetric="trend"
-            />
+            {/* Gated like every other panel here. A 5xx or a timeout turns this
+                read's data into `[]`, and the chart would then say the window
+                held no completions — inverting a failed read into a claim
+                about the work. */}
+            <QueryGate
+              query={completedTrend}
+              label="Loading the comparison"
+              onRetry={() => void completedTrend.refetch()}
+            >
+              {(points) => (
+                <TrendChart
+                  title="Tasks completed against the previous period"
+                  subtitle={rangeLabel}
+                  kind="line"
+                  data={points.map((point) => ({
+                    label: point.bucket ? formatMetricDate(point.bucket) : point.label,
+                    completed: point.value,
+                    previous: point.previous,
+                  }))}
+                  series={[
+                    { key: 'completed', label: 'This period' },
+                    { key: 'previous', label: 'Previous period', colorIndex: 4 },
+                  ]}
+                  emptyMetric="trend"
+                />
+              )}
+            </QueryGate>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">

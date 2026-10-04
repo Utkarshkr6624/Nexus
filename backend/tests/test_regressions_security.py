@@ -26,14 +26,12 @@ of*:
   row — is marked ``integration`` and runs against the ``nexus_test`` database
   the suite's conftest provisions.
 
-**One of the ``integration`` tests in this file does not pass, and the reason is
-not the filter it tests.** ``app/api/v1/auth.py:165`` calls
-``SessionRead.model_validate(row, update=...)``, and Pydantic v2 has no
-``update`` keyword, so ``GET /api/v1/auth/sessions`` answers 500 for every
-caller. That breaks ``test_an_expired_session_is_not_listed`` here and four
-pre-existing tests in ``test_sessions.py``. The application is not this test
-file's to fix, so the defect is left standing and reported; the test stays
-because it is the assertion the fix is supposed to make true.
+**Every one of these is executed.** The session-listing defect once reported
+here — ``app/api/v1/auth.py`` building a ``SessionRead`` with a Pydantic
+keyword that does not exist, so ``GET /api/v1/auth/sessions`` answered 500 —
+has been fixed in the application; ``SessionRead.for_request`` is what the
+router calls now, and ``test_an_expired_session_is_not_listed`` passes against
+it rather than standing as a claim.
 """
 
 from __future__ import annotations
@@ -595,12 +593,11 @@ async def test_a_replayed_refresh_token_is_refused_end_to_end(client):
     assert replay.status_code == 401, replay.text
     # The new pair is still the only live one: the replay must not have
     # invalidated the legitimate client's tokens by overwriting the digest.
-    assert (
-        await client.get("/api/v1/auth/me", headers=_bearer(tokens["access_token"]))
-    ).status_code in (
-        200,
-        401,
-    )
+    # 401 here is exactly the failure this test exists to catch — the replay
+    # revoking the session the legitimate client is still using — so there is
+    # nothing to allow here.
+    me = await client.get("/api/v1/auth/me", headers=_bearer(tokens["access_token"]))
+    assert me.status_code == 200, me.text
 
 
 # ---------------------------------------------------------------------------

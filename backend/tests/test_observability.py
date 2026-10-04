@@ -430,17 +430,41 @@ def test_the_startup_database_probe_reports_a_verdict():
     assert "check_database_connection()" in source
 
 
-async def test_the_database_probe_answers_a_verdict_and_never_raises():
-    """The behaviour behind that line, driven for real.
+async def test_the_database_probe_reports_a_reachable_database(engine):
+    """The healthy half of the probe, driven against the migrated test database.
+
+    ``engine`` is requested for its side effect: the fixture installs it as the
+    process-wide engine the probe reaches through ``get_engine()``. Without that
+    the probe would answer a verdict about whatever the ambient settings point
+    at, which is not a thing this file is allowed to assert about.
+    """
+    from app.db.session import check_database_connection
+
+    assert await check_database_connection() is True
+
+
+async def test_the_database_probe_reports_an_unreachable_database_and_never_raises(
+    unreachable_engine, monkeypatch
+):
+    """The half the ``database_probe`` log line exists for, driven for real.
 
     A probe that raised would take the whole boot with it; a probe that hung
     would stall startup until the OS TCP timeout. Both are the reason the
     function swallows and bounds its own work, and both are what make the
     ``database_probe`` log line worth reading.
-    """
-    from app.db.session import check_database_connection
 
-    assert await check_database_connection() in (True, False)
+    Only the engine underneath is replaced — the probe itself is the real one —
+    because an implementation that let an exception out of its ``finally``
+    (closing a connection whose ``__aenter__`` never completed is exactly that
+    exception) would be invisible to a test that stubs the probe out. Asserting
+    the boolean *and* the absence of a raise is what makes this the regression
+    test for that defect.
+    """
+    from app.db import session as app_db_session
+
+    monkeypatch.setattr(app_db_session, "get_engine", lambda: unreachable_engine)
+
+    assert await app_db_session.check_database_connection() is False
 
 
 # ---------------------------------------------------------------------------

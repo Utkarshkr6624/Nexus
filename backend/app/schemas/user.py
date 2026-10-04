@@ -57,8 +57,17 @@ __all__ = [
     "validate_password_strength",
 ]
 
-#: bcrypt silently truncates beyond 72 bytes, so cap the input instead.
-MAX_PASSWORD_LENGTH = 128
+#: The longest password this schema accepts, counted in **UTF-8 bytes**.
+#:
+#: bcrypt hashes at most 72 bytes of input and silently ignores everything past
+#: them, so a longer password is interchangeable with its own first 72 bytes:
+#: appending "whatever you like" to a rejected password would still sign in. The
+#: unit therefore has to be the one bcrypt truncates in — characters, which is
+#: what a 128-character cap used to measure, is a different quantity entirely
+#: for anything non-ASCII. 72 is chosen because it is bcrypt's own limit: not
+#: one byte of an accepted password is discarded, and no tighter rule is imposed
+#: on the ASCII passwords the policy is otherwise written for.
+MAX_PASSWORD_LENGTH = 72
 MAX_EMAIL_LENGTH = 320
 #: Must match ``app.models.user._MAX_USERNAME_LENGTH``.
 MAX_USERNAME_LENGTH = 32
@@ -223,11 +232,12 @@ def validate_password_strength(value: str) -> str:
     Raises:
         ValueError: If the password is shorter than
             ``settings.password_min_length``, longer than
-            :data:`MAX_PASSWORD_LENGTH`, or is missing an uppercase letter, a
-            lowercase letter, a digit or a special character.
+            :data:`MAX_PASSWORD_LENGTH` bytes once encoded, or is missing an
+            uppercase letter, a lowercase letter, a digit or a special
+            character.
     """
-    if len(value) > MAX_PASSWORD_LENGTH:
-        raise ValueError(f"Must be at most {MAX_PASSWORD_LENGTH} characters.")
+    if len(value.encode("utf-8")) > MAX_PASSWORD_LENGTH:
+        raise ValueError(f"Must be at most {MAX_PASSWORD_LENGTH} bytes.")
     for rule, criterion, satisfied in _rule_results(value):
         if not satisfied:
             raise ValueError(f"Password must contain {criterion} ({rule.label}).")
@@ -261,7 +271,10 @@ def password_rule_status(password: str) -> list[dict[str, object]]:
 
 #: A password that may be *stored*. The minimum length is deliberately absent
 #: from the ``Field``: it is a setting, not a constant, and duplicating it here
-#: would let the advertised schema and the enforced rule disagree.
+#: would let the advertised schema and the enforced rule disagree. The
+#: ``max_length`` is the byte budget read as a character count, which is a sound
+#: over-approximation of it — a shorter string can still be longer in bytes, and
+#: that is what the validator below catches.
 Password = Annotated[
     str,
     Field(

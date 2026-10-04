@@ -24,7 +24,11 @@ export function AuthBootstrap({ children }: { children: ReactNode }) {
   const hydrate = useAuthStore((state) => state.hydrate)
 
   useEffect(() => {
-    void hydrate()
+    // `hydrate` reports its verdict through the store rather than by throwing,
+    // but nothing it can be faulted on — storage, a listener in
+    // `announceSessionChange` — may leave an unhandled rejection behind: the
+    // guards are already showing the boot screen, and no retry follows it.
+    void hydrate().catch(() => undefined)
   }, [hydrate])
 
   return children

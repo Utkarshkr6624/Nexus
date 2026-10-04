@@ -107,6 +107,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('a rotation that lands after the session moved on', () => {
@@ -303,6 +304,231 @@ describe('boot verification of a persisted session', () => {
 
   it('treats a 404 from a wrong base URL as no verdict', async () => {
     await driveBootVerification(404)
+  })
+})
+
+describe('a persisted session whose access token has expired', () => {
+  /**
+   * The bug this guards is a hang, not a wrong verdict: the boot check reached
+   * 'superseded' — because the API client's own 401 recovery rotated the pair
+   * out from under the guard `loadUser` was holding — and 'superseded' ends the
+   * check without deciding anything. Nothing then set a status, so both route
+   * guards rendered "Restoring session" for the rest of the session's life.
+   */
+  it('renews it and lands on authenticated instead of stalling on the boot screen', async () => {
+    useAuthStore.setState({
+      accessToken: 'expired-access',
+      refreshToken: 'expired-refresh',
+      user: USER_A,
+      status: 'initializing',
+      pending: false,
+      error: null,
+    })
+
+    const presented: string[] = []
+    let refreshCalls = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.includes('/auth/refresh')) {
+          refreshCalls += 1
+          return json(tokenPair('fresh-access', 'fresh-refresh', SESSION_A))
+        }
+        if (url.includes('/auth/me')) {
+          const bearer = new Headers(init?.headers).get('Authorization') ?? ''
+          presented.push(bearer)
+          // Only the stored token is spent; the renewed one identifies the user.
+          return bearer === 'Bearer fresh-access'
+            ? json(USER_A)
+            : json(errorBody('unauthorized', 'Not authenticated'), 401)
+        }
+        return json(errorBody('not_found', 'Not found'), 404)
+      }),
+    )
+
+    await useAuthStore.getState().hydrate()
+
+    expect(presented).toEqual(['Bearer expired-access', 'Bearer fresh-access'])
+    // One single-use refresh token spent, not one per attempt.
+    expect(refreshCalls).toBe(1)
+
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('authenticated')
+    expect(state.accessToken).toBe('fresh-access')
+    expect(state.refreshToken).toBe('fresh-refresh')
+    expect(state.user?.id).toBe(USER_A.id)
+    expect(state.pending).toBe(false)
+  })
+})
+
+describe('a sign-in whose /auth/me is refused', () => {
+  /**
+   * A token the backend has just minted can still arrive spent — a race, a
+   * proxy in the middle, a clock that disagrees. The client's recovery renews
+   * it and replays the request, and that renewal is the same session with newer
+   * tokens, so the store adopts the account it got back rather than reporting a
+   * superseded sign-in and leaving a fresh pair on an anonymous store.
+   */
+  function stubRenewingBackend(): () => number {
+    let refreshCalls = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.includes('/auth/refresh')) {
+          refreshCalls += 1
+          return json(tokenPair('a2', 'r2', SESSION_A))
+        }
+        if (url.includes('/auth/login')) return json(tokenPair('a1', 'r1', SESSION_A))
+        if (url.includes('/auth/register')) return json(USER_A, 201)
+        if (url.includes('/auth/me')) {
+          const bearer = new Headers(init?.headers).get('Authorization') ?? ''
+          return bearer === 'Bearer a2'
+            ? json(USER_A)
+            : json(errorBody('unauthorized', 'Not authenticated'), 401)
+        }
+        return json(errorBody('not_found', 'Not found'), 404)
+      }),
+    )
+    return () => refreshCalls
+  }
+
+  it('signs the user in after the client renews the token it just minted', async () => {
+    const refreshCalls = stubRenewingBackend()
+
+    await useAuthStore.getState().login({ email: USER_A.email, password: 'irrelevant' })
+
+    expect(refreshCalls()).toBe(1)
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('authenticated')
+    expect(state.pending).toBe(false)
+    expect(state.error).toBeNull()
+    expect(state.accessToken).toBe('a2')
+    expect(state.refreshToken).toBe('r2')
+    expect(state.user?.id).toBe(USER_A.id)
+  })
+
+  it('signs the user in the same way when the account was just created', async () => {
+    const refreshCalls = stubRenewingBackend()
+
+    await useAuthStore.getState().register({
+      email: USER_A.email,
+      username: USER_A.username,
+      password: 'irrelevant',
+    })
+
+    expect(refreshCalls()).toBe(1)
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('authenticated')
+    // The create-account form's spinner is released the same way: nothing about
+    // the renewal may leave it on "Creating account…".
+    expect(state.pending).toBe(false)
+    expect(state.error).toBeNull()
+    expect(state.accessToken).toBe('a2')
+    expect(state.user?.id).toBe(USER_A.id)
+  })
+
+  it('reports the failure and releases the form when the request fails after a renewal', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (url.includes('/auth/refresh')) return json(tokenPair('a2', 'r2', SESSION_A))
+        if (url.includes('/auth/login')) return json(tokenPair('a1', 'r1', SESSION_A))
+        if (url.includes('/auth/me')) {
+          const bearer = new Headers(init?.headers).get('Authorization') ?? ''
+          if (bearer === 'Bearer a2') {
+            return json(errorBody('internal_error', 'Backend is unhappy'), 500)
+          }
+          return json(errorBody('unauthorized', 'Not authenticated'), 401)
+        }
+        return json(errorBody('not_found', 'Not found'), 404)
+      }),
+    )
+
+    await useAuthStore.getState().login({ email: USER_A.email, password: 'irrelevant' })
+
+    const state = useAuthStore.getState()
+    // The renewal replaced the refresh token this call claimed, so the guard
+    // that used to skip the whole catch body saw a pair that was not its own
+    // and reported nothing at all — no message and a permanently disabled form.
+    expect(state.error).not.toBeNull()
+    expect(state.pending).toBe(false)
+    // The renewed pair never became a session, so it does not survive either.
+    expect(state.status).toBe('anonymous')
+    expect(state.accessToken).toBeNull()
+    expect(state.refreshToken).toBeNull()
+  })
+})
+
+describe('storage that refuses to be written', () => {
+  /**
+   * zustand guards the storage *accessor*, not the writes: a `setItem` that
+   * throws (quota, private browsing) made every store write a rejected promise,
+   * which showed up as a sign-in stuck on "Signing in…", a sign-out that never
+   * navigated, and a boot screen that never left. Persistence is lost; nothing
+   * else may be.
+   */
+  it('degrades to an in-memory session rather than rejecting the actions', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes('/auth/login')) return json(tokenPair('a1', 'r1', SESSION_A))
+        if (url.includes('/auth/me')) return json(USER_A)
+        if (url.includes('/auth/logout')) return new Response(null, { status: 204 })
+        return json(errorBody('not_found', 'Not found'), 404)
+      }),
+    )
+
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+    })
+
+    await useAuthStore.getState().login({ email: USER_A.email, password: 'irrelevant' })
+
+    expect(setItem).toHaveBeenCalled()
+    const signedIn = useAuthStore.getState()
+    expect(signedIn.status).toBe('authenticated')
+    expect(signedIn.pending).toBe(false)
+    expect(signedIn.user?.id).toBe(USER_A.id)
+
+    // And the sign-out that a rejected write used to swallow whole, leaving the
+    // user on a signed-in shell that no longer matches the backend.
+    await expect(useAuthStore.getState().logout()).resolves.toBeUndefined()
+    expect(useAuthStore.getState().status).toBe('anonymous')
+  })
+
+  it('still reaches a verdict at boot, rather than pinning the app on the boot screen', async () => {
+    // The shape a reload restores: a pair and a user, with `status` recomputed
+    // by `hydrate` rather than persisted.
+    useAuthStore.setState({
+      accessToken: 'stored-access',
+      refreshToken: 'stored-refresh',
+      user: USER_A,
+      status: 'initializing',
+      pending: false,
+      error: null,
+    })
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+    })
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes('/auth/me')) return json(USER_A)
+        return json(errorBody('not_found', 'Not found'), 404)
+      }),
+    )
+
+    await expect(useAuthStore.getState().hydrate()).resolves.toBeUndefined()
+
+    const state = useAuthStore.getState()
+    expect(state.status).toBe('authenticated')
+    expect(state.user?.id).toBe(USER_A.id)
   })
 })
 

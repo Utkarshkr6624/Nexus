@@ -94,7 +94,6 @@ rearranged by an edit they did not make.
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, date, datetime, timedelta
@@ -1575,15 +1574,20 @@ class TaskService:
         Two values on a task are not properties of the row and are filled in
         here: the tag ids, fetched for the whole page in **one** query through
         :meth:`~app.repositories.tag.TagRepository.list_tags_for_tasks` rather
-        than one per row, and ``has_blocked_dependencies``.
+        than one per row, and ``has_blocked_dependencies``, fetched the same way
+        through :meth:`~app.repositories.task.TaskRepository.blocked_task_ids` —
+        one statement over the page's own ids, not one dependency lookup per row.
 
-        The blocked flag is the weaker of the two: it costs one dependency query
-        per row, so a fifty-row page is fifty small indexed lookups. They are
-        issued concurrently, but they share one request-scoped session and so do
-        not truly run in parallel. It is still worth paying, because a board that
-        reports a blocked card as ready is wrong rather than slow, and the fix —
-        a bulk ``blocked_task_ids(task_ids)`` on the repository — is a
-        repository change rather than a service one. Flagged for review.
+        The flag is worth a statement per page rather than none at all: a board
+        that reports a blocked card as ready is wrong rather than slow. The
+        earlier shape of this method asked the question per row, which meant
+        fifty small indexed lookups on a full page, and its first attempt fixed
+        the round trips by ``asyncio.gather``-ing them instead. That was worse
+        than slow: an ``AsyncSession`` is documented as not safe for concurrent
+        use and there is one per request, so fifty gathered coroutines interleaved
+        fifty statements over a single connection. The repository now answers the
+        whole page in one statement, which is the only shape of this question that
+        is both cheap and sequential.
 
         A third value is passed rather than derived: ``today``, from the
         database clock (see :meth:`_today`), so every row on the page answers
@@ -1593,22 +1597,66 @@ class TaskService:
         """
         task_ids = [row.id for row in rows]
         tags = await self.tag_repository.list_tags_for_tasks(task_ids)
-        blocked = await asyncio.gather(
-            *(self._has_open_dependencies(row.id, owner) for row in rows)
-        )
+        blocked = await self.repository.blocked_task_ids(task_ids, owner.id)
+        await self._refuse_on_drifted_prerequisites(task_ids, owner)
         today = await self._today()
         return Page[TaskRead](
             items=[
                 TaskRead.build(
                     row,
                     tag_ids=[tag.id for tag in tags.get(row.id, [])],
-                    has_blocked_dependencies=is_waiting,
+                    has_blocked_dependencies=row.id in blocked,
                     today=today,
                 )
-                for row, is_waiting in zip(rows, blocked, strict=True)
+                for row in rows
             ],
             meta=PageMeta(total=total, limit=limit, offset=offset),
         )
+
+    async def _refuse_on_drifted_prerequisites(
+        self, task_ids: Sequence[uuid.UUID], owner: User
+    ) -> None:
+        """Raise if any prerequisite on the page carries a status nothing can name.
+
+        :func:`_current_status` raises on a drifted status rather than defaulting
+        to one, and a bulk query cannot inherit that for free: ``status !=
+        'completed'`` in SQL cannot tell a row nobody can interpret from an
+        ordinary ``todo``, so without this a corrupted card would be reported as
+        merely unfinished and the page would render it as ordinary work.
+
+        ``tasks.status`` is a ``String(16)`` with no ``CHECK`` constraint and no
+        native enum, so a drifted value is reachable by any writer that skips
+        :func:`~app.models.enums.validate_task_status` — an import, a script, a
+        column edited by hand — and this raise is the only thing that reports it.
+        :attr:`~app.models.task.Task.status_enum` returning ``None`` is the same
+        observation from Python, and equally silent.
+
+        It costs one statement over the page's ids, so the page still pays a
+        fixed number of round trips rather than one per row, and it is checked
+        over the same ids the blocked flag is: a card nobody on this page is
+        waiting on has never reached this method and still does not.
+
+        One difference from the row-by-row path it replaces, and it is the point
+        of the change. That path evaluated ``_current_status`` inside ``any()``,
+        which stops at the first prerequisite that is not completed, so whether a
+        page rendered or failed depended on the *board position* of a corrupted
+        card relative to the unfinished one beside it. Any drifted prerequisite
+        the page can see raises now.
+
+        Args:
+            task_ids: The cards the page is rendering.
+            owner: The authenticated caller, applied to the prerequisite.
+
+        Raises:
+            ValidationError: If a prerequisite on the page has a status outside
+                :class:`~app.models.enums.TaskStatus`.
+        """
+        drifted = await self.repository.list_drifted_prerequisites(task_ids, owner.id)
+        if drifted:
+            # Raises. Called for its raise rather than for a return so the
+            # message is the one this service has always sent for this row,
+            # raised by the one function that words it.
+            _current_status(drifted[0])
 
     async def _has_open_dependencies(self, task_id: uuid.UUID, owner: User) -> bool:
         """Report whether any prerequisite of one task is unfinished."""

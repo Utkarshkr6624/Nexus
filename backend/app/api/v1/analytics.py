@@ -52,7 +52,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy import func, select
 
-from app.api.deps import AnalyticsServiceDep, AuthenticatedUser, DbSession, SettingsDep
+from app.api.deps import (
+    AnalyticsServiceDep,
+    AuthenticatedUser,
+    DbSession,
+    SettingsDep,
+    get_authenticated_user,
+)
 from app.core.deps import require_permission
 from app.core.permissions import Permission
 from app.schemas.analytics import (
@@ -545,7 +551,14 @@ async def rebuild(
     "/export",
     response_model=CsvExportManifestRead,
     summary="Which CSV datasets exist, and their columns",
-    dependencies=_ANALYTICS_READ,
+    # The route takes no caller, so nothing here would consult the ``sessions``
+    # table on its own. ``require_permission`` resolves the caller through
+    # ``app.core.deps.get_current_user``, which never does — a revoked or
+    # superseded bearer therefore kept reaching this manifest for the whole
+    # ``ACCESS_TOKEN_EXPIRE_MINUTES``. Adding the check as a dependency rather
+    # than a parameter is deliberate: it says "the token must still be live"
+    # without implying the manifest is scoped to anyone.
+    dependencies=[*_ANALYTICS_READ, Depends(get_authenticated_user)],
 )
 async def export_manifest(
     analytics: AnalyticsServiceDep,

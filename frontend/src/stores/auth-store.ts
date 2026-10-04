@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import type { StateStorage } from 'zustand/middleware'
 
 import { ApiError, apiClient } from '@/lib/api-client'
 import type { TokenRecovery } from '@/lib/api-client'
@@ -121,6 +122,7 @@ function announceSessionChange(): void {
  * for exactly one caller.
  */
 function endSession(): void {
+  renewedPair = null
   useAuthStore.setState({ ...ANONYMOUS, pending: false, error: null })
   announceSessionChange()
 }
@@ -176,8 +178,60 @@ function delay(ms: number): Promise<void> {
 let hydrateInFlight: Promise<void> | null = null
 let refreshInFlight: Promise<RefreshOutcome> | null = null
 
+/**
+ * The pair this store's own rotation last committed, or `null` once the session
+ * is over.
+ *
+ * A renewal replaces the pair without changing the session, so a caller that
+ * guards a write on the token it spent sees a token it did not mint and would
+ * call the session superseded. That reading is wrong for the client-side 401
+ * recovery, which rotates out from under the request that triggered it, so the
+ * renewal is recorded here: it is what separates "renewed while this call was
+ * on the wire" — the same session, adoptable — from "a newer sign-in owns the
+ * store", whose tokens are the only other ones a rotation can have replaced.
+ * Cleared on sign-out; a sign-in writes a pair the backend has never renewed,
+ * so a stale entry cannot outlive the session it describes.
+ */
+let renewedPair: TokenPair | null = null
+
+/**
+ * Whether the refresh token the store holds is the one `claim` names, counting
+ * a renewal of that same pair as still ours. Used by the sign-in flows, which
+ * must tear down the pair they failed to exchange for a user without touching a
+ * session that replaced it.
+ */
+function isClaimed(claim: string | null, held: string | null): boolean {
+  if (held === claim) return true
+  return renewedPair !== null && held === renewedPair.refresh_token
+}
+
 function isUnreachable(error: ApiError): boolean {
   return error.isTransportError || error.isTimeout || error.status >= 500
+}
+
+/**
+ * A `localStorage` that cannot fail. zustand guards only the accessor that
+ * hands the storage over, never the writes themselves, so a `setItem` that
+ * throws — a full quota, Safari's private browsing — would turn every store
+ * write into a rejected promise: `login()` would reject after committing
+ * `pending`, leaving the form stuck on "Signing in…"; `logout()` would never
+ * reach its redirect; and `hydrate()` would leave the app on its boot screen
+ * for good. Losing persistence is a degradation rather than a failure, so each
+ * operation swallows its own error and the store keeps working from memory.
+ */
+function tolerantStorage(): StateStorage {
+  const attempt = <T,>(operation: () => T): T | null => {
+    try {
+      return operation()
+    } catch {
+      return null
+    }
+  }
+  return {
+    getItem: (name) => attempt(() => window.localStorage.getItem(name)),
+    setItem: (name, value) => attempt(() => window.localStorage.setItem(name, value)),
+    removeItem: (name) => attempt(() => window.localStorage.removeItem(name)),
+  }
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -200,6 +254,7 @@ export const useAuthStore = create<AuthState>()(
           // over: drop it and touch nothing.
           if (get().refreshToken !== startedFrom) return { kind: 'superseded' }
           set({ accessToken: tokens.access_token, refreshToken: tokens.refresh_token })
+          renewedPair = tokens
           return { kind: 'refreshed', tokens }
         } catch (cause) {
           const error = toApiError(cause)
@@ -247,13 +302,24 @@ export const useAuthStore = create<AuthState>()(
        * @param expectedAccessToken The access token this call wrote, so a
        *   superseded write is detected and skipped. Omitted only where the
        *   caller is restoring a pair it did not mint.
+       * @param recoverOn401 Whether the API client may renew the session on a
+       *   401 by itself. Off wherever the store is already running the renewal:
+       *   a rotation the client commits mid-call replaces the very token the
+       *   guard above was handed, and the check is then told the session was
+       *   superseded when it was only renewed — at boot that ends the check with
+       *   no verdict at all and the guards render the boot screen for good.
        * @returns true when the store was updated, false when the pair was
        *   superseded while the request was in flight.
        */
-      async function loadUser(expectedAccessToken?: string): Promise<boolean> {
-        const user = await fetchCurrentUser()
+      async function loadUser(
+        expectedAccessToken?: string,
+        { recoverOn401 = true }: { recoverOn401?: boolean } = {},
+      ): Promise<boolean> {
+        const user = await fetchCurrentUser({ recoverOn401 })
         if (expectedAccessToken !== undefined && get().accessToken !== expectedAccessToken) {
-          return false
+          if (renewedPair === null || get().accessToken !== renewedPair.access_token) {
+            return false
+          }
         }
         set({ user, status: 'authenticated', pending: false, error: null })
         return true
@@ -293,7 +359,7 @@ export const useAuthStore = create<AuthState>()(
         }
         const accessToken = outcome.tokens.access_token
         try {
-          return (await loadUser(accessToken)) ? 'verified' : 'superseded'
+          return (await loadUser(accessToken, { recoverOn401: false })) ? 'verified' : 'superseded'
         } catch (cause) {
           const error = toApiError(cause)
           // A verdict that arrives after a sign-out or a newer sign-in is not
@@ -311,7 +377,8 @@ export const useAuthStore = create<AuthState>()(
       /** One attempt: the stored pair as it stands, rotating only on a 401. */
       async function verifyOnce(accessToken: string | null): Promise<VerifyOutcome> {
         try {
-          return (await loadUser(accessToken ?? undefined)) ? 'verified' : 'superseded'
+          const verified = await loadUser(accessToken ?? undefined, { recoverOn401: false })
+          return verified ? 'verified' : 'superseded'
         } catch (cause) {
           const error = toApiError(cause)
           // A 401 means the access token is spent; anything else — including a
@@ -371,10 +438,21 @@ export const useAuthStore = create<AuthState>()(
           } catch (cause) {
             // A pair we never exchanged for a user must not survive: it is
             // persisted, and the next verification would adopt it as a session.
-            if (get().refreshToken === owner) {
+            // A sign-out or a newer sign-in that landed while this call was on
+            // the wire owns the store now, and its pair is not this one's to
+            // tear down.
+            if (isClaimed(owner, get().refreshToken)) {
               endSession()
-              set({ error: toApiError(cause) })
             }
+            // Reported either way: the form that triggered this needs to know
+            // the sign-in failed, whichever session the store ended up on.
+            set({ error: toApiError(cause) })
+          } finally {
+            // `pending` belongs to that form, and every way out of this call —
+            // a superseded pair, a failed load, a failure under a session that
+            // is no longer this one's — has to release it. Without this the
+            // inputs and the button stay disabled until the page is reloaded.
+            set({ pending: false })
           }
         },
 
@@ -392,10 +470,14 @@ export const useAuthStore = create<AuthState>()(
             if (!(await loadUser(tokens.access_token))) return
             announceSessionChange()
           } catch (cause) {
-            if (get().refreshToken === owner) {
+            if (isClaimed(owner, get().refreshToken)) {
               endSession()
-              set({ error: toApiError(cause) })
             }
+            set({ error: toApiError(cause) })
+          } finally {
+            // Same invariant as `login`: the create-account form is released on
+            // every exit, not only the one that reported an error.
+            set({ pending: false })
           }
         },
 
@@ -487,7 +569,7 @@ export const useAuthStore = create<AuthState>()(
     },
     {
       name: AUTH_STORAGE_KEY,
-      storage: createJSONStorage(() => window.localStorage),
+      storage: createJSONStorage(tolerantStorage),
       // `status` is deliberately not persisted: it is recomputed by `hydrate`.
       partialize: (state) => ({
         accessToken: state.accessToken,

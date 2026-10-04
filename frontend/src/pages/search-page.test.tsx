@@ -5,7 +5,7 @@ import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import SearchPage from '@/pages/search-page'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import type { PageMeta } from '@/types/pagination'
 import {
@@ -23,7 +23,7 @@ import type { SearchGroup, SearchHit, SearchResponse } from '@/types/search'
  * **The query client is local**, for the reason `recommendations-page.test.tsx`
  * gives: `AppProviders` mounts the shared singleton and clears it on a session
  * change, which in jsdom strands every component at `pending`. The shipped
- * defaults are reproduced rather than relaxed so the retry behaviour under test
+ * defaults are carried over rather than relaxed so the retry behaviour under test
  * is the behaviour that ships.
  *
  * **The route table is the real one.** The "every kind links somewhere" test
@@ -157,12 +157,7 @@ function createTestClient(): QueryClient {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

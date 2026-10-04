@@ -9,7 +9,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { formatNumber } from '@/features/analytics/format'
 import { describeWindow } from '@/features/learning/components'
 import LearningPage from '@/pages/learning-page'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import type { Granularity } from '@/types/analytics'
 import type {
@@ -32,7 +32,7 @@ import type {
  * and the counts are checkable by hand: 45 goals behind a two-row page, 41 skills
  * behind a one-row page, 30 recorded activities behind a twelve-row page.
  *
- * **The query client is local and its defaults are reproduced, not relaxed.**
+ * **The query client is local and its defaults are the shipped ones.**
  * `AppProviders` mounts the shared singleton and registers
  * `onSessionChange(() => queryClient.clear())`, which in jsdom strands every
  * component at `pending`; and the retry policy in `src/app/query-client.ts` is
@@ -209,19 +209,14 @@ function installBackend(overrides: Backend = {}): Call[] {
   return calls
 }
 
-/** Mirrors `src/app/query-client.ts`, reproduced rather than relaxed. */
+/** Ships the retry policy from `src/app/query-client.ts`. */
 function createTestClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

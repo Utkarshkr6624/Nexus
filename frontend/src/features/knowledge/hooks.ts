@@ -209,8 +209,8 @@ export const knowledgeKeys = {
     params
       ? (['knowledge', 'graph', params.entity_type ?? null, params.limit ?? null] as const)
       : (['knowledge', 'graph'] as readonly unknown[]),
-  search: (query?: string, type?: string) =>
-    ['knowledge', 'search', query ?? '', type ?? null] as readonly unknown[],
+  search: (query?: string, type?: string, limit?: number) =>
+    ['knowledge', 'search', query ?? '', type ?? null, limit ?? null] as readonly unknown[],
 }
 
 /* ------------------------------------------------------------------ queries */
@@ -357,7 +357,7 @@ export function useKnowledgeSearch(
 ): UseQueryResult<KnowledgeSearchResult> {
   const term = query.trim()
   return useQuery({
-    queryKey: knowledgeKeys.search(term, options.type),
+    queryKey: knowledgeKeys.search(term, options.type, options.limit),
     queryFn: ({ signal }) =>
       searchKnowledge({ q: term, type: options.type as never, limit: options.limit }, signal),
     enabled: term.length > 0,

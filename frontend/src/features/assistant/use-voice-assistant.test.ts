@@ -264,7 +264,18 @@ function renderAssistant(
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
+  // StrictMode, because `src/main.tsx` renders the app inside one. It mounts,
+  // runs every effect's cleanup and runs the effect again, which is the only
+  // way a test can catch an effect that tears something down without ever
+  // re-arming it.
+  //
+  // It has to be `reactStrictMode`, not a `<StrictMode>` element in `wrapper`:
+  // only the render option puts the boundary where React's double-invoke of
+  // effects actually reaches this hook. With the element in the wrapper the
+  // effects are *not* re-run, so the regression this guards was invisible — a
+  // StrictMode test that never double-runs is decoration, not coverage.
   const rendered = renderHook(() => useVoiceAssistant(options), {
+    reactStrictMode: true,
     wrapper: ({ children }: { children: ReactNode }) =>
       createElement(
         QueryClientProvider,
@@ -510,6 +521,86 @@ describe('the happy path', () => {
     await waitFor(() => expect(result.current.lastDecision).not.toBeNull())
     expect(result.current.error).toBeNull()
     expect(spokenText()).toEqual(['That is outside what NEXUS can route.'])
+  })
+})
+
+/**
+ * Regression guard for the mounted flag.
+ *
+ * The hook tells a late response not to touch a dead tree by consulting
+ * `mountedRef`. That ref was armed by `useRef(true)` and disarmed by the single
+ * effect's cleanup — but the effect never re-armed it, and React's StrictMode
+ * runs mount → cleanup → effect on the first mount. Under `npm run dev` the flag
+ * was therefore false for the whole life of the panel, which silently disabled
+ * the three guards that depend on it: a successful turn was never recorded or
+ * spoken, a failure was never surfaced, and a `speaking` phase could never end.
+ *
+ * Nothing below asserts on a ref. It asserts on the symptom — a whole turn,
+ * end to end, under StrictMode — because the symptom is what the user sees and
+ * what a future refactor could break in some other way.
+ */
+describe('under StrictMode', () => {
+  it('completes a full turn: submitted, recorded, spoken, and back to idle', async () => {
+    const { result } = renderAssistant('/tasks')
+
+    // Nothing has been said yet, and the panel is willing to listen — the flag
+    // must already be armed at the end of mount, not merely true by default.
+    expect(result.current.state).toBe('idle')
+    expect(result.current.canListen).toBe(true)
+
+    await submit(result, 'show my open tasks')
+
+    const [turn] = result.current.turns
+    expect(turn?.transcript).toBe('show my open tasks')
+    expect(turn?.decision?.intent).toBe('task_manage')
+    expect(turn?.error).toBeNull()
+    expect(spokenText()).toEqual(['Routing to Task.'])
+    expect(result.current.state).toBe('idle')
+  })
+
+  it('does not strand the panel in processing, which would block every later turn', async () => {
+    const { result } = renderAssistant('/tasks')
+
+    await submit(result, 'show my open tasks')
+
+    // The failure mode was the first utterance moving the machine to
+    // `processing` and nothing ever moving it back, which left `canListen`
+    // false and made every subsequent submission a no-op.
+    expect(result.current.state).not.toBe('processing')
+    expect(result.current.canListen).toBe(true)
+
+    await submit(result, 'show my projects')
+
+    expect(result.current.turns).toHaveLength(2)
+    expect(result.current.state).toBe('idle')
+  })
+
+  it('surfaces a failure instead of leaving it unreported', async () => {
+    const { result } = renderAssistant('/tasks')
+
+    await submitExpectingError(result, 'show my open tasks', () =>
+      errorEnvelope('ml_unavailable', 'the classifier is not loaded', null, 503),
+    )
+
+    expect(result.current.error?.code).toBe('classifier_unavailable')
+    expect(result.current.turns).toHaveLength(1)
+    expect(result.current.turns[0]?.error?.code).toBe('classifier_unavailable')
+  })
+
+  it('ends the read-aloud instead of waiting for an event that never arrives', async () => {
+    const { result } = renderAssistant('/tasks')
+
+    respond = () => json(ACCEPTED)
+    await act(async () => {
+      result.current.submitTranscript('show my open tasks')
+      await Promise.resolve()
+    })
+    await waitFor(() => expect(result.current.state).toBe('speaking'))
+
+    await settleSpeech(result)
+
+    expect(result.current.state).toBe('idle')
+    expect(result.current.canListen).toBe(true)
   })
 })
 

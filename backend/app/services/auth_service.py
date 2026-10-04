@@ -26,7 +26,6 @@ import secrets
 import uuid
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
-from functools import cache
 from typing import Any
 
 from sqlalchemy.exc import IntegrityError
@@ -122,18 +121,20 @@ def _jti(claims: dict[str, object]) -> str:
     return value
 
 
-@cache
-def _decoy_hash() -> str:
-    """Return a bcrypt hash of a random value, computed once per process.
-
-    ``authenticate`` verifies against it when the address is unknown, so that the
-    missing-account path pays the same bcrypt cost as a real check: the
-    shared error message hides the account from the response text, and this
-    hides it from the response clock as well. The value behind the hash is
-    random and discarded, so no submitted password can ever match it, and
-    caching keeps the ~250 ms of hashing off the import path.
-    """
-    return hash_password(secrets.token_urlsafe(32))
+#: A bcrypt hash of a random value, computed once when this module is imported.
+#:
+#: ``authenticate`` verifies against it when the address is unknown, so that the
+#: missing-account path pays the same bcrypt cost as a real check: the shared
+#: error message hides the account from the response text, and this hides it
+#: from the response clock as well. The value behind the hash is random and
+#: discarded, so no submitted password can ever match it.
+#:
+#: Computed at import rather than lazily cached on first use. A lazy cache pays
+#: its hash *and* its verify on the first unknown-address login — ~410 ms
+#: against ~200 ms for a known one — so the very first probe of a freshly
+#: started process is the one probe the decoy exists to make indistinguishable.
+#: The cost moves to import, where it is paid once and off the request path.
+_DECOY_HASH = hash_password(secrets.token_urlsafe(32))
 
 
 class AuthService:
@@ -211,7 +212,11 @@ class AuthService:
         try:
             user = await self.repository.create(
                 email=str(data.email),
-                hashed_password=hash_password(data.password),
+                # bcrypt is a ~200 ms solid compute. Run it on a worker thread so
+                # a registration cannot stall the loop for every other request
+                # in the process — the same rule the ML router applies to
+                # inference.
+                hashed_password=await asyncio.to_thread(hash_password, data.password),
                 username=username,
                 display_name=data.display_name,
             )
@@ -248,10 +253,13 @@ class AuthService:
         does not show a hundred different addresses arriving at once. The reason
         is the closed vocabulary ``invalid_credentials`` or ``inactive`` — the
         email, the password and the token pair are never in the line.
+
+        The verify itself runs on a worker thread, so the ~250 ms it costs is
+        this login's latency rather than the whole process's.
         """
         user = await self.repository.get_by_email(str(data.email))
-        stored_hash = user.hashed_password if user is not None else _decoy_hash()
-        password_ok = verify_password(data.password, stored_hash)
+        stored_hash = user.hashed_password if user is not None else _DECOY_HASH
+        password_ok = await asyncio.to_thread(verify_password, data.password, stored_hash)
         if user is None or not password_ok:
             await self._audit(
                 AuditEvent.USER_LOGIN_FAILED,
@@ -390,6 +398,14 @@ class AuthService:
         opposite of what they asked for. Failures are logged at WARNING instead,
         so the condition is still visible to an operator without reaching the
         caller as an error.
+
+        The denylist write is the *only* step guarded. It is the one that can
+        fail for a reason of its own — a token this service did not mint has no
+        ``jti`` to blacklist — and letting that failure decide the fate of the
+        session row would answer 204 with the device still signed in. The row is
+        revoked from the token's own claims, which need no ``jti``, so it is
+        attempted regardless; so is the audit row, because the attempt happened
+        either way.
         """
         try:
             token_data = decode_token(token, settings=self.settings)
@@ -397,11 +413,10 @@ class AuthService:
             return
         try:
             await self._revoke(token_data)
-            if self.sessions is not None:
-                await self.sessions.revoke_by_token(token)
         except Exception:
-            logger.warning("logout_revocation_failed", exc_info=True)
-            return
+            logger.warning("logout_denylist_failed", exc_info=True)
+        if self.sessions is not None:
+            await self.sessions.revoke_by_token(token)
         # A logout is one of the few events an operator actually looks for, so
         # it is recorded even though the token itself is deliberately not: the
         # subject is enough to say "this account ended this session here". It
@@ -469,14 +484,16 @@ class AuthService:
         Returns:
             The number of other sessions that were revoked.
         """
-        if not verify_password(current_password, user.hashed_password):
+        # Three bcrypt operations, ~600 ms of solid compute — on the thread, not
+        # on the loop.
+        if not await asyncio.to_thread(verify_password, current_password, user.hashed_password):
             raise UnauthorizedError(_WRONG_CURRENT_PASSWORD)
-        if verify_password(new_password, user.hashed_password):
+        if await asyncio.to_thread(verify_password, new_password, user.hashed_password):
             raise ConflictError(_SAME_PASSWORD)
         now = datetime.now(UTC)
         await self.repository.update_fields(
             user,
-            hashed_password=hash_password(new_password),
+            hashed_password=await asyncio.to_thread(hash_password, new_password),
             password_changed_at=now,
         )
         revoked = 0
@@ -501,7 +518,7 @@ class AuthService:
         user_agent: str | None = None,
         ip_address: str | None = None,
     ) -> str | None:
-        """Start a password reset and return the raw token outside production.
+        """Start a password reset and return the raw token only where asked.
 
         **This endpoint must not be an account oracle.** A known address and an
         unknown one produce the same audit row, the same response, and the same
@@ -512,14 +529,19 @@ class AuthService:
         bcrypt constant a login pays, and it is the price of storing a token at
         all.
 
-        The raw token is returned only when ``settings.is_production`` is false.
-        This is a local-first product: a user with no mail provider configured has
-        to be able to finish the flow, and in production there is nowhere for the
-        token to go but a mail transport, so the API stops handing it out.
+        Handing the token back is opt-in through
+        ``settings.dev_expose_reset_token``, and off by default. This is a
+        local-first product, so a user with no mail provider configured has to be
+        able to finish the flow — but "not production" is not the same thing as
+        "safe to hand a takeover token to an unauthenticated caller", and a
+        staging or preview deployment is not production either. The token is
+        therefore only returned where the deployment has said, in as many words,
+        that it wants it.
 
         Returns:
-            The raw reset token in non-production, or ``None`` in production and
-            for an address with no active account.
+            The raw reset token when ``dev_expose_reset_token`` is set, or
+            ``None`` for an address with no active account and for every
+            deployment that has not opted in.
         """
         user = await self.repository.get_by_email(email)
         now = datetime.now(UTC)
@@ -543,7 +565,7 @@ class AuthService:
             ip_address=ip_address,
             user_agent=user_agent,
         )
-        if raw_token is None or self.settings.is_production:
+        if raw_token is None or not self.settings.dev_expose_reset_token:
             return None
         return raw_token
 
@@ -559,7 +581,9 @@ class AuthService:
 
         Every session goes, including the one that requested the reset. A reset
         is the recovery path for a compromised account, so leaving a live session
-        behind would leave the compromise in place with a new password.
+        behind would leave the compromise in place with a new password. Every
+        other outstanding reset link goes with it, for the same reason: a second
+        link that survives can put the old password back afterwards.
 
         Args:
             token: The raw reset token from the link.
@@ -595,9 +619,14 @@ class AuthService:
         # follows fails, the link is dead rather than still redeemable.
         if not await self._resets.spend(row.id, used_at=now):
             raise UnauthorizedError(_INVALID_RESET)
+        # Every *other* outstanding link goes too, for the same reason
+        # ``change_password`` spends them: one link is redeemed while a second
+        # sits in someone else's inbox, and spending only the row that was used
+        # leaves that one able to overwrite the password that was just set.
+        await self._resets.invalidate_all_for_user(user.id, used_at=now)
         await self.repository.update_fields(
             user,
-            hashed_password=hash_password(new_password),
+            hashed_password=await asyncio.to_thread(hash_password, new_password),
             password_changed_at=now,
         )
         revoked = 0

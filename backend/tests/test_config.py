@@ -14,6 +14,11 @@ def test_database_uri_is_assembled_from_the_parts():
     settings = Settings(
         _env_file=None,
         database_url=None,
+        # ``_env_file=None`` stops the .env file, not the environment: without
+        # this, an exported ``TEST_DATABASE_URL`` silently overrides the value
+        # the test is deriving and the assertion below is about that export
+        # rather than about the assembly.
+        test_database_url=None,
         postgres_user="ada",
         # The value itself is the point: reserved characters must be percent-encoded.
         postgres_password="p@ss word",  # noqa: S106

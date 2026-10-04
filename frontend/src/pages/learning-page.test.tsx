@@ -10,7 +10,7 @@ import LearningPage from '@/pages/learning-page'
 import { NO_VALUE, formatNumber } from '@/features/analytics/format'
 import { formatLevelOfScale, levelSourcePhrase } from '@/features/learning/components'
 import { NOT_ENOUGH_DATA_TITLE } from '@/features/learning/components/learning-vocabulary'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import type {
   LearningActivityBucketRead,
@@ -39,7 +39,7 @@ import type {
  * (`src/app/auth-bootstrap.tsx:13`). In jsdom that clear lands mid-test and
  * strands every component at `pending` forever, which is why this suite builds a
  * fresh client per render. The defaults below are the ones in
- * `src/app/query-client.ts`, reproduced rather than relaxed: the retry policy in
+ * `src/app/query-client.ts`, carried over rather than relaxed: the retry policy in
  * particular is what makes the error surfaces arrive after a few seconds rather
  * than on the first response, and the 5xx case below waits with an explicit
  * `{ timeout: 20_000 }` because of it.
@@ -193,19 +193,14 @@ function installBackend(overrides: Backend = {}): Call[] {
   return calls
 }
 
-/** Mirrors `src/app/query-client.ts`, reproduced rather than relaxed. */
+/** Ships the retry policy from `src/app/query-client.ts`. */
 function createTestClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

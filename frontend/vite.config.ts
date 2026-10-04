@@ -16,6 +16,17 @@ import { defineConfig } from 'vitest/config'
  */
 const DEFAULT_DEV_PROXY_TARGET = 'http://localhost:8000'
 
+/**
+ * The repository root, where the shared `.env` lives.
+ *
+ * Vite resolves `envDir` against the directory the command was launched from,
+ * which for every documented workflow is `frontend/` — one level too deep to
+ * see the `.env` that `scripts/bootstrap.py` writes at the repository root. So
+ * both the config's own env read and `envDir` are anchored here, on this file's
+ * location, and the two cannot drift apart again.
+ */
+const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
+
 function resolveProxyTarget(raw: string | undefined): string {
   const trimmed = raw?.trim()
   return trimmed || DEFAULT_DEV_PROXY_TARGET
@@ -68,8 +79,9 @@ function manualChunk(id: string): string | undefined {
 // the client itself calls when set; `VITE_DEV_PROXY_TARGET` (above) moves where
 // the dev server forwards it.
 export default defineConfig(({ mode }) => {
-  // Empty prefix: `.env` values plus anything already in the process environment.
-  const env = loadEnv(mode, process.cwd(), '')
+  // Same directory as `envDir` below, and the same 'VITE_' prefix Vite itself
+  // applies when it populates `import.meta.env`.
+  const env = loadEnv(mode, REPO_ROOT, 'VITE_')
   const proxyTarget = resolveProxyTarget(env.VITE_DEV_PROXY_TARGET)
 
   const proxy = {
@@ -86,6 +98,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    envDir: REPO_ROOT,
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

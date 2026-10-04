@@ -27,19 +27,27 @@ import logging
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.exceptions import install_exception_handlers
 from app.core.logging import configure_logging, get_logger, log_event
-from app.core.middleware import RateLimitMiddleware, add_request_context_middleware
+from app.core.middleware import (
+    RateLimitMiddleware,
+    add_cors_middleware,
+    add_request_context_middleware,
+)
 from app.db import session as db_session
 from app.db.session import check_database_connection
+from app.ml.exceptions import MLUnavailableError
 from app.ml.runtime import MLRuntime, get_ml_runtime
+from app.repositories.password_reset import PasswordResetRepository
+from app.repositories.session import SessionRepository
+from app.services.session_service import SessionService
 
 __all__ = ["app", "create_app"]
 
@@ -85,16 +93,39 @@ _OPENAPI_TAGS: list[dict[str, object]] = [
 ]
 
 
+async def _purge_expired_records(settings: Settings) -> tuple[int, int]:
+    """Delete lapsed session and password-reset rows, returning both counts.
+
+    **Nothing else prunes either table.** A session row is written per sign-in
+    and only ever revoked, and a reset row per request, so without a sweep both
+    grow by every sign-in the product ever sees. One pass at startup is enough:
+    the rows selected here are already past their own expiry and therefore
+    authenticate nothing, and the delete is a single set-based statement.
+
+    The cutoff is read once, from the application clock, and shared by both so
+    the two tables are pruned against the same instant.
+    """
+    session_factory = db_session.get_session_factory()
+    cutoff = datetime.now(UTC)
+    async with session_factory() as session:
+        purged_sessions = await SessionService(
+            SessionRepository(session), settings
+        ).purge_expired_sessions(before=cutoff)
+        purged_resets = await PasswordResetRepository(session).purge_expired(before=cutoff)
+    return purged_sessions, purged_resets
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Stamp the uptime clock, configure logging, probe the database, load ML, dispose on exit.
 
-    Startup does three things beyond the clock, and all three are advisory: the
-    database probe, the ML load, and the settings they are both given. A
-    deployment without a Postgres instance still serves, and a deployment
-    without a Phase 10 checkpoint still serves — it simply answers the ML
-    endpoints with 503 and a reason. Only ``ML_FAIL_FAST`` turns the second of
-    those into a refusal to boot.
+    Startup does four things beyond the clock, and all four are advisory: the
+    database probe, the ML load, the sweep that prunes lapsed session and
+    password-reset rows, and the settings they are all given. A deployment
+    without a Postgres instance still serves, and a deployment without a Phase 10
+    checkpoint still serves — it simply answers the ML endpoints with 503 and a
+    reason. Only ``ML_FAIL_FAST`` turns the second of those into a refusal to
+    boot.
 
     The ML runtime is stored on ``app.state`` so a route can reach the one
     loaded instance from the request rather than importing it. Note that the
@@ -146,14 +177,23 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.ml_runtime = runtime
     try:
         status = await run_in_threadpool(runtime.load)
-    except Exception:
-        # Only reachable under ML_FAIL_FAST, where the runtime re-raises by
+    except MLUnavailableError as exc:
+        # Reachable only under ML_FAIL_FAST, where the runtime re-raises by
         # design. Swallowing it here would turn a strict deployment into a
-        # silently degraded one and defeat the flag, so the status is read back
-        # for the log line and the process exits through the server's own
-        # lifespan failure handling.
-        status = runtime.status
-        log_event(logger, logging.ERROR, "ml_runtime_startup_failed", reason=status.reason)
+        # silently degraded one and defeat the flag, so the reason is logged and
+        # the failure is passed on: the server stops rather than serving an ML
+        # boundary that answers 503 for the life of the process. The runtime
+        # never records a status on this path — it raises instead — so the
+        # exception is what carries the reason. Anything else reaching here is a
+        # bug rather than a deployment condition, and is left to propagate.
+        log_event(
+            logger,
+            logging.ERROR,
+            "ml_runtime_startup_failed",
+            reason=runtime.status.reason,
+            detail=str(exc),
+        )
+        raise
     # The runtime logs its own attempt with the checkpoint path and the load
     # time; this line answers the different question "was ML ready by the time
     # the server started serving", which is what an operator reads a boot log
@@ -167,6 +207,23 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         reason=status.reason,
     )
 
+    # Best effort, and never a reason to refuse to boot: the API is usable with
+    # a stale row in either table, and a deployment that cannot reach the
+    # database has already been reported by the probe above.
+    try:
+        purged_sessions, purged_resets = await _purge_expired_records(settings)
+    except Exception:
+        logger.warning("expired_record_purge_failed", exc_info=True)
+    else:
+        if purged_sessions or purged_resets:
+            log_event(
+                logger,
+                logging.INFO,
+                "expired_records_purged",
+                sessions=purged_sessions,
+                password_resets=purged_resets,
+            )
+
     try:
         yield
     finally:
@@ -174,7 +231,13 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         # from the default settings purely to close it again.
         engine = db_session._engine
         if engine is not None:
-            await engine.dispose()
+            # Guarded so a disposal failure cannot skip the two steps below —
+            # a raised close would strand the classifier's 703 MiB in the
+            # process and lose the line that says the service stopped.
+            try:
+                await engine.dispose()
+            except Exception:
+                logger.warning("engine_dispose_failed", exc_info=True)
         # The same rule for the model: an app whose lifespan never ran has no
         # runtime on its state, and releasing "whatever the singleton is" would
         # tear down a process that never took ownership of it.
@@ -210,15 +273,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # which is the only layer positioned to refuse a request before it runs.
     application.add_middleware(RateLimitMiddleware, settings=settings)
 
-    if settings.cors_origin_list:
-        application.add_middleware(
-            CORSMiddleware,
-            allow_origins=settings.cors_origin_list,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-            expose_headers=["X-Request-ID"],
-        )
+    # Installed before the request context below, and both through the same
+    # helper, because each call wraps the previous one: the result is request
+    # context, then CORS, then the standard stack — so a 500 rendered by
+    # ServerErrorMiddleware still leaves with its CORS headers attached.
+    add_cors_middleware(application, settings)
 
     # Added last so that it wraps CORS and the router: every response then
     # carries X-Request-ID and every request produces exactly one access line.

@@ -1486,10 +1486,25 @@ function RecordActivityDialog({
 }) {
   const [title, setTitle] = useState('')
   const [activityType, setActivityType] = useState<LearningActivityType>('study_session')
-  const [skillId, setSkillId] = useState('')
+  const [skillId, setSkillId] = useState(defaultSkillId)
   const [goalId, setGoalId] = useState('')
   const [duration, setDuration] = useState('')
   const [error, setError] = useState<ApiError | null>(null)
+
+  /**
+   * The dialog stays mounted for the whole page visit, so `defaultSkillId` — the
+   * `?skill=` filter — would otherwise be a snapshot taken the first time this
+   * component rendered. A deep link would open the picker on "Not linked to a
+   * skill" and a later filter change, made while the dialog was closed, would
+   * leave it on the skill before it. Re-seed when the prop moves; a skill picked
+   * from the dropdown inside the dialog is untouched by this, because the prop
+   * does not change while the reader is choosing.
+   */
+  const [lastSkillFilter, setLastSkillFilter] = useState(defaultSkillId)
+  if (lastSkillFilter !== defaultSkillId) {
+    setLastSkillFilter(defaultSkillId)
+    setSkillId(defaultSkillId)
+  }
 
   const create = useCreateLearningActivity()
   const pending = create.isPending

@@ -8,6 +8,14 @@
     "jsx": "react-jsx",
     "useDefineForClassFields": true,
 
+    /* This program is the browser. Left unset, TypeScript auto-includes every
+       package under node_modules/@types, so `process`, `Buffer` and `require`
+       would type-check here and throw at runtime.
+       Not a complete seal: vitest's own declarations reference vite/node,
+       which references @types/node again, so the tests have to move to a
+       program of their own before the leak is closed for good. */
+    "types": [],
+
     /* Bundle mode: Vite owns emit, tsc only type-checks. */
     "noEmit": true,
     "composite": true,

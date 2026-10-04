@@ -28,7 +28,9 @@
  * stops an acknowledged risk from flickering back to `active` while the list
  * refetch is in flight. The list and the summary are still invalidated, because
  * a transition removes a row from the live set and moves a band count, and only
- * the server knows which.
+ * the server knows which. A transition also invalidates the activity feed and
+ * counters under `['work']`, because the lifecycle routes write an
+ * `activity_events` row that no other risk write would move.
  *
  * **Invalidation targets are chosen by blast radius, not by symmetry.** A risk
  * transition invalidates the risk lists, the risk details and the summary, plus
@@ -59,6 +61,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query'
 
+import { workKeys } from '@/features/work/hooks'
 import {
   acceptRecommendation,
   acknowledgeRisk,
@@ -224,6 +227,10 @@ function cacheRiskTransition(queryClient: QueryClient, updated: RiskRead): void 
   // recommendation lists are refreshed by every transition rather than only by
   // the one that can cause it.
   void queryClient.invalidateQueries({ queryKey: riskKeys.recommendations() })
+  // The transition is an activity event server-side, and nothing under `['work']`
+  // is invalidated by a risk write, so the dashboard feed and the activity
+  // counters would otherwise keep showing the feed from before the click.
+  void queryClient.invalidateQueries({ queryKey: workKeys.all() })
 }
 
 function cacheRecommendationTransition(

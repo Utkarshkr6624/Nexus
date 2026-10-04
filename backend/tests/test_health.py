@@ -11,8 +11,9 @@ from app.db import session as app_db_session
 from app.db.session import check_database_connection
 from tests.conftest import _preserved_logging
 
-#: Every test below that takes ``client`` reaches the database, so it is marked
-#: ``integration``. The liveness and header tests deliberately take
+#: Every test below that reaches PostgreSQL is marked ``integration``: those
+#: taking ``client``, and the degraded-readiness probe, which needs a server
+#: that can refuse it. The liveness and header tests deliberately take
 #: ``offline_client`` and stay outside that marker.
 integration = pytest.mark.integration
 
@@ -81,6 +82,31 @@ async def test_a_database_fault_degrades_readiness_without_failing_it(offline_cl
     response = await offline_client.get("/api/v1/health")
 
     assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "degraded"
+    assert body["database"]["status"] == "unavailable"
+    assert body["database"]["latency_ms"] >= 0
+
+
+@integration
+async def test_an_unreachable_database_degrades_readiness_through_the_real_probe(
+    non_raising_client, unreachable_engine, monkeypatch
+):
+    """The same degraded answer, this time from the probe the router really calls.
+
+    The test above replaces ``health_api.check_database_connection`` itself, so
+    the router never runs the probe and any fault inside it is untestable from
+    there — a probe that let an exception escape would turn this endpoint's 500
+    into a passing test. Here only the engine underneath is replaced, so the
+    router, the probe, and the failure path all execute, and
+    ``non_raising_client`` means a regression shows up as the 500 a caller would
+    actually have received rather than as a traceback out of the transport.
+    """
+    monkeypatch.setattr(app_db_session, "get_engine", lambda: unreachable_engine)
+
+    response = await non_raising_client.get("/api/v1/health")
+
+    assert response.status_code == 200, response.text
     body = response.json()
     assert body["status"] == "degraded"
     assert body["database"]["status"] == "unavailable"

@@ -106,10 +106,14 @@ class SessionService:
         becomes a single write and :func:`~app.core.security.new_session_id`
         moves back here.
 
-        ``expires_at`` comes from ``session_absolute_lifetime_days`` rather than
-        from the refresh token's own lifetime: a rotating token would otherwise
-        let a session that is never signed out of live forever, outliving any
-        actual sign-in event.
+        ``expires_at`` is the same clamp :meth:`_rotated_expiry` applies —
+        the refresh token's own window against the absolute ceiling, whichever
+        is shorter. A rotating token would otherwise let a session that is never
+        signed out of live forever, outliving any actual sign-in event; stamping
+        the absolute lifetime alone would leave it live for three weeks *after*
+        the refresh token behind it is dead, which is a device the sessions
+        screen keeps listing and one of the ``max_active_sessions`` slots it
+        keeps occupying.
 
         Returns:
             The stored row and the pair handed to the client.
@@ -119,7 +123,7 @@ class SessionService:
             oldest live sessions, never by refusing to issue.
         """
         now = datetime.now(UTC)
-        expires_at = now + timedelta(days=self.settings.session_absolute_lifetime_days)
+        expires_at = self._initial_expiry(now)
 
         db_session = await self.repository.create(
             user_id=user.id,
@@ -181,6 +185,29 @@ class SessionService:
         candidates = [row for row in live if row.id != new_session_id]
         for stale in candidates[:excess]:
             await self.repository.revoke(stale, revoked_at=now)
+
+    def _initial_expiry(self, now: datetime) -> datetime:
+        """Return the expiry a brand-new session row is stamped with.
+
+        The same ``min`` :meth:`_rotated_expiry` computes, evaluated for a row
+        whose ``created_at`` is ``now``: the refresh token's own lifetime
+        against the absolute ceiling, whichever is shorter. Written out rather
+        than delegated because the row's ``created_at`` is a server default that
+        does not exist until the insert — at issue time the deadline and ``now``
+        are the same instant, so taking the smaller of the two day counts is
+        exactly what the rotation clamp would return.
+
+        Args:
+            now: The moment the session is being issued, application clock.
+
+        Returns:
+            The clamped, timezone-aware expiry to store on the new row.
+        """
+        days = min(
+            self.settings.refresh_token_expire_days,
+            self.settings.session_absolute_lifetime_days,
+        )
+        return now + timedelta(days=days)
 
     # -- Rotation ------------------------------------------------------------
 

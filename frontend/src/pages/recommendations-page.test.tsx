@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import RecommendationsPage from '@/pages/recommendations-page'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import {
   RECOMMENDATION_STATUSES,
@@ -26,7 +26,7 @@ import {
  * registers `onSessionChange(() => queryClient.clear())`
  * (`src/app/auth-bootstrap.tsx:13`), which in jsdom clears the cache mid-test and
  * strands every component at `pending`. A fresh client per render avoids that,
- * with the defaults from `src/app/query-client.ts` reproduced rather than
+ * with the defaults from `src/app/query-client.ts` carried over rather than
  * relaxed so the retry behaviour under test is the shipped behaviour.
  */
 
@@ -170,19 +170,14 @@ function installBackend(overrides: Backend = {}): Call[] {
   return calls
 }
 
-/** Mirrors `src/app/query-client.ts`; see the note in the suite docstring. */
+/** Ships the retry policy from `src/app/query-client.ts`. */
 function createTestClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

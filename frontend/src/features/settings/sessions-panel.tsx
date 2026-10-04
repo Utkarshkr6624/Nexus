@@ -109,7 +109,13 @@ export function SessionsPanel() {
         // The token used to make this request is now revoked, so the local
         // session has to be torn down as well; the route guard takes it from
         // there. The list is not refetched — there is no session left to list.
-        void logout().then(() => navigate('/login', { replace: true }))
+        const toLogin = (): void => {
+          navigate('/login', { replace: true })
+        }
+        // Either way the redirect happens: the local session is gone even when
+        // its teardown threw, and leaving the user on this screen would show a
+        // session list for a session that no longer exists.
+        void logout().then(toLogin, toLogin)
         return
       }
       toast.success('Session revoked')

@@ -15,6 +15,11 @@ code is read back from the same message.
 
 :class:`RateLimitMiddleware` sits the other way round: one layer *below* the
 request context, so a throttled response is still correlated and still logged.
+
+:func:`add_cors_middleware` uses the same mechanism for the same reason. CORS
+placed the ordinary way sits inside ``ServerErrorMiddleware``, which means the
+500 it renders for an unhandled exception leaves without the CORS headers, and a
+browser reads that as a failed request rather than as a 500.
 """
 
 from __future__ import annotations
@@ -32,6 +37,7 @@ from http import HTTPStatus
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -51,6 +57,7 @@ __all__ = [
     "BodyCaptureMiddleware",
     "RateLimitMiddleware",
     "RequestContextMiddleware",
+    "add_cors_middleware",
     "add_request_context_middleware",
 ]
 
@@ -67,9 +74,13 @@ _MAX_REQUEST_ID_LENGTH = 128
 
 _MAX_LOGGED_BODY_CHARS = 2000
 
-#: Upper bound on the body bytes buffered for the access-log preview. Anything
-#: past it is still read and replayed to the handler untouched, but it is never
-#: held for logging, so one large upload cannot be turned into unbounded memory.
+#: Upper bound on the body bytes this middleware buffers, for the replay and for
+#: the access-log preview alike. Reading stops once a body crosses it — one
+#: chunk may carry it past, so the buffer is the cap plus at most that chunk —
+#: and the remainder of the stream is left for the handler to read. The copy
+#: kept for the log is truncated to the cap on top of that.
+#: :class:`BodyCaptureMiddleware` sits on unauthenticated routes such as
+#: ``POST /auth/login``, so a buffer with no ceiling is one a stranger can fill.
 _MAX_CAPTURED_BODY_BYTES = 256 * 1024
 
 #: Mirrors the marker used by :func:`app.core.logging.redact` for a redacted
@@ -192,9 +203,10 @@ class BodyCaptureMiddleware:
     """Buffer the request body so it stays replayable and can be logged.
 
     Only installed when ``LOG_REQUEST_BODY`` is on. Recorded ASGI messages are
-    replayed verbatim downstream, so route handlers see an unchanged body; only
-    the copy kept for the log is capped at
-    :data:`_MAX_CAPTURED_BODY_BYTES`.
+    replayed verbatim downstream, so route handlers see an unchanged body; the
+    recording stops at :data:`_MAX_CAPTURED_BODY_BYTES`, and everything still on
+    the wire is left there for the handler to read for itself. Nothing is
+    truncated on the wire; what is capped is what this middleware holds.
     """
 
     def __init__(self, app: ASGIApp) -> None:
@@ -218,10 +230,18 @@ class BodyCaptureMiddleware:
             if len(captured) < _MAX_CAPTURED_BODY_BYTES:
                 captured += chunk[: _MAX_CAPTURED_BODY_BYTES - len(captured)]
             more_body = message.get("more_body", False)
+            if total_length > _MAX_CAPTURED_BODY_BYTES:
+                # Stop reading rather than stop recording: the cap bounds what
+                # is held, and a body this size that kept arriving would be
+                # held in full to keep counting it. Whatever has not arrived is
+                # still on the wire, and `replay` below hands the handler the
+                # stream itself. `total_length` is therefore the bytes read
+                # here — the whole body whenever it arrived in one piece.
+                break
 
         state = scope.setdefault("state", {})
         state["body"] = captured
-        # The true size, so the log can say how much was dropped without ever
+        # The size, so the log can say how much was dropped without ever
         # keeping the bytes that were.
         state["body_length"] = total_length
 
@@ -230,7 +250,8 @@ class BodyCaptureMiddleware:
         async def replay() -> Message:
             if pending:
                 return pending.pop(0)
-            # Past the end of the body: let the server close the stream.
+            # Past the cap, or past the end of the body: the handler reads what
+            # is left from the server itself.
             return await receive()
 
         await self.app(scope, replay, send)
@@ -539,6 +560,34 @@ def _install_outermost(app: FastAPI, middleware_class: type, **kwargs: Any) -> N
         return middleware_class(build_middleware_stack(), **kwargs)
 
     app.build_middleware_stack = build_with_context  # type: ignore[method-assign]
+
+
+def add_cors_middleware(app: FastAPI, settings: Settings | None = None) -> None:
+    """Install CORS on ``app``, above ``ServerErrorMiddleware``.
+
+    Installed the ordinary way it would sit *inside* that layer — and that layer
+    is what turns an unhandled exception into the 500 response, so the one
+    response a browser most needs to read would leave without its CORS headers.
+    The frontend would report ``TypeError: Failed to fetch`` and could not tell a
+    server fault from a dropped connection, which is exactly the distinction the
+    500 exists to make.
+
+    Call this **before** :func:`add_request_context_middleware`, which installs
+    the outermost layer of all: each call wraps the previous one, so the order
+    of the calls is the order the layers end up in.
+    """
+    settings = settings or get_settings()
+    if not settings.cors_origin_list:
+        return
+    _install_outermost(
+        app,
+        CORSMiddleware,
+        allow_origins=settings.cors_origin_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Request-ID"],
+    )
 
 
 def add_request_context_middleware(app: FastAPI, settings: Settings | None = None) -> None:

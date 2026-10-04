@@ -795,6 +795,27 @@ function EditProfileDialog({
 }) {
   const [error, setError] = useState<ApiError | null>(null)
 
+  /**
+   * The seed the form is re-keyed on, captured **when the dialog opens**.
+   *
+   * Read live off `profile.updated_at` it moves part-way through the first visit
+   * to this page — `useCareerProfile` has no placeholder data, so the key starts
+   * at `'new-profile'` and flips as soon as the read resolves. That remounts the
+   * whole form subtree and every uncontrolled `defaultValue` on it, so a reader
+   * who opened the dialog, typed and pressed Save watches the fields blank with
+   * no error to explain it.
+   *
+   * Taking it on the open transition instead keeps the self-correcting re-key — a
+   * reopened dialog still seeds from the stored row — without firing under a
+   * form the reader is part-way through editing.
+   */
+  const [seed, setSeed] = useState<string | null>(profile?.updated_at ?? null)
+  const [wasOpen, setWasOpen] = useState(open)
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) setSeed(profile?.updated_at ?? null)
+  }
+
   const upsert = useUpsertCareerProfile()
   const pending = upsert.isPending
 
@@ -806,7 +827,7 @@ function EditProfileDialog({
     setError(null)
 
     // Uncontrolled inputs, read once on submit: the form is re-keyed on the
-    // profile's own `updated_at`, so reopening it always seeds from the stored
+    // seed taken when it opened, so reopening it always seeds from the stored
     // row without a reset function that could disagree with what is on screen.
     const form = new FormData(event.currentTarget)
     const text = (name: string): string | null => {
@@ -859,7 +880,7 @@ function EditProfileDialog({
             className="app-form-stack"
             onSubmit={submit}
             noValidate
-            key={profile?.updated_at ?? 'new-profile'}
+            key={seed ?? 'new-profile'}
           >
             {banner && (
               <p role="alert" className="app-form-error">

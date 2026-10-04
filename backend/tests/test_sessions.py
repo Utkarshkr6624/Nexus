@@ -1,8 +1,12 @@
 """Device sessions: listing, revoking one, revoking all — and the IDOR guard.
 
-**Every test here requires a live PostgreSQL and has NOT been executed.** They
-are marked ``integration`` and are excluded from
-``pytest -m "not integration"``.
+**Every test here requires a live PostgreSQL.** They are marked ``integration``
+and they run by default: ``pytest.ini``'s ``addopts`` is
+``-ra --strict-markers --strict-config``, with no ``-m`` filter, so the marker
+names the precondition rather than excluding the tests. The database is the
+suite's own — ``conftest.py`` creates the ``TEST_DATABASE_URL`` target, migrates
+it to ``head`` and holds an advisory lock on it — so a run without one stops
+rather than quietly skipping.
 
 The centrepiece is :func:`test_revoking_another_users_session_answers_404_not_403`:
 ownership is scoped inside the query rather than checked afterwards, so another

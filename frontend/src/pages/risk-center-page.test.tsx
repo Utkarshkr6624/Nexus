@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import RiskCenterPage from '@/pages/risk-center-page'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import type { RiskListRead, RiskRead, RiskStatus, RiskSummaryRead } from '@/types/risk'
 
@@ -23,7 +23,7 @@ import type { RiskListRead, RiskRead, RiskStatus, RiskSummaryRead } from '@/type
  * (`src/app/auth-bootstrap.tsx:13`). In jsdom that clear lands mid-test and
  * leaves every component sitting at `pending` forever, which is why these two
  * page suites build a fresh client per render instead. The defaults below are
- * the ones in `src/app/query-client.ts`, reproduced rather than relaxed: the
+ * the ones in `src/app/query-client.ts`, carried over rather than relaxed: the
  * retry policy in particular is what makes the error surface arrive after a few
  * seconds rather than on the first response.
  */
@@ -236,10 +236,10 @@ function installBackend(overrides: Backend = {}): Call[] {
 }
 
 /**
- * Mirrors `src/app/query-client.ts`. Reproduced rather than replaced so the
- * retry behaviour under test is the behaviour the app ships with: a 5xx is
- * asked twice more, which is why the error surfaces are awaited with a long
- * timeout, while a 4xx is refused on the first response.
+ * Ships the retry policy from `src/app/query-client.ts`, so the retry behaviour
+ * under test is the behaviour the app has: a 5xx is asked twice more, which is
+ * why the error surfaces are awaited with a long timeout, while a 4xx is refused
+ * on the first response.
  */
 function createTestClient(): QueryClient {
   return new QueryClient({
@@ -247,12 +247,7 @@ function createTestClient(): QueryClient {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

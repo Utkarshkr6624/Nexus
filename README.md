@@ -681,7 +681,7 @@ that visible.
 | Requirement | Version | Needed for |
 | --- | --- | --- |
 | Python | 3.13+ | backend, migrations, tests, scripts |
-| Node.js | 20.19+ (22 LTS recommended) | frontend, tests, build |
+| Node.js | 20.19.0+ on the 20.x line, or 22.12.0+ (22 LTS recommended) — the range Vite 7 accepts | frontend, tests, build |
 | npm | ships with Node | frontend |
 | Docker + Compose v2 | recent | the `docker compose` path (optional) |
 | PostgreSQL | 16 (or a local 13+) | the non-Docker path |
@@ -777,7 +777,7 @@ one produces a DSN the driver cannot parse.
 
 ### Path B — local development (hot reload, your own processes)
 
-Requires Python 3.13+, Node 20.19+ and a reachable PostgreSQL 16.
+Requires Python 3.13+, Node 20.19.0+ (20.x) or 22.12.0+, and a reachable PostgreSQL 16.
 
 ```bash
 # from the repository root
@@ -835,7 +835,9 @@ Copy-Item .env.example .env       # PowerShell
 ```
 
 `Settings` in `backend/app/core/config.py` also looks for `.env` in `../.env` and
-`../../.env`, so the file at the repository root is found regardless of the working
+`../../.env`, `backend/run.py` resolves the repository-root file from its own
+location, and `frontend/vite.config.ts` points `envDir` at the repository root —
+so the one file at the root is found by both processes regardless of the working
 directory. Every variable is case-insensitive.
 
 ### Groups
@@ -843,16 +845,16 @@ directory. Every variable is case-insensitive.
 | Group | Variables |
 | --- | --- |
 | Application | `ENVIRONMENT`, `DEBUG`, `APP_NAME`, `APP_VERSION`, `APP_DESCRIPTION` (shown in the OpenAPI schema and the docs UI), `OPENAPI_URL`, `DOCS_URL`, `REDOC_URL`, `API_V1_PREFIX` (the prefix every versioned route is mounted under; change it and `VITE_API_BASE_URL` has to change with it) |
-| Security | `SECRET_KEY`, `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `REFRESH_TOKEN_EXPIRE_DAYS` |
+| Security | `SECRET_KEY`, `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `REFRESH_TOKEN_EXPIRE_DAYS`, `DEV_EXPOSE_RESET_TOKEN` (false — leave it off; true makes `POST /auth/password/forgot` return the raw reset token, which defeats the endpoint's protection against account enumeration) |
 | Accounts, sessions and audit (Phase 2) | `PASSWORD_MIN_LENGTH` (default 8, plus uppercase/lowercase/digit/special), `PASSWORD_RESET_EXPIRE_MINUTES` (30), `SESSION_ABSOLUTE_LIFETIME_DAYS` (30), `MAX_ACTIVE_SESSIONS` (20), `AUDIT_LOG_RETENTION_DAYS` (400 — **declared, not enforced**; no pruning job exists) |
 | Rate limiting | `RATE_LIMIT_ENABLED` (true), `RATE_LIMIT_WINDOW_SECONDS` (60), `RATE_LIMIT_GENERAL_MAX_REQUESTS` (600 per route per address per window), `RATE_LIMIT_CREDENTIAL_MAX_REQUESTS` (120, for `/auth/login` and `/auth/password/forgot`), `RATE_LIMIT_MAX_ENTRIES` (10000 — the backstop that keeps the in-memory store from becoming the leak it prevents), `RATE_LIMIT_TRUST_FORWARDED_FOR` (false — turn it on **only** behind a trusted reverse proxy) |
 | Backend server (read by `backend/run.py`) | `NEXUS_HOST`, `NEXUS_PORT`, `NEXUS_RELOAD` |
 | CORS | `CORS_ORIGINS` (comma-separated, no trailing slashes) |
-| Database | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, `POSTGRES_PORT`, `DATABASE_URL`, `TEST_DATABASE_URL`, `DB_ECHO`, `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT`, `DB_POOL_RECYCLE`, `DB_PROBE_TIMEOUT_SECONDS` |
+| Database | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, `POSTGRES_PORT`, `DATABASE_URL`, `TEST_DATABASE_URL`, `DB_ECHO`, `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT`, `DB_POOL_RECYCLE`, `DB_PROBE_TIMEOUT_SECONDS`, `DB_CONNECT_TIMEOUT_SECONDS` |
 | Planner (Phase 4) | `PLANNER_DEFAULT_TIMEZONE` (`UTC` — the zone that decides which *day boundaries* a view spans; every stored instant stays UTC), `PLANNER_DAY_START_HOUR` (8), `PLANNER_DAY_END_HOUR` (20) — the fallback working window for a user with no availability rules, `PLANNER_MIN_SESSION_MINUTES` (15), `PLANNER_MAX_SESSION_MINUTES` (240), `PLANNER_MAX_SUGGESTIONS_PER_TASK` (3), `PLANNER_LOOKAHEAD_DAYS` (30) |
-| Analytics (Phase 6) | `ANALYTICS_PRODUCTIVITY_WEIGHT_COMPLETION` (30), `ANALYTICS_PRODUCTIVITY_WEIGHT_DEADLINE` (25), `ANALYTICS_PRODUCTIVITY_WEIGHT_CONSISTENCY` (20), `ANALYTICS_PRODUCTIVITY_WEIGHT_FOCUS` (25) — **these four must sum to 100 or the process refuses to start**; see [`Settings` fails validation](#settings-fails-validation). Also `ANALYTICS_COMPARISON_WINDOWS` (`7,30,90`), `ANALYTICS_DEFAULT_RANGE_DAYS` (7), `ANALYTICS_MAX_RANGE_DAYS` (366), `ANALYTICS_REBUILD_MAX_DAYS` (180) |
+| Analytics (Phase 6) | `ANALYTICS_PRODUCTIVITY_WEIGHT_COMPLETION` (30), `ANALYTICS_PRODUCTIVITY_WEIGHT_DEADLINE` (25), `ANALYTICS_PRODUCTIVITY_WEIGHT_CONSISTENCY` (20), `ANALYTICS_PRODUCTIVITY_WEIGHT_FOCUS` (25) — **these four must sum to 100 or the process refuses to start**; see [`Settings` fails validation](#settings-fails-validation). Also `ANALYTICS_COMPARISON_WINDOWS` (`7,30,90` — **read by no code**; the analytics endpoints derive each comparison period from the requested range, so the value is kept only so an existing `.env` still validates), `ANALYTICS_DEFAULT_RANGE_DAYS` (7), `ANALYTICS_MAX_RANGE_DAYS` (366), `ANALYTICS_REBUILD_MAX_DAYS` (180) |
 | Logging | `LOG_LEVEL`, `LOG_JSON`, `LOG_FILE`, `LOG_REQUEST_BODY`, `SLOW_REQUEST_MS` |
-| Frontend — read by the app (only `VITE_*` reaches the browser) | `VITE_API_BASE_URL` |
+| Frontend — read by the app (only `VITE_*` reaches the browser) | `VITE_API_BASE_URL` (`/api/v1` — keep it **relative** so the browser stays same-origin and the Vite proxy forwards to the backend; an absolute URL bypasses the proxy and puts CORS and cookies back in play) |
 | Frontend — dev server only | `VITE_DEV_PROXY_TARGET` — server-side, read by `frontend/vite.config.ts`; it is never bundled into the browser build |
 | Frontend — **reserved, read by no code** | `VITE_API_SERVER_URL`, `VITE_APP_NAME`, `VITE_ENABLE_COMMAND_PALETTE` — declared in `frontend/src/vite-env.d.ts` and in `.env.example`, but no module in `frontend/src` reads them. They are kept so the names stay stable for whoever wires those features up; changing them has no effect today. |
 | Docker Compose | `BIND_HOST` (see below), `POSTGRES_CONTAINER_NAME`, `POSTGRES_VOLUME_NAME`, `BACKEND_CONTAINER_NAME`, `FRONTEND_CONTAINER_NAME` |
@@ -883,11 +885,16 @@ probe in `backend/app/db/session.py`. `DB_POOL_TIMEOUT` only bounds the wait for
 connection, not the TCP handshake behind it, so a filtered port or a wedged server would
 otherwise stall the probe until the OS TCP timeout.
 
-One caveat on `VITE_DEV_PROXY_TARGET`: Vite resolves `.env` files relative to its own root,
-which is `frontend/`, not the repository root. On the host the default
-`http://localhost:8000` therefore applies and that is the correct value anyway; it is
-Compose — which injects the variable straight into the frontend container's environment —
-that moves the proxy to `http://backend:8000` inside the network.
+`DB_CONNECT_TIMEOUT_SECONDS` (default 5) is the same idea one level down: it bounds the
+TCP/TLS handshake on **every** connection the application opens. psycopg's own default is
+130 seconds, so a database that is down turned any request that touched it into a two-minute
+stall rather than a prompt failure.
+
+One caveat on `VITE_DEV_PROXY_TARGET`: `frontend/vite.config.ts` sets `envDir` to the
+repository root, so the `.env` there does reach it — the default
+`http://localhost:8000` in `.env.example` is what applies on the host. It is
+Compose — which injects the variable straight into the frontend container's
+environment — that moves the proxy to `http://backend:8000` inside the network.
 
 ### The handful a newcomer will actually change
 

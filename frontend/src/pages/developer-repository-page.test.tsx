@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import DeveloperRepositoryPage from '@/pages/developer-repository-page'
 import { NO_VALUE, formatNumber } from '@/features/analytics/format'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import {
   type BranchListRead,
@@ -30,8 +30,9 @@ import type { Project } from '@/types/work'
  * uses. The shared singleton is not used because `AppProviders` registers
  * `onSessionChange(() => queryClient.clear())` (`src/app/auth-bootstrap.tsx:13`)
  * and in jsdom that clear lands mid-test and strands every component at
- * `pending`. The retry policy is reproduced from `src/app/query-client.ts`, not
- * relaxed — which is why the 5xx case below waits with `{ timeout: 20_000 }`.
+ * `pending`. The retry policy is `src/app/query-client.ts`'s own
+ * `queryRetryPolicy`, not a copy of it — which is why the 5xx case below waits
+ * with `{ timeout: 20_000 }`.
  *
  * Three claims the specification makes by name are pinned here.
  *
@@ -143,19 +144,14 @@ function installBackend(overrides: Backend = {}): Call[] {
   return calls
 }
 
-/** Mirrors `src/app/query-client.ts`, reproduced rather than relaxed. */
+/** Ships the retry policy from `src/app/query-client.ts`. */
 function createTestClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

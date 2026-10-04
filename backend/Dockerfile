@@ -5,7 +5,7 @@
 #   docker build -t nexus-backend ./backend
 #   docker run --rm -p 8000:8000 --env-file ../.env nexus-backend
 #
-# Build context must be ./backend: the image copies app/, migrations/ and
+# Build context must be ./backend: the image copies app/, migrations/, ml/ and
 # requirements.txt from that directory.
 
 # --- Stage 1: build the virtualenv ------------------------------------------
@@ -69,6 +69,18 @@ COPY --chown=nexus:nexus app ./app
 COPY --chown=nexus:nexus migrations ./migrations
 COPY --chown=nexus:nexus alembic.ini ./alembic.ini
 COPY --chown=nexus:nexus run.py ./run.py
+
+# The ML taxonomy package, which the app imports at boot: app.ml.router and
+# app.api.v1.ml read ml.datasets, and app.ml.classifier reads ml.validation for
+# its credential-shaped-text screen. Without these the process cannot even
+# import app.main, and the ML routes report "checkpoint missing" for a reason
+# that has nothing to do with ML_MODEL_PATH.
+# Copied path by path rather than as `COPY ml ./ml` because backend/.dockerignore
+# does not exclude ml/artifacts/, so the whole-package copy would bake the
+# multi-gigabyte Phase 10 checkpoint into the image.
+COPY --chown=nexus:nexus ml/__init__.py ml/validation.py ./ml/
+COPY --chown=nexus:nexus ml/datasets ./ml/datasets
+COPY --chown=nexus:nexus ml/preprocessing ./ml/preprocessing
 
 USER nexus
 EXPOSE 8000

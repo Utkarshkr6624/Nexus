@@ -337,14 +337,20 @@ def _date_bound(
     ``to`` becomes the last microsecond of the day *inclusive*. Writing ``to`` as
     midnight would silently drop every event on that day, which is the kind of
     off-by-one that is only noticed by whoever lost the row.
+
+    The zone is read with ``getattr`` rather than ``value.tzinfo``: a caller
+    bound is typed ``date | datetime`` and the route hands over a plain
+    :class:`datetime.date`, which has no ``tzinfo`` at all. Reading the
+    attribute directly turns every timestamp-column search into an
+    ``AttributeError``, and a naive bound is the correct thing for a ``date``
+    anyway — Postgres compares it in the session zone rather than failing.
     """
     if value is None or not is_timestamp:
         return value
+    tzinfo = getattr(value, "tzinfo", None)
     if end_of_day:
-        return datetime(
-            value.year, value.month, value.day, 23, 59, 59, 999_999, tzinfo=value.tzinfo
-        )
-    return datetime(value.year, value.month, value.day, tzinfo=value.tzinfo)
+        return datetime(value.year, value.month, value.day, 23, 59, 59, 999_999, tzinfo=tzinfo)
+    return datetime(value.year, value.month, value.day, tzinfo=tzinfo)
 
 
 class SearchRepository:

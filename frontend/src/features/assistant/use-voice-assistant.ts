@@ -24,8 +24,8 @@
  * render loop, and this hook would be full of them: feature detection on mount,
  * capturing the current route, clearing the error when recognition starts. All
  * of that happens in event handlers and in the recogniser's own callbacks, which
- * are event handlers too. The single effect is the unmount cleanup, which only
- * aborts work in flight.
+ * are event handlers too. The single effect marks the panel mounted and, on
+ * unmount, aborts work in flight.
  */
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
@@ -621,19 +621,26 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
     })
   }
 
-  // Cleanup only. Nothing here sets state, so it is not a render loop; it stops
-  // a microphone, a voice and a request that would otherwise outlive the panel.
-  useEffect(
-    () => () => {
+  // Arms on mount, disarms and releases on unmount. Nothing here sets state, so
+  // it is not a render loop; it stops a microphone, a voice and a request that
+  // would otherwise outlive the panel.
+  //
+  // The arming half is not decoration. StrictMode mounts, runs the cleanup and
+  // runs the effect again, so a flag that is only ever cleared would stay false
+  // for the life of the panel and every `mountedRef` guard below would refuse
+  // to do its job — no turn recorded, no error surfaced, no way out of
+  // `speaking`.
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
       mountedRef.current = false
       recogniserRef.current?.abort()
       recogniserRef.current = null
       cancelSpeech()
       requestRef.current?.abort()
       requestRef.current = null
-    },
-    [],
-  )
+    }
+  }, [])
 
   return {
     state,

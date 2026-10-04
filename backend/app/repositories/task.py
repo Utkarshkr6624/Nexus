@@ -26,7 +26,10 @@ that a task with three matching tags is still one row and the count stays right.
 
 **Counts come from the database.** ``total`` is a ``COUNT`` over the filtered
 query, and :meth:`TaskRepository.stats_for_user` gets every bucket from a single
-``GROUP BY`` rather than a loop of ``COUNT``s.
+``GROUP BY`` rather than a loop of ``COUNT``s. :meth:`TaskRepository.blocked_task_ids`
+is the same shape asked a different question — *which* of the ids a page already
+holds are waiting on unfinished work — because the alternative is one dependency
+lookup per card, fifty of them on a full page.
 
 **A task cannot wait for itself.** :meth:`TaskRepository.add_dependency` does not
 check ``task_id != depends_on_id``, because the ``task_dependencies`` table
@@ -39,6 +42,7 @@ script at midnight. The ``IntegrityError`` it raises is the repository's normal
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from datetime import date
 
 from sqlalchemy import delete, func, select
@@ -100,6 +104,17 @@ _SORT_COLUMNS: dict[str, InstrumentedAttribute] = {
     "title": Task.title,
     "priority": Task.priority,
 }
+
+#: Every value ``tasks.status`` is supposed to hold, as plain strings.
+#:
+#: A statement needs the *persisted* form, and ``tasks.status`` is a ``String(16)``
+#: rather than a native enum — the board's vocabulary grew after the table was
+#: written, and the column was left alone. That leaves a drifted value
+#: reachable, which is why this list exists at all: it is the predicate that finds
+#: the rows nothing can interpret, rather than the one that quietly counts them as
+#: ordinary work. :attr:`app.models.task.Task.status_enum` is the Python half of
+#: the same question.
+_KNOWN_TASK_STATUSES: tuple[str, ...] = tuple(status.value for status in TaskStatus)
 
 
 def _search_pattern(term: str) -> str:
@@ -253,9 +268,10 @@ class TaskRepository:
         tasks filters them out itself, or asks for them by project.
 
         ``tag_ids`` requires a task to carry every listed tag. It is an ``IN`` over
-        a subquery rather than a join to ``task_tags``, so a task matching three
-        of the requested tags is still one row and the ``total`` is the number of
-        distinct tasks rather than the number of matching tag edges.
+        a grouped subquery rather than a join to ``task_tags``, so a task matching
+        three of the requested tags is still one candidate — one that the
+        ``HAVING`` then rejects — and the ``total`` is the number of distinct
+        tasks rather than the number of matching tag edges.
 
         Returns:
             The page of rows and the total number of rows the filters match —
@@ -281,11 +297,17 @@ class TaskRepository:
                 | Task.description.ilike(pattern, escape="\\")
             )
         if tag_ids:
-            filters.append(
-                Task.id.in_(
-                    select(task_tags.c.task_id).where(task_tags.c.tag_id.in_(list(tag_ids)))
-                )
+            # All-of, enforced by counting the distinct tags each candidate task
+            # carries: a bare ``IN`` over the edge table would be any-of and would
+            # hand back a larger page than the docs promise.
+            wanted = list(dict.fromkeys(tag_ids))
+            matching = (
+                select(task_tags.c.task_id)
+                .where(task_tags.c.tag_id.in_(wanted))
+                .group_by(task_tags.c.task_id)
+                .having(func.count(func.distinct(task_tags.c.tag_id)) == len(wanted))
             )
+            filters.append(Task.id.in_(matching))
 
         page = (
             select(Task)
@@ -507,6 +529,106 @@ class TaskRepository:
             select(Task)
             .join(TaskDependency, TaskDependency.task_id == Task.id)
             .where(TaskDependency.depends_on_id == task_id)
+            .order_by(Task.position.asc(), Task.created_at.asc(), Task.id.asc())
+        )
+        return list(result.scalars().all())
+
+    async def blocked_task_ids(
+        self, task_ids: Sequence[uuid.UUID], owner_id: uuid.UUID
+    ) -> set[uuid.UUID]:
+        """Ids from ``task_ids`` that have at least one unfinished prerequisite.
+
+        One owner-scoped statement: ``task_dependencies`` joined to the
+        depended-upon ``tasks`` row, filtered to ``tasks.owner_id == owner_id``
+        and a status that is not ``completed``.
+
+        The join direction is the one :meth:`list_dependencies` gets right and
+        this one has to get right too: the edge's ``depends_on_id`` is the
+        *blocker*, so the ``tasks`` row carrying ``owner_id`` and the status is
+        the prerequisite, not the card that is waiting. Ownership is a predicate
+        on the prerequisite, which is the same predicate the row-by-row path
+        applied after loading the edges — an edge into somebody else's card never
+        blocks anything of the caller's.
+
+        ``COMPLETED`` is the only status that clears a card, matching
+        :data:`~app.services.task_service._SATISFIES_DEPENDENCY`: a ``cancelled``
+        prerequisite is still waiting, and the user unblocks it by removing the
+        edge. ``DISTINCT`` because a card waiting on three unfinished tasks is
+        blocked once, and the caller only ever asks ``task_id in blocked``.
+
+        The *waiting* card's own ownership is deliberately not a predicate here.
+        The per-row path this replaces did not filter on it either, and
+        :meth:`~app.services.task_service.TaskService.list` only ever passes ids
+        it has just loaded under ``owner_id`` — the scope belongs to the caller
+        that assembles the page, not to this query, which is asked a narrower
+        question: of these cards, which are waiting on my unfinished work.
+
+        A prerequisite whose status is outside
+        :class:`~app.models.enums.TaskStatus` counts as unfinished here, because
+        it is not ``completed`` and nothing else is. That is not the same as
+        treating it as ordinary work: :meth:`list_drifted_prerequisites` turns
+        such a row into the ``ValidationError`` the service raises for it, and
+        this answer is never used once that has happened.
+
+        An empty sequence returns ``set()`` without querying, for the reason
+        :meth:`~app.repositories.tag.TagRepository.list_tags_for_tasks` does the
+        same: an ``IN ()`` is a pointless round trip, and a page that matched
+        nothing is the ordinary last page of any filtered listing.
+
+        Args:
+            task_ids: The cards the caller is rendering, in any order.
+            owner_id: The caller's account, applied to the prerequisite.
+
+        Returns:
+            The subset of ``task_ids`` with at least one unfinished
+            prerequisite, as a set for the membership test the caller makes.
+        """
+        if not task_ids:
+            return set()
+        result = await self.session.execute(
+            select(TaskDependency.task_id)
+            .join(Task, Task.id == TaskDependency.depends_on_id)
+            .where(
+                TaskDependency.task_id.in_(list(task_ids)),
+                Task.owner_id == owner_id,
+                Task.status != TaskStatus.COMPLETED.value,
+            )
+            .distinct()
+        )
+        return set(result.scalars().all())
+
+    async def list_drifted_prerequisites(
+        self, task_ids: Sequence[uuid.UUID], owner_id: uuid.UUID
+    ) -> list[Task]:
+        """Return the prerequisites of ``task_ids`` whose status is not a known one.
+
+        The same join as :meth:`blocked_task_ids`, with the membership test
+        inverted: instead of "unfinished" it asks which rows of
+        ``tasks.status`` no member of :class:`~app.models.enums.TaskStatus` names.
+        ``tasks.status`` carries no ``CHECK`` constraint and is not a native enum,
+        so a drifted value is reachable by any writer that skips
+        :func:`~app.models.enums.validate_task_status` — an import, a script, a
+        later version of the enum written by hand. This query is what finds it.
+
+        It is a second statement rather than a branch inside the first because a
+        set of ids cannot carry a row's status out of SQL, and because the caller
+        needs the row itself to name the value in its error. The service raises
+        on what comes back; nothing here interprets it, and the answer is not a
+        flag the caller may fold into the blocked one.
+
+        Returns the rows in board order so the row that gets named is a
+        deterministic one, and ``[]`` without querying for an empty sequence.
+        """
+        if not task_ids:
+            return []
+        result = await self.session.execute(
+            select(Task)
+            .join(TaskDependency, TaskDependency.depends_on_id == Task.id)
+            .where(
+                TaskDependency.task_id.in_(list(task_ids)),
+                Task.owner_id == owner_id,
+                Task.status.notin_(_KNOWN_TASK_STATUSES),
+            )
             .order_by(Task.position.asc(), Task.created_at.asc(), Task.id.asc())
         )
         return list(result.scalars().all())

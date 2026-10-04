@@ -5,10 +5,11 @@
  * argument, `events()`, `sessions()` and `conflicts()` yield the *prefix* for
  * that family; called with params they yield the key for that one query.
  *
- * **`tz` is part of the day/week/month key, not a detail of the fetch.** The
- * same `2026-03-04` in Europe/Berlin and in America/New_York is a different
- * window of the calendar, so the two answers must never share a cache entry —
- * one of them is then rendered for the wrong day, with no error anywhere.
+ * **`tz` is part of the day/week/month/suggestions key, not a detail of the
+ * fetch.** The same `2026-03-04` in Europe/Berlin and in America/New_York is a
+ * different window of the calendar, so the two answers must never share a cache
+ * entry — one of them is then rendered for the wrong day, with no error
+ * anywhere.
  *
  * **Every mutation invalidates the whole `['planner']` tree.** Stopping a timer
  * that leaves the day, the week, the month, the session list, the conflict list
@@ -134,7 +135,9 @@ export const plannerKeys = {
     (params
       ? ['planner', 'conflicts', 'list', ...conflictKeyPart(params)]
       : ['planner', 'conflicts']) as readonly unknown[],
-  suggestions: () => ['planner', 'suggestions'] as const,
+  /** `tz` is in the key: the same slots read in two zones are two answers. */
+  suggestions: (params: SuggestionRequest = {}) =>
+    ['planner', 'suggestions', params.tz ?? null] as const,
   availability: () => ['planner', 'availability'] as const,
 }
 
@@ -227,14 +230,17 @@ export function usePlannerConflicts(
  * The scheduling engine, **off unless asked for**. A full evaluation of the
  * backlog is the most expensive read on this surface, so opening the planner
  * must not fire it; pass `enabled: true` from a deliberate "Suggest slots"
- * action. The engine writes nothing, so a short cache is safe.
+ * action. The engine writes nothing, so a short cache is safe. The zone rides in
+ * the key for the same reason it does on the day/week/month queries: the panel
+ * renders these slot times, so the answer for one zone must never be drawn with
+ * another's label after the user switches.
  */
 export function useSuggestions(
   params: SuggestionRequest = {},
   options: Enabled = {},
 ): UseQueryResult<SuggestionResponse> {
   return useQuery({
-    queryKey: plannerKeys.suggestions(),
+    queryKey: plannerKeys.suggestions(params),
     queryFn: ({ signal }) => fetchSuggestions(params, signal),
     enabled: options.enabled === true,
     staleTime: 60_000,

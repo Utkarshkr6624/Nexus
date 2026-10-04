@@ -744,9 +744,11 @@ The Vite dev server (`:5173`) and `vite preview` (`:4173`) proxy `/api` and
 never enters the picture. The proxy target is `VITE_DEV_PROXY_TARGET`, default
 `http://localhost:8000`, set to `http://backend:8000` by Docker Compose.
 
-The shipped `.env` sets `VITE_API_BASE_URL=http://localhost:8000/api/v1`, which
-makes the client call the backend cross-origin instead and exercises the CORS
-path. Either works; set the variable to `/api/v1` to go through the proxy.
+The shipped `.env` sets `VITE_API_BASE_URL=/api/v1`, so the client calls the API
+same-origin and goes through the proxy. Setting it to an absolute URL such as
+`http://localhost:8000/api/v1` bypasses the proxy, makes every API call
+cross-origin — so CORS applies and cookies stop being sent — and only works for
+origins listed in `CORS_ORIGINS`.
 
 ---
 

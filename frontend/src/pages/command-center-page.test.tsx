@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { CommandPalette } from '@/components/layout/command-palette'
 import { dateOnlyOf, shiftDateOnly } from '@/features/command-center/priority'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { OverviewRead } from '@/types/analytics'
 import type { ApiErrorEnvelope } from '@/types/api'
 import type { Conflict, ConflictList } from '@/types/planner'
@@ -41,7 +41,7 @@ import CommandCenterPage from '@/pages/command-center-page'
  * **The query client is local.** `AppProviders` mounts the shared singleton and
  * clears the cache on a session change, which in jsdom strands every component at
  * `pending` mid-test. A fresh client per render avoids that, with the defaults
- * from `src/app/query-client.ts` reproduced rather than relaxed so the retry
+ * from `src/app/query-client.ts` carried over rather than relaxed so the retry
  * behaviour under test is the shipped behaviour.
  */
 
@@ -467,19 +467,14 @@ function created(url: string, body: BodyInit | null | undefined): Response {
   return json({ name })
 }
 
-/** Mirrors `src/app/query-client.ts`; see the note in the suite docstring. */
+/** Ships the retry policy from `src/app/query-client.ts`. */
 function createTestClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

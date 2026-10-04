@@ -107,11 +107,18 @@ async def logout(
     that sends nothing but a bearer is signing out of the session it is calling
     from. Always 204 — a client that cannot log out is a client that stays
     signed in.
+
+    A client that sends the same token in both places is revoking one session,
+    so it is revoked once: calling through twice would write a second
+    ``user_logout`` row for a single sign-out, and the audit trail would
+    over-count every logout the frontend performs this way.
     """
-    if payload is not None:
-        await auth.revoke(payload.refresh_token)
-    if credentials is not None:
-        await auth.revoke(credentials.credentials)
+    body_token = payload.refresh_token if payload is not None else None
+    bearer_token = credentials.credentials if credentials is not None else None
+    if body_token is not None and body_token != bearer_token:
+        await auth.revoke(body_token)
+    if bearer_token is not None:
+        await auth.revoke(bearer_token)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -249,7 +256,8 @@ async def forgot_password(
     is a promise that a link is on its way, not a claim that it is.
 
     ``dev_token`` carries the raw reset token where there is no mail transport
-    to send it through, and is always ``None`` in production.
+    to send it through, and only where ``dev_expose_reset_token`` says so — it
+    is ``None`` everywhere else, production included.
 
     Errors: 422 for a malformed address only. There is no 404 for an unknown one.
     """

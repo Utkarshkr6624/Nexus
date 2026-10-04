@@ -736,7 +736,10 @@ def _remove_priority(text: str) -> tuple[str, str | None, str | None]:
         start = lead.start()
     tail = _PRIORITY_TRAIL_RE.match(text[end:])
     if tail is not None:
-        end = tail.end()
+        # ``match`` is anchored on the slice, so the span it reports is relative
+        # to ``end``; the lead side needs no such fix because ``search`` is given
+        # ``text[:start]`` and its offsets already line up with ``text``.
+        end = end + tail.end()
 
     return _cut(text, start, end), value, matched
 
@@ -1010,6 +1013,10 @@ def match_task_reference(
         )
 
     normalised = [(candidate, _normalise(candidate.title)) for candidate in candidates]
+    # A title of nothing but punctuation normalises to "", and "" is contained in
+    # every needle, so such a candidate would match every fragment and turn these
+    # passes into a coin flip. It has no words to be matched on; drop it.
+    normalised = [pair for pair in normalised if pair[1]]
 
     exact = [pair for pair in normalised if pair[1] == needle]
     if len(exact) == 1:

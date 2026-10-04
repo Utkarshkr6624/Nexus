@@ -13,7 +13,13 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request, Response, status
 
-from app.api.deps import AuthenticatedUser, UserServiceDep, get_client_context
+from app.api.deps import (
+    AuthenticatedUser,
+    SettingsDep,
+    UserServiceDep,
+    get_authenticated_user,
+    get_client_context,
+)
 from app.core.deps import get_current_active_superuser, require_permission
 from app.core.permissions import Permission
 from app.models.user import User
@@ -33,6 +39,7 @@ async def update_me(
     current_user: AuthenticatedUser,
     users: UserServiceDep,
     request: Request,
+    settings: SettingsDep,
 ) -> User:
     """Update the caller's own profile.
 
@@ -54,7 +61,7 @@ async def update_me(
     username the caller already holds is not a conflict — the profile form
     resubmits it on every save.
     """
-    ip, agent = get_client_context(request)
+    ip, agent = get_client_context(request, settings)
     return await users.update(current_user, payload, ip_address=ip, user_agent=agent)
 
 
@@ -75,6 +82,7 @@ async def delete_me(
     current_user: AuthenticatedUser,
     users: UserServiceDep,
     request: Request,
+    settings: SettingsDep,
 ) -> Response:
     """Delete the caller's account permanently.
 
@@ -93,7 +101,7 @@ async def delete_me(
 
     Errors: 401 when the password does not verify.
     """
-    ip, agent = get_client_context(request)
+    ip, agent = get_client_context(request, settings)
     await users.delete_account(
         user=current_user,
         password=payload.password,
@@ -110,6 +118,7 @@ async def delete_me(
     dependencies=[
         Depends(require_permission(Permission.USERS_READ)),
         Depends(get_current_active_superuser),
+        Depends(get_authenticated_user),
     ],
 )
 async def list_users(users: UserServiceDep) -> list[User]:
@@ -128,7 +137,19 @@ async def list_users(users: UserServiceDep) -> list[User]:
     because a fixture that could itself need pagination would be a worse
     fixture.
 
-    Errors: 403 for any caller whose role does not satisfy both checks.
+    **A third gate, and it is about revocation rather than permission.** The two
+    above resolve the caller through ``app.core.deps.get_current_user``, which
+    never consults the ``sessions`` table or the revocation denylist — so a token
+    from a device that has since been signed out, revoked everywhere or
+    superseded by a password change went on reading this listing, and every
+    account's address with it, for the full ``ACCESS_TOKEN_EXPIRE_MINUTES``.
+    :func:`app.api.deps.get_authenticated_user` is the dependency that does
+    consult both. It says nothing about *who* may call — that is still the two
+    gates above — only whether the bearer is one anybody has signed out of,
+    which is why it belongs in ``dependencies=`` and goes unused as a parameter.
+
+    Errors: 403 for any caller whose role does not satisfy both checks; 401
+    when the bearer no longer has a live session behind it.
     """
     return await users.list_all()
 

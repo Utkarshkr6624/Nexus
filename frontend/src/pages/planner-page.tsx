@@ -338,6 +338,14 @@ export default function PlannerPage() {
         }
       />
 
+      {/* One `Tabs` for the whole planner, not one for the header and another
+          for the body. `Tabs` derives both the trigger ids and the panel id from
+          a per-instance `useId()`, so a `TabsList` and a `TabsContent` in
+          separate instances produce a panel whose `aria-labelledby` names a tab
+          that exists nowhere — the entire planner body exposed as an unnamed
+          tabpanel. Rendering the list as a sibling of the panel would throw
+          instead, which is why both live in this one. */}
+      <Tabs value={view} onValueChange={(next) => navigate({ view: next as ViewMode })}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
           <Button size="icon" variant="outline" className="size-9" aria-label="Previous" onClick={() => shift(-1)}>
@@ -356,21 +364,13 @@ export default function PlannerPage() {
           </p>
         </div>
 
-        <Tabs value={view} onValueChange={(next) => navigate({ view: next as ViewMode })}>
-          <TabsList aria-label="Planner view">
-            <TabsTrigger value="day">Day</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="month">Month</TabsTrigger>
-            <TabsTrigger value="agenda">Agenda</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <TabsList aria-label="Planner view">
+          <TabsTrigger value="day">Day</TabsTrigger>
+          <TabsTrigger value="week">Week</TabsTrigger>
+          <TabsTrigger value="month">Month</TabsTrigger>
+          <TabsTrigger value="agenda">Agenda</TabsTrigger>
+        </TabsList>
       </div>
-
-      {/* A `TabsContent` only registers its panel id while it is inside a
-          `Tabs`, so the panel below has to live in the same `Tabs` as the
-          list above. Rendering it as a sibling throws on the first paint, which
-          is the shape a unit test misses and a browser does not. */}
-      <Tabs value={view} onValueChange={(next) => navigate({ view: next as ViewMode })}>
 
       {isMobile && view === 'week' && (
         <p className="text-xs text-muted-foreground">

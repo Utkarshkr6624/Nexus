@@ -53,6 +53,7 @@ import random
 import sys
 import time
 import tomllib
+import warnings
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
@@ -1528,6 +1529,18 @@ def _run(args: argparse.Namespace) -> int:
         global_step, first_epoch, batches_to_skip, loss_curve = _restore(
             torch, resume_state, model=model, optimiser=optimiser
         )
+        # The checkpoint carries the model, the optimiser and the RNG but not the
+        # scheduler, and a fresh LambdaLR counts from step 0 — so without this the
+        # resumed run replays the warmup from the top while ``global_step`` and the
+        # loss curve carry on from where the crash left them, and the run finishes
+        # at a higher rate than an uninterrupted one. Replaying the schedule's own
+        # steps puts ``last_epoch`` back where the checkpoint left it. The warning
+        # is silenced because these steps are deliberately unpaired: no gradient
+        # was applied, and the log should not claim otherwise.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            for _ in range(global_step):
+                scheduler.step()
         _log(
             f"resuming     yes - {resume_state.directory} at step {global_step}, "
             f"epoch {first_epoch}, batch {batches_to_skip} of {steps_per_epoch}"

@@ -72,12 +72,20 @@ imported lazily so a machine without it still boots and still serves every other
                                                   (8000)
 ```
 
-Two transport topologies coexist, and the difference matters:
+The browser's base URL is the same in both modes:
 
 | Mode | `VITE_API_BASE_URL` | What the browser calls | Where `/api/v1` resolves |
 | --- | --- | --- | --- |
-| Host development | `http://localhost:8000/api/v1` (from `.env.example`) | the backend cross-origin | the API, CORS applies |
+| Host development | `/api/v1` (from `.env.example`) | same-origin | Vite's proxy → `VITE_DEV_PROXY_TARGET` |
 | Compose | `/api/v1` (set in `docker-compose.yml`) | same-origin | Vite's proxy → `VITE_DEV_PROXY_TARGET` |
+
+Both rows are the same on purpose. The base URL is **relative**, so the browser
+never issues a cross-origin request and CORS never applies on the dev path; the
+dev server (and the preview server, and the production reverse proxy standing in
+for it) is what forwards `/api/v1` to the backend. Setting an absolute URL here
+would bypass the proxy, make every API call cross-origin so cookies stop being
+sent, and require that origin to appear in `CORS_ORIGINS`. What differs between
+the two modes is where the proxy points, not what the browser asks for.
 
 `VITE_DEV_PROXY_TARGET` defaults to `http://localhost:8000` and is set to
 `http://backend:8000` by Compose, because inside the compose network
@@ -90,7 +98,10 @@ behaves like the reverse proxy that will eventually front the API.
 
 One `.env` at the repository root feeds both processes. `Settings`
 (`backend/app/core/config.py`) searches `.env`, `../.env`, `../../.env`, so the
-file is found regardless of the working directory. `docker-compose.yml` reads the
+file is found regardless of the working directory; `backend/run.py` resolves it
+from its own location with `load_dotenv`, and `frontend/vite.config.ts` points
+`envDir` at the repository root for the same reason — Vite would otherwise
+resolve `envDir` to `frontend/` and read nothing. `docker-compose.yml` reads the
 same file directly and injects `${VAR:-default}` values per service. There is no
 second configuration channel: every value that shapes behaviour is an environment
 variable listed in [`.env.example`](../.env.example).
@@ -1072,7 +1083,7 @@ share:
 | Planner | `planner_lookahead_days` | How far forward the scheduler searches, so a large backlog stays a bounded walk of availability rather than a scan |
 | Planner | `planner_max_session_minutes`, `planner_min_session_minutes`, `planner_max_suggestions_per_task` | The shape of one proposal, so one large task cannot fill the horizon ahead of a task that is due tomorrow |
 | Analytics | `analytics_max_range_days` (366), `analytics_rebuild_max_days` (180) | Every windowed aggregate scans the owner's whole history; an unbounded range is the one query shape these indexes cannot serve |
-| Analytics | `analytics_default_range_days`, `analytics_comparison_windows` | What a request that names no dates gets. A week is the shortest span that can distinguish a habit from a one-off |
+| Analytics | `analytics_default_range_days` | What a request that names no dates gets. A week is the shortest span that can distinguish a habit from a one-off |
 | Planner | `planner_default_timezone`, `planner_day_start_hour`, `planner_day_end_hour` | Which *day boundaries* a view spans. Every stored instant is UTC regardless; `08:00–20:00` is a daytime window the scheduler assumes when told nothing, not a working-hours claim |
 
 ### Where the variables live
@@ -1774,7 +1785,11 @@ Three decisions are worth reading in the file itself:
 
 The backend Dockerfile is multi-stage: an `awk` extraction at the `DEV MARKER`
 line strips pytest and ruff from the runtime image, and the runtime stage runs as
-uid 10001 with `libpq5` and `curl` only.
+uid 10001 with `libpq5` and `curl` only. It also copies the four `ml/` paths the
+app imports at boot — `ml/__init__.py`, `ml/validation.py`, `ml/datasets/` and
+`ml/preprocessing/` — one path per `COPY` rather than `COPY ml ./ml`, because
+`backend/.dockerignore` does not exclude `ml/artifacts/` and a whole-package copy
+would bake the Phase 10 checkpoint into the image.
 
 ---
 
@@ -1839,7 +1854,7 @@ table, which is why both are called "Phase 2".
 | `non_raising_client` for tests that assert on a rendered 5xx | The default transport re-raises, which makes the application's own catch-all handler unobservable | One more client fixture, and a rule about which tests use which |
 | `pytest.exit` when `TEST_DATABASE_URL` names the application database | `truncated_database` really does truncate; a skip would be a guard that silently stops guarding | A configuration mistake stops the whole session rather than skipping the affected tests |
 | Frontend 401 recovery + single-flighted refresh | An expired access token should not strand the user, but refresh tokens are single-use server-side — concurrent refreshes would destroy the winner's fresh pair | Three module-level in-flight promises to reason about, and a replay path that must not loop |
-| Same-origin `/api/v1` under Compose | Keeps CORS and cookies out of the picture in dev; the proxy is an accurate stand-in for a reverse proxy | Two `VITE_API_BASE_URL` values depending on mode |
+| Same-origin `/api/v1` on the host and under Compose | Keeps CORS and cookies out of the picture in dev; the proxy is an accurate stand-in for a reverse proxy | One relative base URL, so nothing has to branch on the mode |
 | Module registry as the single declaration | Sidebar, palette, headers and placeholders cannot drift apart | Adding a module still needs a route entry |
 | React Query for server state, Zustand for client state | Caching/polling and session/theme are different problems | Two state libraries |
 | Placeholder pages that render an em dash | No fabricated data; the UI states plainly what does not exist | Screenshots and demos look emptier than a mock would |

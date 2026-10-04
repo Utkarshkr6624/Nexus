@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import CareerPage from '@/pages/career-page'
 import { formatNumber } from '@/features/analytics/format'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import { useToastStore } from '@/stores/toast-store'
 import type { ApiErrorEnvelope } from '@/types/api'
 import type { Paginated } from '@/types/pagination'
@@ -207,19 +207,14 @@ function installBackend(overrides: Backend = {}): Call[] {
   return calls
 }
 
-/** Mirrors `src/app/query-client.ts`, reproduced rather than relaxed. */
+/** Ships the retry policy from `src/app/query-client.ts`. */
 function createTestClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

@@ -749,9 +749,13 @@ class AvailabilityRuleRepository:
                 self.session.add(row)
             await self.session.flush()
         await self.session.commit()
-        for row in rows:
-            await self.session.refresh(row)
-        return rows
+        # One re-read, not one per row: a full-week replace is up to 168 rules,
+        # so the per-row ``refresh`` this replaces was 168 round trips to fetch
+        # values the same statement already returns. Re-keyed by id because the
+        # rows must come back in the order they were submitted, not in whatever
+        # order the ``WHERE owner_id`` scan yields.
+        stored = {row.id: row for row in await self.list_for_user(owner_id)}
+        return [stored[row.id] for row in rows]
 
     async def delete_for_user(self, owner_id: uuid.UUID) -> None:
         """Delete every rule belonging to this user.

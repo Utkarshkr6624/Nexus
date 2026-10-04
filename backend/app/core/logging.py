@@ -193,7 +193,10 @@ class ConsoleFormatter(logging.Formatter):
             parts.append(self._paint(f"req={request_id[:8]}", _DIM))
 
         fields = {
-            key: redact(value)
+            # Redact the key/value pair, not the value alone: a scalar secret
+            # such as password="hunter2" has nothing to walk, and this is the
+            # formatter a developer reads by eye.
+            key: redact({key: value})[key]
             for key, value in record.__dict__.items()
             if key not in _RESERVED_RECORD_ATTRS and key != "request_id"
         }

@@ -286,7 +286,15 @@ function Pager({
   )
 }
 
-/** Resources have no dedicated form component, so the browser owns this one. */
+/**
+ * Resources have no dedicated form component, so the browser owns this one.
+ *
+ * **It is still a real `<form>`.** Enter in any field submits, which is the one
+ * keyboard path a dialog that only hangs `onClick` off a button denies its
+ * reader, and a `<form>` is also what the browser uses to move the submit button
+ * into an implicit submission. `noValidate` because the fields are already
+ * bounded by `maxLength` and the server is the authority on the URL.
+ */
 function ResourceDialog({
   open,
   onOpenChange,
@@ -302,6 +310,14 @@ function ResourceDialog({
   const [description, setDescription] = useState('')
   const [resourceType, setResourceType] = useState<ResourceType>('article')
 
+  /** All four fields, the type included: a half-typed resource is not a draft. */
+  function reset() {
+    setTitle('')
+    setUrl('')
+    setDescription('')
+    setResourceType('article')
+  }
+
   async function submit() {
     const payload: ResourceCreatePayload = {
       title: title.trim(),
@@ -315,9 +331,7 @@ function ResourceDialog({
       const saved = await create.mutateAsync(payload)
       toast.success('Resource filed', saved.title)
       onSaved(saved)
-      setTitle('')
-      setUrl('')
-      setDescription('')
+      reset()
       onOpenChange(false)
     } catch (cause) {
       toast.error('Could not file that resource', toApiError(cause).message)
@@ -333,7 +347,14 @@ function ResourceDialog({
             An external thing worth citing. Nothing is fetched — the URL is stored as you type it.
           </DialogDescription>
         </DialogHeader>
-        <div className="app-form-stack">
+        <form
+          className="app-form-stack"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void submit()
+          }}
+          noValidate
+        >
           <div className="app-form-field">
             <Label htmlFor="resource-title">Title</Label>
             <Input
@@ -379,15 +400,24 @@ function ResourceDialog({
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={create.isPending}>
-            Cancel
-          </Button>
-          <Button onClick={() => void submit()} disabled={create.isPending || !title.trim()}>
-            {create.isPending ? 'Filing…' : 'File resource'}
-          </Button>
-        </DialogFooter>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                reset()
+                onOpenChange(false)
+              }}
+              disabled={create.isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={create.isPending || !title.trim()}>
+              {create.isPending ? 'Filing…' : 'File resource'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -406,6 +436,20 @@ export default function KnowledgePage() {
   const [pendingDelete, setPendingDelete] = useState<
     { kind: 'bookmark' | 'resource' | 'concept'; id: string; title: string } | null
   >(null)
+
+  /**
+   * `view.q` is the URL, and the input is not its only writer: "Clear filters",
+   * a tag chip, a shared link and the browser's own Back/Forward all go through
+   * `apply` and none of them touch this draft. Without this the box kept showing
+   * a query the list was no longer filtered by. Typing still sets both in the
+   * same event, so the two never disagree — and this only re-seeds when the URL
+   * actually moved, not on every keystroke.
+   */
+  const [lastQ, setLastQ] = useState(view.q)
+  if (lastQ !== view.q) {
+    setLastQ(view.q)
+    setSearchDraft(view.q)
+  }
 
   // Typing replaces the current entry rather than pushing one per keystroke —
   // five search characters should not cost five presses of the back button.

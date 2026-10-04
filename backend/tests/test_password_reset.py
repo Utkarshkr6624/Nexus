@@ -30,11 +30,26 @@ STRONG_SECRET = "k7Qm2Zt9XpL4vR8sN6bY3wJ1hG5dF0cA7eU9iO2pS4tV6xZ8mB1nC3qW5eR7yT9
 
 
 def _settings(**overrides) -> Settings:
-    return Settings(_env_file=None, **{"secret_key": STRONG_SECRET, **overrides})
+    """Development settings for a service-level test.
+
+    ``dev_expose_reset_token`` is on because the service only hands the raw token
+    back when it is explicitly asked to: the endpoint is otherwise an account
+    oracle, since returning a token for a known address and not for an unknown
+    one is exactly the difference the shared response body is meant to hide. A
+    test that wants a token therefore has to say so.
+    """
+    return Settings(
+        _env_file=None,
+        **{"secret_key": STRONG_SECRET, "dev_expose_reset_token": True, **overrides},
+    )
 
 
 def _production_kwargs() -> dict:
-    """Production refuses the placeholder secret and refuses debug, so both are set."""
+    """Production refuses the placeholder secret and refuses debug, so both are set.
+
+    ``dev_expose_reset_token`` is deliberately absent: production never returns
+    the token, whether or not the flag is set, so the token must be ``None``.
+    """
     return {"environment": "production", "secret_key": STRONG_SECRET, "debug": False}
 
 

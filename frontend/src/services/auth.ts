@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client'
+import type { RequestOptions } from '@/lib/api-client'
 import type {
   LoginPayload,
   PasswordChangePayload,
@@ -61,8 +62,19 @@ export function logoutRequest(accessToken: string | null, refreshToken: string |
   )
 }
 
-export function fetchCurrentUser(): Promise<User> {
-  return apiClient.get<User>(AUTH_ENDPOINTS.me)
+/**
+ * Read the signed-in user.
+ *
+ * `recoverOn401` is exposed because the boot check drives its own renewal: if
+ * the client rotated the session underneath it, the store's supersession guard
+ * would see a different access token and discard the result, leaving the app
+ * on its boot screen forever. Passing `false` keeps the recovery in the store,
+ * where it is single-flighted and knows how to re-verify afterwards.
+ */
+export function fetchCurrentUser(
+  options: Omit<RequestOptions, 'method' | 'body'> = {},
+): Promise<User> {
+  return apiClient.get<User>(AUTH_ENDPOINTS.me, options)
 }
 
 /**

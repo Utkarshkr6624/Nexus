@@ -53,7 +53,7 @@ from app.api.deps import get_authenticated_user, get_current_user
 from app.api.deps import get_ml_runtime as provide_ml_runtime
 from app.core.config import BACKEND_ROOT, DEFAULT_MODEL_PATH, ML_DEVICES, Settings
 from app.ml.classifier import IntentClassifier
-from app.ml.exceptions import InferenceError
+from app.ml.exceptions import InferenceError, MLUnavailableError
 from app.ml.model_loader import (
     DEFAULT_CHECKPOINT_DIR,
     REQUIRED_CHECKPOINT_FILES,
@@ -196,11 +196,19 @@ def lifespan_collaborators(monkeypatch: pytest.MonkeyPatch):
                 raise database_probe
             return True if database_probe is None else database_probe
 
+        async def no_purge(_settings) -> tuple[int, int]:
+            return 0, 0
+
         monkeypatch.setattr(
             app_main, "configure_logging", lambda *_a, **_k: logging.getLogger("app.main")
         )
         monkeypatch.setattr(app_main, "check_database_connection", probe)
         monkeypatch.setattr(app_main, "get_ml_runtime", lambda: runtime)
+        # The retention sweep is the one startup step that needs a real
+        # session; stubbed so these tests stay about the ML lifecycle. The
+        # lifespan's guard around it is what keeps it from being fatal either
+        # way, and ``tests/test_health.py`` runs it against a real database.
+        monkeypatch.setattr(app_main, "_purge_expired_records", no_purge)
         # No engine exists: the ASGI clients never run this lifespan, so the
         # module-global the cleanup block reads is None in a test process.
         monkeypatch.setattr(app_main, "db_session", SimpleNamespace(_engine=None))
@@ -215,12 +223,22 @@ class _RecordingRuntime:
     Substituted for :class:`app.ml.runtime.MLRuntime` so the wiring can be tested
     without loading 703 MiB — the assertions are about *when* the lifespan calls
     ``load`` and ``shutdown``, not about what a model returns.
+
+    ``load_status`` is the tolerant failure the real runtime produces: a load
+    that returns an unavailable status. ``load_error`` is the strict one: a load
+    that raises, which only the real runtime does under ``ML_FAIL_FAST``.
     """
 
-    def __init__(self, *, load_error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        load_error: Exception | None = None,
+        load_status: MLRuntimeStatus | None = None,
+    ) -> None:
         self._load_error = load_error
+        self._load_status = load_status
         self.calls: list[str] = []
-        self.status = MLRuntimeStatus(
+        self.status = load_status or MLRuntimeStatus(
             available=load_error is None,
             reason="available" if load_error is None else "load_failed",
         )
@@ -234,7 +252,7 @@ class _RecordingRuntime:
         self.calls.append(f"load:{threading.get_ident()}")
         if self._load_error is not None:
             raise self._load_error
-        return self.status
+        return self._load_status or self.status
 
     def shutdown(self) -> None:
         self.calls.append("shutdown")
@@ -725,14 +743,21 @@ async def test_a_failed_database_probe_does_not_stop_startup(app, lifespan_colla
     assert runtime.events == ["load", "shutdown"]
 
 
-async def test_a_failed_model_load_does_not_stop_startup(app, lifespan_collaborators):
+async def test_a_degraded_model_load_does_not_stop_startup(app, lifespan_collaborators):
     """``ML_FAIL_FAST`` is off by default, so a broken checkpoint is a 503, not a crash.
 
-    The runtime is still attached to ``app.state`` and still shut down on exit,
-    so a deployment that repairs its checkpoint does not also have to repair a
-    leaked process.
+    The tolerant failure is the one ``load()`` *returns*: an unavailable status
+    with a reason. The runtime is still attached to ``app.state`` and still shut
+    down on exit, so a deployment that repairs its checkpoint does not also have
+    to repair a leaked process.
     """
-    runtime = _RecordingRuntime(load_error=RuntimeError("the weights are corrupt"))
+    runtime = _RecordingRuntime(
+        load_status=MLRuntimeStatus(
+            available=False,
+            reason=MLRuntime.REASON_CHECKPOINT_MISSING,
+            detail="no checkpoint directory at /srv/nexus/checkpoints/final",
+        )
+    )
     lifespan_collaborators(runtime)
     application = app_main.create_app(Settings(_env_file=None))
 
@@ -742,8 +767,44 @@ async def test_a_failed_model_load_does_not_stop_startup(app, lifespan_collabora
         assert runtime.calls[0].startswith("load:"), "the failing load must have been attempted"
         assert application.state.ml_runtime is runtime
         assert runtime.status.available is False
+        assert runtime.status.reason == MLRuntime.REASON_CHECKPOINT_MISSING
 
     assert runtime.calls[-1] == "shutdown"
+
+
+async def test_a_strict_model_load_refuses_to_start(app, lifespan_collaborators, tmp_path, caplog):
+    """``ML_FAIL_FAST=true`` buys a boot failure instead of a feature that 503s.
+
+    The strict runtime *raises* — that is the whole difference from the case
+    above, and it is the difference the flag exists to buy. A lifespan that
+    swallowed the raise would serve a deployment that had asked not to be served,
+    and the runtime would never record a status at all, so ``/api/v1/ml/status``
+    would report ``not_loaded`` rather than the reason.
+
+    The runtime is the real one, pointed at a checkpoint that is not there, so
+    the exception the lifespan re-raises is the one a strict deployment
+    produces and no weights are read.
+    """
+    caplog.set_level(logging.INFO)
+    runtime = MLRuntime(
+        Settings(
+            _env_file=None,
+            ml_enabled=True,
+            ml_fail_fast=True,
+            ml_model_path=str(tmp_path / "never-trained"),
+        )
+    )
+    lifespan_collaborators(runtime)
+    application = app_main.create_app(Settings(_env_file=None))
+
+    with pytest.raises(MLUnavailableError):
+        async with AsyncExitStack() as stack:
+            await stack.enter_async_context(app_main._lifespan(application))
+
+    assert application.state.ml_runtime is runtime, "the failing load must have been attempted"
+    # Logged before it is re-raised, so an operator who asked for this gets the
+    # reason in the boot log rather than only a traceback.
+    assert "ml_runtime_startup_failed" in _logged_payload(caplog)
 
 
 def test_a_runtime_the_lifespan_attached_is_the_one_the_ml_routes_will_get():

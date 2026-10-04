@@ -7,6 +7,7 @@ the rules about who may change what are stated in one place.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 
 from sqlalchemy.exc import IntegrityError
@@ -186,7 +187,10 @@ class UserService:
         Raises:
             UnauthorizedError: If the password does not verify.
         """
-        if not verify_password(password, user.hashed_password):
+        # Off the event loop. The hash is a deliberate ~200 ms of bcrypt, and a
+        # synchronous verify inside `async def` blocks every other request this
+        # worker is serving for the duration of one user's typo.
+        if not await asyncio.to_thread(verify_password, password, user.hashed_password):
             raise UnauthorizedError(_WRONG_PASSWORD)
         if self.audit is not None:
             # Written BEFORE the row goes. The audit table keeps a SET NULL

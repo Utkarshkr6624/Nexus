@@ -171,6 +171,13 @@ export interface RequestOptions {
    * the 401 recovery, which is what the login, refresh and logout calls need.
    */
   auth?: boolean
+  /**
+   * Set false for a request that must surface its own 401 rather than let the
+   * client renew and replay it. The auth store's boot check is the one caller:
+   * it performs the renewal itself, and a rotation the client commits mid-call
+   * replaces the pair the store is guarding its write on.
+   */
+  recoverOn401?: boolean
   parse?: 'json' | 'text' | 'none'
 }
 
@@ -278,6 +285,15 @@ async function toApiError(response: Response): Promise<ApiError> {
   })
 }
 
+/** One wording for every way a request can run out of time. */
+function timeoutError(path: string, timeoutMs: number): ApiError {
+  return new ApiError({
+    status: NO_HTTP_STATUS,
+    code: 'timeout',
+    message: `Request to ${path} timed out after ${timeoutMs}ms`,
+  })
+}
+
 export class ApiClient {
   private baseUrl: string
   private timeoutMs: number
@@ -337,9 +353,13 @@ export class ApiClient {
   }
 
   /**
-   * One round trip, with the timeout and the caller's cancellation applied.
+   * One round trip, with the caller's cancellation applied.
    * A transport failure leaves as an `ApiError`; anything HTTP-shaped is handed
    * back untouched so the caller can decide what a status means.
+   *
+   * The abort plumbing belongs to `request`, which owns the timeout: `fetch`
+   * resolves on headers, so a timer scoped to this call would be cleared before
+   * the body is read and a stalled body would never be noticed.
    */
   private async send(params: {
     path: string
@@ -347,52 +367,34 @@ export class ApiClient {
     method: HttpMethod
     headers: Headers
     payload: BodyInit | undefined
-    signal: AbortSignal | undefined
+    signal: AbortSignal
+    callerSignal: AbortSignal | undefined
     timeoutMs: number
+    timedOut: () => boolean
   }): Promise<Response> {
-    const { path, query, method, headers, payload, signal, timeoutMs } = params
-
-    const controller = new AbortController()
-    let timedOut = false
-    const onExternalAbort = (): void => controller.abort()
-    signal?.addEventListener('abort', onExternalAbort)
-
-    const timer =
-      timeoutMs > 0
-        ? setTimeout(() => {
-            timedOut = true
-            controller.abort()
-          }, timeoutMs)
-        : undefined
+    const { path, query, method, headers, payload, signal, callerSignal, timeoutMs, timedOut } = params
 
     try {
       return await this.fetchImpl(this.buildUrl(path, query), {
         method,
         headers,
         body: payload,
-        signal: controller.signal,
+        signal,
         credentials: 'same-origin',
       })
     } catch (cause) {
-      if (timedOut) {
-        throw new ApiError({
-          status: NO_HTTP_STATUS,
-          code: 'timeout',
-          message: `Request to ${path} timed out after ${timeoutMs}ms`,
-        })
+      if (timedOut()) {
+        throw timeoutError(path, timeoutMs)
       }
-      if (signal?.aborted) {
+      if (callerSignal?.aborted) {
         // Caller cancelled: surface the abort reason so React Query can ignore it.
-        throw signal.reason ?? cause
+        throw callerSignal.reason ?? cause
       }
       throw new ApiError({
         status: NO_HTTP_STATUS,
         code: 'network_error',
         message: cause instanceof Error ? cause.message : 'Network request failed',
       })
-    } finally {
-      if (timer !== undefined) clearTimeout(timer)
-      signal?.removeEventListener('abort', onExternalAbort)
     }
   }
 
@@ -420,117 +422,167 @@ export class ApiClient {
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { method = 'GET', body, query, signal, auth = true, parse = 'json' } = options
+    const {
+      method = 'GET',
+      body,
+      query,
+      signal,
+      auth = true,
+      recoverOn401 = true,
+      parse = 'json',
+    } = options
     const timeoutMs = options.timeoutMs ?? this.timeoutMs
 
     if (signal?.aborted) {
       throw signal.reason ?? new DOMException('Request aborted', 'AbortError')
     }
 
-    const headers = new Headers(options.headers)
-    let payload: BodyInit | undefined
+    // The timeout spans the whole exchange, body included: `fetch` resolves on
+    // headers, so a server that flushes them and then stalls the body would leave
+    // this promise pending forever — and a promise that never settles is a query
+    // that never retries.
+    const controller = new AbortController()
+    let timedOut = false
+    const onExternalAbort = (): void => controller.abort()
+    signal?.addEventListener('abort', onExternalAbort)
 
-    if (body !== undefined && body !== null) {
-      if (isNativeBody(body)) {
-        payload = body
-      } else {
-        payload = JSON.stringify(body)
-        if (!headers.has('Content-Type')) {
-          headers.set('Content-Type', 'application/json')
-        }
-      }
-    }
-
-    // A caller-supplied Authorization header is the caller's own credential:
-    // the client neither replaces it nor renews it on a 401.
-    const getToken = auth ? this.getToken : null
-    let authenticated = false
-    if (getToken && !headers.has('Authorization')) {
-      const token = await getToken()
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`)
-        authenticated = true
-      }
-    }
-    if (!headers.has('Accept')) {
-      headers.set('Accept', 'application/json')
-    }
-
-    const send = (): Promise<Response> =>
-      this.send({ path, query, method, headers, payload, signal, timeoutMs })
-
-    let response = await send()
-    let rejectedAfterRenewal = false
-
-    if (response.status === 401 && authenticated) {
-      const recovery = await this.recoverToken()
-      if (recovery.kind === 'unreachable') {
-        // The renewal never reached the backend, so this 401 is not evidence
-        // that the session is spent. Reporting it would tell the caller the
-        // backend rejected the session when in fact it never answered, and
-        // React Query does not retry a 4xx — the query would sit in a wrong
-        // error state for the rest of the cache's life.
-        throw recovery.error
-      }
-      if (recovery.kind === 'renewed') {
-        // Replay at most once: a second 401 is a real rejection, not an
-        // expiry, and the caller sees it as such.
-        headers.set('Authorization', `Bearer ${recovery.token}`)
-        response = await send()
-        rejectedAfterRenewal = response.status === 401
-      }
-    }
-
-    // Only a request the client authenticated belongs to the streak. The
-    // recovery call travels through this same client unauthenticated — login,
-    // refresh and logout all pass `auth: false` — so counting it would reset
-    // the counter it exists to advance, and the streak could never reach two.
-    if (authenticated) {
-      // A request that was not refused after a renewal breaks the streak, so
-      // the count measures consecutive failures rather than total requests.
-      if (!rejectedAfterRenewal) {
-        this.consecutiveRenewalFailures = 0
-        this.sessionRejectionReported = false
-      } else {
-        this.consecutiveRenewalFailures += 1
-        if (
-          this.consecutiveRenewalFailures >= MAX_CONSECUTIVE_RENEWAL_FAILURES &&
-          !this.sessionRejectionReported
-        ) {
-          // Renewal succeeds and the endpoint still says 401, repeatedly: the
-          // session cannot be saved by rotating again. Report it once, so the
-          // loop stops instead of spending a single-use refresh token per
-          // request for as long as the panel is open.
-          this.sessionRejectionReported = true
-          this.sessionRejectedHandler?.()
-        }
-      }
-    }
-
-    if (!response.ok) {
-      throw await toApiError(response)
-    }
-
-    if (parse === 'none' || response.status === 204) {
-      return undefined as T
-    }
-
-    const text = await response.text()
-    if (!text) {
-      return undefined as T
-    }
-    if (parse === 'text') {
-      return text as T
-    }
+    const timer =
+      timeoutMs > 0
+        ? setTimeout(() => {
+            timedOut = true
+            controller.abort()
+          }, timeoutMs)
+        : undefined
 
     try {
-      return JSON.parse(text) as T
-    } catch {
-      throw new ApiError({
-        status: response.status,
-        code: 'invalid_response',
-        message: 'Response body was not valid JSON',
-      })
+      const headers = new Headers(options.headers)
+      let payload: BodyInit | undefined
+
+      if (body !== undefined && body !== null) {
+        if (isNativeBody(body)) {
+          payload = body
+        } else {
+          payload = JSON.stringify(body)
+          if (!headers.has('Content-Type')) {
+            headers.set('Content-Type', 'application/json')
+          }
+        }
+      }
+
+      // A caller-supplied Authorization header is the caller's own credential:
+      // the client neither replaces it nor renews it on a 401.
+      const getToken = auth ? this.getToken : null
+      let authenticated = false
+      if (getToken && !headers.has('Authorization')) {
+        const token = await getToken()
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`)
+          authenticated = true
+        }
+      }
+      if (!headers.has('Accept')) {
+        headers.set('Accept', 'application/json')
+      }
+
+      const send = (): Promise<Response> =>
+        this.send({
+          path,
+          query,
+          method,
+          headers,
+          payload,
+          signal: controller.signal,
+          callerSignal: signal,
+          timeoutMs,
+          timedOut: () => timedOut,
+        })
+
+      let response = await send()
+      let rejectedAfterRenewal = false
+
+      if (response.status === 401 && authenticated && recoverOn401) {
+        const recovery = await this.recoverToken()
+        if (recovery.kind === 'unreachable') {
+          // The renewal never reached the backend, so this 401 is not evidence
+          // that the session is spent. Reporting it would tell the caller the
+          // backend rejected the session when in fact it never answered, and
+          // React Query does not retry a 4xx — the query would sit in a wrong
+          // error state for the rest of the cache's life.
+          throw recovery.error
+        }
+        if (recovery.kind === 'renewed') {
+          // Replay at most once: a second 401 is a real rejection, not an
+          // expiry, and the caller sees it as such.
+          headers.set('Authorization', `Bearer ${recovery.token}`)
+          response = await send()
+          rejectedAfterRenewal = response.status === 401
+        }
+      }
+
+      // Only a request the client authenticated belongs to the streak. The
+      // recovery call travels through this same client unauthenticated — login,
+      // refresh and logout all pass `auth: false` — so counting it would reset
+      // the counter it exists to advance, and the streak could never reach two.
+      if (authenticated) {
+        // A request that was not refused after a renewal breaks the streak, so
+        // the count measures consecutive failures rather than total requests.
+        if (!rejectedAfterRenewal) {
+          this.consecutiveRenewalFailures = 0
+          this.sessionRejectionReported = false
+        } else {
+          this.consecutiveRenewalFailures += 1
+          if (
+            this.consecutiveRenewalFailures >= MAX_CONSECUTIVE_RENEWAL_FAILURES &&
+            !this.sessionRejectionReported
+          ) {
+            // Renewal succeeds and the endpoint still says 401, repeatedly: the
+            // session cannot be saved by rotating again. Report it once, so the
+            // loop stops instead of spending a single-use refresh token per
+            // request for as long as the panel is open.
+            this.sessionRejectionReported = true
+            this.sessionRejectedHandler?.()
+          }
+        }
+      }
+
+      if (!response.ok) {
+        const error = await toApiError(response)
+        // A body that never arrived because the timeout fired is a timeout, not
+        // the status the headers carried.
+        throw timedOut ? timeoutError(path, timeoutMs) : error
+      }
+
+      if (parse === 'none' || response.status === 204) {
+        return undefined as T
+      }
+
+      let text: string
+      try {
+        text = await response.text()
+      } catch (cause) {
+        if (timedOut) throw timeoutError(path, timeoutMs)
+        throw cause
+      }
+
+      if (!text) {
+        return undefined as T
+      }
+      if (parse === 'text') {
+        return text as T
+      }
+
+      try {
+        return JSON.parse(text) as T
+      } catch {
+        throw new ApiError({
+          status: response.status,
+          code: 'invalid_response',
+          message: 'Response body was not valid JSON',
+        })
+      }
+    } finally {
+      if (timer !== undefined) clearTimeout(timer)
+      signal?.removeEventListener('abort', onExternalAbort)
     }
   }
 

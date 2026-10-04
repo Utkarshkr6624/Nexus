@@ -24,7 +24,7 @@ import {
 } from '@/features/developer/components'
 import { NOT_ENOUGH_DATA_TITLE } from '@/features/developer/components/developer-vocabulary'
 import { NO_VALUE, formatNumber } from '@/features/analytics/format'
-import { isAbortError, toApiError } from '@/services/errors'
+import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import {
   NOT_ENOUGH_DATA,
@@ -55,8 +55,8 @@ import {
  * `QueryClient` per render. The shared singleton is deliberately not used:
  * `AppProviders` registers `onSessionChange(() => queryClient.clear())`
  * (`src/app/auth-bootstrap.tsx:13`), and in jsdom that clear lands mid-test and
- * strands every component at `pending` forever. The retry policy below is the
- * one in `src/app/query-client.ts`, reproduced rather than relaxed.
+ * strands every component at `pending` forever. The retry policy below is
+ * `src/app/query-client.ts`'s own `queryRetryPolicy`, not a copy of it.
  *
  * **Only `fetch` is stubbed, and the routing table is there to prove it is not
  * needed.** The components are presentational by construction — a
@@ -185,8 +185,8 @@ function installBackend(overrides: Backend = {}): Call[] {
 }
 
 /**
- * Mirrors `src/app/query-client.ts`. Reproduced rather than replaced so nothing
- * in this file is testing a policy the app does not ship.
+ * Ships the retry policy from `src/app/query-client.ts`, so nothing in this file
+ * is testing a policy the app does not ship.
  */
 function createTestClient(): QueryClient {
   return new QueryClient({
@@ -194,12 +194,7 @@ function createTestClient(): QueryClient {
       queries: {
         staleTime: 30_000,
         refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-          if (isAbortError(error)) return false
-          const status = toApiError(error).status
-          if (status >= 400 && status < 500) return false
-          return failureCount < 2
-        },
+        retry: queryRetryPolicy,
       },
       mutations: { retry: false },
     },

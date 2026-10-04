@@ -592,7 +592,11 @@ class AnalyticsRepository:
         comparison elsewhere reports as a late completion.
         """
         day = Task.due_date
-        completed_day = cast(Task.completed_at, Date)
+        # ``utc_day`` rather than a plain ``CAST(... AS DATE)``: the bare cast
+        # resolves ``timestamptz::date`` through the session's ``TimeZone``, so the
+        # boundary it cuts would depend on how the connection was configured —
+        # see this module's docstring.
+        completed_day = utc_day(Task.completed_at)
         result = await self.session.execute(
             select(day, func.count())
             .where(

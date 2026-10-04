@@ -94,6 +94,104 @@ describe('ApiError mapping', () => {
     expect(apiError.requestId).toBe('proxy-req-77')
   })
 })
+describe('the request timeout', () => {
+  /**
+   * `fetch` resolves on headers, so a server that flushes them and then stalls
+   * the body used to leave the promise pending forever: no `ApiError`, and
+   * therefore no React Query retry. The abort and its timer have to outlive the
+   * headers, which means outliving the `response.text()` calls that follow.
+   */
+  it('covers reading the body, not just waiting for the headers', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            // Headers and part of a body, then nothing — the shape of a stall.
+            controller.enqueue(new TextEncoder().encode('{"id":'))
+            init?.signal?.addEventListener('abort', () => {
+              controller.error(new DOMException('The operation was aborted.', 'AbortError'))
+            })
+          },
+        })
+        return new Response(body, {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }),
+    )
+
+    const error = await new ApiClient({ baseUrl: '/api/v1', timeoutMs: 25 })
+      .get('/stalled')
+      .catch((cause: unknown) => cause)
+
+    expect(error).toBeInstanceOf(ApiError)
+    const apiError = error as ApiError
+    expect(apiError.isTimeout).toBe(true)
+    // No HTTP status was ever completed, so this is not a response the backend
+    // would have to be asked about again — but it is a thrown error, which is
+    // what lets the retry happen at all.
+    expect(apiError.isTransportError).toBe(true)
+  })
+
+  it('leaves a body that arrives in time alone', async () => {
+    respond({ ok: true }, 200)
+
+    await expect(new ApiClient({ baseUrl: '/api/v1', timeoutMs: 25 }).get('/quick')).resolves.toEqual({
+      ok: true,
+    })
+  })
+})
+
+describe('recoverOn401', () => {
+  /**
+   * The opt-out for a caller that runs its own renewal: letting the client
+   * rotate a token mid-call replaces the very pair the caller is guarding its
+   * write on.
+   */
+  it('surfaces the 401 instead of renewing when recovery is off', async () => {
+    const renewals = { calls: 0 }
+    const instance = new ApiClient({
+      baseUrl: '/api/v1',
+      getToken: () => 'spent-access',
+    })
+    instance.setUnauthorizedHandler(async () => {
+      renewals.calls += 1
+      return { kind: 'renewed', token: 'fresh-access' }
+    })
+
+    respond(errorEnvelope(), 401)
+
+    const error = await instance
+      .get('/auth/me', { recoverOn401: false })
+      .catch((cause: unknown) => cause)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBe(401)
+    expect(renewals.calls).toBe(0)
+  })
+
+  it('renews and replays once when recovery is on, the default', async () => {
+    const renewals = { calls: 0 }
+    const instance = new ApiClient({
+      baseUrl: '/api/v1',
+      getToken: () => 'spent-access',
+    })
+    instance.setUnauthorizedHandler(async () => {
+      renewals.calls += 1
+      return { kind: 'renewed', token: 'fresh-access' }
+    })
+
+    respond(errorEnvelope(), 401)
+    await expect(instance.get('/auth/me')).rejects.toBeInstanceOf(ApiError)
+    expect(renewals.calls).toBe(1)
+  })
+})
+
+function errorEnvelope(): { error: Record<string, unknown> } {
+  return { error: { code: 'unauthorized', message: 'Not authenticated', details: null } }
+}
+
 describe('queryFrom', () => {
   /**
    * The one params filter, shared by every service module. What it drops is the

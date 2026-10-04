@@ -1001,12 +1001,17 @@ class LearningRepository:
         return row
 
     async def delete_skill(self, owner_id: uuid.UUID, skill_id: uuid.UUID) -> bool:
-        """Remove one skill and the activities recorded against it.
+        """Remove one skill. Its activities are kept, not cascaded.
 
-        The activities go with it through the declared ``ON DELETE CASCADE``, in
-        one statement rather than a read-then-delete per child table: an
-        activity left pointing at a skill that no longer exists would sit in no
-        skill's evidence count and no page would ever show it.
+        The activity rows survive through the declared ``ON DELETE SET NULL`` on
+        ``learning_activities.skill_id`` — migration ``0010`` changed that
+        constraint from ``CASCADE`` precisely because a cascade destroys
+        evidence: deleting one skill row silently removed every activity
+        recorded against it, and ``learning_activities`` has no ``updated_at``
+        to leave a trace. The activity outlives the thing it describes, as an
+        append-only fact with an unattributed subject, which is a state the
+        column is already ``NULL`` for. So the single ``DELETE`` is all there is
+        here, and it is deliberately not a read-then-delete per child table.
 
         The user's levels go with it, and so does every ``career_evidence`` row
         that named it — those are ``SET NULL``, so the evidence survives as the

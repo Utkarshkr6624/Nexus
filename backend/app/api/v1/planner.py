@@ -6,7 +6,9 @@ This file is a translation layer, exactly as ``app/api/v1/projects.py`` is. The
 windows, the bucketing, the overload arithmetic and the scheduling engine all
 belong to :class:`~app.services.planner_service.PlannerService`; this router
 validates a query, picks a status code and hands the result back. It imports no
-repository and raises no domain error.
+repository, and the one domain error it raises is the impossible-span refusal
+:func:`list_conflicts` documents — a query the shape of which no service could
+answer, checked here so every route refuses it the same way.
 
 Timezones — the rule this whole router exists to honour
 --------------------------------------------------------
@@ -59,6 +61,7 @@ from pydantic import BaseModel, Field
 
 from app.api.deps import AuthenticatedUser, PlannerServiceDep, SchedulingServiceDep
 from app.core.deps import require_permission
+from app.core.exceptions import ValidationError
 from app.core.permissions import Permission
 from app.schemas.common import PageMeta
 from app.schemas.planner import (
@@ -284,6 +287,14 @@ async def list_conflicts(
     correct answer. A truncated span is never an empty one, so the two cannot be
     confused.
 
+    **A reversed span is refused rather than scanned.** ``end`` before ``start``
+    describes no days at all, and answering it with 200 and an empty list would
+    be a clean-looking "no conflicts" for a window that was never inspected —
+    ``window`` would even read back the two dates the caller sent, in the wrong
+    order. :meth:`~app.services.planner_service.PlannerService.list_events`,
+    ``list_sessions`` and :meth:`~app.services.analytics.service.AnalyticsService._check_range`
+    all refuse it for the same reason, and so does this route.
+
     **The answer is bounded, and says so.** Overlap detection is pairwise, so a
     span holding 500 mutually overlapping sessions would name 124,750 pairs —
     roughly 63.5 MB of JSON. The scan stops at
@@ -292,8 +303,10 @@ async def list_conflicts(
     presented as a complete one. ``meta.total`` is then a floor on the number of
     conflicts that exist rather than a count of them.
 
-    Errors: 422 for a malformed date or an unknown ``tz``.
+    Errors: 422 for a malformed date, a reversed span, or an unknown ``tz``.
     """
+    if end < start:
+        raise ValidationError("end_date must not be earlier than start_date.")
     zone = resolve_timezone(tz, settings=scheduling.settings)
     scan = await scheduling.conflicts(owner=current_user, start=start, end=end, tz=tz)
     return ConflictList(

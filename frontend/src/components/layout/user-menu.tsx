@@ -111,6 +111,10 @@ export function UserMenu() {
             // survives it, whereas a component-level one would not.
             void logout()
               .then(() => toast.success('Signed out', 'This device no longer holds a session.'))
+              // The local session is gone either way, so a teardown that threw
+              // must not cost the redirect — a user left on a signed-in shell
+              // the backend has already forgotten is the worse failure.
+              .catch(() => toast.error('Signed out', 'The sign-out could not be completed cleanly.'))
               .then(() => navigate('/login', { replace: true }))
           }}
         >

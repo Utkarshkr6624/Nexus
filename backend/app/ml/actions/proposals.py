@@ -487,15 +487,23 @@ def _summarise(
     if spec.kind is ActionKind.COMPLETE_TASK:
         return f"Mark the task '{title}' as completed."
 
+    # A note has no priority field and so has no urgency to describe; every other
+    # creation kind has one, and the payload is about to carry the value the user
+    # asked for — a sentence that left it out would be checking a form the user
+    # has to read the payload to complete.
+    adjective = ""
+    if "priority" in spec.schema.model_fields:
+        adjective = _PRIORITY_ADJECTIVES.get(priority or "", "")
+    prefix = f"{adjective} " if adjective else ""
+
     if spec.kind is ActionKind.CREATE_NOTE:
         subject = f"Save a note titled '{title}'"
     elif spec.kind is ActionKind.CREATE_PROJECT:
-        subject = f"Create a project named '{title}'"
+        subject = f"Create a {prefix}project named '{title}'"
     elif spec.kind is ActionKind.CREATE_LEARNING_GOAL:
-        subject = f"Create a learning goal titled '{title}'"
+        subject = f"Create a {prefix}learning goal titled '{title}'"
     else:
-        adjective = _PRIORITY_ADJECTIVES.get(priority or "", "")
-        subject = f"Create a {adjective + ' ' if adjective else ''}task titled '{title}'"
+        subject = f"Create a {prefix}task titled '{title}'"
 
     clauses = [subject]
     # Only a kind that *has* a date field may be described as having a date. A
@@ -689,7 +697,11 @@ def _build_payload(
         return TaskStatusChange(status=TaskStatus.COMPLETED)
 
     raw[spec.title_field] = extraction.title
-    if extraction.priority is not None:
+    # Not every kind has somewhere to put a priority — :class:`NoteCreate` has no
+    # such field and forbids extras, so sending one would fail validation for a
+    # field the note cannot hold anyway. The schema, not the kind, is the
+    # authority on which fields exist.
+    if extraction.priority is not None and "priority" in spec.schema.model_fields:
         raw["priority"] = extraction.priority
     if spec.date_field is not None and extraction.due_date is not None:
         raw[spec.date_field] = extraction.due_date

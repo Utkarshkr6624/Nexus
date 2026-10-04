@@ -80,16 +80,17 @@ _RECOMMENDATION_NOT_FOUND = "That recommendation does not exist."
 def _columns(row: Any) -> dict[str, Any]:
     """Project a stored row onto the mapping its wire model validates from.
 
-    ``model_validate(row, from_attributes=True)`` cannot be used for
+    ``model_validate(row, from_attributes=True)`` is not used for
     :class:`~app.schemas.recommendation.RecommendationRead`: the model declares
-    ``metadata`` as ``AliasChoices("metadata", "metadata_")`` to cope with the
-    name SQLAlchemy reserves on a declarative class, and under ``from_attributes``
-    pydantic resolves the first choice with ``getattr`` — which finds
-    SQLAlchemy's own ``MetaData`` object rather than the stored extras. Reading
-    the mapper's column attributes by name produces the stored mapping under the
-    column's real attribute, and does so without this function needing to know
-    the column list. The same reasoning and the same helper shape as
-    :func:`app.api.v1.risks._columns`.
+    ``metadata`` as ``AliasChoices("metadata_", "metadata")`` to cope with the
+    name SQLAlchemy reserves on a declarative class, and under
+    ``from_attributes`` pydantic resolves the first choice with ``getattr`` —
+    which finds the column attribute today, but would find SQLAlchemy's own
+    ``MetaData`` object if the alias order were ever the other way round.
+    Reading the mapper's column attributes by name produces the stored mapping
+    under the column's real attribute regardless of the alias order, and does so
+    without this function needing to know the column list. The same reasoning
+    and the same helper shape as :func:`app.api.v1.risks._columns`.
     """
     return {column.key: getattr(row, column.key) for column in inspect(type(row)).column_attrs}
 
@@ -136,14 +137,17 @@ async def list_recommendations(
 
     ``by_priority`` counts across every matching row rather than this page, and
     always carries all four bands, so the response shape does not change as the
-    last open suggestion is closed.
+    last open suggestion is closed. It is filtered by exactly the ``status`` and
+    ``recommendation_type`` the items were read with, so the tally beside
+    ``total`` always describes the set the caller is looking at rather than a
+    wider one.
     """
     statuses = [recommendation_status.value] if recommendation_status is not None else None
     types = [recommendation_type.value] if recommendation_type is not None else None
     rows, total = await risks.list_recommendations(
         current_user.id, statuses=statuses, types=types, limit=limit, offset=offset
     )
-    by_priority = await risks.count_by_priority(current_user.id, statuses=statuses)
+    by_priority = await risks.count_by_priority(current_user.id, statuses=statuses, types=types)
     return RecommendationListRead(
         items=[_recommendation_read(row) for row in rows],
         total=total,

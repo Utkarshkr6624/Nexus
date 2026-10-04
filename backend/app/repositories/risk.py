@@ -1400,13 +1400,24 @@ class RiskRepository:
         return len(expired)
 
     async def count_by_priority(
-        self, owner_id: uuid.UUID, *, statuses: Sequence[str] | None = None
+        self,
+        owner_id: uuid.UUID,
+        *,
+        statuses: Sequence[str] | None = None,
+        types: Sequence[str] | None = None,
     ) -> dict[str, int]:
         """``{priority: count}`` for the recommendations header, one grouped query.
 
         The recommendation counterpart of :meth:`count_by_severity`, seeded with
         all four bands for the same reason — the header renders four fixed
         buckets — and for the same no-``total`` reason.
+
+        ``types`` is honoured for the same reason ``risk_types`` is honoured
+        there, and it was missing here long enough to be a bug rather than a
+        choice: ``RecommendationListRead`` puts ``by_priority`` beside ``total``
+        and the caller filters the list by ``recommendation_type``, so a tally
+        that ignored the filter would no longer sum to the ``total`` next to it —
+        the header would claim recommendations the filtered list had excluded.
 
         This method is not in the contract's method table. It is here because
         ``RecommendationListRead`` carries a ``by_priority`` field with no other
@@ -1416,6 +1427,8 @@ class RiskRepository:
         filters: list[Any] = [Recommendation.user_id == owner_id]
         if statuses:
             filters.append(Recommendation.status.in_(list(statuses)))
+        if types:
+            filters.append(Recommendation.recommendation_type.in_(list(types)))
         result = await self.session.execute(
             select(Recommendation.priority, func.count())
             .where(*filters)

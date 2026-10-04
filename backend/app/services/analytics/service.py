@@ -814,18 +814,28 @@ class AnalyticsService:
     ) -> TimeDistributionRead:
         """Where the recorded work time went, by project and by task.
 
-        Both breakdowns come from one read of the session rows, so the per-project
-        and per-task slices are the same minutes partitioned two ways and cannot
-        disagree. Per-task rows are labelled by task id rather than by title: the
-        title would cost a lookup per task, and a drill-down list is not worth an
-        N+1 — ``key`` carries the full id for a client that wants to link.
+        Both breakdowns come from one read of the session rows and are filled
+        from the same loop, so they partition the **same minutes**: every minute
+        that reaches ``total_minutes`` reaches both slices. That includes the
+        unattributable ones — ``work_sessions.task_id`` is nullable, so a session
+        can belong to a project without belonging to a task — which are reported
+        under the reserved ``unassigned`` key in both lists rather than counted
+        once and dropped from the other, the arrangement that left the per-task
+        shares summing to well under 100% while ``total_minutes`` said the window
+        was fully accounted for.
+
+        Past :data:`MAX_TIME_BUCKETS` tasks the by-task list is a drill-down and
+        not a partition; ``/export.csv`` is the complete answer. Per-task rows are
+        labelled by task id rather than by title: the title would cost a lookup per
+        task, and a drill-down list is not worth an N+1 — ``key`` carries the full
+        id for a client that wants to link.
         """
         self._check_range(start, end)
         project_id = await self._owned_project(project_id, owner)
         rows = await self.metrics.work_session_rows(owner.id, start=start, end=end)
 
         by_project: dict[uuid.UUID | None, int] = {}
-        by_task: dict[uuid.UUID, int] = {}
+        by_task: dict[uuid.UUID | None, int] = {}
         for (
             _session_id,
             task_id,
@@ -842,9 +852,9 @@ class AnalyticsService:
                 continue
             if project_id is not None and row_project_id != project_id:
                 continue
-            by_project[row_project_id] = by_project.get(row_project_id, 0) + int(actual_minutes)
-            if task_id is not None:
-                by_task[task_id] = by_task.get(task_id, 0) + int(actual_minutes)
+            minutes = int(actual_minutes)
+            by_project[row_project_id] = by_project.get(row_project_id, 0) + minutes
+            by_task[task_id] = by_task.get(task_id, 0) + minutes
 
         total = sum(by_project.values())
         names = await self._project_names(owner.id)
@@ -871,8 +881,11 @@ class AnalyticsService:
             ],
             by_task=[
                 TimeBucketRead(
-                    key=str(key),
-                    label=f"Task {str(key)[:8]}",
+                    # The reserved key and label, not a task id: a client that
+                    # links a row has nothing to link a session recorded against
+                    # no task to, and inventing one would be worse than saying so.
+                    key=str(key) if key is not None else "unassigned",
+                    label=f"Task {str(key)[:8]}" if key is not None else "Unassigned",
                     minutes=minutes,
                     share=rate(minutes, total),
                 )
@@ -1475,13 +1488,20 @@ class AnalyticsService:
         plain string — a caller writing it to a file should not have to strip a
         wrapper off first — while the route wants a filename and a row count so a
         cap on the export is visible to the client instead of silent.
+
+        The count is a count of **records**, read back through the ``csv``
+        reader rather than by counting newlines: a field containing CRLF — a task
+        title pasted out of a Windows editor, say — is quoted rather than escaped,
+        so its newline survives into the document and counting CRLF would report a
+        row that is not there.
         """
         body = await self.export_csv(owner=owner, dataset=dataset, start=start, end=end)
         return CsvExportRead(
             dataset=dataset,
             filename=f"nexus-{dataset}-{start.isoformat()}-{end.isoformat()}.csv",
             content_type="text/csv; charset=utf-8",
-            row_count=max(0, body.count("\r\n") - 1),
+            # ``- 1`` drops the header row, which is always written.
+            row_count=max(0, sum(1 for _ in csv.reader(io.StringIO(body, newline=""))) - 1),
             columns=list(CSV_DATASETS[dataset]),
             truncated=False,
             csv=body,
@@ -1664,14 +1684,26 @@ class AnalyticsService:
             )
 
     async def _today(self) -> date:
-        """Today's date, from the database clock.
+        """Today's date, from the database clock, normalised to UTC.
 
         Never ``date.today()``: a host whose clock drifts from the server's would
         file a deadline in the wrong day, and "still overdue" is exactly the figure
         that has to agree with the rest of the system.
+
+        Normalised to UTC, because ``now()`` is a ``timestamptz`` *labelled with
+        the connection's* ``TimeZone``. On a server running anything other than UTC
+        — the development box runs at +05:30 — ``.date()`` on it would yield the
+        server-local day, and analytics would disagree with
+        :meth:`app.services.task_service.TaskService._today` about what "today"
+        means for five and a half hours a day, in the same request, about the same
+        instant. Same normalisation, same seam.
         """
         value = await self.metrics.session.scalar(select(func.now()))
-        return value.date() if isinstance(value, datetime) else datetime.now(UTC).date()
+        if not isinstance(value, datetime):  # pragma: no cover - ``now()`` is never null
+            return datetime.now(UTC).date()
+        if value.tzinfo is None:  # pragma: no cover - asyncpg returns aware UTC
+            return value.date()
+        return value.astimezone(UTC).date()
 
     async def _owned_project(self, project_id: uuid.UUID | None, owner: User) -> uuid.UUID | None:
         """Resolve ``project_id`` through the *scoped* lookup, or 404.

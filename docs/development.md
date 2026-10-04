@@ -59,7 +59,7 @@ Two consequences worth stating plainly:
 | Requirement | Version | Used by |
 | --- | --- | --- |
 | Python | 3.13+ | backend, migrations, tests, scripts |
-| Node.js | 20.19+ (22 LTS recommended) | frontend dev server, tests, build |
+| Node.js | 20.19.0+ on the 20.x line, or 22.12.0+ (22 LTS recommended) — the range Vite 7 accepts | frontend dev server, tests, build |
 | npm | ships with Node | frontend |
 | PostgreSQL | 16 (13+ works) | the backend, the integration tests |
 | Docker + Compose v2 | recent | optional — only for the `make up` path |
@@ -313,7 +313,7 @@ Two dependency modules, and the split matters:
 | Module | Owns | Import it from |
 | --- | --- | --- |
 | `app/core/deps.py` | Identity and authorisation: bearer scheme, `CurrentUser`, optional user, `SuperUser`, the `sid` claim, `require_permission()`, session → repository. Imports no service, which keeps the graph acyclic. | `app/api/deps.py` re-exports it |
-| `app/api/deps.py` | Layering on top: `get_<module>_service` (session → repository → service), `get_authenticated_user` (which adds the revocation check), and `get_client_context(request)` → `(ip_address, user_agent)` | the routers |
+| `app/api/deps.py` | Layering on top: `get_<module>_service` (session → repository → service), `get_authenticated_user` (which adds the revocation check), and `get_client_context(request, settings)` → `(ip_address, user_agent)` — it reads `X-Forwarded-For` only when `RATE_LIMIT_TRUST_FORWARDED_FOR` is on, so the audit trail cannot be attributed to a caller-chosen address | the routers |
 
 A new module adds one provider here, mirroring `get_auth_service`:
 
@@ -1279,7 +1279,7 @@ The environment this baseline was captured in has a working **native PostgreSQL 
 | Not run | Why it matters |
 | --- | --- |
 | `docker compose up` | `docker-compose.yml` has never been executed by `docker compose`. `scripts/verify_compose.py` validates it statically — Compose v2 syntax, three services, real build contexts, existing bind mounts, every `${VAR}` documented — and cannot tell you the stack starts. Treat the first run as untested, and note that the images themselves have never been built either |
-| The containers in the production configuration | Nothing here says the `backend` or `frontend` Dockerfile works; only that the repository they build from lints, type-checks, tests and builds. `backend/Dockerfile:29` also installs the runtime requirements **without** `--extra-index-url`, so the image build currently fails on the `torch==2.14.1+cpu` pin for the reason in [§1.2](#12-bootstrap) |
+| The containers in the production configuration | Nothing here says the `backend` or `frontend` Dockerfile works; only that the repository they build from lints, type-checks, tests and builds. The runtime install *does* pass `--extra-index-url https://download.pytorch.org/whl/cpu`, so the `torch==2.14.1+cpu` pin in [§1.2](#12-bootstrap) resolves — but no image has been built here, so that is a reading of the file and not a build log |
 | `postgresql:16-alpine` | The suite runs against native PostgreSQL 16.2 on Windows. The Compose path uses the Alpine image and its `docker/postgres/init/` extension script, which nothing here has executed |
 | Any GPU | Every Phase 11 figure — load time, cold and warm inference, the long-input case — comes from a **CPU-only** machine with 14 torch threads. `ML_DEVICE=cuda` is implemented and fails loudly when CUDA is absent, but no CUDA latency was measured and none is estimated anywhere in this documentation set |
 
@@ -1548,7 +1548,7 @@ because a developer changing scheduling or scoring behaviour needs to know they 
 | `ANALYTICS_PRODUCTIVITY_WEIGHT_DEADLINE` | `25` | Deadline pressure's share |
 | `ANALYTICS_PRODUCTIVITY_WEIGHT_CONSISTENCY` | `20` | Consistency's share |
 | `ANALYTICS_PRODUCTIVITY_WEIGHT_FOCUS` | `25` | Focus's share |
-| `ANALYTICS_COMPARISON_WINDOWS` | `7,30,90` | Period lengths offered for period-over-period comparison, as a comma-separated string |
+| `ANALYTICS_COMPARISON_WINDOWS` | `7,30,90` | **Not read by any code path.** The analytics endpoints derive each comparison period from the range the caller asked for. The setting is kept only so an existing `.env` carrying it still validates; changing it changes nothing |
 | `ANALYTICS_DEFAULT_RANGE_DAYS` | `7` | Window when a request names no dates. A week is the shortest span that can distinguish a habit from a one-off |
 | `ANALYTICS_MAX_RANGE_DAYS` | `366` | Hard ceiling on any requested range. A range query with no bound is the one shape these indexes cannot serve: every aggregate scans the owner's whole history |
 | `ANALYTICS_REBUILD_MAX_DAYS` | `180` | Ceiling on `POST /analytics/rebuild`, the *write* path |
@@ -1569,11 +1569,11 @@ console at startup, not as a surprising percentage on a dashboard, and the rest 
 application never comes up at all. See the README's
 [`Settings` fails validation](../README.md#settings-fails-validation) entry for that message.
 
-`ANALYTICS_COMPARISON_WINDOWS` behaves the opposite way on purpose: unparsable entries are
-**dropped** rather than raising, because they feed a list of suggested period lengths and a
-typo in one of them should cost the user that suggestion rather than stop the process. An
-empty result is still honest — it renders as "no comparison periods" instead of as a
-fabricated default.
+`ANALYTICS_COMPARISON_WINDOWS` is the odd one out in the tables above: it is a plain
+string with no validator, because nothing reads it. The comparison periods the API
+returns come from the range each request asked for, so there is no list of
+suggested lengths to be unparsable about; the value is retained purely so an
+existing `.env` still passes validation.
 
 ### 11.6 ML settings (Phase 11)
 

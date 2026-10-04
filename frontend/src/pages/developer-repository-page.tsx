@@ -119,7 +119,11 @@ export default function DeveloperRepositoryPage() {
    */
   const changeTotals = useMemo(() => {
     if (!activity.data) return null
-    return activity.data.buckets.reduce(
+    // `buckets` is required by the wire type, but a degraded or partially cached
+    // response should blank one total rather than crash the page into the route
+    // error boundary. The zero-filled default keeps every consumer on the same
+    // "no measurement" path it already handles.
+    return (activity.data.buckets ?? []).reduce(
       (sum, bucket) => ({
         additions: sum.additions + bucket.additions,
         deletions: sum.deletions + bucket.deletions,
@@ -306,7 +310,7 @@ export default function DeveloperRepositoryPage() {
           <CardHeader className="pb-3">
             <CardTitle>Change statistics</CardTitle>
             <CardDescription>
-              Summed across the {activity.data?.buckets.length ?? 0} {window.granularity} buckets of
+              Summed across the {(activity.data?.buckets ?? []).length} {window.granularity} buckets of
               the current window. A file edited in three commits is counted three times, because
               git recorded three changes to it.
             </CardDescription>

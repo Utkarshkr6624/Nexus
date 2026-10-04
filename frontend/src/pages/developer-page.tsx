@@ -753,7 +753,7 @@ function ChangeTotals({
       <CardHeader className="pb-3">
         <CardTitle>Recent activity</CardTitle>
         <CardDescription>
-          What the {activity?.buckets.length ?? 0} {granularity} buckets of this window recorded.
+          What the {(activity?.buckets ?? []).length} {granularity} buckets of this window recorded.
           Each commit's changed files are counted once per commit, so a file edited three times is
           counted three times.
         </CardDescription>

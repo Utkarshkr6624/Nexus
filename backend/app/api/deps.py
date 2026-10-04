@@ -979,14 +979,25 @@ def get_ml_runtime(request: Request) -> MLRuntime:
 MLRuntimeDep = Annotated[MLRuntime, Depends(get_ml_runtime)]
 
 
-def get_client_context(request: Request) -> tuple[str | None, str | None]:
+def get_client_context(request: Request, settings: SettingsDep) -> tuple[str | None, str | None]:
     """Return ``(ip_address, user_agent)`` for the calling request.
 
     The address rule is the one :func:`app.core.middleware._client_ip` applies
-    to the access log — the left-most ``X-Forwarded-For`` entry, because that is
-    what the outermost proxy saw, falling back to the socket peer when the
-    request arrived directly — so the audit trail and the access log never
-    disagree about where a request came from.
+    to the rate limiter — **the left-most ``X-Forwarded-For`` entry only when
+    ``settings.rate_limit_trust_forwarded_for`` is on, and the socket peer
+    otherwise**. The two must move together: one module trusting the header
+    while the other did not would leave the audit row and the limiter describing
+    the same request differently, and turning the setting on would have to be
+    remembered in two places. The access log is the deliberate exception — it
+    believes the header unconditionally, because a misattributed log line costs
+    nothing; ``ip_address`` is the field an investigation reads, and it is
+    written by whatever the caller claimed.
+
+    Defaulting that setting to False is what keeps ``ip_address`` an
+    *attribution* rather than a free-text field: without a proxy we control,
+    anything that can reach the process can put any string in the header, and
+    an audit row whose address the caller wrote is worse than no address at
+    all.
 
     **Neither value is an identity claim.** Both headers are supplied by the
     client: anything that can reach the process can put any string in them. They
@@ -995,8 +1006,10 @@ def get_client_context(request: Request) -> tuple[str | None, str | None]:
     No authorisation decision may ever rest on them — see
     :attr:`app.models.session.Session.ip_address`.
     """
-    forwarded = request.headers.get("x-forwarded-for")
-    ip_address = forwarded.split(",")[0].strip() if forwarded else ""
+    ip_address = ""
+    if settings.rate_limit_trust_forwarded_for:
+        forwarded = request.headers.get("x-forwarded-for")
+        ip_address = forwarded.split(",")[0].strip() if forwarded else ""
     if not ip_address:
         ip_address = request.client.host if request.client else ""
     user_agent = request.headers.get("user-agent") or ""

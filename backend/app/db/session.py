@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
+from contextlib import suppress
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -30,6 +31,10 @@ def create_engine(settings: Settings | None = None) -> AsyncEngine:
         pool_timeout=settings.db_pool_timeout,
         pool_recycle=settings.db_pool_recycle,
         pool_pre_ping=True,
+        # Bounds the handshake, not just the pool wait — see the setting's
+        # comment. psycopg's own default is 130 seconds, which is what made an
+        # unreachable database look like a hung login.
+        connect_args={"connect_timeout": settings.db_connect_timeout_seconds},
         future=True,
     )
 
@@ -103,4 +108,9 @@ async def check_database_connection() -> bool:
     finally:
         # Covers a connect aborted inside the timeout: __aenter__ never
         # completed, so __aexit__ never ran to hand the connection back.
-        await connection.close()
+        # Closing an unstarted AsyncConnection raises AsyncContextNotStarted,
+        # and an exception raised here escapes past the handler above — so an
+        # unreachable database answered /health with a 500 instead of the
+        # degraded status it is documented to return.
+        with suppress(Exception):
+            await connection.close()

@@ -169,10 +169,12 @@ _OPTIONAL_BRANCH_FIELDS: frozenset[str] = frozenset(
 #: The commit columns a re-scan refreshes. The identity and the author date are
 #: excluded: git cannot change either, and rewriting ``committed_at`` from a
 #: second reader's parse would make two scans of one repository disagree about
-#: when a commit happened.
+#: when a commit happened. ``committed_at`` is still *required* on the way in —
+#: it is what an inserted row is stamped with — it is just never rewritten by the
+#: conflict branch, so the value a commit was first seen with is the value it
+#: keeps.
 _REFRESHED_COMMIT_COLUMNS: tuple[str, ...] = (
     "short_hash",
-    "committed_at",
     "message",
     "author_name",
     "author_email",

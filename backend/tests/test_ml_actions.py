@@ -65,6 +65,7 @@ from app.ml.actions.extraction import (
     Extraction,
     TaskCandidate,
     TaskMatch,
+    TaskMatchFailure,
     day_start_utc,
     extract_arguments,
     extract_title,
@@ -87,7 +88,7 @@ from app.ml.actions.proposals import (
     render_summary,
 )
 from app.ml.schemas import IntentPrediction
-from app.models.enums import TaskPriority, TaskStatus
+from app.models.enums import ProjectPriority, TaskPriority, TaskStatus
 from app.schemas.knowledge import NoteCreate
 from app.schemas.learning import LearningGoalWrite
 from app.schemas.project import ProjectCreate
@@ -306,6 +307,65 @@ def test_priority_is_cut_out_of_the_title() -> None:
     assert proposal.summary == (
         "Create a high-priority task titled 'finish DSA', due Friday, in project 'Nexo rewrite'."
     )
+
+
+def test_a_priority_phrase_is_cut_at_the_index_the_cut_really_starts_from() -> None:
+    """A phrase followed by punctuation was cut at a substring-relative offset.
+
+    :func:`extraction._remove_priority` asks :func:`re.match` about ``text[end:]``,
+    so the span it reports counts from zero *of that slice*. Read as an absolute
+    index — the bug — the end of the cut collapsed back towards the front of the
+    sentence and the wrong words came off: "add a task, with high priority, to ship
+    v1" lost "with high priority, to ship v1" instead of just ", with high
+    priority,". Every title whose priority phrase was followed by punctuation came
+    back corrupted, and corrupted in the direction of the command phrase, so the
+    title the user was about to confirm named no subject at all.
+
+    The control is the same sentence without the trailing comma. It was always
+    right, which is why a suite written only in comma-free prose could not have
+    found this.
+    """
+    remaining, value, matched = extraction_module._remove_priority(
+        "add a task, with high priority, to ship v1"
+    )
+    assert remaining == "add a task, to ship v1"
+    assert value == "high"
+    assert matched == "high priority"
+
+    assert (
+        extraction_module._remove_priority("add a task with high priority to ship v1")[0]
+        == "add a task to ship v1"
+    )
+
+    punctuated = extract("add a task with high priority, to ship v1")
+    assert punctuated.title == "ship v1"
+    assert punctuated.priority == "high"
+    assert propose("Add a high priority, task to finish DSA").payload.title == "finish DSA"
+
+
+def test_a_note_that_mentions_a_priority_is_a_note_and_not_a_refusal() -> None:
+    """:class:`NoteCreate` has no priority column and forbids extras.
+
+    The payload builder wrote the priority unconditionally, so "create a high
+    priority note about the retro" produced a dict the note schema rejects, and
+    the rejection surfaced as ``PAYLOAD_INVALID`` — a refusal whose reason reads
+    like NEXUS failed to understand a sentence it understood perfectly. Any note
+    request that mentioned urgency was impossible, however ordinary it sounded.
+
+    A note has nowhere to put an urgency, so the phrase is dropped and the note is
+    created; the unasked-for word is not an error in the request. The schema is
+    asserted here too, because it is the schema — not the layer — that decides
+    which fields exist, and a fix that worked by relaxing ``extra`` would have
+    widened every note instead of dropping one word.
+    """
+    assert NoteCreate.model_config["extra"] == "forbid"
+    assert "priority" not in NoteCreate.model_fields
+
+    proposal = propose("create a high priority note about the retro", str(Intent.KNOWLEDGE_CAPTURE))
+    assert proposal.kind is ActionKind.CREATE_NOTE
+    assert proposal.payload.title == "retro"
+    assert "priority" not in proposal.payload.model_fields_set
+    assert "priority" not in proposal.payload.model_dump()
 
 
 def test_an_unmentioned_priority_is_absent_from_the_payload_and_the_summary() -> None:
@@ -690,6 +750,39 @@ def test_match_task_reference_returns_the_match_shape_not_a_bare_object() -> Non
     assert isinstance(match, TaskMatch)
     assert match.candidate.id == CONTRACT_TASK_ID
     assert match.rule
+
+
+def test_a_title_of_nothing_but_punctuation_does_not_match_everything() -> None:
+    """A row whose title normalises to ``""`` was a match for *every* fragment.
+
+    :func:`extraction._normalise` drops punctuation, so a task titled ``!!!``
+    normalises to the empty string — and ``"" in needle`` is true for every needle
+    there is. The containment pass therefore returned that row as the one match for
+    "mark the quarterly retrospective task as done", and NEXUS proposed completing
+    a task whose name is three exclamation marks. Completing is a write to somebody's
+    own history, so this has to come back NOT-FOUND instead of being scored.
+
+    The positive control below matters as much as the assertion: the noise row is
+    skipped, not treated as a failure, so a real row sitting next to it still
+    matches. Without it, "drop the empty ones" and "give up when one is present"
+    would both pass.
+    """
+    noise = TaskCandidate(THIRD_TASK_ID, "!!!")
+
+    outcome = match_task_reference("anything", (noise,))
+    assert isinstance(outcome, TaskMatchFailure)
+    assert outcome.reason_code == "not_found"
+    assert not isinstance(outcome, TaskMatch)
+
+    ctx = context(task_candidates=(noise,))
+    refusal = refuse("mark the quarterly retrospective task as done", ctx=ctx)
+    assert refusal.reason_code is ProposalReason.TASK_REFERENCE_NOT_FOUND
+    assert refusal.kind is ActionKind.COMPLETE_TASK
+
+    real = TaskCandidate(CONTRACT_TASK_ID, "Draft the API contract")
+    beside = match_task_reference("the API contract", (noise, real))
+    assert isinstance(beside, TaskMatch)
+    assert beside.candidate.id == CONTRACT_TASK_ID
 
 
 # --------------------------------------------------------------------------- #
@@ -1119,6 +1212,47 @@ def test_each_kind_renders_its_own_sentence(utterance: str, intent: str, expecte
     accepted.
     """
     assert render_summary(propose(utterance, intent)) == expected
+
+
+def test_the_sentence_names_the_priority_for_every_kind_that_carries_one() -> None:
+    """The adjective was rendered for tasks only, while the payload carried it everywhere.
+
+    A project created ``critical`` and a learning goal created ``critical`` both
+    persisted the urgency the user asked for, but the confirmation sentence read
+    "Create a project named 'Nebula'" — the one screen whose whole job is to
+    describe the write is not describing it, and the user has to open the payload
+    to discover the priority they just agreed to. The rule is per *schema*, not per
+    kind-name: if the payload has a ``priority`` field, the sentence names it.
+
+    The note is the control from the other side. It has no priority column, so its
+    sentence must not claim one — the guard is the presence of the field, not a
+    list of kinds that happen to be safe today.
+    """
+    project = propose(
+        "Create a critical priority project named 'Nebula'", str(Intent.PROJECT_MANAGE)
+    )
+    assert project.payload.priority is ProjectPriority.CRITICAL
+    assert project.summary == "Create a critical-priority project named 'Nebula'."
+
+    goal = propose("Add a critical priority learning goal for Rust", str(Intent.LEARNING_TRACK))
+    assert goal.payload.priority == "critical"
+    assert goal.summary == "Create a critical-priority learning goal titled 'Rust'."
+
+    note = propose("create a high priority note about the retro", str(Intent.KNOWLEDGE_CAPTURE))
+    assert "priority" not in note.payload.model_fields_set
+    assert "priority" not in note.summary
+    assert note.summary == "Save a note titled 'retro'."
+
+    # The rule is stated over the schema, so it is checked over every creation
+    # spec rather than over the two kinds named above: a note is the only creation
+    # kind whose payload has nowhere to put an urgency, and a new kind added
+    # tomorrow must not have to be added to a list here to get its sentence right.
+    without_priority = {
+        kind
+        for kind, spec in ACTION_SPECS.items()
+        if kind is not ActionKind.COMPLETE_TASK and "priority" not in spec.schema.model_fields
+    }
+    assert without_priority == {ActionKind.CREATE_NOTE}
 
 
 def test_a_kind_with_no_date_field_is_never_described_as_having_one() -> None:

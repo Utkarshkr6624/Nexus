@@ -196,17 +196,19 @@ async def _recommendations_by_risk(
 def _columns(row: Any) -> dict[str, Any]:
     """Project a stored row onto the mapping its wire model validates from.
 
-    ``model_validate(row, from_attributes=True)`` does not work for the read
+    ``model_validate(row, from_attributes=True)`` is not used for the read
     models in this phase, and the reason is worth recording rather than working
     around silently: both declare ``metadata`` as
-    ``AliasChoices("metadata", "metadata_")`` to cope with the name SQLAlchemy
-    reserves on a declarative class, but under ``from_attributes`` pydantic
-    resolves the first choice with ``getattr`` — and ``Risk.metadata`` is
-    SQLAlchemy's own ``MetaData`` object. Validation then fails with "input
-    should be a valid dictionary" on a row that is perfectly good. Reading the
-    mapper's column attributes by name produces the stored mapping under the
-    column's real attribute, and picks up a column added later without this
-    function being touched.
+    ``AliasChoices("metadata_", "metadata")`` to cope with the name SQLAlchemy
+    reserves on a declarative class, and under ``from_attributes`` pydantic
+    resolves the first choice with ``getattr``. Today that first choice is the
+    column attribute and happens to work, but ``Risk.metadata`` — the name
+    pydantic would reach for if the alias order were ever the other way round —
+    is SQLAlchemy's own ``MetaData`` object, and validation then fails with
+    "input should be a valid dictionary" on a row that is perfectly good.
+    Reading the mapper's column attributes by name produces the stored mapping
+    under the column's real attribute regardless of the alias order, and picks
+    up a column added later without this function being touched.
     """
     return {column.key: getattr(row, column.key) for column in inspect(type(row)).column_attrs}
 

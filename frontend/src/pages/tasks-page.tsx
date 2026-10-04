@@ -114,7 +114,29 @@ function writeFilters(filters: TaskFilterValue): URLSearchParams {
   return params
 }
 
-function StatTile({ label, value, tone }: { label: string; value: number; tone?: 'danger' }) {
+/**
+ * A figure that has not been measured yet is a skeleton, never a zero: "you
+ * have no tasks" is a claim about the work, and a cold load has not earned it.
+ */
+function StatTile({
+  label,
+  value,
+  tone,
+  loading,
+}: {
+  label: string
+  value: number
+  tone?: 'danger'
+  loading?: boolean
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-border bg-card px-3 py-2">
+        <Skeleton className="h-3 w-16" />
+        <Skeleton className="mt-2 h-6 w-10" />
+      </div>
+    )
+  }
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -182,6 +204,23 @@ export default function TasksPage() {
       // Storage unavailable: the choice still applies for this page load.
     }
   }, [view])
+
+  /**
+   * A checkbox is a claim about the rows on screen. Paging, filtering or
+   * switching view replaces those rows, so a selection kept across the change
+   * would let "Complete selected" act on tasks the reader is no longer looking
+   * at — and report a count against a page showing different rows. The ids are
+   * kept, not the rows, so the selection is dropped with the page.
+   */
+  const [selectionScope, setSelectionScope] = useState({ filters, page, view })
+  if (
+    selectionScope.filters !== filters ||
+    selectionScope.page !== page ||
+    selectionScope.view !== view
+  ) {
+    setSelectionScope({ filters, page, view })
+    setSelected((current) => (current.length === 0 ? current : []))
+  }
 
   // The URL updates per keystroke; only the request is debounced, so the input
   // never lags behind the person typing in it.
@@ -331,10 +370,27 @@ export default function TasksPage() {
 
       {stats.isError ? null : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatTile label="Tasks" value={stats.data?.tasks.total ?? 0} />
-          <StatTile label="In progress" value={stats.data?.tasks.in_progress ?? 0} />
-          <StatTile label="Blocked" value={stats.data?.tasks.blocked ?? 0} />
-          <StatTile label="Overdue" value={stats.data?.tasks.overdue ?? 0} tone="danger" />
+          <StatTile
+            label="Tasks"
+            value={stats.data?.tasks.total ?? 0}
+            loading={stats.isPending && !stats.data}
+          />
+          <StatTile
+            label="In progress"
+            value={stats.data?.tasks.in_progress ?? 0}
+            loading={stats.isPending && !stats.data}
+          />
+          <StatTile
+            label="Blocked"
+            value={stats.data?.tasks.blocked ?? 0}
+            loading={stats.isPending && !stats.data}
+          />
+          <StatTile
+            label="Overdue"
+            value={stats.data?.tasks.overdue ?? 0}
+            tone="danger"
+            loading={stats.isPending && !stats.data}
+          />
         </div>
       )}
 

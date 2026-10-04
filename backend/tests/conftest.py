@@ -502,6 +502,32 @@ def engine(test_database_url: str) -> Iterator[AsyncEngine]:
 
 
 @pytest.fixture
+async def unreachable_engine(test_database_url: str) -> AsyncIterator[AsyncEngine]:
+    """A real engine the server refuses, fast.
+
+    The database probe builds its ``AsyncConnection`` lazily and aborts inside
+    ``__aenter__``, so the connection is left unstarted: closing one in that
+    state raises ``AsyncContextNotStarted``, and an exception raised out of a
+    ``finally`` escapes the probe's own handler. Only a genuine engine reaches
+    that path, so a hand-written stub cannot stand in for it.
+
+    The refusal is made fast by naming a database the server does not have,
+    rather than by pointing at a closed port: on Windows the connect to a
+    refused port hangs until the probe's own ``asyncio.timeout`` fires, so the
+    test would spend its entire budget proving nothing about the connection.
+    """
+    absent_database = f"{_database_name(test_database_url)}_absent"
+    engine = create_async_engine(
+        _async_url(_url_for_database(test_database_url, absent_database)), poolclass=NullPool
+    )
+    try:
+        yield engine
+    finally:
+        with contextlib.suppress(RuntimeError):
+            await engine.dispose()
+
+
+@pytest.fixture
 async def truncated_database(engine: AsyncEngine) -> None:
     """Empty every managed table so each test starts from a known state."""
     tables = ", ".join(f'"{table.name}"' for table in Base.metadata.sorted_tables)

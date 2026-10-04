@@ -3,6 +3,7 @@ import { lazy } from 'react'
 // Route-level code splitting. Kept in its own module so the router file stays
 // a pure route table.
 
+export const CommandCenterPage = lazy(() => import('@/pages/command-center-page'))
 export const DashboardPage = lazy(() => import('@/pages/dashboard-page'))
 export const ProjectsPage = lazy(() => import('@/pages/projects-page'))
 export const ProjectDetailPage = lazy(() => import('@/pages/project-detail-page'))

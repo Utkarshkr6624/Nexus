@@ -395,3 +395,29 @@ export type {
 
 // A value, so it cannot ride in the `export type` block above.
 export { ROUTING_TIMEOUT_MS } from './ml'
+
+// Phase 13. The global search vocabulary is a frozen array plus a frozen record
+// of per-kind metadata (label, plural, icon, route), so those go out by value
+// and the rest as types. `SearchListParams` is deliberately not `SearchParams`:
+// `./knowledge` already exports a type by that name for
+// `GET /knowledge/search`, and two different request shapes cannot share one.
+export {
+  SEARCH_DEFAULT_LIMIT,
+  SEARCH_ENTITY_KINDS,
+  SEARCH_KIND_META,
+  SEARCH_MAX_LIMIT,
+  SEARCH_MAX_QUERY_CHARS,
+  SEARCH_MAX_TYPES,
+  SEARCH_MIN_QUERY_CHARS,
+  SEARCH_PAGE_SIZES,
+  hitDateLabel,
+  searchHitHref,
+} from './search'
+export type {
+  SearchEntityKind,
+  SearchGroup,
+  SearchHit,
+  SearchKindMeta,
+  SearchListParams,
+  SearchResponse,
+} from './search'

@@ -189,7 +189,7 @@ describe('application shell', () => {
     await user.keyboard('{Control>}k{/Control}')
 
     const dialog = await screen.findByRole('dialog', { name: 'Command palette' })
-    const filter = within(dialog).getByLabelText('Filter destinations')
+    const filter = within(dialog).getByLabelText('Filter commands, destinations and records')
 
     await user.type(filter, 'planner')
     await waitFor(() => {

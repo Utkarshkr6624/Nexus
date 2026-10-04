@@ -8,6 +8,7 @@ import {
   AnalyticsPage,
   AssistantPage,
   CareerPage,
+  CommandCenterPage,
   DashboardPage,
   DeveloperPage,
   DeveloperRepositoryPage,
@@ -34,13 +35,15 @@ import {
 
 // Paths mirror `@/features/modules/catalog`, which owns the navigation.
 export const router = createBrowserRouter([
-  // The product opens on the dashboard, not on an empty index.
-  { path: '/', element: <Navigate to="/dashboard" replace /> },
+  // The product opens on the Command Center, not on an empty index: it is the
+  // one surface that answers what needs attention before anything else does.
+  { path: '/', element: <Navigate to="/command-center" replace /> },
 
   {
     element: <AppLayout />,
     errorElement: <RouteErrorBoundary />,
     children: [
+      { path: '/command-center', element: <CommandCenterPage /> },
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/projects', element: <ProjectsPage /> },
       { path: '/projects/:projectId', element: <ProjectDetailPage /> },

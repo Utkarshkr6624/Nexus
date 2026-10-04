@@ -39,14 +39,19 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       />
     )
 
-    // Without an adornment the input is returned untouched: no extra DOM, so
-    // existing flex/grid layouts and tests keep behaving exactly as before.
-    if (!endAdornment) return input
-
+    // The wrapper is unconditional. Returning a bare `<input>` when there is no
+    // adornment saved one `<span>`, and cost something far more expensive: React
+    // unmounts and remounts a node when its tree shape changes, so any caller
+    // that toggled `endAdornment` — a search box whose clear button appears on
+    // the first keystroke, say — dropped focus and swallowed the character that
+    // triggered the toggle. One always-present span is not worth that class of
+    // bug.
     return (
       <span className="relative block w-full">
         {input}
-        <span className="absolute inset-y-0 right-0 flex items-center pr-2">{endAdornment}</span>
+        {endAdornment && (
+          <span className="absolute inset-y-0 right-0 flex items-center pr-2">{endAdornment}</span>
+        )}
       </span>
     )
   },

@@ -54,7 +54,10 @@ export function RequireAnonymous({ children }: RequireAnonymousProps) {
   const status = useAuthStore((state) => state.status)
 
   if (status === 'initializing') return <BootScreen />
-  if (status === 'authenticated') return <Navigate to="/dashboard" replace />
+  // Signing in lands on the Command Center, not the Dashboard: it is the route
+  // `/` already redirects to, and the two disagreeing would send a signed-in user
+  // to two different places depending on how they arrived.
+  if (status === 'authenticated') return <Navigate to="/command-center" replace />
 
   return children
 }

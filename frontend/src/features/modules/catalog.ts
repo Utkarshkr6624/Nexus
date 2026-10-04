@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   ListTodo,
+  Radar,
   Search,
   Settings,
   ShieldAlert,
@@ -56,6 +57,39 @@ export interface NavGroup {
 }
 
 export const MODULES: ModuleDefinition[] = [
+  {
+    to: '/command-center',
+    label: 'Command Center',
+    summary:
+      'One prioritised surface over every module: what is happening, what needs your attention, and what to do next — each figure labelled by where it came from.',
+    vision:
+      'The Command Center answers three questions in order, and it is explicit about which is which. What is happening is a set of measured counts read from real endpoints. What needs attention is a set of live findings, unanswered suggestions, open deadlines, schedule conflicts and active goals. What to do next is a ranking over those, and the ranking is deterministic arithmetic whose weights, buckets and three stated caveats are printed under the list — because a number a reader cannot check is a number they have to take on trust. NEXUS runs one model, a fourteen-class intent classifier, and it does not rank anything here: it maps a sentence to an intent and has nothing to say about a deadline. Where a prediction does appear it is badged model-derived, framed as a prediction, and never set beside a measured figure. The page refuses to survive on fabrication: a panel with no records renders its empty state, a figure the backend could not compute renders with the backend’s own reason, and one failing request takes down one panel rather than the page.',
+    phase: 13,
+    icon: Radar,
+    keywords: ['priority', 'triage', 'attention', 'next', 'briefing', 'inbox', 'dashboard'],
+    capabilities: [
+      {
+        title: 'A deterministic, explained order',
+        description:
+          'Severity, deadline proximity, task priority, detector score, suggestion priority and freshness, each with its points and its ceiling shown on the row that used it.',
+      },
+      {
+        title: 'Provenance on every figure',
+        description:
+          'Measured, calculated and model-derived are three different claims. Each panel names which one it is making.',
+      },
+      {
+        title: 'Honest when a source fails',
+        description:
+          'One panel’s failure costs one panel. A source that failed alongside successful ones is named under the list with its own retry.',
+      },
+    ],
+    metrics: [
+      { label: 'Signals ranked', hint: 'Live findings, suggestions, deadlines, conflicts and goals' },
+      { label: 'Priority score', hint: 'Calculated on read from the rule printed under the list' },
+      { label: 'Model status', hint: 'One intent classifier, read from GET /ml/status' },
+    ],
+  },
   {
     to: '/dashboard',
     label: 'Dashboard',
@@ -563,7 +597,16 @@ export function getModule(path: string): ModuleDefinition {
 }
 
 export const NAV_GROUPS: NavGroupDefinition[] = [
-  { id: 'overview', label: 'Overview', items: [getModule('/dashboard')] },
+  // The Command Center is the product's primary destination, so it leads the
+  // Overview group. The Dashboard joins it rather than sitting alone on a home
+  // row: both answer "where do I stand", and a rail that separates them by a
+  // rule ("the one item gets no heading") would be making a distinction between
+  // two summaries that the reader cannot act on.
+  {
+    id: 'overview',
+    label: 'Overview',
+    items: [getModule('/command-center'), getModule('/dashboard')],
+  },
   {
     id: 'work',
     label: 'Work',

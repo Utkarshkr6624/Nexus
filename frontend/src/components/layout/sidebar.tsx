@@ -32,13 +32,16 @@ function focusableWithin(root: HTMLElement): HTMLElement[] {
 }
 
 /*
- * Grouping. The registry already clusters the twelve modules, so the rail adds
- * one decision on top of it rather than inventing a second taxonomy: a group of
- * one is a home row, not a section. The Dashboard is where the product opens, so
- * it sits alone at the top and the remaining four groups carry headings. Four
- * headings across eleven destinations is about as much as a rail can hold
- * before it stops being scannable, and each one earns its place by naming a
- * different kind of work — doing it, reasoning over it, growing at it, and
+ * Grouping. The registry already clusters the modules, so the rail adds one
+ * decision on top of it rather than inventing a second taxonomy: a group of one
+ * is a home row, not a section. Since the Command Center landed, no group is a
+ * single item — the two overview surfaces (the Command Center and the
+ * Dashboard) answer the same question at different depths, and separating them
+ * by a rule the reader cannot act on would be pretending they are different
+ * kinds of thing. All five groups therefore carry headings. Five headings across
+ * thirteen destinations is about as much as a rail can hold before it stops
+ * being scannable, and each one earns its place by naming a different kind of
+ * work — orienting yourself, doing it, reasoning over it, growing at it, and
  * extending the platform itself.
  */
 const HOME_GROUP = NAV_GROUPS.find((group) => group.items.length === 1)
@@ -256,7 +259,7 @@ export function AppSidebar({
         {!collapsed && (
           <p className="flex items-center gap-2 px-3 pt-2.5 text-[11px] text-sidebar-muted">
             <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-primary/70" />
-            Phase 2 · shell and accounts
+            Local-first · your data stays here
           </p>
         )}
       </div>

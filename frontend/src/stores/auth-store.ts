@@ -518,10 +518,6 @@ apiClient.setUnauthorizedHandler(() => useAuthStore.getState().recoverSession())
  */
 apiClient.setSessionRejectedHandler(() => endSession())
 
-export function selectIsAuthenticated(state: AuthState): boolean {
-  return state.status === 'authenticated' && state.accessToken !== null
-}
-
 /**
  * The name to show for an account, best available first: the chosen display
  * name, then the handle the account signed up with, then the local part of the

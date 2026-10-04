@@ -16,7 +16,7 @@ import { Select } from '@/components/ui/select'
 import { useCreateTask, useSetTaskTags, useTags, useUpdateTask } from '@/features/work/hooks'
 import type { ApiError } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
-import { toApiError } from '@/services/errors'
+import { toApiError, bannerError, fieldErrorMessages } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
 import { PRIORITY_META, TASK_PRIORITIES, TASK_STATUSES, TASK_STATUS_META } from '@/types/work'
 import type { Project, Task, TaskPriority, TaskStatus } from '@/types/work'
@@ -72,27 +72,6 @@ function formFrom(task: Task): FormState {
   }
 }
 
-/**
- * Flattens a 422's `details.errors[]` into `{ field: message }`, per
- * `docs/api-conventions.md`. Entries that are not field-scoped are dropped and
- * the first message wins when a field repeats.
- */
-function fieldErrorMessages(error: ApiError | null): Record<string, string> {
-  if (!error) return {}
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
-  const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
-  }
-  return messages
-}
-
 const TEXTAREA_CLASSES = cn(
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm',
   'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
@@ -131,10 +110,7 @@ function TaskForm({
   const pending = createTask.isPending || updateTask.isPending || setTags.isPending
 
   const fieldErrors = fieldErrorMessages(error)
-  // A 422 whose messages are all attached to fields is already on screen
-  // inline; the banner is for what no field can express.
-  const bannerError =
-    error && !(error.isValidationError && Object.keys(fieldErrors).length > 0) ? error : null
+  const banner = bannerError(error)
 
   function update(patch: Partial<FormState>) {
     setForm((current) => ({ ...current, ...patch }))
@@ -206,9 +182,9 @@ function TaskForm({
 
   return (
     <form className="app-form-stack" onSubmit={submit} noValidate>
-      {bannerError && (
+      {banner && (
         <p role="alert" className="app-form-error">
-          {bannerError.message}
+          {banner.message}
         </p>
       )}
 

@@ -30,9 +30,8 @@
  * what a 404 (someone else's id) or a 409 (a transition the lifecycle forbids)
  * means for the screen.
  */
-import { apiClient, type QueryParams } from '@/lib/api-client'
+import { apiClient, queryFrom } from '@/lib/api-client'
 import type {
-  EvaluationListParams,
   EvaluationParams,
   EvaluationRead,
   RecommendationListParams,
@@ -69,16 +68,6 @@ export const RISK_ENDPOINTS = {
  * carries no implicit index signature and would not be assignable to that record
  * — the same reason `services/knowledge.ts` does it this way.
  */
-function queryFrom(params: object): QueryParams {
-  const query: QueryParams = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    if (Array.isArray(value)) continue
-    query[key] = value as string | number | boolean
-  }
-  return query
-}
-
 /* ----------------------------------------------------------------------- risks */
 
 /**
@@ -93,11 +82,6 @@ export function fetchRisks(
   signal?: AbortSignal,
 ): Promise<RiskListRead> {
   return apiClient.get<RiskListRead>(RISK_ENDPOINTS.risks, { query: queryFrom(params), signal })
-}
-
-/** A single risk. Someone else's id is a 404 here, not a 403 — see the contract. */
-export function fetchRisk(id: UUIDString, signal?: AbortSignal): Promise<RiskRead> {
-  return apiClient.get<RiskRead>(RISK_ENDPOINTS.risk(id), { signal })
 }
 
 /**
@@ -152,13 +136,6 @@ export function fetchRecommendations(
   })
 }
 
-export function fetchRecommendation(
-  id: UUIDString,
-  signal?: AbortSignal,
-): Promise<RecommendationRead> {
-  return apiClient.get<RecommendationRead>(RISK_ENDPOINTS.recommendation(id), { signal })
-}
-
 /** "I will do this." Records the response and stamps `responded_at`. */
 export function acceptRecommendation(
   id: UUIDString,
@@ -195,22 +172,6 @@ export function completeRecommendation(
   })
 }
 
-/**
- * Marks a suggestion as read without answering it.
- *
- * Separate from accept because "I have seen this" is its own observation, and
- * recording it keeps the unanswered set distinguishable from the unseen one —
- * the distinction Phase 10 will want as a training label.
- */
-export function viewRecommendation(
-  id: UUIDString,
-  signal?: AbortSignal,
-): Promise<RecommendationRead> {
-  return apiClient.post<RecommendationRead>(RISK_ENDPOINTS.recommendationView(id), undefined, {
-    signal,
-  })
-}
-
 /* -------------------------------------------------------------- intelligence */
 
 /**
@@ -234,13 +195,3 @@ export function evaluateIntelligence(
   })
 }
 
-/** Recent run summaries, newest first — "is my risk trending up", from the log. */
-export function fetchEvaluations(
-  params: EvaluationListParams = {},
-  signal?: AbortSignal,
-): Promise<EvaluationRead[]> {
-  return apiClient.get<EvaluationRead[]>(RISK_ENDPOINTS.evaluations, {
-    query: queryFrom({ limit: params.limit }),
-    signal,
-  })
-}

@@ -40,14 +40,12 @@ import {
   deleteCalendarEvent,
   deleteWorkSession,
   fetchAvailability,
-  fetchCalendarEvent,
   fetchCalendarEvents,
   fetchPlannerConflicts,
   fetchPlannerDay,
   fetchPlannerMonth,
   fetchPlannerWeek,
   fetchSuggestions,
-  fetchWorkSession,
   fetchWorkSessions,
   replaceAvailability,
   startWorkSession,
@@ -158,16 +156,6 @@ export function useCalendarEvents(
   })
 }
 
-export function useCalendarEvent(
-  id: UUIDString | null | undefined,
-): UseQueryResult<CalendarEvent> {
-  return useQuery({
-    queryKey: plannerKeys.event(id),
-    queryFn: ({ signal }) => fetchCalendarEvent(id as UUIDString, signal),
-    enabled: Boolean(id),
-  })
-}
-
 export function useWorkSessions(
   params: WorkSessionListParams = {},
   options: Enabled = {},
@@ -177,16 +165,6 @@ export function useWorkSessions(
     queryFn: ({ signal }) => fetchWorkSessions(params, signal),
     enabled: options.enabled,
     placeholderData: (previous) => previous,
-  })
-}
-
-export function useWorkSession(
-  id: UUIDString | null | undefined,
-): UseQueryResult<WorkSession> {
-  return useQuery({
-    queryKey: plannerKeys.session(id),
-    queryFn: ({ signal }) => fetchWorkSession(id as UUIDString, signal),
-    enabled: Boolean(id),
   })
 }
 
@@ -338,15 +316,6 @@ export function useUpdateWorkSession(): UseMutationResult<
 
 export function useDeleteWorkSession(): UseMutationResult<void, Error, UUIDString> {
   return useMutation({ mutationFn: deleteWorkSession, onSuccess: useInvalidatePlanner() })
-}
-
-/** Starting or stopping moves `actual_minutes`, so every capacity figure moves. */
-export function useStartWorkSession(): UseMutationResult<WorkSession, Error, UUIDString> {
-  return useMutation({ mutationFn: startWorkSession, onSuccess: useInvalidatePlanner() })
-}
-
-export function useStopWorkSession(): UseMutationResult<WorkSession, Error, UUIDString> {
-  return useMutation({ mutationFn: stopWorkSession, onSuccess: useInvalidatePlanner() })
 }
 
 /**

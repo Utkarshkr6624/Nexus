@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiClient, ApiError } from '@/lib/api-client'
+import { ApiClient, ApiError, queryFrom } from '@/lib/api-client'
 
 /**
  * `fetch` is always stubbed — these tests must never touch the network. The
@@ -92,5 +92,50 @@ describe('ApiError mapping', () => {
     expect(apiError.code).toBe('internal_error')
     expect(apiError.message).toBe('<html>502 Bad Gateway</html>')
     expect(apiError.requestId).toBe('proxy-req-77')
+  })
+})
+describe('queryFrom', () => {
+  /**
+   * The one params filter, shared by every service module. What it drops is the
+   * whole point of it, so the dropped cases are asserted individually rather
+   * than through a round trip: a `?search=` that slips through asks the backend
+   * for the empty search and comes back with an empty result set that looks
+   * exactly like a search which legitimately found nothing.
+   */
+
+  it('keeps the values the client can serialise', () => {
+    expect(queryFrom({ limit: 25, offset: 0, search: 'notes', archived: false })).toEqual({
+      limit: 25,
+      offset: 0,
+      search: 'notes',
+      archived: false,
+    })
+  })
+
+  it.each([
+    ['undefined', { limit: undefined }],
+    ['null', { project_id: null }],
+    ['the empty string', { search: '' }],
+  ])('drops %s rather than serialising it as a literal', (_label, params) => {
+    expect(queryFrom(params)).toEqual({})
+  })
+
+  it('drops an array, which is not one query value', () => {
+    // A repeated list is spelled on the path by `withRepeatedParam`, not here:
+    // the client can only emit a key once.
+    expect(queryFrom({ tag_ids: ['a', 'b'], limit: 10 })).toEqual({ limit: 10 })
+  })
+
+  it('keeps a zero, which is a measurement and not an absence', () => {
+    expect(queryFrom({ offset: 0, confidence: 0 })).toEqual({ offset: 0, confidence: 0 })
+  })
+
+  it('accepts a typed params interface, not just a record', () => {
+    interface ListParams {
+      limit?: number
+      search?: string
+    }
+    const params: ListParams = { limit: 5 }
+    expect(queryFrom(params)).toEqual({ limit: 5 })
   })
 })

@@ -33,12 +33,13 @@
  *   account and the caller does not name it. A `POST` would have needed a
  *   second uniqueness check to stay a single profile, which is the same problem
  *   one column longer.
- * - **`PATCH` never carries the measured fields.** `SkillUpdatePayload` has no
- *   `evidence_count` and no `confidence`, `CareerEvidenceCreatePayload` defaults
- *   `source` to `manual` and no client should send anything else, and
- *   `LearningGoalUpdatePayload` has no `completed_at` — completion is a route,
- *   not an editable field. Each of those would otherwise be a way for a client
- *   to forge the one number that lends a claim its credibility.
+ * - **`PATCH` never carries the measured fields.** The skill update payload has
+ *   no `evidence_count` and no `confidence`,
+ *   `CareerEvidenceCreatePayload` defaults `source` to `manual` and no client
+ *   should send anything else, and the goal update payload has no
+ *   `completed_at` — completion is a route, not an editable field. Each of
+ *   those would otherwise be a way for a client to forge the one number that
+ *   lends a claim its credibility.
  * - **No function here supplies a level, a target role, a certification, an
  *   employer or a date.** Every career field is passed through from the user.
  *   There is deliberately no convenience wrapper that derives one.
@@ -51,7 +52,7 @@
  * the machine-readable code and any field-level details, and the hooks decide
  * what a 404 means for the screen.
  */
-import { apiClient, type QueryParams } from '@/lib/api-client'
+import { apiClient, queryFrom } from '@/lib/api-client'
 import type { RecommendationRead } from '@/types/risk'
 import type { ActivityGranularity } from '@/types/learning'
 import type {
@@ -59,13 +60,10 @@ import type {
   CareerEvidenceListParams,
   CareerEvidenceListRead,
   CareerEvidenceRead,
-  CareerEvidenceUpdatePayload,
   CareerExperienceCreatePayload,
   CareerExperienceListParams,
   CareerExperienceListRead,
   CareerExperienceRead,
-  CareerExperienceUpdatePayload,
-  CareerFeatureVectorRead,
   CareerProfileRead,
   CareerProfileUpsert,
   CareerSummaryRead,
@@ -74,13 +72,10 @@ import type {
   LearningActivityListRead,
   LearningActivityRead,
   LearningActivitySeriesRead,
-  LearningFeatureVectorRead,
   LearningGoalCreatePayload,
   LearningGoalListParams,
   LearningGoalListRead,
   LearningGoalRead,
-  LearningGoalUpdatePayload,
-  LearningMetricRead,
   LearningSummaryRead,
   LearningWindowParams,
   SkillCreatePayload,
@@ -89,7 +84,6 @@ import type {
   SkillListParams,
   SkillListRead,
   SkillRead,
-  SkillUpdatePayload,
   UUIDString,
 } from '@/types/learning'
 
@@ -127,16 +121,6 @@ export const CAREER_ENDPOINTS = {
  * carries no implicit index signature and would not be assignable to that record
  * — the same reason `services/developer.ts` does it this way.
  */
-function queryFrom(params: object): QueryParams {
-  const query: QueryParams = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    if (Array.isArray(value)) continue
-    query[key] = value as string | number | boolean
-  }
-  return query
-}
-
 /* ------------------------------------------------------------------ dashboard */
 
 /**
@@ -157,25 +141,6 @@ export function fetchLearningSummary(
   signal?: AbortSignal,
 ): Promise<LearningSummaryRead> {
   return apiClient.get<LearningSummaryRead>(LEARNING_ENDPOINTS.summary, {
-    query: queryFrom({ window_days: params.window_days }),
-    signal,
-  })
-}
-
-/**
- * Every learning metric, each with its definition and its explanation.
- *
- * A metric the data could not support comes back with `value: null`,
- * `available: false` and a reason rather than being dropped, so a client renders
- * "Not enough data yet." instead of quietly losing a card. A metric that *was*
- * measured and came out at zero arrives with `available: true` and must not be
- * rendered with the reason attached — the two are different answers.
- */
-export function fetchLearningMetrics(
-  params: LearningWindowParams = {},
-  signal?: AbortSignal,
-): Promise<LearningMetricRead[]> {
-  return apiClient.get<LearningMetricRead[]>(LEARNING_ENDPOINTS.metrics, {
     query: queryFrom({ window_days: params.window_days }),
     signal,
   })
@@ -222,25 +187,6 @@ export function fetchLearningActivity(
   })
 }
 
-/**
- * The ML-ready feature vector.
- *
- * An extractor, not a model: named numbers plus `schema_version`. Nothing here is
- * trained, loaded or inferred, and no screen may join these features into a
- * prediction about the user. Read it for what it is — the columns and what they
- * meant — and treat the closed `schema_version` union as the signal that a
- * future version will not line up with these field names.
- */
-export function fetchLearningFeatures(
-  params: LearningWindowParams = {},
-  signal?: AbortSignal,
-): Promise<LearningFeatureVectorRead> {
-  return apiClient.get<LearningFeatureVectorRead>(LEARNING_ENDPOINTS.features, {
-    query: queryFrom({ window_days: params.window_days }),
-    signal,
-  })
-}
-
 /* ---------------------------------------------------------------------- goals */
 
 /** Learning goals, filtered and paginated. */
@@ -276,55 +222,6 @@ export function createLearningGoal(
   return apiClient.post<LearningGoalRead>(LEARNING_ENDPOINTS.goals, payload)
 }
 
-/**
- * One goal in detail.
- *
- * Someone else's id is a 404 here, not a 403 — ownership is server-side and the
- * client is not told the difference.
- */
-export function fetchLearningGoal(
-  id: UUIDString,
-  signal?: AbortSignal,
-): Promise<LearningGoalRead> {
-  return apiClient.get<LearningGoalRead>(LEARNING_ENDPOINTS.goal(id), { signal })
-}
-
-/**
- * Edits a goal.
- *
- * `LearningGoalUpdatePayload` has no `completed_at`, so completion cannot be
- * forged by an edit — use {@link completeLearningGoal}, which stamps the moment
- * and emits `LEARNING_GOAL_COMPLETED`.
- */
-export function updateLearningGoal(
-  id: UUIDString,
-  payload: LearningGoalUpdatePayload,
-): Promise<LearningGoalRead> {
-  return apiClient.patch<LearningGoalRead>(LEARNING_ENDPOINTS.goal(id), payload)
-}
-
-/**
- * Removes a goal.
- *
- * Its activities survive: the foreign key is `ON DELETE SET NULL`, so the trail
- * outlives the thing it was a trail of, and a gap explanation can still say "6
- * related learning activities" after the goal that named them is gone.
- */
-export function deleteLearningGoal(id: UUIDString): Promise<void> {
-  return apiClient.delete<void>(LEARNING_ENDPOINTS.goal(id))
-}
-
-/**
- * Marks a goal complete, server-side, and returns the updated row.
- *
- * A separate route rather than a PATCH with `status: 'completed'` because the
- * completion instant is a fact NEXUS stamps, not one the client types: it sets
- * `completed_at`, and the event log records that the user said so.
- */
-export function completeLearningGoal(id: UUIDString): Promise<LearningGoalRead> {
-  return apiClient.post<LearningGoalRead>(LEARNING_ENDPOINTS.goalComplete(id))
-}
-
 /* --------------------------------------------------------------------- skills */
 
 /** Skills, filtered and paginated. */
@@ -354,32 +251,6 @@ export function fetchSkills(
  */
 export function createSkill(payload: SkillCreatePayload): Promise<SkillRead> {
   return apiClient.post<SkillRead>(LEARNING_ENDPOINTS.skills, payload)
-}
-
-/** One skill in detail, with its level source and evidence count. */
-export function fetchSkill(id: UUIDString, signal?: AbortSignal): Promise<SkillRead> {
-  return apiClient.get<SkillRead>(LEARNING_ENDPOINTS.skill(id), { signal })
-}
-
-/**
- * Edits a skill, including its level and where that level came from.
- *
- * `SkillUpdatePayload` has no `evidence_count` and no `confidence` — measured
- * fields are not editable, so what you may change is what you typed.
- */
-export function updateSkill(id: UUIDString, payload: SkillUpdatePayload): Promise<SkillRead> {
-  return apiClient.patch<SkillRead>(LEARNING_ENDPOINTS.skill(id), payload)
-}
-
-/**
- * Removes a skill.
- *
- * Goals pointing at it keep their `target_skill_id` as null rather than
- * disappearing, and the activities recorded against it go with it: an activity
- * whose skill is gone would be an unattributed event.
- */
-export function deleteSkill(id: UUIDString): Promise<void> {
-  return apiClient.delete<void>(LEARNING_ENDPOINTS.skill(id))
 }
 
 /* ----------------------------------------------------------------- activities */
@@ -493,19 +364,6 @@ export function createCareerExperience(
   return apiClient.post<CareerExperienceRead>(CAREER_ENDPOINTS.experience, payload)
 }
 
-/** Edits one dated record. The backend refuses a date pair that runs backwards. */
-export function updateCareerExperience(
-  id: UUIDString,
-  payload: CareerExperienceUpdatePayload,
-): Promise<CareerExperienceRead> {
-  return apiClient.patch<CareerExperienceRead>(CAREER_ENDPOINTS.experienceItem(id), payload)
-}
-
-/** Removes one dated record. Nothing else on the profile depends on it. */
-export function deleteCareerExperience(id: UUIDString): Promise<void> {
-  return apiClient.delete<void>(CAREER_ENDPOINTS.experienceItem(id))
-}
-
 /** Career evidence, newest first, filtered and paginated. */
 export function fetchCareerEvidence(
   params: CareerEvidenceListParams = {},
@@ -539,29 +397,6 @@ export function createCareerEvidence(
   return apiClient.post<CareerEvidenceRead>(CAREER_ENDPOINTS.evidence, payload)
 }
 
-/** Edits one piece of evidence. `occurred_on` may move; `created_at` may not. */
-export function updateCareerEvidence(
-  id: UUIDString,
-  payload: CareerEvidenceUpdatePayload,
-): Promise<CareerEvidenceRead> {
-  return apiClient.patch<CareerEvidenceRead>(CAREER_ENDPOINTS.evidenceItem(id), payload)
-}
-
-/** Removes one piece of evidence. The event log keeps the record of the edit. */
-export function deleteCareerEvidence(id: UUIDString): Promise<void> {
-  return apiClient.delete<void>(CAREER_ENDPOINTS.evidenceItem(id))
-}
-
-/**
- * The career feature vector.
- *
- * An extractor, not a model — the same boundary {@link fetchLearningFeatures}
- * sits on. Nothing here is trained, loaded or inferred, and no screen may join
- * these numbers into a match score or a suitability claim.
- */
-export function fetchCareerFeatures(signal?: AbortSignal): Promise<CareerFeatureVectorRead> {
-  return apiClient.get<CareerFeatureVectorRead>(CAREER_ENDPOINTS.features, { signal })
-}
 /**
  * Run the two deterministic learning rules and return what this call newly raised.
  *

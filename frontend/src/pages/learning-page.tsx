@@ -55,7 +55,7 @@ import {
 import type { LearningWindow, LearningWindowPresetId } from '@/features/learning/hooks'
 import type { ApiError } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
-import { toApiError } from '@/services/errors'
+import { toApiError, bannerError, fieldErrorMessages } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
 import { todayDateOnly } from '@/types/analytics'
 import type { Granularity } from '@/types/analytics'
@@ -240,27 +240,6 @@ function seriesCaption(
     `${describeWindow(series.window_days)}. Every bucket in that range is plotted, ` +
     'including the ones with nothing recorded in them.'
   )
-}
-
-/**
- * Flattens a 422's `details.errors[]` into `{ field: message }`, per
- * `docs/api-conventions.md`. Entries that are not field-scoped are dropped and
- * the first message wins when a field repeats.
- */
-function fieldErrorMessages(error: ApiError | null): Record<string, string> {
-  if (!error) return {}
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
-  const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
-  }
-  return messages
 }
 
 export default function LearningPage() {
@@ -1278,8 +1257,7 @@ function NewGoalDialog({
   const pending = create.isPending
 
   const fieldErrors = fieldErrorMessages(error)
-  const bannerError =
-    error && !(error.isValidationError && Object.keys(fieldErrors).length > 0) ? error : null
+  const banner = bannerError(error)
 
   function reset() {
     setTitle('')
@@ -1346,9 +1324,9 @@ function NewGoalDialog({
 
         {open && (
           <form className="app-form-stack" onSubmit={submit} noValidate>
-            {bannerError && (
+            {banner && (
               <p role="alert" className="app-form-error">
-                {bannerError.message}
+                {banner.message}
               </p>
             )}
 
@@ -1517,8 +1495,7 @@ function RecordActivityDialog({
   const pending = create.isPending
 
   const fieldErrors = fieldErrorMessages(error)
-  const bannerError =
-    error && !(error.isValidationError && Object.keys(fieldErrors).length > 0) ? error : null
+  const banner = bannerError(error)
 
   function reset() {
     setTitle('')
@@ -1584,9 +1561,9 @@ function RecordActivityDialog({
 
         {open && (
           <form className="app-form-stack" onSubmit={submit} noValidate>
-            {bannerError && (
+            {banner && (
               <p role="alert" className="app-form-error">
-                {bannerError.message}
+                {banner.message}
               </p>
             )}
 
@@ -1725,8 +1702,7 @@ function AddSkillDialog({
   const pending = create.isPending
 
   const fieldErrors = fieldErrorMessages(error)
-  const bannerError =
-    error && !(error.isValidationError && Object.keys(fieldErrors).length > 0) ? error : null
+  const banner = bannerError(error)
 
   function reset() {
     setName('')
@@ -1795,9 +1771,9 @@ function AddSkillDialog({
 
         {open && (
           <form className="app-form-stack" onSubmit={submit} noValidate>
-            {bannerError && (
+            {banner && (
               <p role="alert" className="app-form-error">
-                {bannerError.message}
+                {banner.message}
               </p>
             )}
 

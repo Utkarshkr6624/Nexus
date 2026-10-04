@@ -82,9 +82,6 @@ export type RiskSeverity = (typeof RISK_SEVERITIES)[number]
 export const RISK_STATUSES = ['active', 'acknowledged', 'resolved', 'dismissed'] as const
 export type RiskStatus = (typeof RISK_STATUSES)[number]
 
-/** The statuses a risk can be *found* in again, i.e. what a live filter offers. */
-export const LIVE_RISK_STATUSES: readonly RiskStatus[] = ['active', 'acknowledged']
-
 /**
  * What kind of action a recommendation proposes.
  *

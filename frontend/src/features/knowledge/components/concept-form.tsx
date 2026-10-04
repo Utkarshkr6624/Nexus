@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCreateConcept, useUpdateConcept } from '@/features/knowledge/hooks'
-import { toApiError } from '@/services/errors'
+import { bannerError, fieldErrorMessages, toApiError } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
 import type { ApiError } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
@@ -32,22 +32,6 @@ export interface ConceptFormProps {
 
 const TEXTAREA_CLASSES =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-
-function fieldErrorMessages(error: ApiError | null): Record<string, string> {
-  if (!error) return {}
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
-  const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
-  }
-  return messages
-}
 
 function ConceptFields({
   concept,
@@ -67,6 +51,7 @@ function ConceptFields({
   const update = useUpdateConcept()
   const pending = create.isPending || update.isPending
   const fieldErrors = fieldErrorMessages(error)
+  const banner = bannerError(error)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -104,9 +89,9 @@ function ConceptFields({
 
   return (
     <form className="app-form-stack" onSubmit={submit} noValidate>
-      {error && !error.isValidationError && (
+      {banner && (
         <p role="alert" className="app-form-error">
-          {error.message}
+          {banner.message}
         </p>
       )}
 

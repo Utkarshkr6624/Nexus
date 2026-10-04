@@ -12,8 +12,7 @@
  * - `blockTask` posts an optional body carrying only a note; the route pins the
  *   target status to `blocked`.
  */
-import { apiClient } from '@/lib/api-client'
-import type { QueryParams } from '@/lib/api-client'
+import { apiClient, queryFrom } from '@/lib/api-client'
 import type { Paginated } from '@/types/pagination'
 import type {
   ActivityEvent,
@@ -58,16 +57,6 @@ export const WORK_ENDPOINTS = {
   activity: '/activity',
   activityStats: '/activity/stats',
 } as const
-
-function queryFrom(params: Record<string, unknown>): QueryParams {
-  const query: QueryParams = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    if (Array.isArray(value)) continue
-    query[key] = value as string | number | boolean
-  }
-  return query
-}
 
 /**
  * Appends a repeated query parameter to the path.
@@ -200,10 +189,6 @@ export function createTask(payload: TaskCreatePayload): Promise<Task> {
   return apiClient.post<Task>(WORK_ENDPOINTS.tasks, payload)
 }
 
-export function fetchTask(id: UUIDString, signal?: AbortSignal): Promise<Task> {
-  return apiClient.get<Task>(WORK_ENDPOINTS.task(id), { signal })
-}
-
 export function updateTask(id: UUIDString, payload: TaskUpdatePayload): Promise<Task> {
   return apiClient.patch<Task>(WORK_ENDPOINTS.task(id), payload)
 }
@@ -229,24 +214,6 @@ export function blockTask(id: UUIDString, note?: string): Promise<Task> {
   )
 }
 
-export function setTaskPriority(id: UUIDString, priority: TaskPriority): Promise<Task> {
-  return apiClient.patch<Task>(WORK_ENDPOINTS.taskPriority(id), { priority })
-}
-
-export function fetchSubtasks(
-  id: UUIDString,
-  signal?: AbortSignal,
-): Promise<TaskSummary[]> {
-  return apiClient.get<TaskSummary[]>(WORK_ENDPOINTS.taskSubtasks(id), { signal })
-}
-
-export function fetchTaskDependencies(
-  id: UUIDString,
-  signal?: AbortSignal,
-): Promise<TaskSummary[]> {
-  return apiClient.get<TaskSummary[]>(WORK_ENDPOINTS.taskDependencies(id), { signal })
-}
-
 /** Returns the **blocker**, not the task that was blocked. */
 export function addTaskDependency(
   id: UUIDString,
@@ -254,12 +221,6 @@ export function addTaskDependency(
 ): Promise<TaskSummary> {
   return apiClient.post<TaskSummary>(WORK_ENDPOINTS.taskDependencies(id), undefined, {
     query: { depends_on_id: dependsOnId },
-  })
-}
-
-export function removeTaskDependency(id: UUIDString, dependsOnId: UUIDString): Promise<void> {
-  return apiClient.delete<void>(WORK_ENDPOINTS.taskDependency(id, dependsOnId), {
-    parse: 'none',
   })
 }
 
@@ -282,14 +243,6 @@ export function fetchTags(
 
 export function createTag(name: string): Promise<WorkTag> {
   return apiClient.post<WorkTag>(WORK_ENDPOINTS.tags, { name })
-}
-
-export function renameTag(id: UUIDString, name: string): Promise<WorkTag> {
-  return apiClient.put<WorkTag>(WORK_ENDPOINTS.tag(id), { name })
-}
-
-export function deleteTag(id: UUIDString): Promise<void> {
-  return apiClient.delete<void>(WORK_ENDPOINTS.tag(id), { parse: 'none' })
 }
 
 /* ---------------------------------------------------------------- activity */

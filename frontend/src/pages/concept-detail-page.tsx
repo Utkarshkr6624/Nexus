@@ -15,6 +15,7 @@ import {
   LinkEditor,
 } from '@/features/knowledge/components'
 import { useConcepts, useDeleteConcept, useOutboundLinks } from '@/features/knowledge/hooks'
+import { MarkdownView } from '@/features/knowledge/markdown'
 import { ConfirmDialog } from '@/features/work/components'
 import { useTags } from '@/features/work/hooks'
 import { cn } from '@/lib/utils'
@@ -24,24 +25,19 @@ import {
   MAX_PAGE_SIZE,
   formatKnowledgeDateTime,
   formatRelative,
-  renderMarkdown,
 } from '@/types/knowledge'
 import type { KnowledgeEntityType, KnowledgeLink, UUIDString } from '@/types/knowledge'
 
-/** Same measure and rhythm as the note reader — one reading surface, not two. */
+/**
+ * The reading measure. ~68 characters is the width at which a line of body text
+ * can be taken in one saccade; past about 75 the return sweep starts losing the
+ * start of the next line, which is the failure that makes long-form UI tiring.
+ *
+ * The typographic rhythm inside that column is not defined here: a concept and
+ * a note are one reading surface, and `MarkdownView` is where their scale
+ * lives.
+ */
 const READING_MEASURE = 'max-w-[68ch]'
-
-const PROSE = [
-  'text-[1.0625rem] leading-[1.75] text-foreground',
-  '[&_p]:my-4 [&_p:first-of-type]:mt-0',
-  '[&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-6',
-  '[&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-1.5 [&_ol]:pl-6',
-  '[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em]',
-  '[&_pre]:my-5 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted/60 [&_pre]:p-4',
-  '[&_pre_code]:bg-transparent [&_pre_code]:p-0',
-  '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2',
-  '[&_strong]:font-semibold',
-].join(' ')
 
 function DetailSkeleton() {
   return (
@@ -253,10 +249,7 @@ export default function ConceptDetailPage() {
               </Button>
             </div>
           ) : (
-            <div
-              className={PROSE}
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(description) }}
-            />
+            <MarkdownView content={description} />
           )}
         </article>
 

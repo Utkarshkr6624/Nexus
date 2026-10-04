@@ -30,7 +30,6 @@ import {
 } from '@tanstack/react-query'
 
 import {
-  addTaskDependency,
   archiveProject,
   blockTask,
   completeProject,
@@ -39,7 +38,6 @@ import {
   createTag,
   createTask,
   deleteProject,
-  deleteTag,
   deleteTask,
   fetchActivity,
   fetchActivityStats,
@@ -48,16 +46,10 @@ import {
   fetchProjectSummary,
   fetchProjectTasks,
   fetchProjects,
-  fetchSubtasks,
   fetchTags,
-  fetchTask,
-  fetchTaskDependencies,
   fetchTasks,
-  removeTaskDependency,
-  renameTag,
   reopenTask,
   restoreProject,
-  setTaskPriority,
   setTaskTags,
   updateProject,
   updateTask,
@@ -77,8 +69,6 @@ import type {
   ProjectTaskListParams,
   Task,
   TaskListParams,
-  TaskPriority,
-  TaskSummary,
   UUIDString,
   WorkTag,
 } from '@/types/work'
@@ -226,33 +216,6 @@ export function useTasks(
   })
 }
 
-export function useTask(id: UUIDString | null | undefined): UseQueryResult<Task> {
-  return useQuery({
-    queryKey: workKeys.task(id),
-    queryFn: ({ signal }) => fetchTask(id as UUIDString, signal),
-    enabled: Boolean(id),
-  })
-}
-
-export function useSubtasks(id: UUIDString | null | undefined): UseQueryResult<TaskSummary[]> {
-  return useQuery({
-    queryKey: workKeys.subtasks(id),
-    queryFn: ({ signal }) => fetchSubtasks(id as UUIDString, signal),
-    enabled: Boolean(id),
-  })
-}
-
-/** The tasks this one waits on — not the ones waiting on it. */
-export function useTaskDependencies(
-  id: UUIDString | null | undefined,
-): UseQueryResult<TaskSummary[]> {
-  return useQuery({
-    queryKey: workKeys.dependencies(id),
-    queryFn: ({ signal }) => fetchTaskDependencies(id as UUIDString, signal),
-    enabled: Boolean(id),
-  })
-}
-
 export function useTags(
   params: { limit?: number; offset?: number } = {},
 ): UseQueryResult<Paginated<WorkTag>> {
@@ -314,18 +277,6 @@ export function useDeleteProject(): UseMutationResult<void, Error, UUIDString> {
   return useMutation({ mutationFn: deleteProject, onSuccess: useInvalidateWork() })
 }
 
-export function useCompleteProject(): UseMutationResult<Project, Error, UUIDString> {
-  return useMutation({ mutationFn: completeProject, onSuccess: useInvalidateWork() })
-}
-
-export function useArchiveProject(): UseMutationResult<Project, Error, UUIDString> {
-  return useMutation({ mutationFn: archiveProject, onSuccess: useInvalidateWork() })
-}
-
-export function useRestoreProject(): UseMutationResult<Project, Error, UUIDString> {
-  return useMutation({ mutationFn: restoreProject, onSuccess: useInvalidateWork() })
-}
-
 /** `complete`, `archive` and `restore` are three routes with one shape. */
 export function useProjectTransition(): UseMutationResult<
   Project,
@@ -361,37 +312,6 @@ export function useDeleteTask(): UseMutationResult<void, Error, UUIDString> {
   return useMutation({ mutationFn: deleteTask, onSuccess: useInvalidateWork() })
 }
 
-/** Refused with a 422 while an open prerequisite is still unfinished. */
-export function useCompleteTask(): UseMutationResult<Task, Error, UUIDString> {
-  return useMutation({ mutationFn: completeTask, onSuccess: useInvalidateWork() })
-}
-
-export function useReopenTask(): UseMutationResult<Task, Error, UUIDString> {
-  return useMutation({ mutationFn: reopenTask, onSuccess: useInvalidateWork() })
-}
-
-export function useBlockTask(): UseMutationResult<
-  Task,
-  Error,
-  { id: UUIDString; note?: string }
-> {
-  return useMutation({
-    mutationFn: ({ id, note }) => blockTask(id, note),
-    onSuccess: useInvalidateWork(),
-  })
-}
-
-export function useSetTaskPriority(): UseMutationResult<
-  Task,
-  Error,
-  { id: UUIDString; priority: TaskPriority }
-> {
-  return useMutation({
-    mutationFn: ({ id, priority }) => setTaskPriority(id, priority),
-    onSuccess: useInvalidateWork(),
-  })
-}
-
 /**
  * The three lifecycle transitions behind one call, for a control that offers a
  * "what next?" menu. The server decides whether the move is legal and a 422 is
@@ -423,43 +343,7 @@ export function useSetTaskTags(): UseMutationResult<
   })
 }
 
-export function useAddTaskDependency(): UseMutationResult<
-  TaskSummary,
-  Error,
-  { id: UUIDString; dependsOnId: UUIDString }
-> {
-  return useMutation({
-    mutationFn: ({ id, dependsOnId }) => addTaskDependency(id, dependsOnId),
-    onSuccess: useInvalidateWork(),
-  })
-}
-
-export function useRemoveTaskDependency(): UseMutationResult<
-  void,
-  Error,
-  { id: UUIDString; dependsOnId: UUIDString }
-> {
-  return useMutation({
-    mutationFn: ({ id, dependsOnId }) => removeTaskDependency(id, dependsOnId),
-    onSuccess: useInvalidateWork(),
-  })
-}
-
 export function useCreateTag(): UseMutationResult<WorkTag, Error, string> {
   return useMutation({ mutationFn: createTag, onSuccess: useInvalidateWork() })
 }
 
-export function useRenameTag(): UseMutationResult<
-  WorkTag,
-  Error,
-  { id: UUIDString; name: string }
-> {
-  return useMutation({
-    mutationFn: ({ id, name }) => renameTag(id, name),
-    onSuccess: useInvalidateWork(),
-  })
-}
-
-export function useDeleteTag(): UseMutationResult<void, Error, UUIDString> {
-  return useMutation({ mutationFn: deleteTag, onSuccess: useInvalidateWork() })
-}

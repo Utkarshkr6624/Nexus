@@ -65,6 +65,7 @@ than an oversight; see :data:`_UNRECORDED_FILE_PATH`.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import replace
@@ -76,6 +77,7 @@ from sqlalchemy import func, select
 
 from app.core.config import Settings, get_settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.core.logging import get_logger, log_event
 from app.models.developer import GitCommit, GitRepository
 from app.models.enums import ActivityEvent, GitScanStatus
 from app.repositories.developer import DeveloperRepository
@@ -127,6 +129,8 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 __all__ = ["DeveloperIntelligenceService"]
+
+logger = get_logger(__name__)
 
 #: The page size a repository list gets when a caller names none. Matches
 #: :mod:`app.repositories.developer`'s own default so the service's fallback and
@@ -548,6 +552,12 @@ class DeveloperIntelligenceService:
             The ``GitScanRun`` describing the attempt. On failure it carries
             ``status='error'`` and a human sentence — never a traceback.
 
+        **A failed scan is logged as well as stored.** ``git_scan_failed``
+        records the repository, the exception *type* and the duration. The row
+        written here is the answer a user sees on one repository; the log line is
+        the answer an operator needs when every scan on a deployment is failing
+        at once, which is the case the repository list cannot surface.
+
         Raises:
             NotFoundError: If the repository is not this account's.
         """
@@ -562,6 +572,15 @@ class DeveloperIntelligenceService:
                 allowlist=self._path_allowlist(),
             )
         except (GitError, OSError) as exc:
+            log_event(
+                logger,
+                logging.WARNING,
+                "git_scan_failed",
+                error=type(exc).__name__,
+                owner_id=str(owner.id),
+                repository_id=str(repository.id),
+                duration_ms=_elapsed_ms(started),
+            )
             return await self._failed_scan(
                 owner=owner, repository=repository, message=str(exc), started=started
             )

@@ -16,14 +16,13 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { instantToLocalInput, localInputToInstant } from '@/features/planner/datetime'
-import { bannerError, fieldErrorMessages, TEXTAREA_CLASSES } from '@/features/planner/form-errors'
 import {
   useCreateCalendarEvent,
   useDeleteCalendarEvent,
   useUpdateCalendarEvent,
 } from '@/features/planner/hooks'
 import type { ApiError } from '@/lib/api-client'
-import { toApiError } from '@/services/errors'
+import { bannerError, fieldErrorMessages, toApiError } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
 import { CALENDAR_EVENT_TYPES, EVENT_TYPE_META } from '@/types/planner'
 import type { CalendarEvent, CalendarEventType } from '@/types/planner'
@@ -51,6 +50,9 @@ export interface CalendarEventDialogProps {
   onSaved?: (event: CalendarEvent) => void
   onDeleted?: (event: CalendarEvent) => void
 }
+
+const TEXTAREA_CLASSES =
+  'w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-[invalid=true]:border-destructive'
 
 interface FormState {
   title: string

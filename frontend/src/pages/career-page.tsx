@@ -47,7 +47,7 @@ import {
 } from '@/features/learning/hooks'
 import { useProjects } from '@/features/work/hooks'
 import type { ApiError } from '@/lib/api-client'
-import { toApiError } from '@/services/errors'
+import { toApiError, bannerError, fieldErrorMessages } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
 import type {
   CareerEvidenceRead,
@@ -161,27 +161,6 @@ function lastPageOffset(total: number, limit: number): number {
 const NO_EVIDENCE: CareerEvidenceRead[] = []
 const NO_RECORDS: CareerExperienceRead[] = []
 const NO_SKILLS: SkillRead[] = []
-
-/**
- * Flattens a 422's `details.errors[]` into `{ field: message }`, per
- * `docs/api-conventions.md`. Entries that are not field-scoped are dropped and
- * the first message wins when a field repeats.
- */
-function fieldErrorMessages(error: ApiError | null): Record<string, string> {
-  if (!error) return {}
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
-  const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
-  }
-  return messages
-}
 
 export default function CareerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -820,8 +799,7 @@ function EditProfileDialog({
   const pending = upsert.isPending
 
   const fieldErrors = fieldErrorMessages(error)
-  const bannerError =
-    error && !(error.isValidationError && Object.keys(fieldErrors).length > 0) ? error : null
+  const banner = bannerError(error)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -883,9 +861,9 @@ function EditProfileDialog({
             noValidate
             key={profile?.updated_at ?? 'new-profile'}
           >
-            {bannerError && (
+            {banner && (
               <p role="alert" className="app-form-error">
-                {bannerError.message}
+                {banner.message}
               </p>
             )}
 
@@ -1053,10 +1031,7 @@ function AddEvidenceDialog({
   const pending = create.isPending
 
   const fieldErrors = { ...localErrors, ...fieldErrorMessages(error) }
-  const bannerError =
-    error && !(error.isValidationError && Object.keys(fieldErrorMessages(error)).length > 0)
-      ? error
-      : null
+  const banner = bannerError(error)
 
   function reset() {
     setEvidenceType('achievement')
@@ -1130,9 +1105,9 @@ function AddEvidenceDialog({
 
         {open && (
           <form className="app-form-stack" onSubmit={submit} noValidate>
-            {bannerError && (
+            {banner && (
               <p role="alert" className="app-form-error">
-                {bannerError.message}
+                {banner.message}
               </p>
             )}
 
@@ -1350,10 +1325,7 @@ function AddRecordDialog({
   const pending = create.isPending
 
   const fieldErrors = { ...localErrors, ...fieldErrorMessages(error) }
-  const bannerError =
-    error && !(error.isValidationError && Object.keys(fieldErrorMessages(error)).length > 0)
-      ? error
-      : null
+  const banner = bannerError(error)
 
   function reset() {
     setKind('experience')
@@ -1426,9 +1398,9 @@ function AddRecordDialog({
 
         {open && (
           <form className="app-form-stack" onSubmit={submit} noValidate>
-            {bannerError && (
+            {banner && (
               <p role="alert" className="app-form-error">
-                {bannerError.message}
+                {banner.message}
               </p>
             )}
 

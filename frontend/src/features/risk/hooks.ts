@@ -65,10 +65,7 @@ import {
   completeRecommendation,
   dismissRisk,
   evaluateIntelligence,
-  fetchEvaluations,
   fetchRecommendations,
-  fetchRecommendation,
-  fetchRisk,
   fetchRisks,
   fetchRiskSummary,
   rejectRecommendation,
@@ -188,23 +185,6 @@ export function useRisks(
 }
 
 /**
- * One risk, for a detail screen.
- *
- * Disabled while there is no id, so a component that renders a detail route
- * before its parameter is parsed does not fire a request for `/risks/undefined`.
- */
-export function useRisk(
-  id: UUIDString | null | undefined,
-  options: Enabled = {},
-): UseQueryResult<RiskRead> {
-  return useQuery({
-    queryKey: riskKeys.riskDetail(id ?? ''),
-    queryFn: ({ signal }) => fetchRisk(id as UUIDString, signal),
-    enabled: (options.enabled ?? true) && Boolean(id),
-  })
-}
-
-/**
  * The dashboard's compact counts.
  *
  * A separate query from the list because it answers a different question at a
@@ -229,30 +209,6 @@ export function useRecommendations(
     queryFn: ({ signal }) => fetchRecommendations(params, signal),
     enabled: options.enabled,
     placeholderData: (previous) => previous,
-  })
-}
-
-/** One suggestion, for a detail screen. Disabled while there is no id. */
-export function useRecommendation(
-  id: UUIDString | null | undefined,
-  options: Enabled = {},
-): UseQueryResult<RecommendationRead> {
-  return useQuery({
-    queryKey: riskKeys.recommendationDetail(id ?? ''),
-    queryFn: ({ signal }) => fetchRecommendation(id as UUIDString, signal),
-    enabled: (options.enabled ?? true) && Boolean(id),
-  })
-}
-
-/** Recent detection runs, newest first. An empty array means "never run". */
-export function useEvaluationHistory(
-  params: EvaluationListParams = {},
-  options: Enabled = {},
-): UseQueryResult<EvaluationRead[]> {
-  return useQuery({
-    queryKey: riskKeys.evaluationHistory(params),
-    queryFn: ({ signal }) => fetchEvaluations(params, signal),
-    enabled: options.enabled,
   })
 }
 

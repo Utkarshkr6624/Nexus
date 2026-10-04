@@ -426,9 +426,6 @@ export const NOTE_SORT_KEYS = ['updated_at', 'created_at', 'title', 'status'] as
 export const CONCEPT_SORT_KEYS = ['name', 'updated_at', 'created_at'] as const
 export const RESOURCE_SORT_KEYS = ['updated_at', 'created_at', 'title', 'resource_type'] as const
 export const BOOKMARK_SORT_KEYS = ['created_at', 'updated_at', 'archived_at', 'domain'] as const
-export const DOCUMENT_SORT_KEYS = ['updated_at', 'created_at', 'title', 'filename'] as const
-export const CATEGORY_SORT_KEYS = ['name', 'updated_at', 'created_at'] as const
-
 export type NoteSortKey = (typeof NOTE_SORT_KEYS)[number]
 export type ConceptSortKey = (typeof CONCEPT_SORT_KEYS)[number]
 export type ResourceSortKey = (typeof RESOURCE_SORT_KEYS)[number]
@@ -448,9 +445,6 @@ export const SORT_LABELS: Record<string, string> = {
 
 /** `limit` above 100 is a 422 on every list, and a 422 on the graph above 500. */
 export const MAX_PAGE_SIZE = 100
-export const MAX_GRAPH_LIMIT = 500
-export const MAX_SEARCH_LIMIT = 20
-
 /* -------------------------------------------------------------------------- */
 /* Request payloads                                                            */
 /* -------------------------------------------------------------------------- */

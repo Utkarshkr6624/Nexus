@@ -27,6 +27,13 @@ error. So the loaded labels are compared index-by-index against
 :func:`ml.datasets.routing.label_map`, which is derived from
 :class:`ml.datasets.taxonomy.Intent`, and a single disagreement refuses the load.
 
+**The trained context length is checked against the checkpoint's own encoder.** A
+checkpoint from a different run that recorded a longer trained window than its
+``config.json`` declares room for would otherwise load, score, and quietly be a
+different classifier from the one that was measured. DeBERTa stretches its
+relative-position embedding past ``max_position_embeddings`` rather than refusing,
+so nothing downstream would notice.
+
 **Exception messages never carry an absolute path.** The checkpoint lives on the
 server's filesystem and that is deployment information, not client information;
 :attr:`app.ml.schemas.ModelIdentity.checkpoint` holds it for the logs and the
@@ -279,6 +286,10 @@ def load_model(
         _int_keyed_labels(config.get("id2label"), "config.json id2label"),
         sidecar,
     )
+    max_sequence_length = _resolve_max_sequence_length(trained)
+    # Before the weights, for the same reason as the label check and because the
+    # failure it prevents is silent rather than loud.
+    _validate_context_length(max_sequence_length, config)
 
     torch_module = _import_torch()
     transformers = _import_transformers()
@@ -292,7 +303,6 @@ def load_model(
     model.to(device_name)
 
     parameter_count = sum(parameter.numel() for parameter in model.parameters())
-    max_sequence_length = _resolve_max_sequence_length(trained)
     load_seconds = time.perf_counter() - started
     identity = ModelIdentity(
         base_model=_resolve_base_model(config, trained),
@@ -453,6 +463,41 @@ def _validate_labels(config_labels: dict[int, str], sidecar: dict[str, Any]) -> 
         )
 
     return tuple(expected_by_index[index] for index in range(len(expected_by_index)))
+
+
+def _validate_context_length(max_sequence_length: int, config: dict[str, Any]) -> None:
+    """Refuse a trained context length the checkpoint's encoder cannot reach.
+
+    The label check above catches a checkpoint trained against a different *label
+    set*. This catches a different *window*. DeBERTa's relative-position
+    embedding is sized to ``max_position_embeddings`` and is stretched past it
+    rather than refused, so a checkpoint whose ``training_state.json`` records a
+    longer trained context than its own config was built for loads cleanly, runs a
+    forward pass, and returns a confident-looking intent computed from positions
+    the encoder has never been fitted on. Nothing raises and nothing reports an
+    error — the classifier is simply a different classifier from the one whose
+    accuracy was recorded.
+
+    Args:
+        max_sequence_length: The trained context length the run recorded.
+        config: The checkpoint's own ``config.json``.
+
+    Raises:
+        ModelCheckpointError: The trained length exceeds the architecture's
+            declared positional capacity.
+    """
+    capacity = config.get("max_position_embeddings")
+    if isinstance(capacity, bool) or not isinstance(capacity, int) or capacity <= 0:
+        # An architecture that declares no capacity is not one this check can
+        # reason about, and refusing it would be a guess.
+        return
+    if max_sequence_length <= capacity:
+        return
+    raise ModelCheckpointError(
+        f"the checkpoint was trained at a context length of {max_sequence_length} tokens but its "
+        f"own config declares room for {capacity}; these weights describe a different training "
+        "run and cannot serve this one"
+    )
 
 
 def _trained_settings(checkpoint: Path) -> dict[str, Any]:

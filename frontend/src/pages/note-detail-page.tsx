@@ -18,6 +18,7 @@ import {
   RevisionList,
 } from '@/features/knowledge/components'
 import { useDeleteNote, useNote, useNoteTransition } from '@/features/knowledge/hooks'
+import { MarkdownView } from '@/features/knowledge/markdown'
 import { ConfirmDialog } from '@/features/work/components'
 import { useTags } from '@/features/work/hooks'
 import { toApiError } from '@/services/errors'
@@ -27,7 +28,6 @@ import {
   NOTE_STATUS_META,
   formatKnowledgeDateTime,
   formatRelative,
-  renderMarkdown,
 } from '@/types/knowledge'
 import type { KnowledgeEntityType, UUIDString } from '@/types/knowledge'
 
@@ -40,34 +40,6 @@ import type { KnowledgeEntityType, UUIDString } from '@/types/knowledge'
  * because a list of titles is scanned, not read.
  */
 const READING_MEASURE = 'max-w-[68ch]'
-
-/**
- * Typographic rhythm for rendered Markdown, expressed as arbitrary variants so
- * the reading surface does not depend on a typography plugin. The scale is
- * deliberately shallow: body 1.0625rem on a 1.75 line height, headings that
- * step up rather than jump, and spacing between blocks rather than inside them.
- */
-const PROSE = [
-  'text-[1.0625rem] leading-[1.75] text-foreground',
-  '[&_h1]:mt-10 [&_h1]:mb-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-tight',
-  '[&_h2]:mt-9 [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight',
-  '[&_h3]:mt-7 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold',
-  '[&_h4]:mt-6 [&_h4]:mb-2 [&_h4]:text-base [&_h4]:font-semibold',
-  '[&_h5]:mt-5 [&_h5]:text-sm [&_h5]:font-semibold [&_h5]:uppercase [&_h5]:tracking-wide',
-  '[&_h6]:mt-5 [&_h6]:text-sm [&_h6]:font-semibold [&_h6]:text-muted-foreground',
-  '[&_p]:my-4 [&_p:first-of-type]:mt-0',
-  '[&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-6',
-  '[&_ol]:my-4 [&_ol]:list-decimal [&_ol]:space-y-1.5 [&_ol]:pl-6',
-  '[&_li]:pl-1 [&_li::marker]:text-muted-foreground',
-  '[&_blockquote]:my-5 [&_blockquote]:border-l-2 [&_blockquote]:border-primary/40 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground',
-  '[&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.9em]',
-  '[&_pre]:my-5 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:bg-muted/60 [&_pre]:p-4',
-  '[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-sm [&_pre_code]:leading-relaxed',
-  '[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:decoration-primary/40 hover:[&_a]:decoration-primary',
-  '[&_hr]:my-8 [&_hr]:border-border',
-  '[&_strong]:font-semibold',
-  '[&_del]:text-muted-foreground',
-].join(' ')
 
 function DetailSkeleton() {
   return (
@@ -111,11 +83,6 @@ export default function NoteDetailPage() {
     for (const tag of tagPage?.items ?? []) map.set(tag.id, tag.name)
     return map
   }, [tagPage])
-
-  const body = useMemo(
-    () => (note.data ? renderMarkdown(note.data.content) : ''),
-    [note.data],
-  )
 
   if (note.isPending) return <DetailSkeleton />
 
@@ -249,7 +216,7 @@ export default function NoteDetailPage() {
                   </Button>
                 </div>
               ) : (
-                <div className={PROSE} dangerouslySetInnerHTML={{ __html: body }} />
+                <MarkdownView content={current.content} />
               )}
             </div>
           )}

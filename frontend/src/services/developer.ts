@@ -29,9 +29,9 @@
  *   storing it, so this module never inspects the filesystem and cannot report a
  *   path as valid on the strength of its own guess.
  * - **`PATCH` carries no `local_path`.** The path is the row's identity and the
- *   one field checked against the disk; `RepositoryUpdatePayload` omits it so no
- *   caller can even express the move. The same omission applies to
- *   `primary_language`, which the scan measures.
+ *   one field checked against the disk, so it is omitted from the update
+ *   payload and no caller can even express the move. The same omission applies
+ *   to `primary_language`, which the scan measures.
  * - **Scanning returns {@link ScanRunRead}, not {@link RepositoryRead}.** The
  *   run is the record of what the attempt did — including a failure, which is
  *   the only shape in which "this repository could not be read" reaches the
@@ -48,25 +48,22 @@
  * response*: it is a 200 carrying `status: 'error'` and a human sentence, which
  * is the mechanism behind "a broken repository must never break NEXUS".
  */
-import { apiClient, type QueryParams } from '@/lib/api-client'
+import { apiClient, queryFrom } from '@/lib/api-client'
 import type {
   ActivityParams,
   BranchListRead,
   CommitListParams,
   CommitListRead,
   DeveloperActivityRead,
-  DeveloperFeatureVectorRead,
   DeveloperMetricRead,
   DeveloperSummaryRead,
   DeveloperWindowParams,
   PaginationParams,
-  ProjectDeveloperRead,
   RepositoryCreatePayload,
   RepositoryListParams,
   RepositoryListRead,
   RepositoryRead,
   RepositoryScanParams,
-  RepositoryUpdatePayload,
   ScanRunRead,
   UUIDString,
 } from '@/types/developer'
@@ -92,16 +89,6 @@ export const DEVELOPER_ENDPOINTS = {
  * carries no implicit index signature and would not be assignable to that record
  * — the same reason `services/risk.ts` does it this way.
  */
-function queryFrom(params: object): QueryParams {
-  const query: QueryParams = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    if (Array.isArray(value)) continue
-    query[key] = value as string | number | boolean
-  }
-  return query
-}
-
 /* ------------------------------------------------------------------ dashboard */
 
 /**
@@ -189,25 +176,6 @@ export function fetchDeveloperCommits(
   })
 }
 
-/**
- * The ML-ready feature vector.
- *
- * An extractor, not a model: named numbers plus `schema_version`. Nothing here
- * is trained, loaded or inferred, and no screen may join these features into a
- * prediction. Read it for what it is — the columns and what they meant — and
- * treat the closed `schema_version` union as the signal that a future version
- * will not line up with these field names.
- */
-export function fetchDeveloperFeatures(
-  params: DeveloperWindowParams = {},
-  signal?: AbortSignal,
-): Promise<DeveloperFeatureVectorRead> {
-  return apiClient.get<DeveloperFeatureVectorRead>(DEVELOPER_ENDPOINTS.features, {
-    query: queryFrom({ window_days: params.window_days }),
-    signal,
-  })
-}
-
 /* -------------------------------------------------------------- repositories */
 
 /** Registered repositories, newest first, filtered and paginated. */
@@ -256,20 +224,6 @@ export function fetchRepository(
   signal?: AbortSignal,
 ): Promise<RepositoryRead> {
   return apiClient.get<RepositoryRead>(DEVELOPER_ENDPOINTS.repository(id), { signal })
-}
-
-/**
- * Edits repository metadata.
- *
- * `RepositoryUpdatePayload` has no `local_path` and no `primary_language`, so a
- * move or an invented language cannot be expressed here. To repoint a
- * repository at another directory, register the new one and delete the old.
- */
-export function updateRepository(
-  id: UUIDString,
-  payload: RepositoryUpdatePayload,
-): Promise<RepositoryRead> {
-  return apiClient.patch<RepositoryRead>(DEVELOPER_ENDPOINTS.repository(id), payload)
 }
 
 /**
@@ -351,20 +305,3 @@ export function fetchRepositoryBranches(
 
 /* ------------------------------------------------------------------- project */
 
-/**
- * The developer view of one project: its linked repositories and the activity
- * recorded against them.
- *
- * Carries the repositories themselves alongside the counts, so a project detail
- * page cannot render a total that disagrees with the rows beneath it.
- */
-export function fetchProjectDeveloper(
-  projectId: UUIDString,
-  params: DeveloperWindowParams = {},
-  signal?: AbortSignal,
-): Promise<ProjectDeveloperRead> {
-  return apiClient.get<ProjectDeveloperRead>(DEVELOPER_ENDPOINTS.project(projectId), {
-    query: queryFrom({ window_days: params.window_days }),
-    signal,
-  })
-}

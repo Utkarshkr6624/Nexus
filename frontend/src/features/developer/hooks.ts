@@ -48,16 +48,13 @@ import {
   deleteRepository,
   fetchDeveloperActivity,
   fetchDeveloperCommits,
-  fetchDeveloperFeatures,
   fetchDeveloperMetrics,
   fetchDeveloperSummary,
-  fetchProjectDeveloper,
   fetchRepositories,
   fetchRepository,
   fetchRepositoryBranches,
   fetchRepositoryCommits,
   scanRepository,
-  updateRepository,
 } from '@/services/developer'
 import type { DateOnlyString } from '@/types/analytics'
 import { isDateOnly, rangeDays, shiftDays, todayDateOnly } from '@/types/analytics'
@@ -73,17 +70,14 @@ import {
   type CommitListParams,
   type CommitListRead,
   type DeveloperActivityRead,
-  type DeveloperFeatureVectorRead,
   type DeveloperMetricRead,
   type DeveloperSummaryRead,
   type DeveloperWindowParams,
-  type ProjectDeveloperRead,
   type RepositoryCreatePayload,
   type RepositoryListParams,
   type RepositoryListRead,
   type RepositoryRead,
   type RepositoryScanParams,
-  type RepositoryUpdatePayload,
   type ScanRunRead,
   type UUIDString,
 } from '@/types/developer'
@@ -438,25 +432,6 @@ export function useDeveloperCommits(
 }
 
 /**
- * The ML-ready feature vector.
- *
- * An extractor, not a model: named numbers and a schema version. Nothing on a
- * page may join these into a prediction — the surface exists so a later phase
- * knows what each column meant.
- */
-export function useDeveloperFeatures(
-  params: DeveloperWindowParams = {},
-  options: Enabled = {},
-): UseQueryResult<DeveloperFeatureVectorRead> {
-  return useQuery({
-    queryKey: developerKeys.features(params),
-    queryFn: ({ signal }) => fetchDeveloperFeatures(params, signal),
-    enabled: options.enabled,
-    placeholderData: (previous) => previous,
-  })
-}
-
-/**
  * Registered repositories, newest first.
  *
  * `is_active` and `project_id` are served from indexes server-side, so the
@@ -525,27 +500,6 @@ export function useRepositoryBranches(
   })
 }
 
-/**
- * The developer view of one project: its linked repositories and the activity
- * recorded against them.
- *
- * Carries the repositories alongside the counts, so a project page cannot show
- * a total that disagrees with the rows beneath it. Disabled while there is no
- * project id.
- */
-export function useProjectDeveloper(
-  projectId: UUIDString | null | undefined,
-  params: DeveloperWindowParams = {},
-  options: Enabled = {},
-): UseQueryResult<ProjectDeveloperRead> {
-  return useQuery({
-    queryKey: developerKeys.project(projectId ?? '', params),
-    queryFn: ({ signal }) => fetchProjectDeveloper(projectId as UUIDString, params, signal),
-    enabled: (options.enabled ?? true) && Boolean(projectId),
-    placeholderData: (previous) => previous,
-  })
-}
-
 /* --------------------------------------------------------------- mutations */
 
 /**
@@ -567,28 +521,6 @@ export function useCreateRepository(): UseMutationResult<
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: RepositoryCreatePayload) => createRepository(payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: developerKeys.all() })
-    },
-  })
-}
-
-/**
- * Edits repository metadata.
- *
- * `RepositoryUpdatePayload` has no `local_path` and no `primary_language`, so a
- * move or an invented language cannot be expressed by a caller: the path is the
- * row's identity and the language is measured by the scan.
- */
-export function useUpdateRepository(): UseMutationResult<
-  RepositoryRead,
-  Error,
-  { id: UUIDString; payload: RepositoryUpdatePayload }
-> {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: UUIDString; payload: RepositoryUpdatePayload }) =>
-      updateRepository(id, payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: developerKeys.all() })
     },

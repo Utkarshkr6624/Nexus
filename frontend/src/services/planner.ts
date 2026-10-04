@@ -19,7 +19,7 @@
  * Availability is a **PUT of the whole week**: `rules: []` clears it. There is
  * no "append" verb, by design, so `replaceAvailability` is the only writer.
  */
-import { apiClient } from '@/lib/api-client'
+import { apiClient, queryFrom } from '@/lib/api-client'
 import type { QueryParams } from '@/lib/api-client'
 import type { Paginated } from '@/types/pagination'
 import type {
@@ -62,16 +62,6 @@ export const PLANNER_ENDPOINTS = {
 } as const
 
 /** Dropped when unset: `null`/undefined would serialise as a literal. */
-function queryFrom(params: Record<string, unknown>): QueryParams {
-  const query: QueryParams = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    if (Array.isArray(value)) continue
-    query[key] = value as string | number | boolean
-  }
-  return query
-}
-
 /**
  * Appends a repeated query parameter to the path.
  *
@@ -106,13 +96,6 @@ export function fetchCalendarEvents(
   })
 }
 
-export function fetchCalendarEvent(
-  id: UUIDString,
-  signal?: AbortSignal,
-): Promise<CalendarEvent> {
-  return apiClient.get<CalendarEvent>(PLANNER_ENDPOINTS.calendarEvent(id), { signal })
-}
-
 export function createCalendarEvent(payload: CalendarEventCreatePayload): Promise<CalendarEvent> {
   return apiClient.post<CalendarEvent>(PLANNER_ENDPOINTS.calendar, payload)
 }
@@ -139,13 +122,6 @@ export function fetchWorkSessions(
     query: { ...windowQuery({ from, to }), ...queryFrom(rest as Record<string, unknown>) },
     signal,
   })
-}
-
-export function fetchWorkSession(
-  id: UUIDString,
-  signal?: AbortSignal,
-): Promise<WorkSession> {
-  return apiClient.get<WorkSession>(PLANNER_ENDPOINTS.workSession(id), { signal })
 }
 
 export function createWorkSession(payload: WorkSessionCreatePayload): Promise<WorkSession> {

@@ -20,15 +20,6 @@
 
 const LOCAL_INPUT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/
 
-/** The zone this browser is in. An unknown name on the wire is a 422. */
-export function systemTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-  } catch {
-    return 'UTC'
-  }
-}
-
 /**
  * How far `timeZone` is from UTC at `instant`, in milliseconds.
  *

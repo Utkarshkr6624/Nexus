@@ -15,14 +15,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { formatMinutes, instantToLocalInput, localInputToInstant } from '@/features/planner/datetime'
-import { bannerError, fieldErrorMessages } from '@/features/planner/form-errors'
 import {
   useCreateWorkSession,
   useDeleteWorkSession,
   useUpdateWorkSession,
 } from '@/features/planner/hooks'
 import type { ApiError } from '@/lib/api-client'
-import { toApiError } from '@/services/errors'
+import { bannerError, fieldErrorMessages, toApiError } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
 import { WORK_SESSION_STATUSES, WORK_SESSION_STATUS_META } from '@/types/planner'
 import type { WorkSession, WorkSessionStatus } from '@/types/planner'

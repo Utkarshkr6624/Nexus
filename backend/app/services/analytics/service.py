@@ -77,15 +77,18 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, date, datetime, time, timedelta
+from time import perf_counter
 from typing import Any
 
 from sqlalchemy import func, select
 
 from app.core.config import Settings, get_settings
 from app.core.exceptions import NotFoundError, ValidationError
+from app.core.logging import get_logger, log_event
 from app.models.analytics import DailyMetric
 from app.models.enums import ActivityEvent, TaskPriority
 from app.models.task import Task
@@ -142,6 +145,8 @@ from app.services.analytics.scoring import (
 from app.services.audit_service import AuditService
 
 __all__ = ["CSV_DATASETS", "GRANULARITIES", "TRENDABLE_METRICS", "AnalyticsService"]
+
+logger = get_logger(__name__)
 
 #: Granularities the series and trend endpoints accept, matching the repository's.
 GRANULARITIES = ("day", "week", "month")
@@ -431,6 +436,14 @@ class AnalyticsService:
         *aggregate*; it never becomes a zero in a *score*, because availability is
         decided from what was recorded, not from the presence of this row.
 
+        **The pass is observable.** ``analytics_rebuild_started`` and
+        ``analytics_rebuild_completed`` bracket every run with the window and the
+        row count, and ``analytics_rebuild_failed`` carries the traceback if a
+        source query or the upsert raises. A rebuild is the one write path in the
+        dashboard and it produces no activity rows of its own, so without these
+        three lines there is nothing in the log distinguishing a window that was
+        recomputed from one that was never touched.
+
         Args:
             owner: The user whose days are rebuilt. Scoped in every statement.
             start: Inclusive first day.
@@ -445,6 +458,61 @@ class AnalyticsService:
                 ``Settings.analytics_rebuild_max_days`` sets for this write path.
         """
         self._check_range(start, end, ceiling=self.settings.analytics_rebuild_max_days)
+        log_event(
+            logger,
+            logging.INFO,
+            "analytics_rebuild_started",
+            owner_id=str(owner.id),
+            start=start.isoformat(),
+            end=end.isoformat(),
+            days=(end - start).days + 1,
+        )
+        started = perf_counter()
+        try:
+            written = await self._write_range(owner=owner, start=start, end=end)
+        except Exception:
+            # The owner id, the window and the exception *type* — never the rows
+            # being recomputed, which are one user's working day and must not be
+            # copied into a log. The traceback carries the statement that failed.
+            log_event(
+                logger,
+                logging.ERROR,
+                "analytics_rebuild_failed",
+                exc_info=True,
+                owner_id=str(owner.id),
+                start=start.isoformat(),
+                end=end.isoformat(),
+                elapsed_ms=round((perf_counter() - started) * 1000.0, 3),
+            )
+            raise
+        log_event(
+            logger,
+            logging.INFO,
+            "analytics_rebuild_completed",
+            owner_id=str(owner.id),
+            start=start.isoformat(),
+            end=end.isoformat(),
+            rows_written=written,
+            elapsed_ms=round((perf_counter() - started) * 1000.0, 3),
+        )
+        return written
+
+    async def _write_range(self, *, owner: User, start: date, end: date) -> int:
+        """Run every grouped source query for the range and upsert the result.
+
+        Split from :meth:`rebuild_range` so that the start/finish/failure lines
+        wrap exactly the work and nothing else. :meth:`AnalyticsService._check_range`
+        stays outside it, because an inverted or over-wide range is a caller's
+        422 and not a rebuild that failed.
+
+        Args:
+            owner: The user whose days are rebuilt. Scoped in every statement.
+            start: Inclusive first day.
+            end: Inclusive last day.
+
+        Returns:
+            The number of daily rows written.
+        """
         owner_id = owner.id
 
         created = _by_day(await self.metrics.count_tasks_by_day(owner_id, start=start, end=end))

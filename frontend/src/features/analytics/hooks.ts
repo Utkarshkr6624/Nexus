@@ -49,7 +49,6 @@ import {
   fetchTasks,
   fetchTimeDistribution,
   fetchTrends,
-  fetchWorkload,
   rebuildAnalytics,
 } from '@/services/analytics'
 import {
@@ -77,7 +76,6 @@ import {
   type TrendMetric,
   type TrendPoint,
   type WindowPresetId,
-  type WorkloadRead,
 } from '@/types/analytics'
 
 type Enabled = { enabled?: boolean }
@@ -291,18 +289,6 @@ export function useEstimation(
   return useQuery({
     queryKey: analyticsKeys.estimation(params),
     queryFn: ({ signal }) => fetchEstimation(params, signal),
-    enabled: options.enabled,
-    placeholderData: (previous) => previous,
-  })
-}
-
-export function useWorkload(
-  params: AnalyticsListParams,
-  options: Enabled = {},
-): UseQueryResult<WorkloadRead> {
-  return useQuery({
-    queryKey: analyticsKeys.workload(params),
-    queryFn: ({ signal }) => fetchWorkload(params, signal),
     enabled: options.enabled,
     placeholderData: (previous) => previous,
   })

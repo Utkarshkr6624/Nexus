@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { PasswordField } from '@/features/auth/components/password-field'
 import { toast } from '@/stores/toast-store'
 import { selectDisplayName, useAuthStore } from '@/stores/auth-store'
-import type { ApiError } from '@/lib/api-client'
+import { bannerError, fieldErrorMessages } from '@/services/errors'
 
 interface LocationState {
   from?: string
@@ -33,26 +33,6 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const QUIET_LINK =
   'text-foreground underline-offset-4 transition-colors duration-150 hover:text-primary hover:underline'
-
-/**
- * Flattens the `details.errors[]` list of a 422 envelope into `{ field: message }`,
- * per `docs/api-conventions.md`. Entries that are not field-scoped (`field: "body"`)
- * are dropped, and the first message wins when a field repeats.
- */
-function fieldErrorMessages(error: ApiError): Record<string, string> {
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
-  const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
-  }
-  return messages
-}
 
 function validate(email: string, password: string): LoginFields {
   const errors: LoginFields = {}
@@ -100,8 +80,7 @@ export default function LoginPage() {
   // A 422 whose messages are all attached to fields is already fully visible
   // inline, so a banner saying "that request was not valid" would only repeat
   // it. Everything else — transport, auth, server faults — needs the banner.
-  const hasFieldErrors = Object.keys(fieldErrors).length > 0
-  const showBanner = error !== null && !(error.isValidationError && hasFieldErrors)
+  const showBanner = bannerError(error) !== null
   // `ErrorState`'s generic 401 copy talks about an expired session, which is
   // the wrong story on a sign-in form. The title is the one piece a caller
   // can correct, and the backend's own message is already human.

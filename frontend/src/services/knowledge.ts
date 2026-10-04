@@ -13,8 +13,7 @@
  *   payload carries `status`, so there is no update function that could set one.
  * - `GET /knowledge/search` answers `?q=` and groups its results by entity type.
  */
-import { apiClient } from '@/lib/api-client'
-import type { QueryParams } from '@/lib/api-client'
+import { apiClient, queryFrom } from '@/lib/api-client'
 import type { Paginated } from '@/types/pagination'
 import type {
   BacklinkParams,
@@ -22,19 +21,11 @@ import type {
   BookmarkCreatePayload,
   BookmarkListParams,
   BookmarkUpdatePayload,
-  CategoryCreatePayload,
-  CategoryListParams,
-  CategoryUpdatePayload,
   Concept,
   ConceptCreatePayload,
   ConceptListParams,
   ConceptUpdatePayload,
-  Document,
-  DocumentCreatePayload,
-  DocumentListParams,
-  DocumentUpdatePayload,
   GraphParams,
-  KnowledgeCategory,
   KnowledgeGraph,
   KnowledgeLink,
   KnowledgeLinkCreatePayload,
@@ -48,7 +39,6 @@ import type {
   Resource,
   ResourceCreatePayload,
   ResourceListParams,
-  ResourceUpdatePayload,
   SearchParams,
   UUIDString,
 } from '@/types/knowledge'
@@ -81,26 +71,11 @@ export const KNOWLEDGE_ENDPOINTS = {
   search: '/knowledge/search',
 } as const
 
-function queryFrom(params: object): QueryParams {
-  const query: QueryParams = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    if (Array.isArray(value)) continue
-    query[key] = value as string | number | boolean
-  }
-  return query
-}
-
-/** Every list endpoint takes the same paging/sort/search keys. */
-function listQuery(params: object): QueryParams {
-  return queryFrom(params)
-}
-
 /* ---------------------------------------------------------------------- notes */
 
 export function fetchNotes(params: NoteListParams = {}, signal?: AbortSignal): Promise<Paginated<Note>> {
   return apiClient.get<Paginated<Note>>(KNOWLEDGE_ENDPOINTS.notes, {
-    query: listQuery(params),
+    query: queryFrom(params),
     signal,
   })
 }
@@ -144,14 +119,6 @@ export function listRevisions(
   })
 }
 
-export function fetchRevision(
-  noteId: UUIDString,
-  revisionId: UUIDString,
-  signal?: AbortSignal,
-): Promise<NoteRevision> {
-  return apiClient.get<NoteRevision>(KNOWLEDGE_ENDPOINTS.noteRevision(noteId, revisionId), { signal })
-}
-
 /**
  * Writes a new revision of the current state first, so a restore is itself
  * undoable. The note's `status` is deliberately not part of it.
@@ -167,7 +134,7 @@ export function fetchConcepts(
   signal?: AbortSignal,
 ): Promise<Paginated<Concept>> {
   return apiClient.get<Paginated<Concept>>(KNOWLEDGE_ENDPOINTS.concepts, {
-    query: listQuery(params),
+    query: queryFrom(params),
     signal,
   })
 }
@@ -191,17 +158,13 @@ export function fetchResources(
   signal?: AbortSignal,
 ): Promise<Paginated<Resource>> {
   return apiClient.get<Paginated<Resource>>(KNOWLEDGE_ENDPOINTS.resources, {
-    query: listQuery(params),
+    query: queryFrom(params),
     signal,
   })
 }
 
 export function createResource(payload: ResourceCreatePayload): Promise<Resource> {
   return apiClient.post<Resource>(KNOWLEDGE_ENDPOINTS.resources, payload)
-}
-
-export function updateResource(id: UUIDString, payload: ResourceUpdatePayload): Promise<Resource> {
-  return apiClient.patch<Resource>(KNOWLEDGE_ENDPOINTS.resource(id), payload)
 }
 
 export function deleteResource(id: UUIDString): Promise<void> {
@@ -215,7 +178,7 @@ export function fetchBookmarks(
   signal?: AbortSignal,
 ): Promise<Paginated<Bookmark>> {
   return apiClient.get<Paginated<Bookmark>>(KNOWLEDGE_ENDPOINTS.bookmarks, {
-    query: listQuery(params),
+    query: queryFrom(params),
     signal,
   })
 }
@@ -232,60 +195,9 @@ export function deleteBookmark(id: UUIDString): Promise<void> {
   return apiClient.delete<void>(KNOWLEDGE_ENDPOINTS.bookmark(id))
 }
 
-export function archiveBookmark(id: UUIDString): Promise<Bookmark> {
-  return apiClient.post<Bookmark>(KNOWLEDGE_ENDPOINTS.bookmarkArchive(id))
-}
-
 /* ------------------------------------------------------------------ categories */
 
-export function fetchCategories(
-  params: CategoryListParams = {},
-  signal?: AbortSignal,
-): Promise<Paginated<KnowledgeCategory>> {
-  return apiClient.get<Paginated<KnowledgeCategory>>(KNOWLEDGE_ENDPOINTS.categories, {
-    query: listQuery(params),
-    signal,
-  })
-}
-
-export function createCategory(payload: CategoryCreatePayload): Promise<KnowledgeCategory> {
-  return apiClient.post<KnowledgeCategory>(KNOWLEDGE_ENDPOINTS.categories, payload)
-}
-
-export function updateCategory(
-  id: UUIDString,
-  payload: CategoryUpdatePayload,
-): Promise<KnowledgeCategory> {
-  return apiClient.patch<KnowledgeCategory>(KNOWLEDGE_ENDPOINTS.category(id), payload)
-}
-
-export function deleteCategory(id: UUIDString): Promise<void> {
-  return apiClient.delete<void>(KNOWLEDGE_ENDPOINTS.category(id))
-}
-
 /* ------------------------------------------------------------------- documents */
-
-export function fetchDocuments(
-  params: DocumentListParams = {},
-  signal?: AbortSignal,
-): Promise<Paginated<Document>> {
-  return apiClient.get<Paginated<Document>>(KNOWLEDGE_ENDPOINTS.documents, {
-    query: listQuery(params),
-    signal,
-  })
-}
-
-export function createDocument(payload: DocumentCreatePayload): Promise<Document> {
-  return apiClient.post<Document>(KNOWLEDGE_ENDPOINTS.documents, payload)
-}
-
-export function updateDocument(id: UUIDString, payload: DocumentUpdatePayload): Promise<Document> {
-  return apiClient.patch<Document>(KNOWLEDGE_ENDPOINTS.document(id), payload)
-}
-
-export function deleteDocument(id: UUIDString): Promise<void> {
-  return apiClient.delete<void>(KNOWLEDGE_ENDPOINTS.document(id))
-}
 
 /* -------------------------------------------------------- links, graph, search */
 

@@ -138,6 +138,7 @@ a user can be told is reviewable in one screen.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -149,6 +150,7 @@ from sqlalchemy import func, select
 
 from app.core.config import Settings, get_settings
 from app.core.exceptions import ValidationError
+from app.core.logging import get_logger, log_event
 from app.models.activity import ActivityLog
 from app.models.enums import ActivityEvent, RiskSeverity, RiskStatus, RiskType, TaskStatus
 from app.models.task import Task
@@ -200,6 +202,8 @@ __all__ = [
     "RESOLVE_SWEEP_LIMIT",
     "RiskDetectionService",
 ]
+
+logger = get_logger(__name__)
 
 #: The three entity types a risk can point at. Spelled as constants because they
 #: are a third of the partial unique index ``uq_risks_live_identity``, so a typo
@@ -419,8 +423,71 @@ class RiskDetectionService:
                 analytics reads enforce the same ceiling; checking it here turns a
                 window mistake into one error at the boundary instead of six
                 identical ones from the middle of the pass.
+
+        **The pass is observable.** ``risk_detection_started`` and
+        ``risk_detection_completed`` bracket every run with the window and the
+        counts, and ``risk_detection_failed`` carries the traceback if a read, an
+        upsert or the sweep raises. This pass resolves risks as well as creating
+        them, so a silent half-finished run is the one outcome an operator must
+        be able to find.
         """
         self._check_window(window_days)
+        pass_started = perf_counter()
+        log_event(
+            logger,
+            logging.INFO,
+            "risk_detection_started",
+            owner_id=str(owner.id),
+            today=today.isoformat(),
+            window_days=window_days,
+        )
+        try:
+            summary = await self._run_pass(owner=owner, today=today, window_days=window_days)
+        except Exception:
+            # Counts and the exception *type*, never a risk title, a description
+            # or the evidence behind one — all of which are one user's work.
+            log_event(
+                logger,
+                logging.ERROR,
+                "risk_detection_failed",
+                exc_info=True,
+                owner_id=str(owner.id),
+                today=today.isoformat(),
+                window_days=window_days,
+                elapsed_ms=round((perf_counter() - pass_started) * 1000, 3),
+            )
+            raise
+        log_event(
+            logger,
+            logging.INFO,
+            "risk_detection_completed",
+            owner_id=str(owner.id),
+            window_days=window_days,
+            risks_found=summary.risks_found,
+            risks_created=summary.risks_created,
+            risks_updated=summary.risks_updated,
+            risks_resolved=summary.risks_resolved,
+            recommendations_created=summary.recommendations_created,
+            duration_ms=summary.duration_ms,
+        )
+        return summary
+
+    async def _run_pass(self, *, owner: User, today: date, window_days: int) -> EvaluationRead:
+        """The pass itself, with no logging and no window validation.
+
+        Split from :meth:`evaluate` so the start/finish/failure lines wrap exactly
+        the work and nothing else: ``_check_window`` stays outside them, because a
+        window wider than the analytics ceiling is a caller's 422 rather than a
+        detection pass that failed.
+
+        Args:
+            owner: The account being evaluated, and the owner of every row written.
+            today: The date the pass is anchored on.
+            window_days: Length of the evaluation window and the planning horizon.
+
+        Returns:
+            The run's summary, also persisted as one ``risk_evaluations`` row.
+        """
         started = perf_counter()
         now = await self._now()
         window_start = today - timedelta(days=window_days - 1)

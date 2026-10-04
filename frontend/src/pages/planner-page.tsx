@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { CalendarPlus, ChevronLeft, ChevronRight, Globe, Sparkles } from 'lucide-react'
 
 import { EmptyState } from '@/components/feedback/empty-state'
+import { ErrorState } from '@/components/feedback/error-state'
 import { PageHeader } from '@/components/feedback/page-header'
 import { Alert, AlertDescription, AlertIcon, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +30,7 @@ import {
   useSuggestions,
   useWorkSessions,
 } from '@/features/planner/hooks'
-import { formatCalendarDate, localInputToInstant, shiftDate, startOfWeek } from '@/features/planner/datetime'
+import { addMonths, formatCalendarDate, localInputToInstant, shiftDate, startOfWeek } from '@/features/planner/datetime'
 import { useIsMobile } from '@/hooks/use-media-query'
 import { useProjects, useTasks } from '@/features/work/hooks'
 import { toApiError } from '@/services/errors'
@@ -112,12 +113,6 @@ function isZone(value: string | null): value is string {
   } catch {
     return false
   }
-}
-
-function shiftMonth(month: string, amount: number): string {
-  const [year = 1970, number = 1] = month.split('-').map(Number)
-  const moved = new Date(Date.UTC(year, number - 1 + amount, 1, 12))
-  return `${moved.getUTCFullYear()}-${String(moved.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 /**
@@ -214,7 +209,7 @@ export default function PlannerPage() {
   const shift = useCallback(
     (amount: number) => {
       if (view === 'month') {
-        navigate({ date: `${shiftMonth(month, amount)}-01` })
+        navigate({ date: `${addMonths(month, amount)}-01` })
         return
       }
       navigate({ date: shiftDate(date, amount * (view === 'week' ? 7 : 1)) })
@@ -410,6 +405,7 @@ export default function PlannerPage() {
               <SuggestionsBlock
                 open={suggestOn}
                 onToggle={() => setSuggestOn((current) => !current)}
+                onRetry={() => void suggestions.refetch()}
                 zone={tz}
                 suggestions={suggestions.data?.suggestions ?? []}
                 reasonIfEmpty={suggestions.data?.reason_if_empty ?? null}
@@ -483,7 +479,7 @@ export default function PlannerPage() {
             deadlines={deadlines}
             selectedDate={date}
             onSelectDate={(next) => navigate({ view: 'day', date: next })}
-            onShiftMonth={(amount) => navigate({ view: 'month', date: `${shiftMonth(month, amount)}-01` })}
+            onShiftMonth={(amount) => navigate({ view: 'month', date: `${addMonths(month, amount)}-01` })}
           />
         )}
 
@@ -590,6 +586,7 @@ function localDayKey(instant: string, timeZone: string): DateOnlyString {
 function SuggestionsBlock({
   open,
   onToggle,
+  onRetry,
   zone,
   suggestions,
   reasonIfEmpty,
@@ -599,6 +596,7 @@ function SuggestionsBlock({
 }: {
   open: boolean
   onToggle: () => void
+  onRetry: () => void
   zone: string
   suggestions: PlannerSuggestion[]
   reasonIfEmpty: string | null
@@ -616,7 +614,7 @@ function SuggestionsBlock({
   }
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Walking the backlog…</p>
-  if (isError && error) return <p className="text-sm text-destructive">{error.message}</p>
+  if (isError && error) return <ErrorState error={error} onRetry={onRetry} compact />
 
   if (suggestions.length === 0) {
     return (

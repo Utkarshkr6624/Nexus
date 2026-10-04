@@ -562,18 +562,6 @@ export function formatPlannerRatio(ratio: number | null | undefined): string {
   return `${Math.round(ratio * 100)}%`
 }
 
-/** The load bar's width fraction, clamped; a null ratio is no bar at all. */
-export function plannerRatioFraction(ratio: number | null | undefined): number {
-  if (ratio === null || ratio === undefined || !Number.isFinite(ratio) || ratio <= 0) return 0
-  return Math.min(ratio, 1)
-}
-
-/** True only for a day that is over capacity *and* has capacity to be over. */
-export function isPlannerDayOverloaded(day: PlannerDay | null | undefined): boolean {
-  if (!day) return false
-  return day.available_minutes !== null && day.overloaded
-}
-
 /** `YYYY-MM-DD` for "now" as seen in `tz` — not `new Date().toISOString()`. */
 export function plannerToday(tz: string, now: Date = new Date()): DateOnlyString {
   const options: Intl.DateTimeFormatOptions = {

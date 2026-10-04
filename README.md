@@ -62,7 +62,7 @@ Phase 14 hardened and documented the whole thing. What exists today:
 | Assistant actions (Phase 13) | **Live** — `POST /ml/action/propose` returns a fully-populated proposal the user edits and confirms; `POST /ml/action/confirm` executes it. **Nothing is ever executed from a bare utterance, and destructive actions have no proposal kind at all** |
 | Security hardening (Phase 14) | **Done** — full audit of secrets, SQL injection, path traversal, command injection, authN/authZ across all 190 routes, audit-trail coverage, error and log hygiene, rate limiting and input validation |
 | Experiments | Designed placeholder page only — no backend, and the README says so rather than implying one |
-| Automated tests | **3 227 backend passed**, 14 xfailed, 1 skipped — a pass count; and **52 frontend test files, 799 passing**, of which 8 (156 cases) cover the voice feature |
+| Automated tests | **3 588 backend passed**, 14 xfailed, 1 skipped — a pass count, including 12 end-to-end user journeys and 109 new hardening tests; and **58 frontend test files, 876 passing** |
 
 The backend figure is a **collection** count from `pytest --collect-only` in `backend/`, and
 it is labelled that way on purpose. The last full run before the final remediation pass was
@@ -656,7 +656,7 @@ Nexo/
 | Client state | Zustand 5 | auth session, theme, command palette, toasts |
 | Styling | Tailwind CSS 3.4 + shadcn/ui conventions | `cva` variants, lucide icons, and a small number of hand-rolled primitives where no Radix package is installed |
 | Charts | recharts 2.15 | reserved for the Analytics module |
-| Tests (frontend) | Vitest 3.2 + React Testing Library | **52 test files, 799 tests, all passing** (44 files and 645 before Phase 12) |
+| Tests (frontend) | Vitest 3.2 + React Testing Library | **58 test files, 876 tests, all passing** (44 files and 645 before Phase 12) |
 
 Production bundle is code-split per route and by vendor group. Current build, uncompressed
 `frontend/dist/assets/` sizes, as produced by `npx vite build`: entry chunk `index`
@@ -996,7 +996,7 @@ Frontend — run from `frontend/`:
 npm run dev            # Vite dev server on :5173
 npm run build          # tsc -b && vite build
 npm run preview        # serve dist/ on :4173
-npm test               # vitest run (52 files, 799 tests, all passing)
+npm test               # vitest run (58 files, 876 tests, all passing)
 npm run test:watch     # vitest
 npm run test:coverage  # vitest run --coverage
 npm run lint           # eslint .

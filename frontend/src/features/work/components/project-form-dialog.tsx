@@ -16,7 +16,7 @@ import { Select } from '@/components/ui/select'
 import { useCreateProject, useUpdateProject } from '@/features/work/hooks'
 import type { ApiError } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
-import { toApiError } from '@/services/errors'
+import { toApiError, bannerError, fieldErrorMessages } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
 import { PRIORITY_META, TASK_PRIORITIES } from '@/types/work'
 import type { Project, ProjectPriority } from '@/types/work'
@@ -55,27 +55,6 @@ function formFrom(project: Project): FormState {
   }
 }
 
-/**
- * Flattens a 422's `details.errors[]` into `{ field: message }`, per
- * `docs/api-conventions.md`. Non field-scoped entries are dropped and the first
- * message wins when a field repeats.
- */
-function fieldErrorMessages(error: ApiError | null): Record<string, string> {
-  if (!error) return {}
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
-  const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
-  }
-  return messages
-}
-
 const TEXTAREA_CLASSES = cn(
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm',
   'placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
@@ -104,8 +83,7 @@ function ProjectForm({
   const pending = createProject.isPending || updateProject.isPending
 
   const fieldErrors = fieldErrorMessages(error)
-  const bannerError =
-    error && !(error.isValidationError && Object.keys(fieldErrors).length > 0) ? error : null
+  const banner = bannerError(error)
 
   function update(patch: Partial<FormState>) {
     setForm((current) => ({ ...current, ...patch }))
@@ -153,9 +131,9 @@ function ProjectForm({
 
   return (
     <form className="app-form-stack" onSubmit={submit} noValidate>
-      {bannerError && (
+      {banner && (
         <p role="alert" className="app-form-error">
-          {bannerError.message}
+          {banner.message}
         </p>
       )}
 

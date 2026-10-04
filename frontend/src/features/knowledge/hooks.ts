@@ -29,44 +29,33 @@ import {
 } from '@tanstack/react-query'
 
 import {
-  archiveBookmark,
   archiveNote,
   createBookmark,
-  createCategory,
   createConcept,
-  createDocument,
   createLink,
   createNote,
   createResource,
   deleteBookmark,
-  deleteCategory,
   deleteConcept,
-  deleteDocument,
   deleteLink,
   deleteNote,
   deleteResource,
   fetchBacklinks,
   fetchBookmarks,
-  fetchCategories,
   fetchConcepts,
-  fetchDocuments,
   fetchGraph,
   fetchNote,
   fetchNotes,
   fetchOutboundLinks,
   fetchResources,
-  fetchRevision,
   listRevisions,
   publishNote,
   restoreNote,
   restoreRevision,
   searchKnowledge,
   updateBookmark,
-  updateCategory,
   updateConcept,
-  updateDocument,
   updateNote,
-  updateResource,
 } from '@/services/knowledge'
 import type {
   BacklinkParams,
@@ -74,20 +63,14 @@ import type {
   BookmarkCreatePayload,
   BookmarkListParams,
   BookmarkUpdatePayload,
-  CategoryCreatePayload,
   CategoryListParams,
-  CategoryUpdatePayload,
   Concept,
   ConceptCreatePayload,
   ConceptListParams,
   ConceptUpdatePayload,
-  Document,
-  DocumentCreatePayload,
   DocumentListParams,
-  DocumentUpdatePayload,
   GraphParams,
   KnowledgeEntityType,
-  KnowledgeCategory,
   KnowledgeGraph,
   KnowledgeLink,
   KnowledgeLinkCreatePayload,
@@ -101,7 +84,6 @@ import type {
   Resource,
   ResourceCreatePayload,
   ResourceListParams,
-  ResourceUpdatePayload,
   UUIDString,
 } from '@/types/knowledge'
 import type { Paginated } from '@/types/pagination'
@@ -300,30 +282,6 @@ export function useBookmarks(
   })
 }
 
-export function useCategories(
-  params: CategoryListParams = {},
-  options: Enabled = {},
-): UseQueryResult<Paginated<KnowledgeCategory>> {
-  return useQuery({
-    queryKey: knowledgeKeys.categories(params),
-    queryFn: ({ signal }) => fetchCategories(params, signal),
-    enabled: options.enabled,
-    placeholderData: (previous) => previous,
-  })
-}
-
-export function useDocuments(
-  params: DocumentListParams = {},
-  options: Enabled = {},
-): UseQueryResult<Paginated<Document>> {
-  return useQuery({
-    queryKey: knowledgeKeys.documents(params),
-    queryFn: ({ signal }) => fetchDocuments(params, signal),
-    enabled: options.enabled,
-    placeholderData: (previous) => previous,
-  })
-}
-
 /** Edges leaving a node. Disabled until both halves of the pair are known. */
 export function useOutboundLinks(
   params: Partial<OutboundLinkParams> | undefined,
@@ -391,9 +349,6 @@ export function useKnowledgeGraph(
     enabled: options.enabled,
   })
 }
-
-/** Alias kept beside the descriptive name so both spellings resolve. */
-export const useGraph = useKnowledgeGraph
 
 /** Grouped by entity type server-side, so there is nothing to merge here. */
 export function useKnowledgeSearch(
@@ -496,17 +451,6 @@ export function useCreateResource(): UseMutationResult<Resource, Error, Resource
   return useMutation({ mutationFn: createResource, onSuccess: useInvalidateKnowledge() })
 }
 
-export function useUpdateResource(): UseMutationResult<
-  Resource,
-  Error,
-  { id: UUIDString; payload: ResourceUpdatePayload }
-> {
-  return useMutation({
-    mutationFn: ({ id, payload }) => updateResource(id, payload),
-    onSuccess: useInvalidateKnowledge(),
-  })
-}
-
 export function useDeleteResource(): UseMutationResult<void, Error, UUIDString> {
   return useMutation({ mutationFn: deleteResource, onSuccess: useInvalidateKnowledge() })
 }
@@ -534,60 +478,6 @@ export function useDeleteBookmark(): UseMutationResult<void, Error, UUIDString> 
   return useMutation({ mutationFn: deleteBookmark, onSuccess: useInvalidateKnowledge() })
 }
 
-export function useArchiveBookmark(): UseMutationResult<
-  Bookmark,
-  Error,
-  UUIDString
-> {
-  return useMutation({ mutationFn: archiveBookmark, onSuccess: useInvalidateKnowledge() })
-}
-
-export function useCreateCategory(): UseMutationResult<
-  KnowledgeCategory,
-  Error,
-  CategoryCreatePayload
-> {
-  return useMutation({ mutationFn: createCategory, onSuccess: useInvalidateKnowledge() })
-}
-
-export function useUpdateCategory(): UseMutationResult<
-  KnowledgeCategory,
-  Error,
-  { id: UUIDString; payload: CategoryUpdatePayload }
-> {
-  return useMutation({
-    mutationFn: ({ id, payload }) => updateCategory(id, payload),
-    onSuccess: useInvalidateKnowledge(),
-  })
-}
-
-export function useDeleteCategory(): UseMutationResult<void, Error, UUIDString> {
-  return useMutation({ mutationFn: deleteCategory, onSuccess: useInvalidateKnowledge() })
-}
-
-export function useCreateDocument(): UseMutationResult<
-  Document,
-  Error,
-  DocumentCreatePayload
-> {
-  return useMutation({ mutationFn: createDocument, onSuccess: useInvalidateKnowledge() })
-}
-
-export function useUpdateDocument(): UseMutationResult<
-  Document,
-  Error,
-  { id: UUIDString; payload: DocumentUpdatePayload }
-> {
-  return useMutation({
-    mutationFn: ({ id, payload }) => updateDocument(id, payload),
-    onSuccess: useInvalidateKnowledge(),
-  })
-}
-
-export function useDeleteDocument(): UseMutationResult<void, Error, UUIDString> {
-  return useMutation({ mutationFn: deleteDocument, onSuccess: useInvalidateKnowledge() })
-}
-
 export function useCreateLink(): UseMutationResult<KnowledgeLink, Error, KnowledgeLinkCreatePayload> {
   return useMutation({ mutationFn: createLink, onSuccess: useInvalidateKnowledge() })
 }
@@ -596,13 +486,3 @@ export function useDeleteLink(): UseMutationResult<void, Error, UUIDString> {
   return useMutation({ mutationFn: deleteLink, onSuccess: useInvalidateKnowledge() })
 }
 
-export function useFetchRevision(
-  noteId: UUIDString | null | undefined,
-  revisionId: UUIDString | null | undefined,
-): UseQueryResult<NoteRevision> {
-  return useQuery({
-    queryKey: [...knowledgeKeys.revisions(noteId), revisionId ?? null],
-    queryFn: ({ signal }) => fetchRevision(noteId as UUIDString, revisionId as UUIDString, signal),
-    enabled: Boolean(noteId) && Boolean(revisionId),
-  })
-}

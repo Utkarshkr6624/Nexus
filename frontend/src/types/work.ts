@@ -205,7 +205,6 @@ export const TASK_STATUS_ORDER: readonly TaskStatus[] = [
 ]
 
 export const TASK_STATUSES = Object.keys(TASK_STATUS_META) as TaskStatus[]
-export const PROJECT_STATUSES = Object.keys(PROJECT_STATUS_META) as ProjectStatus[]
 export const TASK_PRIORITIES = Object.keys(PRIORITY_META) as TaskPriority[]
 
 export interface Project {

@@ -14,6 +14,7 @@ import { usePasswordRules } from '@/features/auth/use-password-rules'
 import { toast } from '@/stores/toast-store'
 import { selectDisplayName, useAuthStore } from '@/stores/auth-store'
 import type { ApiError } from '@/lib/api-client'
+import { bannerError, fieldErrorMessages } from '@/services/errors'
 
 type ConflictField = 'email' | 'username'
 
@@ -39,26 +40,6 @@ const PASSWORD_MISMATCH = 'Passwords do not match.'
 
 const QUIET_LINK =
   'text-foreground underline-offset-4 transition-colors duration-150 hover:text-primary hover:underline'
-
-/**
- * Flattens the `details.errors[]` list of a 422 envelope into `{ field: message }`,
- * per `docs/api-conventions.md`. Entries that are not field-scoped (`field: "body"`)
- * are dropped, and the first message wins when a field repeats.
- */
-function fieldErrorMessages(error: ApiError): Record<string, string> {
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
-  const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
-  }
-  return messages
-}
 
 /**
  * A 409 arrives as one flat message — "An account with this email already
@@ -172,9 +153,7 @@ export default function RegisterPage() {
 
   // Nothing else is reported twice: the banner stays for what a field cannot
   // express — transport failures, a conflict with no locatable field, a 5xx.
-  const hasFieldErrors = Object.keys(fieldErrors).length > 0
-  const showBanner =
-    error !== null && conflict === null && !(error.isValidationError && hasFieldErrors)
+  const showBanner = conflict === null && bannerError(error) !== null
 
   // The button is blocked only once the mismatch is actually on screen. A
   // disabled control cannot be focused, so blocking it before its explanation

@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCreateBookmark, useUpdateBookmark } from '@/features/knowledge/hooks'
-import { toApiError } from '@/services/errors'
+import { bannerError, fieldErrorMessages, toApiError } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
 import type { ApiError } from '@/lib/api-client'
 import type { Bookmark } from '@/types/knowledge'
@@ -34,24 +34,6 @@ interface FormState {
 }
 
 const EMPTY: FormState = { url: '', title: '', description: '' }
-
-/** The same 422 flattening `ProjectForm` does — one place per feature, but the
- *  envelope shape is shared and a reader should not have to rediscover it. */
-function fieldErrorMessages(error: ApiError | null): Record<string, string> {
-  if (!error) return {}
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
-  const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
-  }
-  return messages
-}
 
 const TEXTAREA_CLASSES =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
@@ -81,6 +63,7 @@ function BookmarkFields({
   const update = useUpdateBookmark()
   const pending = create.isPending || update.isPending
   const fieldErrors = fieldErrorMessages(error)
+  const banner = bannerError(error)
 
   function patch(changes: Partial<FormState>) {
     setForm((current) => ({ ...current, ...changes }))
@@ -124,9 +107,9 @@ function BookmarkFields({
 
   return (
     <form className="app-form-stack" onSubmit={submit} noValidate>
-      {error && !error.isValidationError && (
+      {banner && (
         <p role="alert" className="app-form-error">
-          {error.message}
+          {banner.message}
         </p>
       )}
 

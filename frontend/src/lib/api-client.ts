@@ -68,6 +68,34 @@ const MAX_CONSECUTIVE_RENEWAL_FAILURES = 2
 export type QueryValue = string | number | boolean | null | undefined
 export type QueryParams = Record<string, QueryValue>
 
+/**
+ * Turns a list endpoint's params object into a {@link QueryParams}.
+ *
+ * Three kinds of entry are dropped rather than sent: `undefined`, `null` and
+ * the empty string would each serialise as a literal (`?q=` asks for the empty
+ * query, which is a different request from not asking), and an array is not a
+ * single query value at all — an endpoint that takes a list spells it the way
+ * `docs/api-conventions.md` describes, not as a repeated key.
+ *
+ * **This is the app's only params filter.** Every service module used to carry
+ * its own copy, and a copy is a place for the rule to drift: one that kept the
+ * empty string would send `?search=` and get an empty result set back while
+ * looking like a search that found nothing.
+ *
+ * Typed as `object` rather than `Record<string, unknown>` because an interface
+ * carries no implicit index signature and would not be assignable to that
+ * record — callers pass their own typed params interfaces directly.
+ */
+export function queryFrom(params: object): QueryParams {
+  const query: QueryParams = {}
+  for (const [key, value] of Object.entries(params) as Array<[string, unknown]>) {
+    if (value === undefined || value === null || value === '') continue
+    if (Array.isArray(value)) continue
+    query[key] = value as QueryValue
+  }
+  return query
+}
+
 export interface ApiErrorInit {
   status: number
   code: ApiErrorCode

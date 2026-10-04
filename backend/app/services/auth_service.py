@@ -33,6 +33,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.config import Settings, get_settings
 from app.core.exceptions import ConflictError, UnauthorizedError
+from app.core.logging import log_event
 from app.core.security import (
     TokenData,
     TokenType,
@@ -240,6 +241,13 @@ class AuthService:
         A failure is audited on both paths too, for the same reason: the record
         of a failed sign-in is the point of the trail, and an unknown address is
         recorded with a null ``user_id`` rather than dropped.
+
+        **The refusal is logged as well as audited.** The audit row is the
+        per-account trail; ``auth_login_failed`` is the line an operator greps for
+        when a deployment is being probed, because a single account's audit history
+        does not show a hundred different addresses arriving at once. The reason
+        is the closed vocabulary ``invalid_credentials`` or ``inactive`` — the
+        email, the password and the token pair are never in the line.
         """
         user = await self.repository.get_by_email(str(data.email))
         stored_hash = user.hashed_password if user is not None else _decoy_hash()
@@ -251,10 +259,37 @@ class AuthService:
                 ip_address=ip_address,
                 user_agent=user_agent,
             )
+            self._log_failure("invalid_credentials", user, ip_address)
             raise UnauthorizedError(_INVALID_CREDENTIALS)
         if not user.is_active:
+            self._log_failure("inactive", user, ip_address)
             raise UnauthorizedError("This account is inactive.")
         return user
+
+    @staticmethod
+    def _log_failure(reason: str, user: User | None, ip_address: str | None) -> None:
+        """Emit one ``auth_login_failed`` line for a refused sign-in.
+
+        Carries the caller's address because the middleware already writes
+        ``client_ip`` on every completed request, so this adds no new personal
+        data to the log — it makes the address findable from the event name
+        alone rather than by correlating against an access line. The user agent
+        is deliberately *not* repeated here; it is a column in the audit row and
+        in the access log, and a third copy would be one more place to forget.
+
+        Args:
+            reason: Which of the two refusals this is.
+            user: The account, or ``None`` when the address is unknown.
+            ip_address: The caller's address, if the middleware resolved one.
+        """
+        log_event(
+            logger,
+            logging.WARNING,
+            "auth_login_failed",
+            reason=reason,
+            user_id=str(user.id) if user is not None else None,
+            ip_address=ip_address,
+        )
 
     async def login(
         self,

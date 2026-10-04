@@ -74,32 +74,6 @@ export const useAssistantStore = create<AssistantState>()((set) => ({
   clearTurns: () => set({ turns: [], accepted: null }),
 }))
 
-/** The most recent turn the backend actually routed, newest first. */
-export function selectLastAcceptedTurn(state: AssistantState): VoiceTurn | null {
-  for (let index = state.turns.length - 1; index >= 0; index -= 1) {
-    const turn = state.turns[index]
-    if (turn && turn.decision?.status === 'accepted') return turn
-  }
-  return null
-}
-
-/**
- * The intent behind {@link selectLastAcceptedTurn}, or `null`.
- *
- * Returns a stored object rather than a fresh one on every call, so it is safe
- * to use directly as a Zustand selector: a selector that allocated would give
- * every subscriber a new reference on each store notification and re-render the
- * tree on writes that changed nothing it displays.
- */
-export function selectLastAcceptedIntent(state: AssistantState): IntentName | null {
-  return state.accepted?.intent ?? null
-}
-
-/** Where the last accepted turn was asked from — the "still on X" affordance. */
-export function selectAcceptedContext(state: AssistantState): VoiceContext | null {
-  return state.accepted?.context ?? null
-}
-
 /**
  * Resets every conversation fact. Tests call this between cases; the app calls
  * `clearTurns` through the assistant's own action.

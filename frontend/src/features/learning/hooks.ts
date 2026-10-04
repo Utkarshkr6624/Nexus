@@ -50,36 +50,22 @@ import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import {
-  completeLearningGoal,
   createCareerEvidence,
   createCareerExperience,
   createLearningActivity,
   createLearningGoal,
   createSkill,
-  deleteCareerEvidence,
-  deleteCareerExperience,
-  deleteLearningGoal,
-  deleteSkill,
   evaluateLearningRecommendations,
   fetchCareerEvidence,
   fetchCareerExperience,
-  fetchCareerFeatures,
   fetchCareerProfile,
   fetchCareerSummary,
   fetchLearningActivities,
   fetchLearningActivity,
-  fetchLearningFeatures,
-  fetchLearningGoal,
   fetchLearningGoals,
-  fetchLearningMetrics,
   fetchLearningSummary,
-  fetchSkill,
   fetchSkillGaps,
   fetchSkills,
-  updateCareerEvidence,
-  updateCareerExperience,
-  updateLearningGoal,
-  updateSkill,
   upsertCareerProfile,
 } from '@/services/learning'
 import type { DateOnlyString, Granularity } from '@/types/analytics'
@@ -93,13 +79,10 @@ import type {
   CareerEvidenceListParams,
   CareerEvidenceListRead,
   CareerEvidenceRead,
-  CareerEvidenceUpdatePayload,
   CareerExperienceCreatePayload,
   CareerExperienceListParams,
   CareerExperienceListRead,
   CareerExperienceRead,
-  CareerExperienceUpdatePayload,
-  CareerFeatureVectorRead,
   CareerProfileRead,
   CareerProfileUpsert,
   CareerSummaryRead,
@@ -108,13 +91,10 @@ import type {
   LearningActivityListRead,
   LearningActivityRead,
   LearningActivitySeriesRead,
-  LearningFeatureVectorRead,
   LearningGoalCreatePayload,
   LearningGoalListParams,
   LearningGoalListRead,
   LearningGoalRead,
-  LearningGoalUpdatePayload,
-  LearningMetricRead,
   LearningSummaryRead,
   LearningWindowParams,
   SkillCreatePayload,
@@ -123,7 +103,6 @@ import type {
   SkillListParams,
   SkillListRead,
   SkillRead,
-  SkillUpdatePayload,
   UUIDString,
 } from '@/types/learning'
 import type { RecommendationRead } from '@/types/risk'
@@ -512,27 +491,6 @@ export function useLearningSummary(
 }
 
 /**
- * Every learning metric, each with its definition, its explanation and its own
- * availability.
- *
- * The endpoint always returns the whole set, marking the figures the data could
- * not support with `available: false` — so nothing here has to guard for a
- * metric going missing, and `metricUnavailableReason` in `./format` renders the
- * reason the backend supplied.
- */
-export function useLearningMetrics(
-  params: LearningWindowParams = {},
-  options: Enabled = {},
-): UseQueryResult<LearningMetricRead[]> {
-  return useQuery({
-    queryKey: learningKeys.metrics(params),
-    queryFn: ({ signal }) => fetchLearningMetrics(params, signal),
-    enabled: options.enabled,
-    placeholderData: (previous) => previous,
-  })
-}
-
-/**
  * Each skill's distance from its target level, with the evidence behind it.
  *
  * **Computed on the server on every read and never stored**, so the same skill
@@ -578,25 +536,6 @@ export function useLearningActivity(
   })
 }
 
-/**
- * The ML-ready feature vector.
- *
- * An extractor, not a model: named numbers and a schema version. Nothing on a
- * page may join these into a prediction, a level or a readiness score — the
- * surface exists so a later phase knows what each column meant.
- */
-export function useLearningFeatures(
-  params: LearningWindowParams = {},
-  options: Enabled = {},
-): UseQueryResult<LearningFeatureVectorRead> {
-  return useQuery({
-    queryKey: learningKeys.features(params),
-    queryFn: ({ signal }) => fetchLearningFeatures(params, signal),
-    enabled: options.enabled,
-    placeholderData: (previous) => previous,
-  })
-}
-
 /* ---------------------------------------------------------- learning: goals */
 
 /**
@@ -617,24 +556,6 @@ export function useLearningGoals(
   })
 }
 
-/**
- * One goal in detail.
- *
- * Disabled while there is no id, so a detail route that renders before its
- * parameter is parsed does not request `/learning/goals/undefined`. Someone
- * else's id is a 404 and never a 403; ownership is the server's alone.
- */
-export function useLearningGoal(
-  id: UUIDString | null | undefined,
-  options: Enabled = {},
-): UseQueryResult<LearningGoalRead> {
-  return useQuery({
-    queryKey: learningKeys.goal(id ?? ''),
-    queryFn: ({ signal }) => fetchLearningGoal(id as UUIDString, signal),
-    enabled: (options.enabled ?? true) && Boolean(id),
-  })
-}
-
 /* --------------------------------------------------------- learning: skills */
 
 /** Tracked skills, filtered and paginated. */
@@ -647,23 +568,6 @@ export function useSkills(
     queryFn: ({ signal }) => fetchSkills(params, signal),
     enabled: options.enabled,
     placeholderData: (previous) => previous,
-  })
-}
-
-/**
- * One skill in detail, with its level source and its evidence count.
- *
- * `current_level` and `level_source` arrive together and are rendered together;
- * there is no path through this hook that yields a bare level.
- */
-export function useSkill(
-  id: UUIDString | null | undefined,
-  options: Enabled = {},
-): UseQueryResult<SkillRead> {
-  return useQuery({
-    queryKey: learningKeys.skill(id ?? ''),
-    queryFn: ({ signal }) => fetchSkill(id as UUIDString, signal),
-    enabled: (options.enabled ?? true) && Boolean(id),
   })
 }
 
@@ -743,22 +647,6 @@ export function useCareerEvidence(
   })
 }
 
-/**
- * The career feature vector.
- *
- * An extractor, not a model — the same boundary {@link useLearningFeatures} sits
- * on. No screen may join these numbers into a match score or a suitability claim,
- * and several of them are null precisely because nobody looked.
- */
-export function useCareerFeatures(options: Enabled = {}): UseQueryResult<CareerFeatureVectorRead> {
-  return useQuery({
-    queryKey: careerKeys.features(),
-    queryFn: ({ signal }) => fetchCareerFeatures(signal),
-    enabled: options.enabled,
-    placeholderData: (previous) => previous,
-  })
-}
-
 /* ------------------------------------------------------ invalidation helpers */
 
 /**
@@ -821,61 +709,6 @@ export function useCreateLearningGoal(): UseMutationResult<
   })
 }
 
-/**
- * Edits a learning goal.
- *
- * `LearningGoalUpdatePayload` has no `completed_at`, so completion cannot be
- * forged by an edit — use {@link useCompleteLearningGoal}, which stamps the
- * moment and emits `LEARNING_GOAL_COMPLETED`.
- */
-export function useUpdateLearningGoal(): UseMutationResult<
-  LearningGoalRead,
-  Error,
-  { id: UUIDString; payload: LearningGoalUpdatePayload }
-> {
-  const invalidateLearning = useInvalidateLearning()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: UUIDString; payload: LearningGoalUpdatePayload }) =>
-      updateLearningGoal(id, payload),
-    onSuccess: invalidateLearning,
-  })
-}
-
-/**
- * Removes a learning goal.
- *
- * Its activities survive — the foreign key is `ON DELETE SET NULL` — so the trail
- * outlives the thing it was a trail of and a gap explanation can still cite it
- * after the goal is gone.
- */
-export function useDeleteLearningGoal(): UseMutationResult<void, Error, UUIDString> {
-  const invalidateLearning = useInvalidateLearning()
-  return useMutation({
-    mutationFn: (id: UUIDString) => deleteLearningGoal(id),
-    onSuccess: invalidateLearning,
-  })
-}
-
-/**
- * Marks a goal complete, server-side, and returns the updated row.
- *
- * A separate route rather than a `PATCH` with `status: 'completed'` because the
- * completion instant is a fact NEXUS stamps, not one the client types: it sets
- * `completed_at`, and the event log records that the user said so. Invalidation
- * covers the summary, which counts completed goals.
- */
-export function useCompleteLearningGoal(): UseMutationResult<
-  LearningGoalRead,
-  Error,
-  UUIDString
-> {
-  const invalidateLearning = useInvalidateLearning()
-  return useMutation({
-    mutationFn: (id: UUIDString) => completeLearningGoal(id),
-    onSuccess: invalidateLearning,
-  })
-}
-
 /* --------------------------------------------------------- learning: skills */
 
 /**
@@ -893,43 +726,6 @@ export function useCreateSkill(): UseMutationResult<SkillRead, Error, SkillCreat
   const invalidateBoth = useInvalidateBoth()
   return useMutation({
     mutationFn: (payload: SkillCreatePayload) => createSkill(payload),
-    onSuccess: invalidateBoth,
-  })
-}
-
-/**
- * Edits a skill, including its level and where that level came from.
- *
- * Moving a skill from `user_defined` to `system_estimate` is the honest way for
- * the backend to take a level over: it re-derives the level and the confidence
- * from recorded evidence rather than keeping the old number under a new label.
- * There is no `evidence_count` and no `confidence` here — measured fields are not
- * editable, so what you may change is what you typed.
- */
-export function useUpdateSkill(): UseMutationResult<
-  SkillRead,
-  Error,
-  { id: UUIDString; payload: SkillUpdatePayload }
-> {
-  const invalidateBoth = useInvalidateBoth()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: UUIDString; payload: SkillUpdatePayload }) =>
-      updateSkill(id, payload),
-    onSuccess: invalidateBoth,
-  })
-}
-
-/**
- * Removes a skill.
- *
- * Goals pointing at it keep their `target_skill_id` as null rather than
- * disappearing, and the activities recorded against it go with it: an activity
- * whose skill is gone would be an unattributed event.
- */
-export function useDeleteSkill(): UseMutationResult<void, Error, UUIDString> {
-  const invalidateBoth = useInvalidateBoth()
-  return useMutation({
-    mutationFn: (id: UUIDString) => deleteSkill(id),
     onSuccess: invalidateBoth,
   })
 }
@@ -1044,35 +840,6 @@ export function useCreateCareerExperience(): UseMutationResult<
 }
 
 /**
- * Edits one dated record.
- *
- * `kind` is editable because moving a row from `experience` to `education` is a
- * correction the user is entitled to make. The backend refuses a date pair that
- * runs backwards, which arrives as a 422 with a field-level detail.
- */
-export function useUpdateCareerExperience(): UseMutationResult<
-  CareerExperienceRead,
-  Error,
-  { id: UUIDString; payload: CareerExperienceUpdatePayload }
-> {
-  const invalidateCareer = useInvalidateCareer()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: UUIDString; payload: CareerExperienceUpdatePayload }) =>
-      updateCareerExperience(id, payload),
-    onSuccess: invalidateCareer,
-  })
-}
-
-/** Removes one dated record. Nothing else on the profile depends on it. */
-export function useDeleteCareerExperience(): UseMutationResult<void, Error, UUIDString> {
-  const invalidateCareer = useInvalidateCareer()
-  return useMutation({
-    mutationFn: (id: UUIDString) => deleteCareerExperience(id),
-    onSuccess: invalidateCareer,
-  })
-}
-
-/**
  * Adds one piece of career evidence.
  *
  * `evidence_type`, `title` and `occurred_on` are required, because evidence
@@ -1093,35 +860,3 @@ export function useCreateCareerEvidence(): UseMutationResult<
   })
 }
 
-/**
- * Edits one piece of evidence.
- *
- * `occurred_on` may move; `created_at` may not, so the record of when the claim
- * entered the profile survives a correction.
- */
-export function useUpdateCareerEvidence(): UseMutationResult<
-  CareerEvidenceRead,
-  Error,
-  { id: UUIDString; payload: CareerEvidenceUpdatePayload }
-> {
-  const invalidateCareer = useInvalidateCareer()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: UUIDString; payload: CareerEvidenceUpdatePayload }) =>
-      updateCareerEvidence(id, payload),
-    onSuccess: invalidateCareer,
-  })
-}
-
-/**
- * Removes one piece of evidence.
- *
- * The event log keeps the record that it was there and that the user removed it,
- * so a deletion is an edit of the profile rather than an erasure of the fact.
- */
-export function useDeleteCareerEvidence(): UseMutationResult<void, Error, UUIDString> {
-  const invalidateCareer = useInvalidateCareer()
-  return useMutation({
-    mutationFn: (id: UUIDString) => deleteCareerEvidence(id),
-    onSuccess: invalidateCareer,
-  })
-}

@@ -20,7 +20,7 @@
  * actually needs, because NEXUS authenticates with a bearer header and a bare
  * `<a href>` would arrive unauthenticated.
  */
-import { apiClient, type QueryParams } from '@/lib/api-client'
+import { apiClient, type QueryParams, queryFrom } from '@/lib/api-client'
 import type {
   AnalyticsCsvDataset,
   AnalyticsListParams,
@@ -40,7 +40,6 @@ import type {
   TimeDistributionRead,
   TrendMetric,
   TrendPoint,
-  WorkloadRead,
   DailyMetricRead,
 } from '@/types/analytics'
 
@@ -66,16 +65,6 @@ export const ANALYTICS_ENDPOINTS = {
 } as const
 
 /** Dropped when unset: `null`/undefined would serialise as a literal. */
-function queryFrom(params: Record<string, unknown>): QueryParams {
-  const query: QueryParams = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    if (Array.isArray(value)) continue
-    query[key] = value as string | number | boolean
-  }
-  return query
-}
-
 function windowQuery(params: AnalyticsListParams = {}): QueryParams {
   return queryFrom({
     start_date: params.start_date,
@@ -134,16 +123,6 @@ export function fetchEstimation(
   signal?: AbortSignal,
 ): Promise<EstimationAccuracyRead> {
   return apiClient.get<EstimationAccuracyRead>(ANALYTICS_ENDPOINTS.estimation, {
-    query: windowQuery(params),
-    signal,
-  })
-}
-
-export function fetchWorkload(
-  params: AnalyticsListParams = {},
-  signal?: AbortSignal,
-): Promise<WorkloadRead> {
-  return apiClient.get<WorkloadRead>(ANALYTICS_ENDPOINTS.workload, {
     query: windowQuery(params),
     signal,
   })

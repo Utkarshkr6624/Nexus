@@ -16,8 +16,7 @@
  * recovery belongs to the shared client; nothing here disables auth.
  */
 
-import { apiClient } from '@/lib/api-client'
-import type { QueryParams } from '@/lib/api-client'
+import { apiClient, queryFrom } from '@/lib/api-client'
 import type { UUIDString } from '@/types/api'
 import type { SearchEntityKind, SearchListParams, SearchResponse } from '@/types/search'
 
@@ -25,16 +24,6 @@ import type { SearchEntityKind, SearchListParams, SearchResponse } from '@/types
 export const SEARCH_ENDPOINTS = {
   search: '/search',
 } as const
-
-function queryFrom(params: object): QueryParams {
-  const query: QueryParams = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === null || value === '') continue
-    if (Array.isArray(value)) continue
-    query[key] = value as string | number | boolean
-  }
-  return query
-}
 
 /**
  * Appends a repeated query parameter to the path.

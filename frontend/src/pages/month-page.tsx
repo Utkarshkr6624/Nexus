@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { ConflictList, MonthGrid, QuickAdd } from '@/features/planner/components'
-import { localInputToInstant } from '@/features/planner/datetime'
+import { addMonths, localInputToInstant } from '@/features/planner/datetime'
 import { usePlannerConflicts, usePlannerMonth } from '@/features/planner/hooks'
 import { useIsMobile } from '@/hooks/use-media-query'
 import { useProjects, useTasks } from '@/features/work/hooks'
@@ -78,12 +78,6 @@ function defaultBlock(date: DateOnlyString, timeZone: string): { starts_at: stri
     starts_at: localInputToInstant(`${date}T09:00`, timeZone) ?? `${date}T09:00:00Z`,
     ends_at: localInputToInstant(`${date}T10:00`, timeZone) ?? `${date}T10:00:00Z`,
   }
-}
-
-function shiftMonth(month: string, amount: number): string {
-  const [year = 1970, number = 1] = month.split('-').map(Number)
-  const moved = new Date(Date.UTC(year, number - 1 + amount, 1, 12))
-  return `${moved.getUTCFullYear()}-${String(moved.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 /** The local days the month route actually covers, for the deadlines query. */
@@ -168,7 +162,7 @@ export default function MonthPage() {
   const busyDays = days.filter((day) => day.scheduled_minutes > 0).length
 
   function stepMonth(amount: number) {
-    const next = shiftMonth(month, amount)
+    const next = addMonths(month, amount)
     navigate({ month: next, date: `${next}-01` })
   }
 

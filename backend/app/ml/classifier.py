@@ -190,9 +190,10 @@ class IntentClassifier:
             context length, and the wall-clock cost of the call.
 
         Raises:
-            InvalidUtteranceError: The text is not a string, is empty or
-                whitespace-only, or exceeds :data:`MAX_UTTERANCE_CHARACTERS`. The
-                ``details`` carry the limit and the length — never the text.
+            InvalidUtteranceError: The text is not a string, cannot be encoded as
+                UTF-8, is empty or whitespace-only, or exceeds
+                :data:`MAX_UTTERANCE_CHARACTERS`. The ``details`` carry the limit
+                and the length — never the text.
             InferenceError: The forward pass failed for a reason that is not the
                 caller's fault. Logged as an exception type, not as the utterance.
             MLUnavailableError: The classifier has been closed.
@@ -313,16 +314,29 @@ class IntentClassifier:
             text: The caller's utterance.
 
         Raises:
-            InvalidUtteranceError: The value is not a string, is blank, is longer
-                than :data:`MAX_UTTERANCE_CHARACTERS`, or is credential-shaped
-                while screening is on. The message and ``details`` never quote the
-                text itself.
+            InvalidUtteranceError: The value is not a string, cannot be encoded as
+                UTF-8, is blank, is longer than :data:`MAX_UTTERANCE_CHARACTERS`,
+                or is credential-shaped while screening is on. The message and
+                ``details`` never quote the text itself.
         """
         if not isinstance(text, str):
             raise InvalidUtteranceError(
                 "the utterance must be a string",
                 details={"type": type(text).__name__},
             )
+        # Text that cannot survive a round trip through UTF-8 is not text. A JSON
+        # body may legally carry an unpaired surrogate escape ("\ud800"), Python
+        # decodes it into a `str` that every length and emptiness check passes,
+        # and the Rust tokenizer then refuses the encode with a TypeError about
+        # its own argument type. Left alone that is a 500 from the tokenizer's
+        # signature rather than from NEXUS, on input the caller got wrong.
+        try:
+            text.encode("utf-8")
+        except UnicodeEncodeError as exc:
+            raise InvalidUtteranceError(
+                "the utterance is not encodable as UTF-8 text",
+                details={"reason": "unencodable", "offset": exc.start},
+            ) from exc
         if not text.strip():
             raise InvalidUtteranceError(
                 "the utterance is empty",

@@ -519,15 +519,13 @@ async def test_journey_ai_proposes_writes_and_reads_back_through_the_ordinary_ap
     the Tasks page uses. An assistant that reported success without writing, or
     wrote somewhere the app cannot see, would pass every other assertion here.
 
-    **A known narrowing, not tested away.** The deterministic extractor strips a
-    trailing type-noun from a recovered title, so "create a task called finish
-    the rollout plan" yields "finish the rollout plan" — correct — while a title
-    that itself ends in that noun, "create a task called finish the rollout task",
-    yields "finish the rollout". The extractor's edge cases belong to
-    ``tests/test_ml_actions.py``, which pins them deliberately; this journey uses
-    an ordinary title because what it is pinning is the propose→confirm→read-back
-    seam, and a contrived title would make it fail for a reason unrelated to
-    that seam.
+    **The title is one whose own text ends in the entity noun.** That is not a
+    contrivance: it is the case that found a real extractor defect, where a
+    named subject lost its final word — "create a task called finish the rollout
+    task" became "finish the rollout". The fix and its regression tests are in
+    ``tests/test_ml_actions.py``; this journey keeps the phrasing because a
+    proposal that silently edits the user's words is exactly the failure the
+    read-back step below exists to catch.
     """
     headers = authed(await register(client, username="aijourney"))
 
@@ -549,7 +547,7 @@ async def test_journey_ai_proposes_writes_and_reads_back_through_the_ordinary_ap
     response = await client.post(
         "/api/v1/ml/action/propose",
         json={
-            "text": "create a high priority task called finish the rollout plan",
+            "text": "create a high priority task called finish the rollout task",
             "project_id": project_id,
         },
         headers=headers,
@@ -564,7 +562,7 @@ async def test_journey_ai_proposes_writes_and_reads_back_through_the_ordinary_ap
 
     # Proposing must not have written anything.
     response = await client.get("/api/v1/tasks", params={"limit": 100}, headers=headers)
-    assert all("rollout plan" not in row["title"].lower() for row in response.json()["items"]), (
+    assert all("rollout" not in row["title"].lower() for row in response.json()["items"]), (
         "proposing an action created the row — the whole safety property of "
         "this layer is that it does not"
     )
@@ -596,7 +594,11 @@ async def test_journey_ai_proposes_writes_and_reads_back_through_the_ordinary_ap
         "not contain it — the write and the read disagree"
     )
     assert created_row["project_id"] == project_id, created_row
-    assert "rollout plan" in created_row["title"].lower(), created_row
+    assert created_row["title"].lower() == "finish the rollout task", (
+        created_row,
+        "the title the user named is not the title that was created — the "
+        "extractor edited their words",
+    )
 
 
 @pytest.mark.ml_model

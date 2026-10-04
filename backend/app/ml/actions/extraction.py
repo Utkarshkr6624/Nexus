@@ -274,6 +274,26 @@ _SUBJECT_CONNECTORS: tuple[str, ...] = (
     ":",
 )
 
+#: The connectors that **name** a subject rather than merely precede one.
+#:
+#: "create a task called finish the rollout task" and "the API contract task"
+#: both end in a task noun, and only one of them means the noun to be stripped.
+#: The second is a noun phrase naming something that exists — the noun is its
+#: type. The first ends in a connector that says the following words *are* the
+#: name, so a noun there is part of the name and stripping it loses the user's
+#: own word: "finish the rollout task" became "finish the rollout".
+#:
+#: A prepositional connector cannot do this job. "add a task to review the
+#: rollout task" is genuinely ambiguous, and a rule that guessed there would be
+#: wrong as often as it was right.
+#:
+#: The failure direction is deliberate. When this matches on a phrase that did
+#: not really name a subject, the cost is a title that keeps its final noun —
+#: still a usable title, and one the user sees before confirming. The opposite
+#: error silently deletes a word the user typed, which is the error worth
+#: spending the weaker failure on.
+_NAMING_CONNECTOR_RE = re.compile(r"\b(?:called|named|titled|entitled)\b", re.IGNORECASE)
+
 
 def _entity_prefix_pattern(nouns: Sequence[str]) -> re.Pattern[str]:
     """Compile the ``subject prefix`` regex for one intent's nouns.
@@ -913,18 +933,26 @@ def extract_title(text: str, *, intent: str) -> tuple[str | None, str | None, li
     removed: list[str] = []
     notes: list[str] = []
     remaining = _collapse(text)
+    # Checked before the prefix match, because the match is not guaranteed to run
+    # and consume the connector: "create a high priority task called X" puts an
+    # adjective between the determiner and the noun, which the prefix pattern
+    # does not cross, so by the time it would have matched the connector is the
+    # only surviving evidence that the subject was named.
+    named = _NAMING_CONNECTOR_RE.search(remaining) is not None
 
     entity_pattern = _ENTITY_PREFIX_RES.get(intent)
     if entity_pattern is not None:
         match = entity_pattern.match(remaining)
         if match is not None and match.end() > 0:
-            removed.append(match.group(0).strip())
+            consumed = match.group(0).strip()
+            removed.append(consumed)
             remaining = remaining[match.end() :]
 
-    trailing = _TRAILING_ENTITY_RE.search(remaining)
-    if trailing is not None:
-        removed.append(trailing.group(0).strip())
-        remaining = remaining[: trailing.start()]
+    if not named:
+        trailing = _TRAILING_ENTITY_RE.search(remaining)
+        if trailing is not None:
+            removed.append(trailing.group(0).strip())
+            remaining = remaining[: trailing.start()]
 
     title = _trim_title_edges(remaining)
     minimum, maximum = _TITLE_BOUNDS.get(intent, (_MIN_TITLE_CHARACTERS, MAX_TASK_TITLE_LENGTH))

@@ -67,6 +67,7 @@ from app.ml.actions.extraction import (
     TaskMatch,
     day_start_utc,
     extract_arguments,
+    extract_title,
     extract_verb,
     local_day,
     match_task_reference,
@@ -1328,3 +1329,44 @@ def test_a_candidate_uuid_is_echoed_in_a_completion_proposal() -> None:
 def test_the_filler_title_list_rejects_an_empty_subject() -> None:
     """A word that survives every strip rule but names nothing is still refused."""
     assert extract("add a task to it").title is None
+
+
+def test_a_named_subject_keeps_a_trailing_entity_noun_that_is_part_of_its_name() -> None:
+    """ "create a task called finish the rollout task" must not lose a word.
+
+    The trailing-noun strip exists so "the API contract task" resolves to the
+    row called "API contract" — the noun there is a type. But when the user
+    introduces the subject *by name*, a trailing noun is part of the name they
+    typed, and stripping it silently edits their request. The user sees the
+    title in the confirmation dialog, so a title that kept a redundant noun is
+    a cosmetic annoyance, while one that lost a word is a wrong row created.
+    """
+    assert extract("create a high priority task called finish the rollout task").title == (
+        "finish the rollout task"
+    )
+    assert extract("create a task named review the API contract task").title == (
+        "review the API contract task"
+    )
+
+
+def test_a_type_noun_is_still_stripped_when_no_name_was_given() -> None:
+    """The other half of the pair: without a naming connector the strip stands.
+
+    Without this the fix would read as "never strip a trailing noun", which
+    would break every completion reference — "mark the API contract task as
+    done" is matched against real titles, and the row is called "API contract".
+    """
+    assert extract_title("the API contract task", intent="task_manage")[0] == "API contract"
+    assert extract_title("my q4 reporting task", intent="task_manage")[0] == "q4 reporting"
+
+
+def test_a_named_subject_is_unaffected_when_it_ends_in_something_else() -> None:
+    """The rule must not fire on titles that never had a noun to protect."""
+    assert extract("create a task called finish the rollout plan").title == (
+        "finish the rollout plan"
+    )
+    assert (
+        extract("create a project called nebula", intent=str(Intent.PROJECT_MANAGE)).title
+        == "nebula"
+    )
+    assert extract("add a task to write the migration plan").title == "write the migration plan"

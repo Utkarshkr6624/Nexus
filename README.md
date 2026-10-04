@@ -26,14 +26,15 @@ rendered on the page itself.
 
 ---
 
-## Status: Phases 1 through 12 are delivered
+## Status: Phases 1 through 14 are delivered
 
 Phase 1 built the technical foundation and Phase 2 turned authentication into a real
 account system: persistent device sessions, a password policy, password recovery,
 role-based permissions, an audit trail, and a five-tab settings surface. Phases 3 to 9
 then made the module surface real, one module per phase. Phase 10 trained the model,
-Phase 11 put it on the request path, and Phase 12 gave it a voice interface. What
-exists today:
+Phase 11 put it on the request path, Phase 12 gave it a voice interface, Phase 13 made
+NEXO one platform — global search, a real command palette, and a Command Center — and
+Phase 14 hardened and documented the whole thing. What exists today:
 
 | Area | State |
 | --- | --- |
@@ -44,7 +45,7 @@ exists today:
 | Password policy, password change, and password reset (no mail service required) | Done |
 | Role-based permissions (`user` / `admin`) with a fail-closed `require_permission()` | Done |
 | Security audit trail (`audit_logs`, 12 event types, best-effort writes) | Done |
-| Alembic migration pipeline | Done — ten revisions, `0001_initial_create_users` → `0010_learning_career_integrity`, a single linear head |
+| Alembic migration pipeline | Done — eleven revisions, `0001_initial_create_users` → `0011_tasks_analytics_window_indexes`, a single linear head |
 | PostgreSQL 16 | The Compose stack is declared and statically validated but has **never** been executed by `docker compose`. A **native** PostgreSQL 16 runs in the development environment and backs every database-backed test |
 | React + TypeScript frontend: router, app shell, design system, theming | Done |
 | Frontend design-system primitives, several hand-rolled (see below) | Done |
@@ -55,7 +56,12 @@ exists today:
 | ML training (Phase 10) | **Done** — one model: a `deberta-v3-base` routing classifier over the 14 Nexo intents, trained on CPU and evaluated at 0.9738 accuracy / 0.9737 macro F1 on a 420-row held-out split. `backend/ml/`, a separate package and entry point (`python -m ml.train`); see [Phase 10](#phase-10--ml-training) |
 | ML integration (Phase 11) | **Delivered** — `backend/app/ml/` loads the Phase 10 checkpoint from the local filesystem and routes an utterance to an existing `app/services/` module. torch is imported lazily, so the app boots and serves every non-ML route without it; the ML endpoints answer `503 ml_unavailable` when the checkpoint or torch is missing, and the checkpoint is gitignored, so the feature is off on a fresh clone by design. No Phase 11 accuracy, test-count or latency figure is claimed here — see [Phase 11](#phase-11--ml-integration) |
 | Voice assistant (Phase 12) | **Live** — `frontend/src/features/assistant/`. Speak or type one request on `/assistant`; the Phase 10/11 classifier returns one intent, a confidence and the validated service behind it. **⚠️ Chrome and Edge transcribe your audio on the browser vendor's servers — the audio leaves your machine. Firefox has no speech recognition at all.** Browser Web Speech API only: no second model, no LLM, no paid service. See [Phase 12](#phase-12--voice) |
-| Search, Experiments | Designed placeholder pages only |
+| Global search (Phase 13) | **Live** — `GET /api/v1/search` searches eleven user-owned entity kinds in one deterministic ranking, tenant-scoped by an ownership predicate on every statement. `/search` is a real page; the command palette queries it too |
+| Command palette (Phase 13) | **Live** — Ctrl/Cmd+K does navigation, quick actions that post to the real APIs, and cross-entity record search, with a real focus trap and an inert background |
+| Command Center (Phase 13) | **Live** — `/command-center` is the primary destination. Signals ranked by a documented deterministic rule; every panel badged for provenance (Measured / Calculated / Model-derived) |
+| Assistant actions (Phase 13) | **Live** — `POST /ml/action/propose` returns a fully-populated proposal the user edits and confirms; `POST /ml/action/confirm` executes it. **Nothing is ever executed from a bare utterance, and destructive actions have no proposal kind at all** |
+| Security hardening (Phase 14) | **Done** — full audit of secrets, SQL injection, path traversal, command injection, authN/authZ across all 190 routes, audit-trail coverage, error and log hygiene, rate limiting and input validation |
+| Experiments | Designed placeholder page only — no backend, and the README says so rather than implying one |
 | Automated tests | **3 227 backend passed**, 14 xfailed, 1 skipped — a pass count; and **52 frontend test files, 799 passing**, of which 8 (156 cases) cover the voice feature |
 
 The backend figure is a **collection** count from `pytest --collect-only` in `backend/`, and
@@ -406,6 +412,85 @@ The existing `ML_*` settings govern the classifier; microphone permission is a
 browser-level grant that no server configuration can influence.
 
 ---
+
+## Phase 13 — Global search, command palette, Command Center
+
+Phase 13's goal was that NEXUS should read as one platform rather than a set of
+modules. It added no model.
+
+**Global search.** `GET /api/v1/search` searches eleven user-owned entity kinds —
+projects, tasks, notes, resources, concepts, repositories, learning goals, skills,
+calendar events, risks, recommendations — in one response, with filters for kind,
+project, status, priority, date range and tags. It is a read-only projection over
+tables that already exist: no migration, no new table, no Postgres full-text
+extension. Ordering is a total order (matched column, then recency, then id), so
+identical queries return identical results.
+
+Tenant isolation is the property that matters most here. Every statement carries the
+same ownership predicate the rest of the codebase uses, so an identically-named row
+belonging to another account cannot appear even when the caller knows its id. A test
+creates two accounts with same-titled records and proves it.
+
+**Actions the assistant can take.** The classifier is a 14-class intent classifier.
+It cannot tell "add a task" from "delete everything" — both are `task_manage`,
+because the taxonomy asks which *surface* a request lands on, not what to do to it.
+Verb is not one of the classes. So nothing is ever executed from an utterance:
+
+```
+utterance → classifier (intent only) → deterministic extraction → proposal
+          → user edits it → confirm → server re-validates → owner-scoped service
+```
+
+Argument extraction is deterministic code, which needs no second model. **Destructive
+actions have no proposal kind at all** — not confirmable, because intent cannot
+distinguish them, and `TaskService.delete` destroys recorded time. The confirm
+endpoint treats its payload as untrusted: it re-derives the spec from the kind,
+re-checks the permission, rejects unknown keys before Pydantic can silently drop
+them, resolves every target through the owner-scoped service, and wires `activity=`
+so the write leaves the same trail a typed request would. A replayed confirm returns
+the existing row rather than duplicating it.
+
+**Command palette.** Ctrl/Cmd+K does three things in one list: navigate, run a quick
+action against a real API, or search your records. It also gained the two things it
+never had — a real focus trap (Tab was neutralised rather than cycled) and an
+inert background.
+
+**Command Center.** `/command-center` is the primary destination. It answers *what is
+happening, what needs attention, what should I do next* by ranking signals with a
+documented deterministic rule. No ML drives the ordering — the model classifies
+utterances, it does not score your data. Every panel is badged for **provenance**,
+because measured, calculated and model-derived are genuinely different things and a
+prediction presented as a measurement is a lie. One failing panel errors alone.
+
+## Phase 14 — Hardening, testing and polish
+
+**Security audit.** All 190 versioned routes enumerated programmatically; every one is
+either permission-gated or carries an authenticated caller. Three real issues found and
+fixed:
+
+- A project deletion was recorded as `PROJECT_UPDATED` with `deleted: true` in its
+  metadata, so every feed filtered for deletions saw none. A real `PROJECT_DELETED`
+  event now exists.
+- `/auth/register` ran a bcrypt hash on every call and answered 409 for an existing
+  address — an account-enumeration oracle on the general rate-limit budget. It now
+  has its own bucket at the tight credential budget.
+- The repository path allowlist was re-serialised as a comma-joined string and
+  re-split, so a root containing a comma parsed as two roots — one of which resolved
+  against the working directory.
+
+**Data correctness.** The scoring functions — productivity, consistency, focus,
+deadline adherence, risk severity, learning progress, skill gaps, developer momentum —
+were re-verified against hand-computed inputs, with the timezone and DST boundaries
+treated as the highest-risk area.
+
+**Test flakiness fixed, not reported.** Seven chart-heavy frontend tests failed
+intermittently under load because Testing Library's 1 s `findBy` default is shorter
+than a recharts surface needs to paint. Both the suite timeout and the async-utility
+timeout were raised to values measured rather than guessed.
+
+**Performance.** Model load 4.50 s once per process; warm inference 60 ms median on
+CPU. Search issues one statement per entity kind plus one owner-scoped lookup for
+project names, and a test pins that cost so a future N+1 fails rather than ships.
 
 ## Architecture at a glance
 
@@ -1141,13 +1226,15 @@ today.
 | 2 | Projects, Tasks | Live | The execution layer: outcomes, projects, tasks, triage views |
 | 3 | Planner | Live | Weekly capacity, time blocks, focus log |
 | 4 | Knowledge | Live | Linked notes, concepts, resources, bookmarks |
-| 4 | Search | Placeholder | Unified cross-module retrieval index |
+| 13 | Search | **Delivered in Phase 13** | `GET /api/v1/search` over eleven entity kinds; the `/search` page; palette search |
 | 5 | Analytics | Live | Traceable metrics derived from real records |
 | 6 | Developer | **Delivered in Phase 8** | Local git repository analysis, work attribution |
 | 7 | Risks, Recommendations | Live | The risk register and the drafts derived from it |
 | 8 | Learning | **Delivered in Phase 9** | Goals, tracked skills, skill gaps |
 | 9 | Career | **Delivered in Phase 9** | Profile, dated records, portfolio evidence |
-| 10 | Experiments | Placeholder | Hypothesis, bounded scope, keep-or-kill verdict |
+| 12 | AI Assistant | **Delivered in Phase 12** | Voice and text over the single classifier |
+| 13 | Command Center | **Delivered in Phase 13** | Prioritised signals, quick actions, provenance-badged panels |
+| 10 | Experiments | Placeholder | Hypothesis, bounded scope, keep-or-kill verdict — no backend yet |
 | 12 | AI Assistant | **Delivered in Phase 12** | Voice and typed input over the single intent classifier — it names the service a request maps to and routes it; it never answers, and executes nothing yet |
 
 Phase 2 was *infrastructure*, not product surface: it made the accounts behind the shell

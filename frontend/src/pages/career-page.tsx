@@ -3,6 +3,7 @@ import type { FormEvent, ReactElement, ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Award, Briefcase, Pencil, Plus, Sparkles } from 'lucide-react'
 
+import { LiveStatus } from '@/components/feedback/live-status'
 import { PageHeader } from '@/components/feedback/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -524,11 +525,9 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {evidence.isPlaceholderData && (
-            <p role="status" className="mt-3 text-xs text-muted-foreground">
-              Updating for the selected filter…
-            </p>
-          )}
+          <LiveStatus active={evidence.isPlaceholderData} className="mt-3 text-xs text-muted-foreground">
+            Updating for the selected filter…
+          </LiveStatus>
         </div>
 
         <PortfolioEvidenceTimeline
@@ -593,11 +592,9 @@ export default function CareerPage() {
             </div>
           </div>
 
-          {records.isPlaceholderData && (
-            <p role="status" className="mt-3 text-xs text-muted-foreground">
-              Updating for the selected filter…
-            </p>
-          )}
+          <LiveStatus active={records.isPlaceholderData} className="mt-3 text-xs text-muted-foreground">
+            Updating for the selected filter…
+          </LiveStatus>
         </div>
 
         <CareerRecordList

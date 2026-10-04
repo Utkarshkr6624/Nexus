@@ -48,6 +48,7 @@ export type WorkEventType =
   | 'project_updated'
   | 'project_completed'
   | 'project_archived'
+  | 'project_deleted'
   | 'project_restored'
   | 'task_created'
   | 'task_updated'
@@ -182,6 +183,7 @@ export const WORK_EVENT_META: Record<WorkEventType, StatusMeta> = {
   project_completed: { label: 'Project completed', icon: CheckCircle2, tone: 'success', description: 'Finished.' },
   project_archived: { label: 'Project archived', icon: Archive, tone: 'neutral', description: 'Archived.' },
   project_restored: { label: 'Project restored', icon: RotateCcw, tone: 'info', description: 'Back in the working set.' },
+  project_deleted: { label: 'Project deleted', icon: Trash2, tone: 'danger', description: 'Removed.' },
   task_created: { label: 'Task created', icon: Plus, tone: 'info', description: 'New task.' },
   task_updated: { label: 'Task updated', icon: Pencil, tone: 'neutral', description: 'Details edited.' },
   task_started: { label: 'Task started', icon: Play, tone: 'info', description: 'Moved into progress.' },

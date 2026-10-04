@@ -74,7 +74,7 @@ import contextlib
 import os
 import re
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -94,6 +94,7 @@ __all__ = [
     "language_distribution",
     "parse_path_allowlist",
     "read_repository",
+    "resolve_allowlist_roots",
     "run_git",
     "sanitize_git_message",
     "validate_repository_path",
@@ -691,9 +692,26 @@ def parse_path_allowlist(raw: str) -> tuple[Path, ...]:
         The roots, with blank entries removed. Empty when ``raw`` is blank, which
         the caller reads as "no allowlist configured".
     """
+    return resolve_allowlist_roots(raw.split(","))
+
+
+def resolve_allowlist_roots(entries: Iterable[str | os.PathLike[str]]) -> tuple[Path, ...]:
+    """Resolve each allowlist entry to an absolute root, dropping unusable ones.
+
+    The single resolution rule, shared by :func:`parse_path_allowlist` — which
+    splits the comma-separated settings value and hands the pieces here — and by
+    :func:`validate_repository_path`, which is handed the roots themselves.
+
+    **It is shared because splitting an already-split list is lossy.** A caller
+    that passes ``allowlist=[Path("/srv/re,pos")]`` and then joins the entries
+    back with commas in order to re-parse them gets two roots out of one: the
+    prefix before the comma, and the fragment after it resolved against the
+    process's working directory. The operator's root stops permitting itself,
+    and a root nobody configured starts permitting something.
+    """
     roots: list[Path] = []
-    for entry in raw.split(","):
-        candidate = entry.strip()
+    for entry in entries:
+        candidate = str(entry).strip()
         if not candidate:
             continue
         try:
@@ -776,7 +794,7 @@ def validate_repository_path(
         ) from exc
 
     if allowlist is not None:
-        roots = parse_path_allowlist(",".join(str(root) for root in allowlist))
+        roots = resolve_allowlist_roots(allowlist)
         # `not roots` rather than `if roots`: a configured allowlist whose every
         # entry was dropped has permitted no directory, and letting it through
         # would read the failure of a malformed setting as the absence of one.

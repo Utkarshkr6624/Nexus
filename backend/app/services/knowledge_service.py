@@ -77,7 +77,7 @@ a history feature exists to prevent.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
@@ -107,6 +107,7 @@ from app.models.knowledge import (
     Note,
     Resource,
 )
+from app.models.tag import Tag
 from app.models.user import User
 from app.schemas.common import Page, PageMeta
 from app.schemas.knowledge import (
@@ -1285,10 +1286,19 @@ class KnowledgeService:
         result = KnowledgeSearchResult(query=term, limit=limit)
         if "note" in wanted:
             rows = await self.notes.search(owner.id, term, limit=limit)
-            result.notes = [await self._note_read(row) for row in rows]
+            # Two statements for the whole matched page, not two per row: this
+            # route is the one that matches up to MAX_SEARCH_ROWS of each kind in
+            # a single call, so the per-row form cost 64 statements on a full
+            # result set. Measured before and after in
+            # tests/test_knowledge_query_efficiency.py.
+            tags, counts = await self._note_joins(rows)
+            result.notes = [
+                _note_read_from(row, tags.get(row.id, []), counts.get(row.id, 0)) for row in rows
+            ]
         if "concept" in wanted:
             rows = await self.concepts.search(owner.id, term, limit=limit)
-            result.concepts = [await self._concept_read(row) for row in rows]
+            tags = await self._concept_joins(rows)
+            result.concepts = [_concept_read_from(row, tags.get(row.id, [])) for row in rows]
         if "resource" in wanted:
             rows = await self.resources.search(owner.id, term, limit=limit)
             result.resources = [ResourceRead.model_validate(row) for row in rows]
@@ -1313,21 +1323,7 @@ class KnowledgeService:
         counts = await self.notes.revision_counts(ids)
         return Page[NoteRead](
             items=[
-                NoteRead(
-                    id=row.id,
-                    owner_id=row.owner_id,
-                    title=row.title,
-                    content=row.content,
-                    summary=row.summary,
-                    status=row.status,
-                    document_id=row.document_id,
-                    created_at=row.created_at,
-                    updated_at=row.updated_at,
-                    tag_ids=[tag.id for tag in tags.get(row.id, [])],
-                    revision_count=counts.get(row.id, 0),
-                    is_archived=row.status == NoteStatus.ARCHIVED.value,
-                )
-                for row in rows
+                _note_read_from(row, tags.get(row.id, []), counts.get(row.id, 0)) for row in rows
             ],
             meta=PageMeta(total=total, limit=limit, offset=offset),
         )
@@ -1338,20 +1334,33 @@ class KnowledgeService:
         """Build a page of concepts, filling ``tag_ids`` for the whole page."""
         tags = await self.concepts.list_tags_for_concepts([row.id for row in rows])
         return Page[ConceptRead](
-            items=[
-                ConceptRead(
-                    id=row.id,
-                    owner_id=row.owner_id,
-                    name=row.name,
-                    description=row.description,
-                    created_at=row.created_at,
-                    updated_at=row.updated_at,
-                    tag_ids=[tag.id for tag in tags.get(row.id, [])],
-                )
-                for row in rows
-            ],
+            items=[_concept_read_from(row, tags.get(row.id, [])) for row in rows],
             meta=PageMeta(total=total, limit=limit, offset=offset),
         )
+
+    async def _note_joins(
+        self, rows: Sequence[Note]
+    ) -> tuple[dict[uuid.UUID, list[Tag]], dict[uuid.UUID, int]]:
+        """The two join columns for a whole batch of notes, in two statements.
+
+        **The N+1 this exists to prevent.** ``tag_ids`` and ``revision_count`` live
+        in ``note_tags`` and ``note_revisions``, so a note cannot be serialised
+        without two further reads. Asking for them one row at a time cost two
+        statements per matched note, and the search route — which matches up to
+        :data:`MAX_SEARCH_ROWS` rows of each kind in one call — is where that was
+        paid: 1 note and 1 concept cost 7 statements, 20 and 20 cost 64.
+
+        Two statements for any number of rows, and none at all for an empty batch —
+        both repositories short-circuit on an empty id list rather than emitting
+        the pointless ``IN ()``. A row with no tags and no revisions is simply
+        absent from both maps, which is the truth about it.
+        """
+        ids = [row.id for row in rows]
+        return await self.notes.list_tags_for_notes(ids), await self.notes.revision_counts(ids)
+
+    async def _concept_joins(self, rows: Sequence[Concept]) -> dict[uuid.UUID, list[Tag]]:
+        """``tag_ids`` for a whole batch of concepts, in one statement."""
+        return await self.concepts.list_tags_for_concepts([row.id for row in rows])
 
     async def _annotate(self, note: Note) -> Note:
         """Put the two answers that live in other tables onto the row itself.
@@ -1360,7 +1369,7 @@ class KnowledgeService:
         :attr:`NoteRead.revision_count` and ``tag_ids`` are not columns on
         ``notes``, and Pydantic fills a field from its default when the object it
         is validating does not carry it. The list and search paths build
-        :class:`NoteRead` explicitly through :meth:`_note_read`, so they were
+        :class:`NoteRead` explicitly through :func:`_note_read_from`, so they were
         right; the routes that hand a note straight back — the read, the PATCH,
         ``/publish``, ``/archive``, ``/restore`` and ``/restore-revision`` —
         returned the bare row, and every one of them answered ``revision_count:
@@ -1371,7 +1380,7 @@ class KnowledgeService:
 
         Pydantic reads an attribute off the source object before it falls back to
         the field default, so setting the two names here is what the response
-        model picks up — two queries, the same pair :meth:`_note_read` runs.
+        model picks up — two queries, the same pair :meth:`_note_joins` runs.
         They are not mapped columns and are never written: nothing flushes after
         this runs, and :meth:`NoteRepository.update_fields` allowlists every
         column a write may touch.
@@ -1397,40 +1406,27 @@ class KnowledgeService:
 
         ``tag_ids`` and ``revision_count`` are answers from other tables, which is
         why :class:`NoteRead` cannot be produced by ``model_validate`` on the row
-        alone — the counts come from one query each for the whole page rather than
+        alone — the counts come from one query each for the whole batch rather than
         one per row. :meth:`_annotate` is the same pair of queries for the one-row
         case, and exists because the single-note routes return the row rather than
         a built model.
+
+        **One row only.** A caller holding several has to ask for them together —
+        :meth:`_note_joins` once, then :func:`_note_read_from` per row — which is
+        what :meth:`_note_page` and :meth:`search` do. Reaching for this in a loop
+        is the N+1 it used to be, and it is the reason it is not the module's
+        serialiser.
         """
-        tags = await self.notes.list_tags_for_notes([note.id])
-        counts = await self.notes.revision_counts([note.id])
-        return NoteRead(
-            id=note.id,
-            owner_id=note.owner_id,
-            title=note.title,
-            content=note.content,
-            summary=note.summary,
-            status=note.status,
-            document_id=note.document_id,
-            created_at=note.created_at,
-            updated_at=note.updated_at,
-            tag_ids=[tag.id for tag in tags.get(note.id, [])],
-            revision_count=counts.get(note.id, 0),
-            is_archived=note.status == NoteStatus.ARCHIVED.value,
-        )
+        tags, counts = await self._note_joins([note])
+        return _note_read_from(note, tags.get(note.id, []), counts.get(note.id, 0))
 
     async def _concept_read(self, concept: Concept) -> ConceptRead:
-        """Build a :class:`ConceptRead`, whose ``tag_ids`` live in ``concept_tags``."""
-        tags = await self.concepts.list_tags_for_concepts([concept.id])
-        return ConceptRead(
-            id=concept.id,
-            owner_id=concept.owner_id,
-            name=concept.name,
-            description=concept.description,
-            created_at=concept.created_at,
-            updated_at=concept.updated_at,
-            tag_ids=[tag.id for tag in tags.get(concept.id, [])],
-        )
+        """Build a :class:`ConceptRead`, whose ``tag_ids`` live in ``concept_tags``.
+
+        One row only, for the reason :meth:`_note_read` gives.
+        """
+        tags = await self._concept_joins([concept])
+        return _concept_read_from(concept, tags.get(concept.id, []))
 
     async def _resolve_endpoint(
         self, entity: KnowledgeEntityType, entity_id: uuid.UUID | None, owner: User
@@ -1544,6 +1540,45 @@ class KnowledgeService:
         if self.activity is None:
             return
         await self.activity.record(event.value, user_id=owner.id, metadata=metadata)
+
+
+def _note_read_from(note: Note, tags: Sequence[Tag], revision_count: int) -> NoteRead:
+    """One :class:`NoteRead` from a row and the two answers read about it.
+
+    **Pure, and shared by every path that serialises more than one note.** The
+    page builder, the search route and the single-note helper all reach this, so
+    there is one definition of "a note with its joins filled in" and no route
+    that quietly forgets a field. The joins arrive as arguments rather than being
+    read here — that is the whole point, since reading them is what used to cost
+    two statements per row.
+    """
+    return NoteRead(
+        id=note.id,
+        owner_id=note.owner_id,
+        title=note.title,
+        content=note.content,
+        summary=note.summary,
+        status=note.status,
+        document_id=note.document_id,
+        created_at=note.created_at,
+        updated_at=note.updated_at,
+        tag_ids=[tag.id for tag in tags],
+        revision_count=revision_count,
+        is_archived=note.status == NoteStatus.ARCHIVED.value,
+    )
+
+
+def _concept_read_from(concept: Concept, tags: Sequence[Tag]) -> ConceptRead:
+    """One :class:`ConceptRead` from a row and its tags. See :func:`_note_read_from`."""
+    return ConceptRead(
+        id=concept.id,
+        owner_id=concept.owner_id,
+        name=concept.name,
+        description=concept.description,
+        created_at=concept.created_at,
+        updated_at=concept.updated_at,
+        tag_ids=[tag.id for tag in tags],
+    )
 
 
 def _refuse_null(fields: Mapping[str, object], *, entity: str) -> None:

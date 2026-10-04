@@ -96,6 +96,34 @@ class Task(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         # unqualified "all my tasks" query this composite does not serve
         # efficiently.
         Index("ix_tasks_owner_status_due", "owner_id", "status", "due_date"),
+        # The analytics window reads, which the composite above does not serve at
+        # all. Phase 6 buckets two series by an *instant* range and none of them
+        # mentions `due_date`:
+        #
+        # 1. "tasks created per day" — `owner_id = ? AND created_at >= ? AND
+        #    created_at < ?`, grouped by `date_trunc('day', created_at)`.
+        # 2. "tasks completed per day" — the same shape on `completed_at`, and
+        #    the same shape again behind `completed_pairs_in_range` and
+        #    `avg_cycle_minutes_in_range`, which between them feed deadline
+        #    adherence, estimation accuracy and cycle time.
+        #
+        # `ix_tasks_owner_status_due` can serve only its leading column here, so
+        # every one of those reads was a sequential scan of the whole table with
+        # the window applied afterwards — a cost that grows with the account's
+        # entire history rather than with the window, and that is paid on *every*
+        # analytics request because the daily rebuild runs them to decide whether
+        # the stored aggregates are current.
+        #
+        # Measured on 20,000 rows for one account over a 31-day window: 1.23 ms to
+        # 0.27 ms on the created-at bucket, 0.86 ms to 0.03 ms on the completed
+        # pairs, 0.92 ms to 0.08 ms on the cycle time. Plan changed from
+        # `Seq Scan on tasks` to a `Bitmap Heap Scan` and two `Index Scan`s.
+        #
+        # `owner_id` leads because every read is already scoped to one account —
+        # that is the tenancy guarantee, not an optimisation — and a range cannot
+        # use an index that has it as a later column.
+        Index("ix_tasks_owner_created", "owner_id", "created_at"),
+        Index("ix_tasks_owner_completed", "owner_id", "completed_at"),
     )
 
     project_id: Mapped[uuid.UUID] = mapped_column(

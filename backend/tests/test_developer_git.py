@@ -1157,6 +1157,30 @@ def test_a_comma_separated_allowlist_parses_into_roots(tmp_path: Path) -> None:
     assert roots == (first.resolve(), second.resolve())
 
 
+@requires_git
+def test_an_allowlist_entry_is_never_split_on_a_comma_inside_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A root whose own name contains a comma still permits the repository in it.
+
+    The comma is the settings value's separator, so splitting the *value* on it
+    is right. It is not a separator inside an entry: a caller that hands
+    :func:`validate_repository_path` the roots themselves — which is what the
+    service does, having already parsed the setting — used to have them joined
+    back with commas and re-split. A root called ``code,old`` came back as two,
+    the prefix before the comma and the fragment after it resolved against the
+    process's working directory. The operator's root stopped permitting itself,
+    and a directory nobody configured started permitting something.
+    """
+    root = tmp_path / "code,old"
+    _init(root, monkeypatch)
+
+    assert validate_repository_path(root, allowlist=[root]) == root.resolve()
+
+    with pytest.raises(GitRepositoryError, match="outside the directories"):
+        validate_repository_path(root, allowlist=[tmp_path / "somewhere-else"])
+
+
 def test_an_allowlist_root_that_does_not_exist_yet_is_still_usable(tmp_path: Path) -> None:
     """A root that has not been created is normalised, not discarded.
 

@@ -539,6 +539,65 @@ describe('risk center page', () => {
     expect(screen.getByLabelText('Severity band')).toHaveValue('low')
   })
 
+  /**
+   * The "Updating for the selected filters…" notice has to be *in the document*
+   * before it has anything to say.
+   *
+   * `role="status"` announces a change to a region that already exists. Written
+   * as `{busy && <p role="status">…</p>}` the region and its text arrive in the
+   * accessibility tree together, and most screen readers stay silent — so the
+   * notice that exists precisely to say "these rows are the previous answer"
+   * would be the one nobody hears. The region is therefore mounted empty and
+   * only its content toggles.
+   */
+  it('mounts the updating notice before it has anything to announce', async () => {
+    // The second read is held open on purpose. The stub answers every request
+    // immediately, and `isPlaceholderData` is true only for the window between
+    // the band changing and the answer landing — a window that closes inside one
+    // microtask, so a notice that *did* render would never be observable.
+    let release: (() => void) | null = null
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const calls = installBackend({
+      list: (url: string) => {
+        const severity = new URL(url, 'http://test').searchParams.get('severity')
+        if (severity === 'low') return gate.then(() => json(listPage([])))
+        return json(RISK_LIST)
+      },
+    })
+    renderRiskCenter('/risks?severity=critical')
+
+    await screen.findByRole('heading', { name: CRITICAL.title })
+
+    // Settled, and nothing to announce — but the region is still on the page.
+    const region = screen.getByRole('status')
+    expect(region).toBeInTheDocument()
+    expect(region).toBeEmptyDOMElement()
+    expect(region).not.toHaveTextContent('Updating for the selected filters')
+
+    // Change the band. The notice fills the region that was already there
+    // rather than replacing it, which is the whole property under test.
+    await userEvent.selectOptions(screen.getByLabelText('Severity band'), 'low')
+    await screen.findByText('Updating for the selected filters…')
+
+    const filled = screen.getByRole('status')
+    expect(filled).toBe(region)
+    expect(filled).toHaveClass('text-xs', 'text-muted-foreground')
+    // The previous answer is still on screen behind the notice, which is the
+    // behaviour the notice exists to explain.
+    expect(listCalls(calls).length).toBeGreaterThan(1)
+
+    await act(async () => {
+      release?.()
+    })
+
+    // And it empties again once the answer lands, so it is not a stale notice
+    // left sitting under the rows.
+    await waitFor(() => expect(screen.getByRole('status')).toBeEmptyDOMElement())
+    expect(await screen.findByText('Nothing matches this filter')).toBeInTheDocument()
+  })
+
   it('never prints NaN, Infinity or an undefined percentage', async () => {
     installBackend({ list: () => json(listPage([])) })
     renderRiskCenter('/risks?severity=low')

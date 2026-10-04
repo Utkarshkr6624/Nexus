@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Play, ShieldAlert } from 'lucide-react'
 
 import { ErrorState } from '@/components/feedback/error-state'
+import { LiveStatus } from '@/components/feedback/live-status'
 import { PageHeader } from '@/components/feedback/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -461,11 +462,9 @@ export default function RiskCenterPage() {
             {/* A refetch under a changed filter keeps the previous page on screen
                 rather than blanking, so the reader is told the rows are the
                 previous answer instead of being shown them as the current one. */}
-            {list.isPlaceholderData && (
-              <p role="status" className="text-xs text-muted-foreground">
-                Updating for the selected filters…
-              </p>
-            )}
+            <LiveStatus active={list.isPlaceholderData} className="text-xs text-muted-foreground">
+              Updating for the selected filters…
+            </LiveStatus>
           </section>
 
           {list.isError && !list.isPlaceholderData ? (

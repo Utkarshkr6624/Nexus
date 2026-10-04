@@ -380,6 +380,16 @@ def compute_overload(
     division by zero. "You scheduled 90 minutes but declared no availability" is
     *unknown*, and the honest rendering of unknown is null; a 0.0 or an infinity
     would both be invented numbers that a chart would happily plot.
+
+    **The overlap is measured in elapsed time, and is therefore independent of
+    what zone the session rows are labelled with.** That is not automatic: Python
+    subtracts two aware datetimes carrying the *same* ``tzinfo`` by their wall
+    clock and ignores the offset, so a row read as ``04:00+02:00`` minus
+    ``00:00+01:00`` is **four hours** even across a spring-forward, where the two
+    instants are three hours apart. Normalising both ends to UTC first — see
+    :func:`_aware` — makes the same pair of instants give the same answer whatever
+    they are labelled, which is the property the rest of this module assumes when
+    it converts a boundary to UTC "before any query is built".
     """
     tz = resolve_timezone(owner_tz, get_settings())
     available = sum(
@@ -405,8 +415,24 @@ def compute_overload(
 
 
 def _aware(value: datetime) -> datetime:
-    """Read a naive datetime as UTC; the columns are timezone-aware."""
-    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+    """Normalise an instant to UTC: naive is read as UTC, aware is converted.
+
+    **Converting rather than passing through is load-bearing for arithmetic.**
+    Python's rule for subtracting two aware datetimes is that a *shared*
+    ``tzinfo`` is ignored and the wall-clock fields are subtracted directly, so
+    ``04:00+02:00 - 00:00+01:00`` is ``4:00:00`` — while the two instants are
+    three hours apart whenever a clock change sits between them. Rows read back
+    from ``timestamptz`` columns arrive labelled UTC, so the shared-``tzinfo``
+    branch was only reachable when a caller of these pure functions handed in an
+    instant carrying its own offset; it then silently changed a day's committed
+    minutes by the length of the transition. Normalising here means the two
+    operands are always ``timezone.utc``, which is the one case where the shared
+    ``tzinfo`` *is* honoured and the subtraction is the elapsed time between the
+    instants.
+    """
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 def _overlaps(start: datetime, end: datetime, other_start: datetime, other_end: datetime) -> bool:

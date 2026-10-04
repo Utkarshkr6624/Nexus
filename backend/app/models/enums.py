@@ -322,6 +322,12 @@ class ActivityEvent(StrEnum):
     PROJECT_COMPLETED = "project_completed"
     PROJECT_ARCHIVED = "project_archived"
     PROJECT_RESTORED = "project_restored"
+    # The counterpart to ``TASK_DELETED``, and it exists for the same reason: a
+    # delete is a moment that happened, not a mutation of a row that still
+    # exists. Recording it as ``PROJECT_UPDATED`` left a consumer filtering on
+    # the delete unable to see a deletion at all, and left every "what changed
+    # in this project" reader counting the removal as an edit.
+    PROJECT_DELETED = "project_deleted"
     TASK_CREATED = "task_created"
     TASK_UPDATED = "task_updated"
     TASK_STARTED = "task_started"

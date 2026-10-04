@@ -45,6 +45,7 @@ def test_the_migration_chain_is_linear_and_has_a_single_head():
     # ``0004_phase4_planner`` and Phase 5 added ``0005_phase5_knowledge``;
     # a revision added later must extend this list rather than replace it.
     assert [revision.revision for revision in script.walk_revisions()] == [
+        "0011",
         "0010",
         "0009",
         "0008",
@@ -69,6 +70,7 @@ def test_every_revision_is_reachable_from_the_single_head():
     script = ScriptDirectory.from_config(_alembic_config("postgresql+psycopg://unused"))
 
     assert {revision.revision: revision.down_revision for revision in script.walk_revisions()} == {
+        "0011": "0010",
         "0010": "0009",
         "0009": "0008",
         "0008": "0007",
@@ -80,7 +82,7 @@ def test_every_revision_is_reachable_from_the_single_head():
         "0002": "0001",
         "0001": None,
     }
-    assert head_revision() == "0010"
+    assert head_revision() == "0011"
 
 
 async def test_the_test_database_is_migrated_to_head(engine):

@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Code2, FolderPlus, Plus, RefreshCw } from 'lucide-react'
 
 import { ErrorState } from '@/components/feedback/error-state'
+import { LiveStatus } from '@/components/feedback/live-status'
 import { PageHeader } from '@/components/feedback/page-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -403,11 +404,12 @@ export default function DeveloperPage() {
                 </div>
               </div>
 
-              {repositories.isPlaceholderData && (
-                <p role="status" className="mt-3 text-xs text-muted-foreground">
-                  Updating for the selected filters…
-                </p>
-              )}
+              <LiveStatus
+                active={repositories.isPlaceholderData}
+                className="mt-3 text-xs text-muted-foreground"
+              >
+                Updating for the selected filters…
+              </LiveStatus>
             </div>
 
             {repositories.isError && !repositories.isPlaceholderData ? (

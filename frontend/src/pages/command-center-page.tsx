@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/feedback/empty-state'
 import { PageHeader } from '@/components/feedback/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store'
 import { useOverview } from '@/features/analytics/hooks'
 import { useDeveloperSummary } from '@/features/developer/hooks'
@@ -274,22 +275,26 @@ export default function CommandCenterPage() {
             {learning.data && <LearningPanelBody summary={learning.data} />}
           </CommandCenterPanel>
 
-          <section aria-labelledby="command-center-quick-actions" className="rounded-lg border border-border bg-card p-6">
-            <div className="mb-4 space-y-1.5">
-              <h2
-                id="command-center-quick-actions"
-                className="text-base font-semibold leading-none tracking-tight text-foreground"
-              >
-                Quick actions
-              </h2>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Each one posts to a real create endpoint and reports what the server made. A
-                task is not offered here because creating one also needs a project, and guessing
-                which project would be a fabrication.
-              </p>
-            </div>
-            <QuickActions />
-          </section>
+          {/*
+            A `Card`, not a hand-rolled section. The panel above and below it in
+            this rail are both `CardHeader`/`CardTitle`/`CardContent`, and this
+            one re-stated the same three class strings by hand — so the header
+            spacing, the title's type ramp and the landmark role were three
+            things that had to be kept in step by hand rather than inherited.
+          */}
+          <Card role="region" aria-labelledby="command-center-quick-actions">
+            <CardHeader>
+              <CardTitle id="command-center-quick-actions">Quick actions</CardTitle>
+              <CardDescription>
+                Each one posts to a real create endpoint and reports what the server made. A task
+                is not offered here because creating one also needs a project, and guessing which
+                project would be a fabrication.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <QuickActions />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

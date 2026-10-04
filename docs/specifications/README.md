@@ -19,6 +19,16 @@ fixed in one direction or the other, never left ambiguous.
 | [`phase-11-ml-integration.md`](./phase-11-ml-integration.md) · [`phase-11-report.md`](./phase-11-report.md) | 11 | ML Integration — the trained classifier, served | ✅ Complete — two endpoints, and the Phase 10 checkpoint answers them ([report](./phase-11-report.md)) |
 | [`../phase-12-voice.md`](../phase-12-voice.md) | 12 | Voice — the browser's own Web Speech APIs as the interface to the one classifier | ✅ Complete — documented at [`docs/phase-12-voice.md`](../phase-12-voice.md), the path the Phase 12 brief specified |
 
+| [`../../README.md`](../../README.md) § Phase 13 | 13 | Global Search + Command Center + Advanced UX | ✅ Complete — search, palette, Command Center and propose-then-confirm actions; documented in the README |
+| [`../../README.md`](../../README.md) § Phase 14 | 14 | Final hardening, security audit, polish | ✅ Complete — security audit, data-correctness verification, flake fix, README and docs rewrite |
+
+> **Where the Phase 13 and 14 documents live.** Phases 13 and 14 are indexed here because
+> they are phases in the chain, but their documentation sits in the repository
+> [`README.md`](../../README.md) rather than in per-phase files here. Phases 1-9 each got
+> a specification because each introduced a subsystem that needed its own contract; 13 and 14
+> introduced no new subsystem worth a second document — 13 assembled existing services behind
+> one search endpoint and one page, and 14 changed very little deliberately.
+
 > **Where the Phase 12 document lives.** Phase 12 is indexed here because it is a phase,
 > but the document itself sits one directory up, at
 > [`docs/phase-12-voice.md`](../phase-12-voice.md), because that is the path the Phase 12
@@ -107,9 +117,10 @@ registered. Each feature row is stamped with a schema version
 (`developer_features.v1`, `learning_features.v1`, `career_features.v1`) so a Phase 10
 trainer knows what every column meant without having to trust the client that ordered them.
 
-That chain ends at Phase 12 rather than at Phase 10: Phase 10 trains the routing classifier
-and writes artifacts, Phase 11 is what loads one inside the API process, and Phase 12 is the
-interface in front of it. The first two are one pipeline with two boundaries, and the second
+That chain ends at Phase 13 rather than at Phase 10: Phase 10 trains the routing classifier
+and writes artifacts, Phase 11 is what loads one inside the API process, Phase 12 is the
+interface in front of it, and Phase 13 is where its decision reaches real records — through a
+search endpoint and a Command Center built from the same services the typed UI already used. The first two are one pipeline with two boundaries, and the second
 boundary is where a model that was only ever measured becomes one that answers requests.
 
 ### Phase 10 — ML training

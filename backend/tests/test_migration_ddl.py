@@ -49,6 +49,7 @@ MIGRATION_MODULES = (
     "migrations.versions.0008_phase8_developer_intelligence",
     "migrations.versions.0009_phase9_learning_career",
     "migrations.versions.0010_learning_career_integrity",
+    "migrations.versions.0011_tasks_analytics_window_indexes",
 )
 
 PG = postgresql.dialect()
@@ -291,8 +292,9 @@ def test_the_migration_chain_is_linear_with_a_single_head():
     """
     script = ScriptDirectory.from_config(_alembic_config("postgresql+psycopg://unused"))
 
-    assert script.get_heads() == ["0010"]
+    assert script.get_heads() == ["0011"]
     assert [revision.revision for revision in script.walk_revisions()] == [
+        "0011",
         "0010",
         "0009",
         "0008",
@@ -305,6 +307,7 @@ def test_the_migration_chain_is_linear_with_a_single_head():
         "0001",
     ]
     assert {revision.revision: revision.down_revision for revision in script.walk_revisions()} == {
+        "0011": "0010",
         "0010": "0009",
         "0009": "0008",
         "0008": "0007",
@@ -953,6 +956,15 @@ def test_the_evidence_deduplication_index_treats_nulls_as_equal_to_each_other(dd
             ),
             True,
         ),
+        # 0011. The analytics window reads on `tasks`. Both are listed here
+        # because `tests/test_migration_ddl.py::test_every_indexed_model_column_has_a_migrated_index`
+        # asserts the two directions of that agreement — a model index with no
+        # migration is a schema that never gets built, and a migrated index with
+        # no model is one that a later `create_all` or autogenerate would
+        # silently drop. What the index is *for* — a measured sequential scan
+        # narrowed to the window — is argued in the migration's own docstring.
+        ("ix_tasks_owner_created", "tasks", ("owner_id", "created_at"), False),
+        ("ix_tasks_owner_completed", "tasks", ("owner_id", "completed_at"), False),
     ],
 )
 def test_a_migrated_index_matches_the_model(index_name, table, columns, unique, created_indexes):

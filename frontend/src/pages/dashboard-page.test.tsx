@@ -666,6 +666,95 @@ describe('dashboard intelligence surface', () => {
     expect(screen.getByText('No task in this window carries a due date.')).toBeInTheDocument()
   })
 
+  /**
+ * Waits for the `ErrorState` that quotes a given request ID.
+ *
+ * The shared client retries a 5xx twice before giving up, so a failure surface
+ * cannot arrive inside the default budget and a `findBy*` against whatever
+ * alerts happen to be on screen matches an unrelated one. Keying on the request
+ * ID is what makes this wait about the panel under test.
+ */
+async function alertForRequest(requestId: string): Promise<HTMLElement> {
+  return await waitFor(
+    () => {
+      const match = screen
+        .getAllByRole('alert')
+        .find((node) => node.textContent?.includes(requestId))
+      if (!match) throw new Error(`No error surface quotes ${requestId} yet.`)
+      return match
+    },
+    { timeout: 20_000 },
+  )
+}
+
+/**
+ * A panel whose request failed must say so.
+ *
+ * An empty state is a claim about the records that exist: "nothing is due in
+ * this window" asserts that the backend read the window and found no open
+ * task. A 500 says nothing of the sort — the window was never read — so
+ * rendering the empty state in its place tells the reader their deadlines are
+ * clear when in fact nobody has looked. Each panel here is failed on its own,
+ * and the rest of the page must survive each failure.
+ */
+  it('reports a failed panel request rather than an empty state', async () => {
+    installBackend({
+      tasks: () => envelope('internal_error', 'The work module is unavailable.', 500, 'req-tasks-1'),
+    })
+    renderDashboard()
+
+    const deadlines = await alertForRequest('req-tasks-1')
+    expect(deadlines).toHaveTextContent('Upcoming deadlines could not load')
+    expect(deadlines).toHaveTextContent('The work module is unavailable.')
+    // The empty state made the opposite claim, and it must not survive.
+    expect(screen.queryByText('Nothing due in this window')).not.toBeInTheDocument()
+    // The retry is scoped to the panel that failed, not to the whole page.
+    expect(within(deadlines).getByRole('button', { name: /retry/i })).toBeEnabled()
+
+    // Every other panel still rendered: one bad request must not blank the page.
+    expect(screen.getByRole('heading', { name: 'Upcoming deadlines' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Project performance' })).toBeInTheDocument()
+    // "Atlas" names a project in the performance panel and a slice in the
+    // donut's legend, so it is matched by presence rather than by count.
+    expect(screen.getAllByText('Atlas').length).toBeGreaterThan(0)
+    expect(screen.getByText('Task completed')).toBeInTheDocument()
+  })
+
+  it('reports a failed project and activity panel on its own, not as zeroes', async () => {
+    installBackend({
+      projects: () =>
+        envelope('internal_error', 'The rollup did not build.', 500, 'req-projects-1'),
+      activity: () =>
+        envelope('internal_error', 'The work feed is unavailable.', 500, 'req-activity-1'),
+    })
+    renderDashboard()
+
+    const projects = await alertForRequest('req-projects-1')
+    const activity = await alertForRequest('req-activity-1')
+
+    expect(projects).toHaveTextContent('Project performance could not load')
+    expect(activity).toHaveTextContent('Recent activity could not load')
+    // Neither panel's empty state may stand in for the failure.
+    expect(screen.queryByText('No activity recorded yet')).not.toBeInTheDocument()
+    // The panel that did answer is untouched.
+    expect(screen.getByText('Draft the migration plan')).toBeInTheDocument()
+  })
+
+  it('reports a failed time-distribution read rather than an empty donut', async () => {
+    installBackend({
+      time: () =>
+        envelope('internal_error', 'The distribution query timed out.', 500, 'req-time-1'),
+    })
+    renderDashboard()
+
+    const alert = await alertForRequest('req-time-1')
+    expect(alert).toHaveTextContent('Where the time went could not load')
+    expect(alert).toHaveTextContent('The distribution query timed out.')
+    expect(
+      screen.queryByText('No work session has been completed in this window.'),
+    ).not.toBeInTheDocument()
+  })
+
   it('renders a relative timestamp for a recorded event', async () => {
     installBackend()
     renderDashboard()

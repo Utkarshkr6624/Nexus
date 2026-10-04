@@ -94,6 +94,25 @@ _CREDENTIAL_ROUTES = frozenset({"/auth/login", "/auth/password/forgot"})
 #: path. See :data:`_CREDENTIAL_ROUTES`.
 _CREDENTIAL_BUCKET = "credential"
 
+#: Routes measured against the same tighter budget but counted **separately** from
+#: it. ``/auth/register`` is unauthenticated, answers with a 409 for an address
+#: or username that already exists, and runs a bcrypt hash on every accepted
+#: request — so leaving it on the generous budget made it both an account
+#: enumeration oracle and a way to buy a quarter of a second of server CPU per
+#: call from an unauthenticated caller.
+#:
+#: It does not *share* the ``credential`` bucket, because it is a different
+#: attack and the sharing above has a specific justification: guessing a password
+#: and enumerating an address are the same probe, so splitting traffic between
+#: them must not double the allowance. Registering is not that probe, and a
+#: shared bucket would mean the ordinary path through a first session — register,
+#: then sign in — cannot be completed inside one window, which is a product
+#: failure rather than a security win.
+_ACCOUNT_ROUTES = frozenset({"/auth/register"})
+
+#: The bucket key for :data:`_ACCOUNT_ROUTES`, in place of its own path.
+_ACCOUNT_BUCKET = "account"
+
 #: Never counted against a budget. A CORS preflight carries no credentials and
 #: reaches no handler, so counting it would silently halve the attempts a
 #: browser client is allowed against ``/auth/login``.
@@ -349,7 +368,7 @@ class RateLimitMiddleware:
     It is also keyed on the *concrete* path, so an enumerator varying the last
     segment (``/projects/1``, ``/projects/2``, ...) draws a fresh budget each
     time. That is acceptable here because this bucket is the generous one; the
-    credential routes it exists for are fixed paths by construction.
+    two tight budgets it exists for are fixed paths by construction.
     """
 
     def __init__(
@@ -379,13 +398,9 @@ class RateLimitMiddleware:
             return
 
         path = scope["path"]
-        credential = self._is_credential_route(path)
+        bucket, limit, budget = self._budget_for(path)
         client = _client_ip(Request(scope), trust_forwarded=self.trust_forwarded) or _UNKNOWN_CLIENT
-        verdict = self._limiter.consume(
-            (client, _CREDENTIAL_BUCKET if credential else path),
-            self._now(),
-            self.credential_limit if credential else self.general_limit,
-        )
+        verdict = self._limiter.consume((client, bucket), self._now(), limit)
         if verdict.allowed:
             await self.app(scope, receive, send)
             return
@@ -397,7 +412,7 @@ class RateLimitMiddleware:
             path=path,
             client_ip=client,
             retry_after_seconds=verdict.retry_after,
-            budget="credential" if credential else "general",
+            budget=budget,
         )
         # The same envelope every other failure uses, so the frontend needs no
         # special case: `request_id` comes from the request context this
@@ -414,9 +429,28 @@ class RateLimitMiddleware:
 
     def _is_credential_route(self, path: str) -> bool:
         """Whether ``path`` is one of the credential routes, prefix removed."""
+        return self._strip_prefix(path) in _CREDENTIAL_ROUTES
+
+    def _budget_for(self, path: str) -> tuple[str, int, str]:
+        """The bucket key, the ceiling and the log label for ``path``.
+
+        Three budgets, resolved here rather than at the call site so a route can
+        never be counted under one ceiling while being reported under another.
+        The tight ones share one number; what separates them is the *bucket*, and
+        that is deliberate — see :data:`_ACCOUNT_ROUTES`.
+        """
+        relative = self._strip_prefix(path)
+        if relative in _CREDENTIAL_ROUTES:
+            return _CREDENTIAL_BUCKET, self.credential_limit, "credential"
+        if relative in _ACCOUNT_ROUTES:
+            return _ACCOUNT_BUCKET, self.credential_limit, "account"
+        return path, self.general_limit, "general"
+
+    def _strip_prefix(self, path: str) -> str:
+        """``path`` with ``Settings.api_v1_prefix`` removed, if it carried one."""
         if self.prefix and path.startswith(self.prefix):
-            path = path[len(self.prefix) :] or "/"
-        return path in _CREDENTIAL_ROUTES
+            return path[len(self.prefix) :] or "/"
+        return path
 
 
 def _access_log_level(status_code: int, duration_ms: float, slow_request_ms: int) -> int:

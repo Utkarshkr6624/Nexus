@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { CircleAlert, Lightbulb } from 'lucide-react'
 
 import { ErrorState } from '@/components/feedback/error-state'
+import { LiveStatus } from '@/components/feedback/live-status'
 import { PageHeader } from '@/components/feedback/page-header'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -339,11 +340,9 @@ const actionErrorFor = (id: UUIDString): string | null => {
           )}</p>}
         </div>
 
-        {list.isPlaceholderData && (
-          <p role="status" className="text-xs text-muted-foreground">
-            Updating for the selected filter…
-          </p>
-        )}
+        <LiveStatus active={list.isPlaceholderData} className="text-xs text-muted-foreground">
+          Updating for the selected filter…
+        </LiveStatus>
       </section>
 
       {list.isError && !list.isPlaceholderData ? (

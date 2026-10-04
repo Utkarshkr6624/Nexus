@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 
 /**
@@ -72,6 +72,13 @@ function installEnvironmentShims(): void {
     })
   }
 }
+
+// Testing Library resolves `findBy*` against a 1 s default, which is shorter
+// than a recharts surface needs to paint under load — the failure surfaced as a
+// "unable to find" on an element that was present, which is a worse message than
+// a timeout and points the reader at the wrong thing. Raised to match the
+// suite's own `testTimeout` rather than patched per call site.
+configure({ asyncUtilTimeout: 20_000 })
 
 beforeEach(() => {
   vi.unstubAllGlobals()

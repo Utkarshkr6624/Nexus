@@ -25,7 +25,9 @@ What each test is for
 * **Decay.** A budget that never returns turns a burst into an outage.
 * **The budget split.** Credential routes draw on their own, tighter budget, so
   a login flood cannot hide inside general API traffic, and one address cannot
-  exhaust another's.
+  exhaust another's. Registration draws on the same tight number under a
+  separate key, so it is throttled without taking the login budget away from a
+  client that is signing in for the first time.
 * **Enumeration.** The limiter must not make guessing *easier*, so every attempt
   inside the budget is still answered by the auth service: 401 for a wrong
   password, never 429.
@@ -62,6 +64,7 @@ pytestmark = pytest.mark.integration
 
 LOGIN_PATH = "/api/v1/auth/login"
 FORGOT_PATH = "/api/v1/auth/password/forgot"
+REGISTER_PATH = "/api/v1/auth/register"
 GENERAL_PATH = "/_test/general"
 
 #: Registered through the API rather than seeded, because the assertion under
@@ -255,6 +258,49 @@ async def test_each_credential_route_draws_on_one_shared_budget(client_for):
 
     assert (await client.post(FORGOT_PATH, json=payload)).status_code == 429
     assert (await client.post(LOGIN_PATH, json=WRONG)).status_code == 429
+
+
+async def test_registration_is_throttled_at_the_tight_budget(client_for):
+    """`/auth/register` draws on a tight budget of its own, not the general one.
+
+    It is the one route that is unauthenticated *and* expensive: every accepted
+    registration runs a bcrypt hash, and every rejected one answers 409 for an
+    address or username that already exists. Left on the generous budget it was
+    both a quarter of a second of server CPU per call, on request, from an
+    anonymous caller, and an enumeration oracle with a 600-per-minute allowance.
+    """
+    client = client_for()
+    # Each registration is a distinct account, so none of them is refused by a
+    # duplicate check — the budget is what has to stop them.
+    for index in range(CREDENTIAL_BUDGET):
+        response = await client.post(
+            REGISTER_PATH,
+            json={
+                "email": f"new{index}@nexus.test",
+                "username": f"new{index}",
+                "password": "Correct-Horse-9",
+            },
+        )
+        assert response.status_code == 201, response.text
+
+    assert (await client.post(REGISTER_PATH, json={**CREDENTIALS})).status_code == 429
+
+
+async def test_registration_does_not_spend_the_login_budget(client_for):
+    """Registering and then signing in both fit inside one window.
+
+    The two budgets are separate on purpose. Sharing them would mean the
+    ordinary path through a first session cannot be completed inside the budget,
+    which is a product failure rather than a security win — the sharing between
+    ``/auth/login`` and ``/auth/password/forgot`` exists because *those* two are
+    one attack, and registering is not.
+    """
+    client = client_for()
+    await _register(client)
+
+    for _ in range(CREDENTIAL_BUDGET):
+        response = await client.post(LOGIN_PATH, json=WRONG)
+        assert response.status_code == 401, response.text
 
 
 async def test_one_client_address_does_not_spend_another_one_s_budget(client_for):

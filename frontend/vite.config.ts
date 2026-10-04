@@ -119,6 +119,13 @@ export default defineConfig(({ mode }) => {
       globals: false,
       setupFiles: ['./src/test/setup.ts'],
       css: false,
+      // Measured, not guessed: the chart-heavy page tests settle in 1-2 s on an
+      // idle machine and took up to 12 s when the suite ran beside other work.
+      // Vitest's 5 s default turned that variance into seven intermittent
+      // failures that had nothing to do with the code under test. Twenty
+      // seconds is past every observed value and still far short of a hang, so a
+      // genuinely stuck test still fails rather than blocking the run.
+      testTimeout: 20_000,
       include: ['src/**/*.{test,spec}.{ts,tsx}'],
       coverage: {
         provider: 'v8',

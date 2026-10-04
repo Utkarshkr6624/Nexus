@@ -698,13 +698,6 @@ class ProjectService:
         project_id = project.id
         name = project.name
         await self.repository.delete(project)
-        # ``PROJECT_DELETED`` does not exist in :class:`ActivityEvent` — the
-        # vocabulary has no member for it, unlike the task feed's
-        # ``TASK_DELETED``. Rather than leave the deletion unrecorded, or invent
-        # an event type nothing else will filter on, this is recorded as an
-        # update carrying the fact. A Phase 3 vocabulary review should add the
-        # member; flagged for review.
-        #
         # ``project_id`` is deliberately ``None``: passing the id this call just
         # deleted raises ``ForeignKeyViolation`` inside the best-effort audit
         # write, which swallows it — so the deletion would go unrecorded while
@@ -712,11 +705,11 @@ class ProjectService:
         # instead, which is where a deleted row's identity has to live now that
         # the join it supported no longer has a row on the other end.
         await self._record(
-            ActivityEvent.PROJECT_UPDATED,
+            ActivityEvent.PROJECT_DELETED,
             owner=owner,
             project=None,
             project_id=None,
-            metadata={"deleted": True, "project_id": str(project_id), "name": name},
+            metadata={"project_id": str(project_id), "name": name},
         )
 
     # -- Aggregates ----------------------------------------------------------

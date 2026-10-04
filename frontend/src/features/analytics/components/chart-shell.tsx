@@ -19,8 +19,17 @@ export interface ChartShellProps {
   title: string
   subtitle?: ReactNode
   actions?: ReactNode
-  /** Nothing to plot: the caller's reason, not a zeroed axis. */
+  /**
+   * Nothing to plot: the caller's reason, not a zeroed axis.
+   *
+   * `error` is a separate slot rather than a flavour of `empty` because a
+   * failed read and an empty one are different claims: `empty` says the window
+   * was measured and held nothing, `error` says it was never measured. A
+   * caller whose query failed passes the failure here so the chart cannot draw
+   * its empty copy over a request that never came back.
+   */
   empty?: ReactNode
+  error?: ReactNode
   isLoading?: boolean
   skeletonHeight?: number
   className?: string
@@ -33,6 +42,7 @@ export function ChartShell({
   subtitle,
   actions,
   empty,
+  error,
   isLoading = false,
   skeletonHeight = 256,
   className,
@@ -52,6 +62,8 @@ export function ChartShell({
         <div className="h-64 w-full min-w-0" style={{ minHeight: skeletonHeight }}>
           {isLoading ? (
             <Skeleton className="h-full w-full" />
+          ) : error ? (
+            <div className="flex h-full items-start">{error}</div>
           ) : empty ? (
             empty
           ) : (

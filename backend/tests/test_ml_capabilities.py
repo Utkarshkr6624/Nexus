@@ -56,7 +56,11 @@ EXPECTED_DOMAINS = 21
 EXPECTED_RECOMMENDATION_TYPES = 12
 EXPECTED_RISK_TYPES = 7
 EXPECTED_PERMISSIONS = 11
-EXPECTED_ACTIVITY_EVENTS = 62
+# Phase 14 added `PROJECT_DELETED`. A project deletion had been recorded as
+# `PROJECT_UPDATED` with a `deleted: true` in its metadata, so every reader
+# filtering the feed for deletions saw none — and `TASK_DELETED` already
+# existed for the same moment on the other entity.
+EXPECTED_ACTIVITY_EVENTS = 63
 
 
 @pytest.fixture(scope="module")

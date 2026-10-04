@@ -39,6 +39,14 @@ export interface TimeDistributionChartProps {
   totalMinutes: number
   reasonIfUnavailable?: string | null
   isLoading?: boolean
+  /**
+   * The caller's failure surface, shown in place of the donut.
+   *
+   * Without it a failed request renders `EmptyAnalytics` over `buckets = []`,
+   * which states that no time was recorded in the window — the opposite of what
+   * a 500 knows, and a reader could act on it.
+   */
+  error?: ReactNode
   className?: string
   /** Only the largest few are drawn; the rest are folded into "Other". */
   maxSlices?: number
@@ -52,6 +60,7 @@ export function TimeDistributionChart({
   totalMinutes,
   reasonIfUnavailable,
   isLoading = false,
+  error,
   className,
   maxSlices = 6,
 }: TimeDistributionChartProps) {
@@ -156,6 +165,7 @@ export function TimeDistributionChart({
       title={title}
       subtitle={subtitle}
       isLoading={isLoading}
+      error={error}
       className={className}
       empty={empty ? <EmptyAnalytics metric="time" reason={reasonIfUnavailable} /> : undefined}
     >

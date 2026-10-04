@@ -507,9 +507,15 @@ class AnalyticsRepository:
 
         Grouped on ``created_at``: that is the instant the row came into being, and
         it is the one a "tasks created" chart means. The window predicate is on the
-        raw ``timestamptz`` column rather than on ``func.date(...)``, so the scan
-        stays inside ``ix_tasks_owner_status_due`` instead of degrading into a
-        filter over every row the user owns.
+        raw ``timestamptz`` column rather than on ``func.date(...)``, which is what
+        lets it be an index range at all — wrapping the column in a function makes
+        it un-indexable whatever indexes exist. Which index is a separate question,
+        and this method used to answer it wrongly in its own docstring: it claimed
+        the scan "stays inside ``ix_tasks_owner_status_due``", which is
+        ``(owner_id, status, due_date)`` and mentions neither of this query's two
+        range columns, so ``EXPLAIN`` showed a ``Seq Scan on tasks`` over the
+        account's whole history. ``0011`` added ``ix_tasks_owner_created`` for
+        this shape, and the plan is now a ``Bitmap Heap Scan``.
         """
         start_utc, end_utc = _utc_window(start, end)
         day = utc_day(Task.created_at)

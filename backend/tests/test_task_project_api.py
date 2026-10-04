@@ -77,6 +77,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.schemas.task as task_schema
+from app.models.activity import ActivityLog
+from app.models.enums import ActivityEvent
 from app.models.planner import CalendarEvent, WorkSession
 from app.models.tag import Tag
 from app.repositories.project import ProjectRepository
@@ -899,3 +901,48 @@ async def _project_rows(session: AsyncSession, model: type, project_id: uuid.UUI
     return await session.scalar(
         select(func.count()).select_from(model).where(model.project_id == project_id)
     )
+
+
+async def _event_types(session: AsyncSession, user_id: uuid.UUID) -> list[str]:
+    """This account's activity feed, in the order the rows were written."""
+    rows = await session.execute(
+        select(ActivityLog.event_type)
+        .where(ActivityLog.user_id == user_id)
+        .order_by(ActivityLog.created_at, ActivityLog.id)
+    )
+    return [row[0] for row in rows.all()]
+
+
+async def test_deleting_a_project_is_recorded_as_a_deletion(client, db_session):
+    """The feed says the project was deleted, and says it only once.
+
+    A delete is a moment that happened, not a mutation of a row that is still
+    there — and this service used to record it as ``PROJECT_UPDATED`` with a
+    ``deleted`` flag in the metadata. Every consumer filtering the feed for
+    deletions therefore saw no deletion at all, and every "what changed in this
+    project" reader counted the removal as an edit. The event the task feed
+    already had for the same moment is ``TASK_DELETED``; this is its project
+    counterpart, not a new idea.
+
+    The id travels in ``metadata`` and not on ``project_id``, because the row
+    that column points at is gone and a best-effort write that violates the
+    foreign key would be swallowed — losing the event while still answering 204.
+    """
+    seed, auth = await seeded_client(client, db_session)
+    doomed = await seed.project(name="Doomed")
+
+    before = await _event_types(db_session, seed.owner.id)
+    deleted = await client.delete(f"/api/v1/projects/{doomed.id}", headers=auth)
+    assert deleted.status_code == 204, deleted.text
+
+    after = await _event_types(db_session, seed.owner.id)
+    assert after[len(before) :] == [ActivityEvent.PROJECT_DELETED.value]
+    assert ActivityEvent.PROJECT_UPDATED.value not in after[len(before) :]
+
+    event = await db_session.execute(
+        select(ActivityLog.metadata_).where(
+            ActivityLog.user_id == seed.owner.id,
+            ActivityLog.event_type == ActivityEvent.PROJECT_DELETED.value,
+        )
+    )
+    assert event.scalar_one() == {"project_id": str(doomed.id), "name": "Doomed"}

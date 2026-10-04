@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import { CalendarClock, GraduationCap, Lightbulb, Play, Plus, Sparkles, Target } from 'lucide-react'
 
 import { ErrorState } from '@/components/feedback/error-state'
+import { LiveStatus } from '@/components/feedback/live-status'
 import { LoadingState } from '@/components/feedback/loading-state'
 import { PageHeader } from '@/components/feedback/page-header'
 import { Button } from '@/components/ui/button'
@@ -730,11 +731,9 @@ export default function LearningPage() {
             </div>
           </div>
 
-          {activities.isPlaceholderData && (
-            <p role="status" className="mt-3 text-xs text-muted-foreground">
-              Updating for the selected window…
-            </p>
-          )}
+          <LiveStatus active={activities.isPlaceholderData} className="mt-3 text-xs text-muted-foreground">
+            Updating for the selected window…
+          </LiveStatus>
         </div>
 
         <LearningActivityTimeline

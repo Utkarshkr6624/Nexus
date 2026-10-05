@@ -107,6 +107,21 @@ const TAB_SORTS: Record<ListTab, readonly string[]> = {
 }
 
 /**
+ * Resolves the URL's `sort` against the allowlist of the tab actually open.
+ *
+ * `sort` is one parameter shared by four lists with four different allowlists —
+ * `name` orders concepts and is a 422 for notes, resources and bookmarks. A value
+ * that was valid where it was chosen, or that arrived on a shared or stale link,
+ * must not be sent on faith: the service answers an unknown key with a 422 no
+ * retry can clear. Falling back to the tab's own default narrows the request
+ * instead of breaking it, which is what every other URL value here does.
+ */
+function resolveSort(tab: ListTab, requested: string | undefined): string {
+  if (requested && (TAB_SORTS[tab] as readonly string[]).includes(requested)) return requested
+  return TAB_DEFAULTS[tab].sort
+}
+
+/**
  * The URL is the source of truth for every piece of view state — tab, filters,
  * sort, page — so a filtered browser survives a refresh and can be shared.
  * Values are resolved against the same allowlists the backend validates
@@ -464,7 +479,7 @@ export default function KnowledgePage() {
 
   const tab: ListTab = view.tab === 'graph' ? 'notes' : view.tab
   const defaults = TAB_DEFAULTS[tab]
-  const sort = view.sort ?? defaults.sort
+  const sort = resolveSort(tab, view.sort)
   const order = view.order ?? defaults.order
   const debouncedQ = useDebouncedValue(view.q, 300)
 
@@ -559,27 +574,43 @@ export default function KnowledgePage() {
     Boolean(debouncedQ)
 
   /**
-   * Status, type, search and sort are the endpoint's own filters. **Tag and date
-   * range are not** — `GET /knowledge/notes` declares no `tag_ids` and no
-   * `updated_after`, and FastAPI ignores an undeclared parameter rather than
-   * 422-ing it, so sending them would silently return the unfiltered list.
-   * They are applied here over the fetched window instead, and the notice
-   * below the filter bar says so whenever one is narrowing the view.
+   * Only notes and concepts carry `tag_ids`; a resource or a bookmark row has no
+   * such column, so a tag pressed on those tabs would empty the list rather than
+   * narrow it. The chips are hidden there for the same reason.
    */
-  const clientFilterActive = view.tags.length > 0 || Boolean(view.after) || Boolean(view.before)
+  const tagsApply = tab === 'notes' || tab === 'concepts'
+
+  /**
+   * Status, search and sort are the endpoint's own filters. **Resource type, tag
+   * and date range are not** — `GET /knowledge/resources` declares no
+   * `resource_type` (the openapi parameter list is `limit, offset, search,
+   * sort, order`) and `GET /knowledge/notes` declares neither `tag_ids` nor
+   * `updated_after`. FastAPI ignores an undeclared parameter rather than
+   * 422-ing it, so sending them would silently return the unfiltered list while
+   * the control claimed to be narrowing it. They are applied here over the
+   * fetched window instead, and the notice below the filter bar says so
+   * whenever one is narrowing the view.
+   */
+  const clientFilterActive =
+    (tagsApply && view.tags.length > 0) ||
+    Boolean(view.resourceType) ||
+    Boolean(view.after) ||
+    Boolean(view.before)
   const visible = useMemo(() => {
     if (!clientFilterActive) return listItems
     return listItems.filter((item) => {
       const record = item as {
         tag_ids?: string[]
+        resource_type?: ResourceType
         updated_at?: string
         archived_at?: string | null
         created_at?: string
       }
-      if (view.tags.length > 0) {
+      if (tagsApply && view.tags.length > 0) {
         const ids = record.tag_ids ?? []
         if (!view.tags.every((id) => ids.includes(id))) return false
       }
+      if (view.resourceType && record.resource_type !== view.resourceType) return false
       const stamp = record.archived_at ?? record.updated_at ?? record.created_at
       if (stamp) {
         if (view.after && stamp.slice(0, 10) < view.after) return false
@@ -587,7 +618,15 @@ export default function KnowledgePage() {
       }
       return true
     })
-  }, [clientFilterActive, listItems, view.tags, view.after, view.before])
+  }, [
+    clientFilterActive,
+    listItems,
+    tagsApply,
+    view.tags,
+    view.resourceType,
+    view.after,
+    view.before,
+  ])
 
   const deleteBookmark = useDeleteBookmark()
   const deleteResource = useDeleteResource()
@@ -819,7 +858,7 @@ export default function KnowledgePage() {
           </div>
         </div>
 
-        {tagPage && tagPage.items.length > 0 && (
+        {tagsApply && tagPage && tagPage.items.length > 0 && (
           <fieldset className="mt-3 space-y-1.5">
             <legend className="text-xs font-medium text-muted-foreground">
               Tags — a note must carry every tag selected
@@ -855,7 +894,7 @@ export default function KnowledgePage() {
             {activeList.isPending
               ? 'Loading…'
               : clientFilterActive
-                ? `${visible.length} of ${total} shown — tag and date filters run over the ${PAGE_SIZE} rows on this page`
+                ? `${visible.length} of ${total} shown — type, tag and date filters run over the ${PAGE_SIZE} rows on this page`
                 : `${total} ${tab.replace(/s$/, '')}${total === 1 ? '' : 's'}`}
           </p>
           {filtering ? (
@@ -882,7 +921,13 @@ export default function KnowledgePage() {
         </div>
       </div>
 
-      <Tabs value={view.tab} onValueChange={(next) => apply({ tab: next as Tab })}>
+      <Tabs
+        value={view.tab}
+        // The sort is dropped with the tab: leaving it behind would ask the next
+        // list for an ordering it does not have, which is a 422 rather than a
+        // different order. Each tab resolves its own default instead.
+        onValueChange={(next) => apply({ tab: next as Tab, sort: undefined })}
+      >
         <TabsList>
           <TabsTrigger value="notes">Notes</TabsTrigger>
           <TabsTrigger value="concepts">Concepts</TabsTrigger>

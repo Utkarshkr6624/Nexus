@@ -156,19 +156,28 @@ def _domain_from_url(url: str) -> str | None:
 
     Never from the client: a caller-supplied domain is a caller-supplied lie, and
     it is the shape a phishing bookmark takes — filed under a domain it does not
-    belong to, and rendered by every client that groups by it. The host is taken
-    from ``urlsplit(...).netloc`` with the port stripped, lower-cased because a
-    host is case-insensitive and ``EXAMPLE.com`` and ``example.com`` are one
-    domain. ``None`` for anything without a host rather than a guess.
+    belong to, and rendered by every client that groups by it. The host comes
+    from :attr:`urllib.parse.SplitResult.hostname`, which is the parsed **host**
+    rather than ``netloc``: ``hostname`` drops the credentials and the port, and
+    lower-cases the host, so ``EXAMPLE.com:8443`` and ``example.com`` are one
+    domain and ``[::1]:8080`` is ``::1`` rather than a second "domain" for
+    localhost.
+
+    **``netloc`` was the wrong half of the parse and it was a security bug, not a
+    cosmetic one.** ``https://user:pw@example.com`` has the netloc
+    ``user:pw@example.com``, and the old partition-on-``:`` read ``user`` — a
+    bookmark filed under a *username*, grouped beside every other bookmark whose
+    user happens to be called ``user``. Worse, ``https://github.com@evil.example/x``
+    parsed to the whole ``github.com@evil.example``, which renders as a github.com
+    bookmark and is not one: everything before the ``@`` in a netloc is
+    credentials and everything after it is the host. The one field that exists to
+    make the origin readable was being filled from the part of the URL a phisher
+    controls most freely.
+
+    ``None`` for anything without a host rather than a guess.
     """
-    host = urlsplit(url.strip()).netloc.lower()
-    if not host:
-        return None
-    # Strip the port and the IPv6 brackets that bracket a literal address, so
-    # `example.com:8443` groups with `example.com` and `[::1]:8080` does not
-    # become a second "domain" for localhost.
-    host = host.partition("]")[0] + "]" if host.startswith("[") else host.partition(":")[0]
-    return host or None
+    host = urlsplit(url.strip()).hostname
+    return host.lower() if host else None
 
 
 # --------------------------------------------------------------------------- #
@@ -637,12 +646,48 @@ class ConceptRepository:
             grouped.setdefault(concept_id, []).append(tag)
         return grouped
 
-    async def set_tags(self, concept_id: uuid.UUID, tag_ids: Sequence[uuid.UUID]) -> None:
-        """Replace a concept's tags with exactly this set."""
+    async def owned_tag_ids(
+        self, tag_ids: Sequence[uuid.UUID], owner_id: uuid.UUID
+    ) -> set[uuid.UUID]:
+        """Which of these tag ids are this user's tags.
+
+        **The check that makes writing a tag edge safe.** ``concept_tags.tag_id``
+        is a foreign key to *any* tag, so an unchecked write attaches somebody
+        else's label to the caller's own concept — a cross-tenant row written
+        through a completely legitimate-looking payload. The service compares the
+        answer against what was asked for and refuses the difference, so the
+        refusal happens before anything is written rather than as an
+        ``IntegrityError`` afterwards.
+        """
+        wanted = list(dict.fromkeys(tag_ids))
+        if not wanted:
+            return set()
+        result = await self.session.execute(
+            select(Tag.id).where(Tag.owner_id == owner_id, Tag.id.in_(wanted))
+        )
+        return {row[0] for row in result.all()}
+
+    async def set_tags(
+        self, concept_id: uuid.UUID, tag_ids: Sequence[uuid.UUID], *, owner_id: uuid.UUID
+    ) -> None:
+        """Replace a concept's tags with exactly this set.
+
+        Delete-then-insert rather than a diff, for the reason given on
+        :meth:`NoteRepository.set_tags`: the caller has decided the full desired
+        set. Ids are deduplicated because the composite primary key would reject a
+        repeat as a 500, and only ids this owner holds are written — see
+        :meth:`owned_tag_ids`, which the service runs first and whose answer this
+        method assumes rather than re-deriving.
+        """
+        owned = await self.owned_tag_ids(tag_ids, owner_id)
+        rows = [
+            {"concept_id": concept_id, "tag_id": tag_id}
+            for tag_id in dict.fromkeys(tag_ids)
+            if tag_id in owned
+        ]
         await self.session.execute(
             delete(concept_tags).where(concept_tags.c.concept_id == concept_id)
         )
-        rows = [{"concept_id": concept_id, "tag_id": tag_id} for tag_id in dict.fromkeys(tag_ids)]
         if rows:
             await self.session.execute(insert(concept_tags), rows)
         await self.session.commit()
@@ -946,20 +991,30 @@ class BookmarkRepository:
         await self.session.delete(bookmark)
         await self.session.commit()
 
-    async def search(self, owner_id: uuid.UUID, term: str, *, limit: int) -> list[Bookmark]:
-        """Substring search over title, description and URL, bounded in SQL."""
+    async def search(
+        self, owner_id: uuid.UUID, term: str, *, limit: int, include_archived: bool = False
+    ) -> list[Bookmark]:
+        """Substring search over title, description and URL, bounded in SQL.
+
+        Archived bookmarks are excluded unless ``include_archived`` says otherwise,
+        on the same rule :meth:`list_for_user` applies: an archive is "not in my
+        working set", and a search is a view of the working set. The flag exists
+        so "where did I put that link?" has an answer that is not "it is gone".
+        """
         pattern = _search_pattern(term)
+        filters = [
+            Bookmark.owner_id == owner_id,
+            or_(
+                Bookmark.title.ilike(pattern, escape="\\"),
+                Bookmark.description.ilike(pattern, escape="\\"),
+                Bookmark.url.ilike(pattern, escape="\\"),
+            ),
+        ]
+        if not include_archived:
+            filters.append(Bookmark.archived_at.is_(None))
         result = await self.session.execute(
             select(Bookmark)
-            .where(
-                Bookmark.owner_id == owner_id,
-                Bookmark.archived_at.is_(None),
-                or_(
-                    Bookmark.title.ilike(pattern, escape="\\"),
-                    Bookmark.description.ilike(pattern, escape="\\"),
-                    Bookmark.url.ilike(pattern, escape="\\"),
-                ),
-            )
+            .where(*filters)
             .order_by(Bookmark.created_at.desc(), Bookmark.id.desc())
             .limit(limit)
         )
@@ -1078,6 +1133,31 @@ class DocumentRepository:
         """
         await self.session.delete(document)
         await self.session.commit()
+
+    async def search(self, owner_id: uuid.UUID, term: str, *, limit: int) -> list[Document]:
+        """Substring search over filename, title and description, bounded in SQL.
+
+        The same predicate :meth:`list_for_user` applies for ``search``, on the
+        same three columns, so ``GET /knowledge/documents?search=`` and
+        ``GET /knowledge/search?q=`` cannot disagree about whether a document
+        matches. Documents had no search at all, which is why the global endpoint
+        answered "nothing" for a term the documents list answered with two rows.
+        """
+        pattern = _search_pattern(term)
+        result = await self.session.execute(
+            select(Document)
+            .where(
+                Document.owner_id == owner_id,
+                or_(
+                    Document.filename.ilike(pattern, escape="\\"),
+                    Document.title.ilike(pattern, escape="\\"),
+                    Document.description.ilike(pattern, escape="\\"),
+                ),
+            )
+            .order_by(Document.updated_at.desc(), Document.id.desc())
+            .limit(limit)
+        )
+        return list(result.scalars().all())
 
 
 # --------------------------------------------------------------------------- #
@@ -1466,9 +1546,20 @@ class KnowledgeLinkRepository:
         return await _paginate_and_count(self.session, page, KnowledgeLink, filters)
 
     async def list_for_owner(
-        self, owner_id: uuid.UUID, *, limit: int, offset: int
+        self,
+        owner_id: uuid.UUID,
+        *,
+        limit: int,
+        offset: int,
+        link_type: str | None = None,
     ) -> tuple[list[KnowledgeLink], int]:
         """Every edge this owner owns, newest first, paginated.
+
+        **This is the answer to "show me all my links".** Naming a node is how a
+        caller asks what a node points at; it is not how a caller enumerates the
+        edge table, and an edge table reachable only node-by-node means a client
+        has to discover the nodes first — which it cannot do when the nodes it
+        wants are the ones it is looking for.
 
         Bounded even though it is owner-scoped: ``owner_id`` is not a selective
         index for this table (it is on the row, but the leading pair of either
@@ -1476,6 +1567,8 @@ class KnowledgeLinkRepository:
         thousands of edges. Paging is the answer; an unbounded "everything" is not.
         """
         filters = [KnowledgeLink.owner_id == owner_id]
+        if link_type is not None:
+            filters.append(KnowledgeLink.link_type == str(link_type))
         page = (
             select(KnowledgeLink)
             .where(*filters)
@@ -1502,6 +1595,22 @@ class KnowledgeLinkRepository:
         CTE on *both* endpoints, which is what keeps every returned edge pointing
         at two nodes that are actually present — an edge to a filtered-out node is
         dropped rather than drawn to nothing.
+
+        **The per-branch ``LIMIT`` is not the cap; it is the bound on the work.**
+        Three branches each limited to ``limit`` return up to ``3 * limit`` nodes,
+        which is why ``?limit=1`` used to answer with three nodes, ``?limit=10``
+        with thirteen and ``?limit=200`` with 203 — every value exactly three over,
+        and every one of them reported alongside a ``limit`` it had already
+        exceeded. The union is therefore capped **again** on the outside, by an
+        outer ``LIMIT limit`` over the pooled branches: the branches keep their
+        per-branch limit so no table is read whole, and the response can never
+        carry more than the number it says it does.
+
+        The outer ordering is by ``id`` so the answer is deterministic: the same
+        account at the same size gets the same graph on every call, which is what
+        makes ``truncated`` mean the same thing twice. It is deliberately not
+        ordered by type — that would fill the cap from whichever kind sorts first
+        and drop the other two entirely.
 
         **Re-establishing the endpoints is the price of the polymorphism.** The
         database cannot check that these ids exist or are owned, because
@@ -1557,7 +1666,13 @@ class KnowledgeLinkRepository:
             return GraphPayload(nodes=[], edges=[], truncated=False)
 
         combined = branches[0] if len(branches) == 1 else union_all(*branches)
-        nodes_cte = combined.cte("graph_nodes")
+        pool = combined.subquery("graph_node_pool")
+        nodes_cte = (
+            select(pool.c.id, pool.c.type, pool.c.label)
+            .order_by(pool.c.id.asc())
+            .limit(limit)
+            .cte("graph_nodes")
+        )
         source = nodes_cte.alias("src")
         target = nodes_cte.alias("dst")
 

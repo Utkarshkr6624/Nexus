@@ -2,7 +2,9 @@ import type { ReactNode } from 'react'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 
 import { ChartShell, ChartTooltip } from '@/features/analytics/components/chart-shell'
+import { ChartDataTable } from '@/features/analytics/components/chart-data-table'
 import { EmptyAnalytics } from '@/features/analytics/components/empty-analytics'
+import { describeSeries, formatChartValue } from '@/features/analytics/chart-theme'
 import { chartColor, formatMinutes, formatPercent } from '@/features/analytics/format'
 import type { TimeBucketRead } from '@/types/analytics'
 
@@ -25,6 +27,10 @@ interface DonutSlice {
  * label, the duration and the share, so the chart is readable without hovering
  * and the sums can be checked. `share` is `null` when the window's total is
  * zero, and renders as "no share" rather than as `0%` — a claim about nothing.
+ *
+ * The legend is drawn in words beside the donut, and the same rows sit behind a
+ * focusable disclosure as a table, so the breakdown is reachable by keyboard
+ * and readable without the drawing at all.
  */
 export interface TimeDistributionChartProps {
   title: string
@@ -98,6 +104,12 @@ export function TimeDistributionChart({
   const empty = slices.length === 0
   const total = totalMinutes || slices.reduce((sum, slice) => sum + slice.value, 0)
 
+  const description = `${describeSeries(
+    'Recorded time',
+    slices.map((slice) => ({ label: slice.label, value: slice.value })),
+    { format: (value) => formatChartValue(value, 'minutes') },
+  )} Split across ${slices.length} ${slices.length === 1 ? 'source' : 'sources'}.`
+
   const body = (
     <div className="flex h-full flex-col items-center gap-4 sm:flex-row sm:items-center">
       <div className="relative h-40 w-40 shrink-0 sm:h-44 sm:w-44">
@@ -167,6 +179,21 @@ export function TimeDistributionChart({
       isLoading={isLoading}
       error={error}
       className={className}
+      accessibility={{
+        description,
+        dataTable: (
+          <ChartDataTable
+            caption={title}
+            rowHeading="Source"
+            columns={['Recorded', 'Share']}
+            rows={slices.map((slice) => [
+              slice.label,
+              formatMinutes(slice.value),
+              total > 0 ? formatPercent((slice.value / total) * 100, 0) : '—',
+            ])}
+          />
+        ),
+      }}
       empty={empty ? <EmptyAnalytics metric="time" reason={reasonIfUnavailable} /> : undefined}
     >
       {body}

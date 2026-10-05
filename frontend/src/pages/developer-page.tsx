@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Code2, FolderPlus, Plus, RefreshCw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Code2, FolderPlus, Plus, RefreshCw, Trash2 } from 'lucide-react'
 
 import { ErrorState } from '@/components/feedback/error-state'
 import { LiveStatus } from '@/components/feedback/live-status'
@@ -35,15 +35,19 @@ import {
 import {
   DEVELOPER_WINDOW_PRESETS,
   useCreateRepository,
+  useDeleteRepository,
   useDeveloperActivity,
   useDeveloperCommits,
   useDeveloperMetrics,
   useDeveloperSummary,
   useDeveloperWindow,
   useRepositories,
+  useScanRepository,
 } from '@/features/developer/hooks'
 import type { DeveloperWindow, DeveloperWindowPresetId } from '@/features/developer/hooks'
+import { ConfirmDialog } from '@/features/work/components/confirm-dialog'
 import { useProjects } from '@/features/work/hooks'
+import { formatNumber } from '@/features/analytics/format'
 import type { ApiError } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
 import { toApiError, bannerError, fieldErrorMessages } from '@/services/errors'
@@ -104,11 +108,34 @@ import {
  * or not git could read the directory, so the dashboard never has to survive an
  * exception from a broken repository: the sentence is rendered by the repository
  * card and, after a manual scan, by the scan record on the detail page. The
- * dashboard itself only registers and rescans — the last of which is reachable
- * from a repository's own page.
+ * dashboard itself only registers, rescans and removes.
+ *
+ * ## Acting on a repository does not mean clicking through to its page
+ *
+ * A card registered but never scanned reports no branch, no commits and “Never
+ * scanned”, and every one of those is an honest sentence about a folder NEXUS has
+ * never opened. **The only thing that changes them is a scan, and nothing runs one
+ * on its own** — so a reader who has to find the scan button on a second page to
+ * learn anything about the directory they just registered has been sent somewhere
+ * pointless. Scan and remove therefore sit on the card itself, and the detail page
+ * keeps both because a reader who opened a repository directly should not have to
+ * go back to find them.
+ *
+ * The card owns no state of its own, so {@link RepositoryCardActions} holds the
+ * two mutations **per card** rather than per page: one `useScanRepository` on the
+ * page would put every card's button into the same pending state, and a scan of
+ * one repository would grey out the other eleven.
  */
 const REPOSITORY_PAGE_LIMIT = 12
-const TIMELINE_LIMIT = 25
+/**
+ * Five commits a page, so the timeline is *paged* rather than truncated.
+ *
+ * At the previous 25 the card held more rows than anyone read, and the last one
+ * was indistinguishable from the 24 above it — a reader had no way to tell the
+ * list was partial and no way to reach the rest. Five keeps a page readable and
+ * makes the arrow controls worth having, which is the whole point of them.
+ */
+const TIMELINE_LIMIT = 5
 const PROJECT_LIMIT = 100
 
 /** Stable empty array, so a memo below is not re-created on every render. */
@@ -160,6 +187,17 @@ export default function DeveloperPage() {
   const page = pageFromParam(searchParams.get('page'))
 
   /**
+   * The timeline's position, in a parameter of its own.
+   *
+   * `?page=` belongs to the repository grid, and `apply` clears it on every
+   * filter change — sharing it would reset the timeline each time a filter moved,
+   * and would let a grid page turn the timeline. `?commitPage=` moves with the
+   * timeline instead, and is written through the same `apply(..., false)`, so a
+   * shared link and the back button walk it exactly as they walk the grid.
+   */
+  const commitPageParam = pageFromParam(searchParams.get('commitPage'))
+
+  /**
    * Window-shaped reads.
    *
    * The summary and the metrics take `window_days` alone; the activity series
@@ -171,7 +209,10 @@ export default function DeveloperPage() {
   const summary = useDeveloperSummary(summaryParams)
   const metrics = useDeveloperMetrics(summaryParams)
   const activity = useDeveloperActivity(window.params)
-  const commits = useDeveloperCommits({ limit: TIMELINE_LIMIT, offset: 0 })
+  const commits = useDeveloperCommits({
+    limit: TIMELINE_LIMIT,
+    offset: (commitPageParam - 1) * TIMELINE_LIMIT,
+  })
   const repositories = useRepositories({
     limit: REPOSITORY_PAGE_LIMIT,
     offset: (page - 1) * REPOSITORY_PAGE_LIMIT,
@@ -200,6 +241,32 @@ export default function DeveloperPage() {
   const total = repositories.data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / REPOSITORY_PAGE_LIMIT))
   const filtering = isActive !== undefined || projectId !== undefined
+
+  const commitTotal = commits.data?.total ?? 0
+  const commitPageCount = Math.max(1, Math.ceil(commitTotal / TIMELINE_LIMIT))
+
+  /**
+   * The page actually shown, which is the requested page bounded by the pages
+   * that exist.
+   *
+   * A link can outlive its contents: `?commitPage=9` survives a rescan that
+   * rewrote history, or a repository being removed, and `total` then describes
+   * fewer pages than the link asked for. Serving that page would show an empty
+   * list under the timeline's own "no commit has been recorded yet" sentence — an
+   * absence the data contradicts. The bounded page is used for the request offset
+   * and for the "Page N of M" line alike, so the link lands on the last real page
+   * instead. Until the first answer arrives the total is unknown and the requested
+   * page is what goes on the wire; the correction follows on the next read.
+   */
+  const commitPage = commitTotal === 0 ? 1 : Math.min(commitPageParam, commitPageCount)
+
+  /** Page one is the absence of a parameter, as `page` already is. */
+  const goToCommitPage = useCallback(
+    (next: number) => {
+      apply({ commitPage: next > 1 ? String(next) : undefined }, false)
+    },
+    [apply],
+  )
 
   /**
    * The commit timeline's repository names.
@@ -342,7 +409,10 @@ export default function DeveloperPage() {
                   Repositories
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  One card per registered work tree. Open one to see its branches, its own commit
+                  One card per registered work tree, and every figure on a card is as of that
+                  repository's last scan — a card showing no branch, no commits and “Never scanned”
+                  is a directory NEXUS has not read yet, not an empty one. Each card can be scanned
+                  again or removed from here; opening one shows its branches, its own commit
                   history and its scan record.
                 </p>
               </div>
@@ -407,6 +477,7 @@ export default function DeveloperPage() {
                 recentWindowDays={summary.data?.window_days ?? null}
                 skeletonCount={6}
                 buildHref={(repository) => `/developer/${repository.id}`}
+                buildActions={(repository) => <RepositoryCardActions repository={repository} />}
                 emptyReason={
                   filtering
                     ? 'The repositories are registered and scanned; none of them match the filters selected above. Clearing the filters shows them again.'
@@ -462,6 +533,10 @@ export default function DeveloperPage() {
               namesById={namesById}
               error={commits.isError && !commits.isPlaceholderData ? commits.error : null}
               onRetry={() => void commits.refetch()}
+              page={commitPage}
+              pageCount={commitPageCount}
+              onPreviousPage={() => goToCommitPage(commitPage - 1)}
+              onNextPage={() => goToCommitPage(commitPage + 1)}
             />
 
             <LanguageBreakdown
@@ -516,6 +591,157 @@ export default function DeveloperPage() {
         projects={(projects.data?.items ?? []).map((project) => ({ id: project.id, name: project.name }))}
       />
     </div>
+  )
+}
+
+/* ------------------------------------------------------- card actions (mutations) */
+
+/**
+ * The two controls a repository card offers: scan it now, or remove it.
+ *
+ * **Both mutations already existed and both already invalidated
+ * `developerKeys.all()`**, so this adds no new request path and no new cache
+ * policy — it reuses `useScanRepository` and `useDeleteRepository` and reads their
+ * success and error callbacks the way the detail page does. That is what makes a
+ * card's figures actually change after a scan rather than a toast appearing over
+ * figures that were already stale: the invalidation re-reads the repository list,
+ * and the card is redrawn from the new row.
+ *
+ * ## Why the controls are not the card's link
+ *
+ * The card's link is its title. These render in the footer, so they are siblings
+ * of that link rather than descendants, and a `<button>` inside an `<a>` — which
+ * the browser resolves by navigating — cannot be what a press lands on. The card
+ * also stops the click reaching its container; see `stopActivation` in
+ * `features/developer/components/repository-card.tsx` for the whole argument.
+ *
+ * ## Why the state is per card and not per page
+ *
+ * Two `useMutation` instances per card, rather than two on the page. React Query
+ * tracks `isPending` per mutation, so one shared instance would put **every** card
+ * on the grid into the same busy state: scanning one repository would disable all
+ * twelve buttons and the reader could not scan a second until the first finished.
+ *
+ * ## The button says "Scan now" because it *is* the scan
+ *
+ * There is no background scheduler, so a control labelled "Refresh" would imply a
+ * re-read that NEXUS performs on its own, and there is none. The label matches the
+ * detail page's `ScanStatusPanel` word for word — including the pending state it
+ * spells out as "Scanning", because a scan shells out to git and can take seconds,
+ * and a control that silently stops responding reads as a broken page.
+ */
+function RepositoryCardActions({ repository }: { repository: RepositoryRead }) {
+  const scan = useScanRepository()
+  const remove = useDeleteRepository()
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const runScan = useCallback(() => {
+    // The button is already disabled while a scan is in flight; repeating the
+    // guard here keeps "one scan at a time" true for anything that is not a
+    // click — a keyboard repeat, or a caller reaching for the handler directly.
+    if (scan.isPending) return
+    scan.mutate(
+      { id: repository.id },
+      {
+        onSuccess: (run) => {
+          // A failed scan is a 200 carrying a sentence, not an exception: the
+          // repository stays registered and its recorded history is untouched,
+          // and the card renders the reason verbatim once the invalidation lands.
+          if (run.status === 'error') {
+            toast.error('The scan could not read this repository', run.error ?? undefined)
+            return
+          }
+          toast.success(
+            'Scan complete',
+            `${formatNumber(run.commits_discovered)} commits discovered, ` +
+              `${formatNumber(run.commits_added)} new, ` +
+              `${formatNumber(run.branches_discovered)} branches seen, in ${formatNumber(run.duration_ms)} ms.`,
+          )
+        },
+        onError: (cause) => toast.error('The scan did not complete', toApiError(cause).message),
+      },
+    )
+  }, [repository.id, scan])
+
+  const onDelete = useCallback(() => {
+    remove.mutate(repository.id, {
+      onSuccess: () => {
+        // No navigation: the dashboard is already where the reader is, and the
+        // invalidation re-reads the list, which is what takes the card off the
+        // grid. Removing the row locally instead would leave the summary tiles
+        // counting a repository the server no longer has.
+        toast.success(
+          'Repository removed',
+          'Its recorded commits, branches and scan record went with it.',
+        )
+      },
+      onError: (cause) => toast.error('Could not remove that repository', toApiError(cause).message),
+    })
+  }, [repository.id, remove])
+
+  return (
+    <>
+      {/* Named for the repository so "Scan now" on twelve cards is twelve
+          distinct controls to a screen reader, rather than one control repeated
+          with no way to say which repository it acts on. */}
+      <div
+        role="group"
+        aria-label={`Actions for ${repository.name}`}
+        className="flex flex-wrap items-center gap-2"
+      >
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={scan.isPending}
+          aria-busy={scan.isPending}
+          onClick={runScan}
+        >
+          {scan.isPending ? <Spinner size="sm" /> : <RefreshCw aria-hidden="true" />}
+          {scan.isPending ? 'Scanning' : 'Scan now'}
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="text-muted-foreground hover:text-destructive"
+          disabled={remove.isPending}
+          onClick={() => setConfirmOpen(true)}
+        >
+          <Trash2 aria-hidden="true" />
+          Remove
+        </Button>
+      </div>
+
+      {/* The controls change what has been *recorded*, never what the folder
+          currently contains — the button reads a snapshot at the moment it is
+          pressed, and says so, because "Scan now" beside a permanently stale
+          branch count could otherwise be read as a live view. */}
+      <p className="w-full text-xs text-muted-foreground">
+        A scan reads this folder once, on the machine NEXUS runs on, when you press it — nothing
+        here re-reads it on its own.
+      </p>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !remove.isPending) setConfirmOpen(false)
+        }}
+        title="Remove this repository?"
+        description={
+          `“${repository.name}” and every commit, branch and scan record NEXUS read from it will be ` +
+          'removed. The activity event stays in your trail. This cannot be undone.'
+        }
+        confirmLabel="Remove repository"
+        destructive
+        pending={remove.isPending}
+        onConfirm={() => {
+          setConfirmOpen(false)
+          onDelete()
+        }}
+      />
+    </>
   )
 }
 
@@ -801,6 +1027,10 @@ function TimelinePanel({
   namesById,
   error,
   onRetry,
+  page,
+  pageCount,
+  onPreviousPage,
+  onNextPage,
 }: {
   commits: CommitRead[]
   total: number
@@ -809,6 +1039,10 @@ function TimelinePanel({
   namesById: Record<UUIDString, string>
   error: unknown
   onRetry: () => void
+  page: number
+  pageCount: number
+  onPreviousPage: () => void
+  onNextPage: () => void
 }) {
   return (
     <section className="min-w-0 space-y-3" aria-labelledby="developer-timeline">
@@ -834,6 +1068,39 @@ function TimelinePanel({
           in flight `shown` is 0, and "every commit is shown here" would be a
           claim about a list that has not arrived. */}
       {!isLoading && !error && <TimelineScopeNote total={total} shown={commits.length} />}
+
+      {/* The arrows exist to make the scope note above true: a page of commits
+          with no way to ask for the next one is the truncation this replaces.
+          They are drawn only when there is somewhere to go — a single page, or an
+          account with no commits at all, would get two permanently dead controls —
+          and only once a real answer has arrived, since the count is the server's. */}
+      {!isLoading && !error && pageCount > 1 && (
+        <nav className="flex items-center justify-between gap-3" aria-label="Commit timeline pages">
+          <p className="text-xs text-muted-foreground">
+            Page {formatNumber(page)} of {formatNumber(pageCount)}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Previous page of commits"
+              disabled={page <= 1}
+              onClick={onPreviousPage}
+            >
+              <ChevronLeft aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label="Next page of commits"
+              disabled={page >= pageCount}
+              onClick={onNextPage}
+            >
+              <ChevronRight aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
+        </nav>
+      )}
     </section>
   )
 }

@@ -9,7 +9,12 @@ import { TaskCard } from './task-card'
 
 export interface KanbanBoardProps {
   tasks: Task[]
-  /** Called with the target column. The server decides whether the move is legal. */
+  /**
+   * Called with the target column. The page behind it consults the mirrored
+   * `TaskService._LEGAL_TRANSITIONS` before asking the server, and answers a
+   * column the lifecycle does not allow with a refusal naming what the card
+   * *can* do.
+   */
   onMove: (task: Task, status: TaskStatus) => void
   onOpen?: (task: Task) => void
   loading?: boolean
@@ -21,6 +26,11 @@ export interface KanbanBoardProps {
  * vocabulary and is deliberately not a column: work that was dropped is not work
  * in progress, and a column for it invites treating it as such. Cancelled tasks
  * stay findable in the list view.
+ *
+ * **The columns are the lifecycle, not a promise that any card may enter any
+ * of them.** A `blocked` card cannot be completed from here — the service
+ * refuses that edge — and the page says so rather than letting the card land
+ * where it was not put.
  */
 const BOARD_COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'blocked', 'completed']
 
@@ -28,10 +38,10 @@ const BOARD_COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'blocked', 'complete
  * Drag-and-drop with a keyboard route to the same place.
  *
  * The arrow keys move a focused card one column left or right and call the same
- * `onMove` a drop does, so a board is operable without a pointer. Nothing is
- * moved optimistically: the card stays where the server last put it until the
- * transition has been accepted, because an illegal move has to be visible rather
- * than silently reverted.
+ * `onMove` a drop does, so a board is operable without a pointer. Both routes
+ * land on `onMove`, which answers for the legality of the move rather than
+ * assuming it: nothing is moved optimistically, because an illegal move has to
+ * be visible rather than silently reverted.
  */
 export function KanbanBoard({ tasks, onMove, onOpen, loading = false, className }: KanbanBoardProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null)

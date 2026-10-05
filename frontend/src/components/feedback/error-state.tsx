@@ -1,6 +1,7 @@
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { errorDetailNotes } from '@/services/errors'
 import { cn } from '@/lib/utils'
 import type { ApiError } from '@/lib/api-client'
 
@@ -60,12 +61,19 @@ function describe(error: ApiError): ErrorCopy {
         message: 'The backend is rate limiting this endpoint. Wait a moment and retry.',
       }
     default:
-      return error.status >= 500
-        ? {
-            title: 'The backend hit an unexpected error',
-            message: 'The failure was recorded on the server. Retry, and quote the request ID below.',
-          }
-        : { title: 'Something went wrong', message: 'The request could not be completed.' }
+      if (error.status >= 500) {
+        // The request id is only promised when there is one to show. A failure
+        // with no id behind it — a render crash normalised into this surface,
+        // a gateway that answered 502 without a body — otherwise told the user
+        // to quote a request ID the page then never displayed.
+        return {
+          title: 'The backend hit an unexpected error',
+          message: error.requestId
+            ? 'The failure was recorded on the server. Retry, and quote the request ID below.'
+            : 'The failure was recorded on the server. Retry, and check the server log if it keeps happening.',
+        }
+      }
+      return { title: 'Something went wrong', message: 'The request could not be completed.' }
   }
 }
 
@@ -85,6 +93,14 @@ export interface ErrorStateProps {
  */
 export function ErrorState({ error, onRetry, title, className, compact = false }: ErrorStateProps) {
   const copy = describe(error)
+  const notes = errorDetailNotes(error)
+  /**
+   * A refused request is the one failure a retry provably cannot fix: the same
+   * bytes get the same 400/422, so an offered Retry is a button that can only
+   * fail again — and, on a query that fires on every render, a permanent red
+   * panel the user cannot get rid of. The copy already says what to change.
+   */
+  const retry = onRetry && !error.isValidationError ? onRetry : undefined
 
   return (
     <div
@@ -103,6 +119,13 @@ export function ErrorState({ error, onRetry, title, className, compact = false }
           <p className="text-sm font-medium text-foreground">{title ?? copy.title}</p>
           <p className="text-sm leading-relaxed text-muted-foreground">{copy.message}</p>
           <p className="text-sm leading-relaxed text-foreground/80">{error.message}</p>
+          {notes.length > 0 && (
+            <ul className="space-y-0.5 pt-1 text-xs leading-relaxed text-muted-foreground">
+              {notes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
@@ -112,9 +135,9 @@ export function ErrorState({ error, onRetry, title, className, compact = false }
         </p>
       )}
 
-      {onRetry && (
+      {retry && (
         <div>
-          <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+          <Button type="button" variant="outline" size="sm" onClick={retry}>
             <RefreshCw aria-hidden="true" />
             Retry
           </Button>

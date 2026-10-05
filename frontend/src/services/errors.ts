@@ -25,8 +25,18 @@ export function isAbortError(cause: unknown): boolean {
 }
 
 /**
- * Flattens a 422's `details.errors[]` into `{ field: message }`, per
+ * Flattens a 422's `details` into `{ field: message }`, per
  * `docs/api-conventions.md`.
+ *
+ * The envelope carries more than one shape for this and a renderer that
+ * understood only the first left the other two blank:
+ *
+ * - `{"errors": [{"field", "message", "type"}]}` — the field and its own sentence.
+ * - `{"fields": ["name"]}` — the field names only. The sentence explaining them
+ *   lives on the envelope's `message`, so it is repeated onto each field: once a
+ *   field carries a message {@link bannerError} suppresses the banner, and
+ *   dropping it here instead would lose the only copy there was.
+ * - `{"field": "url"}` — a single unnamed field, read as a one-entry `fields[]`.
  *
  * Entries that are not field-scoped are dropped and the first message wins when
  * a field repeats, so a form renders one message per input rather than a stack
@@ -35,18 +45,63 @@ export function isAbortError(cause: unknown): boolean {
  */
 export function fieldErrorMessages(error: ApiError | null): Record<string, string> {
   if (!error) return {}
-  const { errors } = error.fieldErrors
-  if (!Array.isArray(errors)) return {}
-
+  const details = error.fieldErrors
   const messages: Record<string, string> = {}
-  for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
-    const field = entry?.field
-    const message = entry?.message
-    if (typeof field !== 'string' || typeof message !== 'string') continue
-    if (field === '' || field === 'body' || field in messages) continue
-    messages[field] = message
+
+  const errors = details.errors
+  if (Array.isArray(errors)) {
+    for (const entry of errors as Array<{ field?: unknown; message?: unknown }>) {
+      const field = entry?.field
+      const message = entry?.message
+      if (typeof field !== 'string' || typeof message !== 'string') continue
+      if (field === '' || field === 'body' || field in messages) continue
+      messages[field] = message
+    }
   }
+
+  const named: unknown[] = []
+  if (Array.isArray(details.fields)) named.push(...details.fields)
+  else if (typeof details.field === 'string') named.push(details.field)
+  if (named.length > 0 && error.message) {
+    for (const entry of named) {
+      const field =
+        typeof entry === 'string' ? entry : (entry as { field?: unknown } | null)?.field
+      if (typeof field !== 'string') continue
+      if (field === '' || field === 'body' || field in messages) continue
+      messages[field] = error.message
+    }
+  }
+
   return messages
+}
+
+/**
+ * The extra sentences a `details` payload carries beyond any field message.
+ *
+ * `{"allowed": [...]}` names the orderings or state changes that would have been
+ * accepted; `{"accepted": [...]}` does the same for a refused enum. Neither is a
+ * field error, so nothing else on the page renders them — and a 422 that says
+ * only what was wrong leaves the caller with no idea what to send instead.
+ */
+export function errorDetailNotes(error: ApiError | null): string[] {
+  const details = error?.details
+  if (!details) return []
+
+  const notes: string[] = []
+  const labels: ReadonlyArray<readonly [string, string]> = [
+    ['allowed', 'Allowed'],
+    ['accepted', 'Accepted'],
+  ]
+  for (const [key, label] of labels) {
+    const value = details[key]
+    if (!Array.isArray(value) || value.length === 0) continue
+    const words = value
+      .filter((entry) => typeof entry === 'string' || typeof entry === 'number')
+      .map((entry) => String(entry))
+    if (words.length === 0) continue
+    notes.push(`${label}: ${words.join(', ')}`)
+  }
+  return notes
 }
 
 /**

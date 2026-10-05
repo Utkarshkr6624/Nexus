@@ -144,10 +144,20 @@ function SignalRow({ signal }: { signal: PrioritySignal }) {
 
 export interface PriorityQueueProps {
   signals: readonly PrioritySignal[]
+  /**
+   * The date the goal source is filtered on, for the empty state.
+   *
+   * The queue reads goals with `target_before`, so a goal with no target date
+   * is never in it. The empty state used to say "no active goal is waiting",
+   * which reads as a count of every open goal and is not: an account with one
+   * undated goal was told nothing was waiting. Naming the date the query used is
+   * the only way the sentence is true.
+   */
+  goalsThrough: string
   className?: string
 }
 
-export function PriorityQueue({ signals, className }: PriorityQueueProps) {
+export function PriorityQueue({ signals, goalsThrough, className }: PriorityQueueProps) {
   const [showAll, setShowAll] = useState(false)
   const visible = showAll ? signals : signals.slice(0, COLLAPSED_ROWS)
 
@@ -157,7 +167,7 @@ export function PriorityQueue({ signals, className }: PriorityQueueProps) {
         compact
         icon={ListChecks}
         title="Nothing is asking for a decision"
-        description="No live finding, unanswered suggestion, open deadline, schedule conflict or active goal is waiting. That is a measurement of the records that exist, not a claim that nothing is wrong."
+        description={`No live finding, unanswered suggestion, open deadline, schedule conflict or learning goal with a target date on or before ${goalsThrough} is waiting. That is a measurement of the records that exist, not a claim that nothing is wrong.`}
       />
     )
   }

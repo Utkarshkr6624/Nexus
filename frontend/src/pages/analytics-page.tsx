@@ -208,7 +208,17 @@ export default function AnalyticsPage() {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="max-w-full overflow-x-auto">
           {TABS.map((entry) => (
-            <TabsTrigger key={entry.value} value={entry.value}>
+            <TabsTrigger
+              key={entry.value}
+              value={entry.value}
+              // The trigger's own active style paints the word in `--primary`,
+              // which measures 4.26:1 on the light canvas — under the 4.5:1 that
+              // WCAG AA asks of normal text, though it clears the floor in dark.
+              // The open tab is still marked by its 2px underline, by
+              // `aria-selected` and by focus; the word itself takes the
+              // foreground colour so it reads in both themes.
+              className={entry.value === tab ? 'text-foreground' : undefined}
+            >
               {entry.label}
             </TabsTrigger>
           ))}
@@ -786,10 +796,15 @@ function TimeTab({
                   'actual_minutes',
                   ['planned', 'actual'],
                 )}
+                // Both series carry an explicit index. `colorIndex` falls back to
+                // the series' *position*, so an unindexed "Recorded" in second
+                // place would take the same token as the indexed "Planned" above
+                // it — two green lines and no way to tell which is which.
                 series={[
                   { key: 'planned', label: 'Planned', unit: 'minutes', colorIndex: 1 },
-                  { key: 'actual', label: 'Recorded', unit: 'minutes' },
+                  { key: 'actual', label: 'Recorded', unit: 'minutes', colorIndex: 0 },
                 ]}
+                rowHeading="Day"
                 isEmpty={daily.length === 0}
                 emptyMetric="time"
               />
@@ -1195,22 +1210,19 @@ function KnowledgeTab({
             />
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div>
             <RankList
               title="Most used tags"
               subtitle={rangeLabel}
               rows={read.most_used_tags.map((tag) => ({ label: tag.label, count: tag.count }))}
               emptyReason="No tag has been used in this window."
             />
-            <RankList
-              title="Most active concepts"
-              subtitle={rangeLabel}
-              rows={read.most_active_concepts.map((concept) => ({
-                label: concept.label,
-                count: concept.count,
-              }))}
-              emptyReason="No concept has been touched in this window."
-            />
+            {/* `most_active_concepts` and `top_tags` are declared on the response
+                but the service never fills either, so a panel over them can only
+                ever print its own empty copy — "No concept has been touched in
+                this window" directly under a card counting the concepts that
+                were created. That is a claim about the user's account the backend
+                never made, so the panel is left out rather than made to lie. */}
           </div>
         </div>
       )}

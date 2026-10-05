@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   CircleCheck,
@@ -9,7 +9,7 @@ import {
   FolderOpen,
 } from 'lucide-react'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LanguageBadge, ScanStatusBadge } from '@/features/developer/components/developer-badges'
 import { DeveloperEmptyState, DeveloperStaleNotice } from '@/features/developer/components/developer-empty-state'
@@ -67,6 +67,21 @@ import type { RepositoryRead, UUIDString } from '@/types/developer'
  * not measurable — the dashboard's "Not enough data yet."), and `undefined`
  * (the caller has no window figure for this repository at all, which is a
  * different thing and says so). None of the three is quietly turned into `0`.
+ *
+ * ## The actions slot is a footer, and why it cannot be a link
+ *
+ * A caller that can act on a repository — scan it, remove it — passes `actions`
+ * and gets a footer strip below the figures. **It is a footer and not part of the
+ * header because the card's only link is its title.** That is what keeps a
+ * `<button>` from ever becoming a descendant of an `<a>`: buttons inside a link
+ * are invalid HTML, and the browser resolves the conflict by navigating, so the
+ * control a reader pressed does nothing but change the URL. Putting the slot
+ * after `CardContent` makes that impossible by construction rather than by
+ * discipline, and {@link stopActivation} is the cheap second half of the
+ * guarantee — see its own comment.
+ *
+ * The slot is **absent when no caller supplies one**, so the read-only rendering
+ * every other caller gets is byte-for-byte what it was before the slot existed.
  */
 
 export interface RepositoryCardProps {
@@ -85,6 +100,15 @@ export interface RepositoryCardProps {
   recentWindowDays?: number | null
   /** How old a scan has to be before the card flags it. */
   staleAfterHours?: number
+  /**
+   * Controls for this repository, drawn in a footer below the figures.
+   *
+   * Omitted — the default — renders **no footer at all**, so a caller that only
+   * reads gets exactly the card it got before this slot existed. A supplied node
+   * is rendered as given: the card does not decide what the controls do, and it
+   * never wraps them in the title's link.
+   */
+  actions?: ReactNode
   titleLevel?: 'h3' | 'h4'
   className?: string
 }
@@ -114,6 +138,24 @@ function ActivityPips({ filled }: { filled: number }) {
   )
 }
 
+/**
+ * Keeps a press on an action from reaching whatever the card sits inside.
+ *
+ * **The structural guarantee is the real one:** the footer is rendered after
+ * `CardContent` and the card's link wraps its title only, so no control here is a
+ * descendant of an `<a>` and a `<button>` inside a link — invalid HTML that the
+ * browser settles by navigating — cannot be produced by this component at all.
+ *
+ * This is what makes that survive the refactor nobody plans for. "Make the whole
+ * card clickable" is a one-line change that wraps the card in its link, and on
+ * that day an action has to go on acting rather than handing its click to the
+ * router. Stopping the event here costs nothing today, because the card has no
+ * click handler to stop, and keeps the invariant when it has one.
+ */
+function stopActivation(event: MouseEvent) {
+  event.stopPropagation()
+}
+
 export function RepositoryCard({
   repository,
   href = null,
@@ -122,6 +164,7 @@ export function RepositoryCard({
   recentCommitCount,
   recentWindowDays = null,
   staleAfterHours = DEFAULT_STALE_HOURS,
+  actions,
   titleLevel = 'h3',
   className,
 }: RepositoryCardProps) {
@@ -346,6 +389,15 @@ export function RepositoryCard({
           )}
         </section>
       </CardContent>
+
+      {actions && (
+        <CardFooter
+          onClick={stopActivation}
+          className="flex-wrap items-center gap-2 border-t border-border py-3"
+        >
+          {actions}
+        </CardFooter>
+      )}
     </Card>
   )
 }
@@ -430,6 +482,11 @@ export interface RepositoryCardGridProps {
   emptyAction?: ReactNode
   /** Builds each card's link. Omit for a read-only grid. */
   buildHref?: (repository: RepositoryRead) => string | null
+  /**
+   * Builds each card's controls. Omit — the default — and every card in the grid
+   * renders with no footer at all, which is the read-only grid's whole contract.
+   */
+  buildActions?: (repository: RepositoryRead) => ReactNode
   projectNames?: Readonly<Record<UUIDString, string>>
   projectHrefs?: Readonly<Record<UUIDString, string>>
   /** Window commit count per repository; a missing key means "not supplied". */
@@ -458,6 +515,11 @@ export interface RepositoryCardGridProps {
  * The counts maps are keyed by `repository_id` and read with `?.` rather than
  * `??`, so a repository the caller has no window figure for takes the "not
  * supplied" branch of its card instead of being drawn as zero commits.
+ *
+ * `buildActions` is passed down **whole**, rather than being called once and
+ * spread: a card's controls hold their own mutation state, and a factory the
+ * grid invokes once would give every card on the page the same "scan running"
+ * flag — so one repository's scan would grey out every other repository's button.
  */
 export function RepositoryCardGrid({
   repositories,
@@ -466,6 +528,7 @@ export function RepositoryCardGrid({
   emptyReason = null,
   emptyAction,
   buildHref,
+  buildActions,
   projectNames,
   projectHrefs,
   recentCommitCounts,
@@ -502,6 +565,7 @@ export function RepositoryCardGrid({
               key={repository.id}
               repository={repository}
               href={buildHref ? buildHref(repository) : null}
+              actions={buildActions ? buildActions(repository) : undefined}
               projectName={projectNames?.[repository.id] ?? null}
               projectHref={projectHrefs?.[repository.id] ?? null}
               recentCommitCount={recent}

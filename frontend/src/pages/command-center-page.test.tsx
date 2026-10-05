@@ -381,6 +381,8 @@ interface Backend {
   learning?: Route
   mlStatus?: Route
   route?: Route
+  /** Any `POST` that is not `/ml/route`, e.g. a refused create. */
+  create?: (url: string, body: BodyInit | null | undefined) => Response
 }
 
 /** Which stub answers which request, keyed by a stable path fragment. */
@@ -443,6 +445,7 @@ function installBackend(overrides: Backend = {}): { url: string; method: string 
 
       if (method === 'POST') {
         if (url.includes('/ml/route')) return overrides.route ? overrides.route(url) : json(ROUTING_DECISION)
+        if (overrides.create) return overrides.create(url, init?.body)
         return created(url, init?.body)
       }
       for (const [fragment, override, fallback] of routes) {
@@ -466,6 +469,21 @@ function created(url: string, body: BodyInit | null | undefined): Response {
   const name = String(parsed.name ?? parsed.title ?? '')
   if (url.includes('/notes') || url.includes('/learning/goals')) return json({ title: name })
   return json({ name })
+}
+
+/** A 422 the way the create endpoints answer one: the field, and its message. */
+function validationFailure(message: string): Response {
+  return json(
+    {
+      error: {
+        code: 'validation_error',
+        message: 'The request was refused.',
+        details: { errors: [{ field: 'name', message }] },
+        request_id: 'req-tag-422',
+      },
+    },
+    422,
+  )
 }
 
 /** Ships the retry policy from `src/app/query-client.ts`. */
@@ -552,7 +570,7 @@ describe('command center page', () => {
     await waitFor(() =>
       expect(within(panel('The classifier')).getByText('microsoft/deberta-v3-base')).toBeInTheDocument(),
     )
-    expect(within(panel('The classifier')).getByText(/The 1 classes in taxonomy phase-10-v1/)).toBeInTheDocument()
+    expect(within(panel('The classifier')).getByText(/The 1 class in taxonomy phase-10-v1/)).toBeInTheDocument()
 
     // Recorded engineering — GET /developer/summary.
     await waitFor(() => expect(within(panel('Recorded engineering')).getByText('17')).toBeInTheDocument())
@@ -1026,6 +1044,135 @@ describe('command center page', () => {
     expect(await screen.findByText('Created project “Atlas migration”.')).toBeInTheDocument()
     const post = calls.find((call) => call.method === 'POST')
     expect(post?.url).toBe('/api/v1/projects')
+  })
+
+  it('rounds the model figures and never prints the server install path', async () => {
+    installBackend({
+      mlStatus: () =>
+        json({
+          ...ML_STATUS,
+          model: {
+            ...ML_STATUS.model,
+            checkpoint: 'E:\\Nexo\\backend\\ml\\artifacts\\small-model\\final',
+            load_seconds: 36.827084100000036,
+          },
+        }),
+    })
+    renderPage()
+
+    const classifier = panel('The classifier')
+    await within(classifier).findByText('microsoft/deberta-v3-base')
+
+    // `36.827084100000036s` reads as a fault on a tile; `36.8s` is the number.
+    expect(within(classifier).getByText('Load time')).toBeInTheDocument()
+    expect(within(classifier).getAllByText('36.8s').length).toBeGreaterThan(0)
+    expect(classifier.textContent ?? '').not.toContain('36.827084100000036')
+
+    // An absolute path on the developer's own drive is a layout detail of the
+    // host, not something this account can act on.
+    expect(within(classifier).getByText('…/small-model/final')).toBeInTheDocument()
+    expect(classifier.textContent ?? '').not.toContain('E:\\Nexo')
+  })
+
+  it('says why every disabled control on a brand-new account is disabled', async () => {
+    installBackend()
+    renderPage()
+
+    await screen.findByRole('heading', { level: 1, name: 'Command Center' })
+    const classifier = panel('The classifier')
+    await within(classifier).findByText('microsoft/deberta-v3-base')
+
+    // Four `Create` buttons, one `Classify`, all greyed out on an empty box.
+    for (const name of ['New project', 'New note', 'New tag', 'New learning goal']) {
+      const button = within(panel('Quick actions')).getByLabelText(name).closest('form')
+        ?.querySelector('button[type="submit"]') as HTMLButtonElement
+      expect(button).toBeDisabled()
+      // `disabled:pointer-events-none` stops a title on the button itself from
+      // being read, so the reason also has to be a sentence on screen.
+      expect(button.parentElement).toHaveAttribute('title', expect.stringContaining('Type a name'))
+      expect(
+        within(button.closest('form') as HTMLElement).getByText(/Type a name above and this becomes Create/),
+      ).toBeInTheDocument()
+    }
+
+    const classify = within(classifier).getByRole('button', { name: 'Classify' })
+    expect(classify).toBeDisabled()
+    expect(classify.parentElement).toHaveAttribute('title', expect.stringContaining('Type a sentence'))
+    expect(within(classifier).getByText(/Type a sentence above/)).toBeInTheDocument()
+  })
+
+  it('holds each quick action to the cap its own endpoint declares', async () => {
+    installBackend()
+    renderPage()
+
+    await screen.findByRole('heading', { level: 1, name: 'Command Center' })
+    // `POST /tags` refuses 49 characters; the field stops at the limit rather
+    // than spending a round trip to say so.
+    expect(screen.getByLabelText('New tag')).toHaveAttribute('maxLength', '48')
+    expect(screen.getByLabelText('New project')).toHaveAttribute('maxLength', '200')
+    expect(screen.getByLabelText('New note')).toHaveAttribute('maxLength', '300')
+    expect(screen.getByLabelText('New learning goal')).toHaveAttribute('maxLength', '200')
+  })
+
+  it('reports what a 422 actually refused rather than only that it was refused', async () => {
+    const user = userEvent.setup()
+    installBackend({
+      create: (url, body) => {
+        if (url.includes('/tags')) return validationFailure('A tag name may be at most 48 characters.')
+        return created(url, body)
+      },
+    })
+    renderPage()
+
+    const form = (await screen.findByLabelText('New tag')).closest('form') as HTMLElement
+    await user.type(within(form).getByPlaceholderText('deep-work'), 'deep-work')
+    await user.click(within(form).getByRole('button', { name: 'Create' }))
+
+    // The backend's own field message — which names the limit — rather than a
+    // bare "the backend rejected that name".
+    expect(
+      await screen.findByText('A tag name may be at most 48 characters. Nothing was created.'),
+    ).toBeInTheDocument()
+  })
+
+  it('does not repeat a panel header sentence above its own empty state', async () => {
+    installBackend({
+      riskSummary: () =>
+        json({ critical: 0, high: 0, medium: 0, low: 0, total: 0, needs_attention: false }),
+    })
+    renderPage()
+
+    expect(await screen.findByText('No live findings')).toBeInTheDocument()
+    // The empty state says what the panel would hold and what fills it; the
+    // header saying the same thing is the dead space on a brand-new account.
+    expect(
+      within(panel('Findings')).queryByText('Live conditions the detection engine raised, counted by band.'),
+    ).toBeNull()
+  })
+
+  it('keeps the page alive when a panel body throws while rendering', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    // `has_data` absent, so the panel is not treated as empty, and a scan stamp
+    // that is not a string — a payload shape the panel cannot read.
+    installBackend({
+      developer: () =>
+        json({
+          ...DEVELOPER_SUMMARY,
+          last_scanned_at: 1735689600000,
+        } as unknown as DeveloperSummaryRead),
+    })
+    renderPage()
+
+    expect(await screen.findByText('Recorded engineering could not be shown')).toBeInTheDocument()
+
+    // Seven other panels read their own endpoints and are untouched.
+    await waitFor(() =>
+      expect(within(panel('Findings')).getByText(/10 findings live in total/)).toBeInTheDocument(),
+    )
+    expect(within(panel('Momentum')).getByText('Tasks completed')).toBeInTheDocument()
+    expect(within(panel('The classifier')).getByText('microsoft/deberta-v3-base')).toBeInTheDocument()
+    expect(screen.getByText(OVERDUE_TASK.title)).toBeInTheDocument()
+    consoleError.mockRestore()
   })
 
   it('opens the command palette rather than duplicating a search box', async () => {

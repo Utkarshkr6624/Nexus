@@ -293,7 +293,12 @@ export const WORK_EVENT_META: Record<WorkEventType, StatusMeta> = {
   task_deleted: { label: 'Task deleted', icon: Trash2, tone: 'danger', description: 'Removed.' },
   task_scheduled: { label: 'Task scheduled', icon: CalendarClock, tone: 'info', description: 'Given a date.' },
   work_session_started: { label: 'Session started', icon: Timer, tone: 'info', description: 'Clock running.' },
-  work_session_completed: { label: 'Session completed', icon: CheckCircle2, tone: 'success', description: 'Time recorded.' },
+  // The old copy read "Time recorded.", which is a claim about a duration on an
+  // event that fires for a timer stopped inside the same second — 0 minutes. The
+  // backend does record `actual_minutes` on the event, so the feed reads it and
+  // says what it measured; this description must not assert a figure the map
+  // itself cannot see. See `eventDetail` in `pages/dashboard-page.tsx`.
+  work_session_completed: { label: 'Session completed', icon: CheckCircle2, tone: 'success', description: 'Timer stopped.' },
   calendar_event_created: { label: 'Event booked', icon: CalendarClock, tone: 'info', description: 'Time reserved.' },
   calendar_event_updated: { label: 'Event changed', icon: Pencil, tone: 'neutral', description: 'Details edited.' },
   calendar_event_deleted: { label: 'Event removed', icon: CalendarX, tone: 'neutral', description: 'The block was released.' },

@@ -6,7 +6,7 @@ provenance, the service pointer and the argument spans; a client needs the
 sentence to confirm and the payload to send back, and shipping the rest would
 couple every consumer to a module whose internals are still moving.
 
-Three decisions shape the file.
+Five decisions shape the file.
 
 **A refusal is a response, not an error.** :class:`ProposeActionRead` is one model
 with a ``proposed`` flag and exactly one of :attr:`proposal` /
@@ -25,19 +25,35 @@ to be re-declared here and could drift from the table
 resolves the schema from the table and validates against that, so there is still
 exactly one definition of what each payload means.
 
-**``requires_confirmation`` and ``destructive`` are echoed as the answer they
-already are.** Both are ``True``/``False`` constants in the proposal layer and
-both are properties rather than fields, so a client cannot read them as a
-negotiable. They are published because a client rendering a confirm dialog should
-not have to know that, and publishing them keeps the doorbell honest if the
-invariant ever changed.
+**``requires_confirmation`` is echoed as the answer it already is.**
+:attr:`ActionProposalRead.requires_confirmation` is a property returning ``True``
+in the proposal layer, not a field, so a client cannot read it as a negotiable.
+``destructive`` is the opposite case and is echoed for the other reason: it is a
+**real field** derived from :data:`app.ml.actions.proposals.ACTION_SPECS`, and a
+confirm dialog that has to ask its own table whether a kind discards a row will
+eventually ask it differently. Publishing it keeps the warning the user sees and
+the gate :meth:`app.api.v1.actions.confirm_action` applies reading from one
+source.
 
 **``intent`` is required on the confirm body.** It is the cheapest stateless
 binding between the two calls: the endpoint refuses a confirm whose ``intent``
 disagrees with the intent :data:`~app.ml.actions.proposals.ACTION_SPECS` says
-this kind can only come from, so a client cannot confirm a ``create_task`` while
-claiming the classifier said ``knowledge_capture``. It binds shape to origin; it
-is not, and does not pretend to be, proof that a proposal happened.
+this kind can only come from — or with any of the other intents that kind is
+trained to also answer as, which is what a second reading of the same sentence
+legitimately produces. It binds shape to origin; it is not, and does not pretend
+to be, proof that a proposal happened.
+
+**The three payload models the action surface adds are re-exported, not
+declared.** :class:`ActionAck` (the kinds whose whole effect is a verb),
+:class:`TaskScheduleWrite` and :class:`ProjectStatusWrite` are declared once, in
+:mod:`app.ml.actions.proposals`, because that is the module that references them
+from :data:`~app.ml.actions.proposals.ACTION_SPECS` and builds them into every
+proposal. They are imported and listed in ``__all__`` here so a consumer of the
+wire models can reach the whole contract from one module, but **this file does
+not define them.** Two classes with one name and two field lists would be the
+"second definition waiting to drift" the paragraph above is about, and the
+endpoint would be validating a payload against whichever one the table happened
+to hold.
 """
 
 from __future__ import annotations
@@ -47,16 +63,26 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.ml.actions.proposals import ActionKind, ActionProposal, ProposalRefusal
+from app.ml.actions.proposals import (
+    ActionAck,
+    ActionKind,
+    ActionProposal,
+    ProjectStatusWrite,
+    ProposalRefusal,
+    TaskScheduleWrite,
+)
 
 __all__ = [
+    "ActionAck",
     "ActionProposalRead",
     "ConfirmActionRead",
     "ConfirmActionRequest",
     "ExtractArgumentRead",
+    "ProjectStatusWrite",
     "ProposalRefusalRead",
     "ProposeActionRead",
     "ProposeActionRequest",
+    "TaskScheduleWrite",
 ]
 
 
@@ -134,7 +160,11 @@ class ActionProposalRead(BaseModel):
         description="Always true. Not a request — there is no path that skips it."
     )
     destructive: bool = Field(
-        description="Always false. No proposed action deletes or discards anything."
+        description=(
+            "True for actions that discard a row; the confirm dialog should say so. "
+            "Derived from the spec table, and it is the flag the confirm endpoint "
+            "checks before it will execute one."
+        )
     )
     permission: str = Field(
         description="The capability the confirming call will be checked against."
@@ -150,7 +180,11 @@ class ActionProposalRead(BaseModel):
     payload: dict[str, Any] = Field(description="The validated payload, JSON-ready.")
     target_id: UUID | None = Field(
         default=None,
-        description="The row this acts on or belongs to. The task a completion marks done.",
+        description=(
+            "The row this acts on or belongs to. For a creation it is the parent "
+            "the row will be filed under; for everything else it is the one existing "
+            "row the action changes, and the confirm body must send it back."
+        ),
     )
     target_label: str | None = Field(
         default=None, description="The caller's own name for that row, so the dialog can quote it."
@@ -215,8 +249,10 @@ class ProposalRefusalRead(BaseModel):
         description=(
             "One of ``app.ml.actions.proposals.ProposalReason``: unsupported_intent, "
             "destructive_request, verb_not_recovered, title_not_recoverable, "
-            "task_reference_ambiguous, task_reference_not_found, context_missing, "
-            "payload_invalid."
+            "task_reference_ambiguous, task_reference_not_found, target_ambiguous, "
+            "target_not_found, field_not_recoverable, entity_not_recognised, "
+            "context_missing, payload_invalid. ``destructive_request`` now means "
+            "only 'that was a whole collection', never 'deletes are off'."
         )
     )
     reason: str = Field(description="Human-readable explanation, safe to render to a user.")
@@ -297,15 +333,13 @@ class ConfirmActionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     kind: ActionKind = Field(
-        description=(
-            "Which action to carry out. Anything outside this set is a 422, and "
-            "there is no delete member to reach in the first place."
-        )
+        description="Which action to carry out. Anything outside this set is a 422."
     )
     intent: str = Field(
         description=(
             "The intent the proposal reported. Refused when it disagrees with the "
-            "one this kind can only have come from."
+            "one this kind can only have come from, or with any of the other "
+            "intents this kind is also trained to answer as."
         )
     )
     payload: dict[str, Any] = Field(
@@ -314,8 +348,19 @@ class ConfirmActionRequest(BaseModel):
     target_id: UUID | None = Field(
         default=None,
         description=(
-            "The row the action acts on — the task a completion marks done. Re-resolved "
-            "through an owner-scoped lookup, so another account's id is a 404."
+            "The row the action acts on — the task a completion marks done, the note a "
+            "delete removes. Re-resolved through an owner-scoped lookup, so another "
+            "account's id is a 404 before anything is written. Required by every "
+            "kind that names an existing row."
+        ),
+    )
+    confirm_destructive: bool = Field(
+        default=False,
+        description=(
+            "Set only when the user pressed Confirm on a proposal marked destructive; "
+            "the endpoint refuses a destructive kind without it. Defaults to false so "
+            "an ordinary confirm cannot carry it by accident, and is checked against "
+            "the spec table rather than against anything the client says the kind is."
         ),
     )
 
@@ -324,21 +369,31 @@ class ConfirmActionRead(BaseModel):
     """What actually happened, said by the service that did it.
 
     **``outcome`` is the field a client branches on** and it is one of
-    ``created``, ``updated`` or ``no_op``. ``no_op`` is a success-shaped answer,
-    not an error: a replayed confirm reports the row that is already there and
-    ``applied: false``, because the desired state was reached by the first call
-    and telling the user their second press failed would be a lie about a system
-    that worked. ``applied`` says whether this request is what moved the row, and
-    ``message`` is the sentence to show — written from the service's return value
-    rather than from what the caller hoped for.
+    ``created``, ``updated``, ``deleted`` or ``no_op``. ``no_op`` is a
+    success-shaped answer, not an error: a replayed confirm reports the row that
+    is already there and ``applied: false``, because the desired state was
+    reached by the first call and telling the user their second press failed
+    would be a lie about a system that worked. The same holds for a transition
+    into a state the row is already in. ``applied`` says whether this request is
+    what moved the row, and ``message`` is the sentence to show — written from
+    the service's return value rather than from what the caller hoped for.
+
+    ``deleted`` carries the id of the row that is **gone**. That is deliberate:
+    a client refreshing a list needs the id to drop, and a "deleted" answer with
+    no id would leave it guessing which of the rows it was holding.
     """
 
     kind: ActionKind = Field(description="The action that was confirmed.")
     entity: str = Field(
-        description="What kind of row was written: task, project, note, learning_goal."
+        description=(
+            "What kind of row was written: task, project, note, bookmark, concept, "
+            "link, learning_goal, skill, calendar_event, work_session, user, "
+            "repository. The noun is derived from the kind's own spec row rather "
+            "than written by the dispatcher, so it cannot drift from the kind."
+        )
     )
     entity_id: UUID = Field(description="The row's identifier, as the service returned it.")
-    outcome: Literal["created", "updated", "no_op"] = Field(
+    outcome: Literal["created", "updated", "deleted", "no_op"] = Field(
         description="What this request did to the row."
     )
     applied: bool = Field(

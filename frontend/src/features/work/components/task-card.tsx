@@ -5,11 +5,14 @@ import {
   Clock,
   CornerDownRight,
   Link2,
+  Play,
   RotateCcw,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { useTags } from '@/features/work/hooks'
+import { controlsFor } from '@/features/work/task-transitions'
+import type { TaskTransitionAction } from '@/features/work/task-transitions'
 import { cn } from '@/lib/utils'
 import { TASK_STATUS_META } from '@/types/work'
 import type { DateOnlyString, Task, TaskStatus, TaskSummary } from '@/types/work'
@@ -32,6 +35,7 @@ export interface TaskCardProps {
   task: TaskCardTask
   projectName?: string
   onOpen?: TaskCardHandler
+  onStart?: TaskCardHandler
   onComplete?: TaskCardHandler
   onReopen?: TaskCardHandler
   /** Single-line density, for list rows rather than board columns. */
@@ -46,6 +50,20 @@ export interface TaskCardProps {
 }
 
 const MAX_TAG_CHIPS = 3
+
+/**
+ * How each control looks, keyed by the verb rather than the status.
+ *
+ * Start hovers to `primary`, which is the token the in-progress badge is drawn
+ * in (`info` maps to the default badge variant, and the default is primary), so
+ * the control reads as belonging to the status it lands on. Complete keeps
+ * success and Reopen keeps no accent at all, as it always has.
+ */
+const CONTROL_LOOK: Record<TaskTransitionAction, { icon: typeof Play; hover: string }> = {
+  start: { icon: Play, hover: 'hover:text-primary' },
+  complete: { icon: Check, hover: 'hover:text-success' },
+  reopen: { icon: RotateCcw, hover: '' },
+}
 
 /** `YYYY-MM-DD` has no timezone; parse it as local midnight so it never shifts. */
 function formatDateOnly(value: DateOnlyString): string {
@@ -80,6 +98,7 @@ export function TaskCard({
   task,
   projectName,
   onOpen,
+  onStart,
   onComplete,
   onReopen,
   compact = false,
@@ -92,7 +111,6 @@ export function TaskCard({
   className,
 }: TaskCardProps) {
   const status = task.status as TaskStatus
-  const finished = status === 'completed' || status === 'cancelled'
   const estimate = 'estimated_minutes' in task ? task.estimated_minutes : null
   const waitingOnDependency =
     'has_blocked_dependencies' in task ? task.has_blocked_dependencies : false
@@ -106,6 +124,21 @@ export function TaskCard({
 
   const dueToday = !task.is_overdue && task.due_date !== null && isDueToday(task.due_date)
   const DueIcon = task.is_overdue ? AlertTriangle : dueToday ? Clock : CalendarDays
+
+  // Which controls a card may offer is the server's answer rather than a
+  // condition written here. It used to be `onComplete && !finished`, which put
+  // a Complete checkmark on every unfinished card — including `todo` and
+  // `blocked`, the two statuses the lifecycle refuses to complete — and the
+  // click answered with a 422 the user could do nothing with. `controlsFor`
+  // reads the mirrored table, so `todo` offers Start, `in_progress` offers
+  // Complete, `completed` offers Reopen, and `blocked`/`cancelled` offer
+  // nothing at all.
+  const controls = controlsFor(status)
+  const handlers: Record<TaskTransitionAction, TaskCardHandler | undefined> = {
+    start: onStart,
+    complete: onComplete,
+    reopen: onReopen,
+  }
 
   return (
     <article
@@ -247,31 +280,30 @@ export function TaskCard({
             </span>
           )}
 
-          {onComplete && !finished && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 text-muted-foreground hover:text-success"
-              onClick={() => onComplete(task)}
-              title={TASK_STATUS_META.completed.description}
-            >
-              <Check aria-hidden="true" />
-              <span className="sr-only">Complete {task.title}</span>
-            </Button>
-          )}
-
-          {onReopen && status === 'completed' && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 text-muted-foreground"
-              onClick={() => onReopen(task)}
-              title={TASK_STATUS_META.todo.description}
-            >
-              <RotateCcw aria-hidden="true" />
-              <span className="sr-only">Reopen {task.title}</span>
-            </Button>
-          )}
+          {controls.map((control) => {
+            const handler = handlers[control.action]
+            // A caller that supplies no handler for a control simply does not
+            // get the control: the board hands cards over with no handlers at
+            // all, and its columns are the affordance there.
+            if (!handler) return null
+            const look = CONTROL_LOOK[control.action]
+            const Icon = look.icon
+            return (
+              <Button
+                key={control.action}
+                variant="ghost"
+                size="icon"
+                className={cn('size-7 text-muted-foreground', look.hover)}
+                onClick={() => handler(task)}
+                title={TASK_STATUS_META[control.to].description}
+              >
+                <Icon aria-hidden="true" />
+                <span className="sr-only">
+                  {control.label} {task.title}
+                </span>
+              </Button>
+            )
+          })}
         </div>
       </div>
     </article>

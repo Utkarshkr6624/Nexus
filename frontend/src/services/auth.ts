@@ -90,9 +90,20 @@ export function logoutAllRequest(): Promise<void> {
  * The backend revokes every session but the caller's as part of this call, so
  * the tokens already held stay valid and the caller is not bounced to the login
  * screen after a successful change.
+ *
+ * `recoverOn401: false` because this endpoint uses 401 for an answer, not for
+ * an expired session: a wrong `current_password` comes back 401 "The current
+ * password is incorrect." Left on the recovery path, a typo was read as a spent
+ * access token — the client spent a single-use refresh rotation on it, replayed
+ * the same wrong password against the freshly minted pair, got the same 401
+ * again, and the second one crossed the renewal-failure streak and ended the
+ * session. Two mistyped passwords signed the user out of the whole app.
  */
 export function changePasswordRequest(payload: PasswordChangePayload): Promise<void> {
-  return apiClient.patch<void>(AUTH_ENDPOINTS.changePassword, payload, { parse: 'none' })
+  return apiClient.patch<void>(AUTH_ENDPOINTS.changePassword, payload, {
+    parse: 'none',
+    recoverOn401: false,
+  })
 }
 
 /**

@@ -44,6 +44,31 @@ function percent(value: number): string {
   return `${Math.round(value * 100)}%`
 }
 
+/**
+ * A duration at the precision a reader can hold: `36.827084100000036` → `36.8s`.
+ *
+ * The wire carries the raw float because it is a timing measurement and the
+ * backend has no reason to round it; printing it raw gives a tile seventeen
+ * significant figures, which reads as a fault rather than as a number.
+ */
+function seconds(value: number): string {
+  return Number.isFinite(value) ? `${value.toFixed(1)}s` : 'not reported'
+}
+
+/**
+ * The checkpoint as the last two path segments: `…/small-model/final`.
+ *
+ * The wire carries the machine's absolute install path — `E:\…\artifacts\
+ * small-model\final` on a developer box — which says nothing about this account
+ * and is a layout detail of the host. A row reading a drive letter is not
+ * information; the artifact's own name is.
+ */
+function checkpointName(checkpoint: string): string {
+  const segments = checkpoint.split(/[\\/]+/).filter(Boolean)
+  if (segments.length <= 2) return segments.join('/')
+  return `…/${segments.slice(-2).join('/')}`
+}
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-1.5">
@@ -120,6 +145,22 @@ export function MlInsightPanel({ status, className }: MlInsightPanelProps) {
 
   const trimmed = text.trim()
 
+  /**
+   * Why `Classify` is unavailable, or `null` when it is.
+   *
+   * A greyed-out button that does not say why is a dead end, and on a page whose
+   * every other control is a link to somewhere real it is the only control that
+   * cannot be reasoned about. The reason is the next sentence, not a tooltip
+   * that only a mouse user can reach.
+   */
+  const classifyBlocked = classify.isPending
+    ? 'Waiting for the classifier to answer. It is a cold model on first call, so this can take a while.'
+    : !status.available
+      ? 'The runtime is not serving classifications, so there is nothing to ask. Everything above is still read from GET /ml/status.'
+      : trimmed.length === 0
+        ? 'Type a sentence above; nothing is sent to the model until you do.'
+        : null
+
   return (
     <div className={cn('space-y-4', className)}>
       <p className="flex flex-wrap items-center gap-2 text-xs leading-relaxed text-muted-foreground">
@@ -150,16 +191,37 @@ export function MlInsightPanel({ status, className }: MlInsightPanelProps) {
       )}
 
       {status.model ? (
-        <dl className="divide-y divide-border/60 rounded-md border border-border">
-          <Row label="Base model" value={status.model.base_model} />
-          <Row label="Architecture" value={status.model.architecture} />
-          <Row label="Device" value={status.model.device} />
-          <Row label="Labels" value={String(status.model.label_count)} />
-          <Row label="Parameters" value={formatNumber(status.model.parameter_count)} />
-          <Row label="Max sequence length" value={String(status.model.max_sequence_length)} />
-          <Row label="Load time" value={`${status.model.load_seconds}s`} />
-          <Row label="Checkpoint" value={status.model.checkpoint} />
-        </dl>
+        /*
+         * Behind a disclosure, not in the open.
+         *
+         * Eight rows of model chrome — architecture, parameter count, sequence
+         * length, the host's checkpoint path — were the tallest thing on the
+         * page and the first thing a new account was shown, above a queue that
+         * was empty. The identity that matters (`microsoft/deberta-v3-base`) is
+         * named in the summary, so nothing is lost by not opening it, and the
+         * rows are still one click away for anyone who is asking.
+         */
+        <details className="rounded-md border border-border px-3 py-2">
+          <summary className="cursor-pointer text-xs font-medium text-foreground">
+            Model identity — {status.model.base_model}, loaded in{' '}
+            {seconds(status.model.load_seconds)}
+          </summary>
+          <dl className="mt-2 divide-y divide-border/60">
+            <Row label="Base model" value={status.model.base_model} />
+            <Row label="Architecture" value={status.model.architecture} />
+            <Row label="Device" value={status.model.device} />
+            <Row label="Labels" value={String(status.model.label_count)} />
+            <Row label="Parameters" value={formatNumber(status.model.parameter_count)} />
+            <Row label="Max sequence length" value={String(status.model.max_sequence_length)} />
+            <Row label="Load time" value={seconds(status.model.load_seconds)} />
+            <Row label="Checkpoint" value={checkpointName(status.model.checkpoint)} />
+          </dl>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Read from <code className="font-mono">GET /ml/status</code>. The checkpoint is named
+            by its artifact folder only; where the backend keeps it on its own disk is not
+            something this account can act on.
+          </p>
+        </details>
       ) : (
         <p className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
           No checkpoint is loaded, so there is no model identity to report. This is the
@@ -176,19 +238,34 @@ export function MlInsightPanel({ status, className }: MlInsightPanelProps) {
             id="command-center-classify"
             value={text}
             placeholder="add a task called draft the report"
+            aria-describedby="command-center-classify-blocked"
             onChange={(event) => setText(event.target.value)}
           />
-          <Button
-            type="button"
-            size="sm"
-            className="shrink-0"
-            disabled={trimmed.length === 0 || classify.isPending}
-            onClick={() => classify.mutate(trimmed)}
-          >
-            <Route aria-hidden="true" />
-            {classify.isPending ? 'Classifying…' : 'Classify'}
-          </Button>
+          {/*
+            The button is disabled on an empty box and says why, in the open.
+            `disabled:pointer-events-none` means a `title` on the button itself
+            never reaches the pointer, so the reason is a sentence under the
+            field — readable by everyone, including a screen reader — and the
+            title rides on the wrapper.
+          */}
+          <span className="inline-flex shrink-0" title={classifyBlocked ?? 'Classify this one sentence'}>
+            <Button
+              type="button"
+              size="sm"
+              aria-describedby="command-center-classify-blocked"
+              disabled={classifyBlocked !== null}
+              onClick={() => classify.mutate(trimmed)}
+            >
+              <Route aria-hidden="true" />
+              {classify.isPending ? 'Classifying…' : 'Classify'}
+            </Button>
+          </span>
         </div>
+        {classifyBlocked && (
+          <p id="command-center-classify-blocked" className="text-xs leading-relaxed text-muted-foreground">
+            {classifyBlocked}
+          </p>
+        )}
         <p className="text-xs leading-relaxed text-muted-foreground">
           One utterance in, one intent out. There is no history and no second model: the
           classifier cannot hold a conversation, extract an argument or perform the action.
@@ -206,7 +283,8 @@ export function MlInsightPanel({ status, className }: MlInsightPanelProps) {
       {status.intents.length > 0 && (
         <details className="rounded-md border border-border px-3 py-2">
           <summary className="cursor-pointer text-xs font-medium text-foreground">
-            The {status.intents.length} classes in taxonomy {status.taxonomy_version}
+            The {status.intents.length} class{status.intents.length === 1 ? '' : 'es'} in taxonomy{' '}
+            {status.taxonomy_version}
           </summary>
           <ul className="mt-2 space-y-1.5">
             {status.intents.map((route) => (

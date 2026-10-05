@@ -45,7 +45,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import date
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
 
@@ -471,6 +471,35 @@ class TaskRepository:
         """
         result = await self.session.execute(
             select(func.count()).select_from(Task).where(Task.parent_id == parent_id)
+        )
+        return int(result.scalar_one())
+
+    async def count_dependency_edges(self, task_id: uuid.UUID) -> int:
+        """Count the dependency edges touching this task **in either direction**.
+
+        Both directions, because both break the same invariant: an edge whose two
+        ends sit in different projects is refused by
+        :meth:`~app.services.task_service.TaskService.add_dependency`, and the two
+        ways a task can be the one that moves out from under an edge are being the
+        blocked card (``task_id``) and being the blocker (``depends_on_id``). One
+        ``OR`` of two counts rather than a join, because the caller only asks
+        "are there any?" and the answer is the same either way.
+
+        Args:
+            task_id: The card whose edges are being counted.
+
+        Returns:
+            How many edges name this task, as either end.
+        """
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(TaskDependency)
+            .where(
+                or_(
+                    TaskDependency.task_id == task_id,
+                    TaskDependency.depends_on_id == task_id,
+                )
+            )
         )
         return int(result.scalar_one())
 

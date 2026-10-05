@@ -12,7 +12,14 @@ import {
 } from 'recharts'
 
 import { ChartShell, ChartTooltip } from '@/features/analytics/components/chart-shell'
-import { CHART_AXIS_PROPS, type ChartValueUnit } from '@/features/analytics/chart-theme'
+import { ChartDataTable } from '@/features/analytics/components/chart-data-table'
+import {
+  CHART_AXIS_PROPS,
+  chartNumber,
+  describeSeries,
+  formatChartValue,
+  type ChartValueUnit,
+} from '@/features/analytics/chart-theme'
 import { EmptyAnalytics, type AnalyticsMetricKey } from '@/features/analytics/components/empty-analytics'
 import { chartColor } from '@/features/analytics/format'
 
@@ -40,6 +47,11 @@ export interface ChartSeries {
  * `ResponsiveContainer` measures the parent, so a long series compresses on a
  * phone rather than widening the page. That is why there is no horizontal
  * scroll escape hatch here: there is nothing to scroll.
+ *
+ * **Two series are named, not merely coloured.** A line chart of "planned" and
+ * "recorded" minutes is two strokes of the same hue and nothing else, which is
+ * colour as the only signal; the legend above the plot says which stroke is
+ * which, and the data table below repeats the pair as words and figures.
  */
 export interface TrendChartProps {
   title: string
@@ -59,6 +71,8 @@ export interface TrendChartProps {
   emptyReason?: string | null
   /** How a dense x axis drops labels rather than rotating them into noise. */
   maxXTicks?: number
+  /** Names the first column of the data table. Defaults to `Day`. */
+  rowHeading?: string
 }
 
 export function TrendChart({
@@ -75,15 +89,59 @@ export function TrendChart({
   emptyMetric = 'trend',
   emptyReason,
   maxXTicks = 8,
+  rowHeading = 'Day',
 }: TrendChartProps) {
   const units = Object.fromEntries(series.map((entry) => [entry.key, entry.unit ?? 'count']))
   const empty = isEmpty || data.length === 0
+
+  const points = series.map((entry) => ({
+    key: entry.key,
+    label: entry.label,
+    unit: entry.unit ?? 'count',
+    values: data.map((row) => ({
+      label: String(row[xKey] ?? ''),
+      value: chartNumber(row[entry.key]),
+    })),
+  }))
+
+  const description = points
+    .map((point) =>
+      describeSeries(point.label, point.values, {
+        format: (value) => formatChartValue(value, point.unit),
+        sums: point.unit !== 'percent',
+      }),
+    )
+    .join(' ')
+
+  const tableRows = data.map((row) => [
+    String(row[xKey] ?? ''),
+    ...series.map((entry) => formatChartValue(chartNumber(row[entry.key]), entry.unit ?? 'count')),
+  ])
 
   // A dense window shows every `maxXTicks`-th label rather than all of them:
   // overlapping dates are less readable than a sampled axis.
   const tickInterval = data.length > maxXTicks ? Math.ceil(data.length / maxXTicks) - 1 : 0
 
-  const body = (
+  // One row per series, so two strokes are told apart by name as well as by
+  // colour. A single-series chart needs no legend: its axis and its subtitle
+  // already say what is being counted.
+  const legend =
+    series.length > 1 ? (
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        {series.map((entry, index) => (
+          <li key={entry.key} className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="size-2 shrink-0 rounded-[2px]"
+              style={{ backgroundColor: chartColor(entry.colorIndex ?? index) }}
+            />
+            {entry.label}
+          </li>
+        ))}
+      </ul>
+    ) : null
+
+  const plot = (
     <ResponsiveContainer width="100%" height="100%">
       {kind === 'line' ? (
         <LineChart data={data as ChartRow[]} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
@@ -161,6 +219,13 @@ export function TrendChart({
     </ResponsiveContainer>
   )
 
+  const body = (
+    <div className="flex h-full min-w-0 flex-col gap-2">
+      {legend}
+      <div className="min-h-0 min-w-0 flex-1">{plot}</div>
+    </div>
+  )
+
   return (
     <ChartShell
       title={title}
@@ -168,6 +233,17 @@ export function TrendChart({
       actions={actions}
       isLoading={isLoading}
       className={className}
+      accessibility={{
+        description,
+        dataTable: (
+          <ChartDataTable
+            caption={title}
+            rowHeading={rowHeading}
+            columns={series.map((entry) => entry.label)}
+            rows={tableRows}
+          />
+        ),
+      }}
       empty={
         empty ? <EmptyAnalytics metric={emptyMetric} reason={emptyReason} /> : undefined
       }

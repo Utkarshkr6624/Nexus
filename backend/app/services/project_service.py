@@ -74,7 +74,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 
 from app.core.config import Settings, get_settings
@@ -174,6 +174,15 @@ _RESTORED_STATUS = ProjectStatus.ACTIVE
 #: that a future schema that grows a ``status`` field still cannot become a back
 #: door into the transition rules.
 _UPDATABLE_FIELDS = frozenset({"description", "name", "priority", "start_date", "target_date"})
+
+#: Edit fields whose *values* are never copied onto the activity event.
+#:
+#: ``PROJECT_UPDATED`` records what each changed field held before the write, so
+#: an edit can be shown and reversed from the feed alone. ``description`` is the
+#: one field left out, for the reason the event has always given: it is free text
+#: the user typed, and an activity feed is long-lived and rendered in places the
+#: project never was. Every other writable field is a grade, a date or a name.
+_UNRECORDED_EDIT_FIELDS = frozenset({"description"})
 
 #: Sort keys the listing accepts.
 #:
@@ -375,6 +384,11 @@ class ProjectService:
         Status is not writable here and not present on the schema; see
         :data:`_UPDATABLE_FIELDS`.
 
+        **The event records what each changed field held before the write**, so an
+        edit can be shown and reversed from the feed rather than only listed by
+        name. ``description`` is the single exception — see
+        :data:`_UNRECORDED_EDIT_FIELDS` for why its values are not copied.
+
         Args:
             project: The project, already resolved for this owner.
             data: The fields to change.
@@ -397,15 +411,26 @@ class ProjectService:
             raise ValidationError("target_date must not be earlier than start_date.")
         if not fields:
             return project
+        # Captured before the write, because ``update_fields`` mutates this very
+        # instance: afterwards every comparison would find the field unchanged.
+        previous = {key: getattr(project, key) for key in fields}
         updated = await self.repository.update_fields(project, **fields)
         await self._record(
             ActivityEvent.PROJECT_UPDATED,
             owner=owner,
             project=updated,
-            # Field names only, for the same reason user_service records only
-            # names: a project's description can carry anything the user typed,
-            # and an activity feed is not the place to copy it a second time.
-            metadata={"fields": sorted(fields)},
+            metadata={
+                "fields": sorted(fields),
+                # The value each changed field held before the write, so a feed
+                # reader can show what an edit overwrote and put it back. Only
+                # the fields that actually moved — see :data:`_UNRECORDED_EDIT_FIELDS`
+                # for the one field whose values are never copied here.
+                "changes": {
+                    key: {"from": _field_value(previous[key]), "to": _field_value(value)}
+                    for key, value in sorted(fields.items())
+                    if key not in _UNRECORDED_EDIT_FIELDS and previous[key] != value
+                },
+            },
         )
         return updated
 
@@ -839,6 +864,19 @@ class ProjectService:
             project_id=project_id if project_id is not None else (project.id if project else None),
             metadata=metadata,
         )
+
+
+def _field_value(value: object) -> object:
+    """Return a project column's value in a form the activity metadata can hold.
+
+    ``activity_events.metadata`` is JSONB and :meth:`ProjectService._record`
+    swallows a write that fails, so a ``date`` handed to it verbatim would cost
+    the whole ``PROJECT_UPDATED`` event rather than one awkward field. Rendering
+    it as a string is the same choice the due-date and delete events make.
+    """
+    if isinstance(value, (date, uuid.UUID)):
+        return str(value)
+    return value
 
 
 def _current_status(project: Project) -> ProjectStatus:

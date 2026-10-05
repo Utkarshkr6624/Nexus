@@ -217,7 +217,13 @@ _SORT_ORDERS = frozenset({"asc", "desc"})
 #: branch below it was unreachable code, so "no bookmark matched" and "no bookmark
 #: was ever looked for" were indistinguishable to every caller. The graph keeps
 #: its own, narrower set — see :func:`app.repositories.knowledge._entity_types`.
-_SEARCH_TABLES = ("note", "concept", "resource", "bookmark")
+#:
+#: **Documents belong here for the same reason and were missed the second time.**
+#: ``GET /knowledge/documents?search=`` finds them and ``GET /knowledge/search``
+#: did not, so the same term answered differently depending on which endpoint the
+#: caller happened to know about — and the global search is the one a client asks
+#: when it does not know which table the thing is in.
+_SEARCH_TABLES = ("note", "concept", "resource", "bookmark", "document")
 
 #: The fields a PATCH may not set to JSON ``null``, per entity.
 #:
@@ -232,7 +238,15 @@ _SEARCH_TABLES = ("note", "concept", "resource", "bookmark")
 _NOT_CLEARABLE_FIELDS: Mapping[str, frozenset[str]] = {
     "note": frozenset({"content", "title"}),
     "concept": frozenset({"name"}),
-    "resource": frozenset({"title"}),
+    # ``resource_type`` is on this list and used not to be. The column is
+    # ``NOT NULL`` and carries a vocabulary, so ``{"resource_type": null}`` is not
+    # "classify this resource as nothing" — it is a field the column cannot hold,
+    # and it reached the database as a ``NotNullViolation`` the service does not
+    # catch: a 500, four times running, for a payload OpenAPI had typed as
+    # nullable because the model has to type every field ``X | None`` to keep an
+    # absent key legal. An absent key is still absent: omitting ``resource_type``
+    # leaves it alone, and this is only about a key that was sent as null.
+    "resource": frozenset({"resource_type", "title"}),
     "bookmark": frozenset({"url"}),
     "document": frozenset({"filename"}),
     "category": frozenset({"name"}),
@@ -584,6 +598,9 @@ class KnowledgeService:
         could choose its owner would let any authenticated user file a concept
         into another account.
 
+        ``tag_ids`` are applied, after every one of them has been shown to be a
+        tag this caller owns — see :meth:`_own_tags`.
+
         Raises:
             ConflictError: If this user already holds a concept with that exact
                 name. The constraint is ``(owner_id, name)``, so two accounts may
@@ -592,12 +609,16 @@ class KnowledgeService:
         """
         if await self.concepts.get_by_name(owner.id, data.name) is not None:
             raise ConflictError("You already have a concept with that name.")
+        # Before the insert, so a tag the caller does not own refuses the whole
+        # request rather than leaving a concept behind from a 422.
+        await self._own_tags(data.tag_ids, owner)
         try:
             concept = await self.concepts.create(
                 owner_id=owner.id, name=data.name, description=data.description
             )
         except IntegrityError as exc:
             raise ConflictError("You already have a concept with that name.") from exc
+        await self.concepts.set_tags(concept.id, data.tag_ids, owner_id=owner.id)
         await self._record(
             ActivityEvent.CONCEPT_CREATED, owner=owner, metadata={"name": concept.name}
         )
@@ -624,22 +645,39 @@ class KnowledgeService:
         write raises ``IntegrityError`` which the handler below turns into "you
         already have a concept with that name" — a confident statement about a
         conflict the caller did not have. See :func:`_refuse_null`.
+
+        **``tag_ids`` replaces the concept's tag set and is applied.** It used to
+        be handed straight to :meth:`ConceptRepository.update_fields`, which is not
+        a column on the row: the allowlist rejected it and a rename carrying the
+        tag list every client sends — including the empty list — was a **500**. A
+        concept could not be renamed from the UI at all, and the name the user had
+        just typed was lost with the dialog that held it. The keys are now split
+        out of the column update and written to ``concept_tags``, and every id in
+        them is shown to be the caller's first — see :meth:`_own_tags`.
         """
         self._own_row(concept, owner, _CONCEPT_NOT_FOUND)
         fields = data.model_dump(exclude_unset=True)
         _refuse_null(fields, entity="concept")
+        # Validated before anything is written, so a tag the caller does not own
+        # refuses the rename too rather than renaming without the tags they asked
+        # for.
+        await self._own_tags(fields.get("tag_ids"), owner)
+        tag_ids = fields.pop("tag_ids", None)
         if "name" in fields and fields["name"] == concept.name:
             fields.pop("name")
         if "name" in fields:
             clash = await self.concepts.get_by_name(owner.id, fields["name"])
             if clash is not None:
                 raise ConflictError("You already have a concept with that name.")
-        if not fields:
-            return concept
-        try:
-            return await self.concepts.update_fields(concept, **fields)
-        except IntegrityError as exc:
-            raise ConflictError("You already have a concept with that name.") from exc
+        if fields:
+            try:
+                concept = await self.concepts.update_fields(concept, **fields)
+            except IntegrityError as exc:
+                raise ConflictError("You already have a concept with that name.") from exc
+        if tag_ids is not None:
+            await self.concepts.set_tags(concept.id, tag_ids, owner_id=owner.id)
+            concept = await self._annotate_concept(concept)
+        return concept
 
     async def delete_concept(self, *, concept: Concept, owner: User) -> None:
         """Delete a concept and the edges touching it.
@@ -663,12 +701,27 @@ class KnowledgeService:
         limit: int = DEFAULT_PAGE_SIZE,
         offset: int = 0,
         search: str | None = None,
+        resource_type: ResourceType | str | None = None,
         sort: str = "updated_at",
         order: str = "desc",
     ) -> Page[ResourceRead]:
-        """List the external things the caller has filed."""
+        """List the external things the caller has filed.
+
+        ``resource_type`` is a real filter and is validated here, so
+        ``?resource_type=blog`` is the 422 naming the vocabulary rather than an
+        unfiltered page that looks filtered. It used to be accepted by the
+        repository, wired to nothing, and dropped by the router: the Resources tab
+        offers a Type control, ``?resource_type=documentation`` answered 200 with
+        every row including the three typed ``other``, and ``?resource_type=blog``
+        — a value the schema has never accepted anywhere else — answered 200 with
+        the same rows. A filter that does nothing is worse than no filter, because
+        the chip it leaves behind says the list is narrowed.
+        """
         _check_window(limit=limit, offset=offset)
         sort = _check_sort("resource", sort, order)
+        type_value = (
+            _resource_type_or_raise(resource_type).value if resource_type is not None else None
+        )
         rows, total = await self.resources.list_for_user(
             owner.id,
             limit=limit,
@@ -676,6 +729,7 @@ class KnowledgeService:
             sort=sort,
             order=order,
             search=search,
+            resource_type=type_value,
         )
         return _page(rows, total, limit, offset, ResourceRead)
 
@@ -744,6 +798,7 @@ class KnowledgeService:
         limit: int = DEFAULT_PAGE_SIZE,
         offset: int = 0,
         search: str | None = None,
+        include_archived: bool = False,
         sort: str = "created_at",
         order: str = "desc",
     ) -> Page[BookmarkRead]:
@@ -753,6 +808,14 @@ class KnowledgeService:
         derivation the client cannot see, so filtering on it would mean filtering
         on something the caller cannot reproduce. The ``search`` over url and title
         answers the same question honestly.
+
+        **``include_archived`` exists because archiving used to be a one-way door.**
+        An archived row was excluded from this list, from ``search``, and from
+        ``meta.total`` — so 21 bookmarks saved and 4 archived reported ``total: 17``
+        and the 4 could be named by nobody: not listed, not searchable, and with no
+        read-one route to fetch by id. ``include_archived=True`` brings the whole
+        set back, archived included, and the default is unchanged because "my
+        bookmarks" is a view of the working set.
         """
         _check_window(limit=limit, offset=offset)
         sort = _check_sort("bookmark", sort, order)
@@ -763,6 +826,7 @@ class KnowledgeService:
             sort=sort,
             order=order,
             search=search,
+            include_archived=include_archived,
         )
         return _page(rows, total, limit, offset, BookmarkRead)
 
@@ -774,12 +838,20 @@ class KnowledgeService:
         — "saved from github.com" rendered beside a URL the user chose, which is a
         phishing surface wearing a metadata field.
 
+        **The URL is canonicalised before it is stored or compared.** The
+        duplicate check used to be a raw string compare, so the same page saved
+        eight times: once per fragment, once per host case, once per explicit
+        ``:443``. ``uq_bookmarks_owner_id_url`` could never catch those, because
+        they are different strings, so the same page was genuinely many rows and
+        ``domain`` read identically on every one of them. Storing the canonical
+        form is what lets the constraint do its job: see :func:`_canonical_url`.
+
         Raises:
-            ConflictError: If this user already saved this exact URL. Uniqueness is
+            ConflictError: If this user already saved this URL. Uniqueness is
                 ``(owner_id, url)``, so two accounts may each save the same URL and
                 the conflict is only ever within one account.
         """
-        url = _check_url(data.url, required=True)
+        url = _canonical_url(_check_url(data.url, required=True))
         if await self.bookmarks.get_by_url(owner.id, url) is not None:
             raise ConflictError("You have already saved that URL.")
         try:
@@ -818,6 +890,11 @@ class KnowledgeService:
         bookmark is exactly its URL, there is no empty one, and silently dropping
         the field would answer a request to change it with a success.
 
+        A new ``url`` is canonicalised on the way in for the reason
+        :meth:`create_bookmark` gives, so re-saving the same page under a
+        different fragment or host case is recognised as the bookmark it already
+        is rather than a second row.
+
         Raises:
             ConflictError: If the new URL is one this user already saved on a
                 *different* bookmark.
@@ -827,7 +904,7 @@ class KnowledgeService:
         fields = data.model_dump(exclude_unset=True)
         _refuse_null(fields, entity="bookmark")
         if "url" in fields and fields["url"] is not None:
-            url = _check_url(fields["url"], required=True)
+            url = _canonical_url(_check_url(fields["url"], required=True))
             if url != bookmark.url:
                 clash = await self.bookmarks.get_by_url(owner.id, url)
                 if clash is not None and clash.id != bookmark.id:
@@ -856,6 +933,26 @@ class KnowledgeService:
         if bookmark.archived_at is not None:
             return bookmark
         return await self.bookmarks.archive(bookmark, archived_at=datetime.now(UTC))
+
+    async def restore_bookmark(self, *, bookmark: Bookmark, owner: User) -> Bookmark:
+        """Clear ``archived_at``, putting the bookmark back in the working set.
+
+        **Archiving used to have no inverse at all.** The route that set the stamp
+        said in its own OpenAPI description that un-archiving went through the
+        plain PATCH, and the PATCH refused the field with ``422 extra_forbidden`` —
+        so the documented way back did not exist, the archived row vanished from
+        the list, from search and from ``meta.total``, and there was no
+        ``include_archived`` and no read-one route to find it by. A mistake was
+        permanent and invisible at the same time. This is the inverse.
+
+        Idempotent, like the archive it reverses: restoring a bookmark that was
+        never archived is a no-op rather than a 422 about a transition it has not
+        made.
+        """
+        self._own_row(bookmark, owner, _BOOKMARK_NOT_FOUND)
+        if bookmark.archived_at is None:
+            return bookmark
+        return await self.bookmarks.update_fields(bookmark, archived_at=None)
 
     # -- Documents ----------------------------------------------------------
 
@@ -1074,10 +1171,15 @@ class KnowledgeService:
         would duplicate the pagination contract and the ownership check for no
         difference in the query shape.
 
-        **Exactly one complete pair must be supplied** — naming neither, half a
-        pair, or both is a 422. A request that specifies no endpoint has no
-        bounded set of edges to return, and returning every link the caller owns
-        would be an unbounded response dressed as a filtered one.
+        **Exactly one complete pair may be supplied** — naming half a pair, or
+        naming both, is a 422. Naming *neither* used to be a 422 as well, on the
+        reasoning that a request specifying no endpoint has no bounded set of
+        edges to return. That reasoning was wrong: the set is bounded by
+        ``owner_id`` and by the page window, exactly as it is for every other
+        listing here, and refusing it made the edge table unreachable to anyone who
+        did not already know a node id — which is precisely the question "what
+        links do I have?" starts from. Naming no endpoint now lists the caller's
+        edges, newest first, and ``link_type`` narrows that set on its own.
 
         **The named endpoint is resolved through an owner-scoped query first.**
         Neither id is in the path, so nothing in the request mentions ``owner_id``:
@@ -1085,7 +1187,7 @@ class KnowledgeService:
         would return their edges. See this module's docstring.
 
         Raises:
-            ValidationError: For a missing, partial or doubled endpoint pair, or an
+            ValidationError: For a partial or doubled endpoint pair, or an
                 unknown ``link_type``.
             NotFoundError: If the named endpoint is not the caller's.
         """
@@ -1095,10 +1197,6 @@ class KnowledgeService:
         if outbound and inbound:
             raise ValidationError(
                 "Supply either source_type with source_id, or target_type with target_id — not both."
-            )
-        if not outbound and not inbound:
-            raise ValidationError(
-                "Supply source_type with source_id, or target_type with target_id."
             )
         if outbound and (source_type is None or source_id is None):
             raise ValidationError("source_type and source_id must be supplied together.")
@@ -1118,7 +1216,7 @@ class KnowledgeService:
                 limit=limit,
                 offset=offset,
             )
-        else:
+        elif inbound:
             await self._resolve_endpoint(
                 _entity_or_raise(target_type, "target_type"), target_id, owner
             )
@@ -1129,6 +1227,10 @@ class KnowledgeService:
                 link_type=link_type_value,
                 limit=limit,
                 offset=offset,
+            )
+        else:
+            rows, total = await self.links.list_for_owner(
+                owner.id, link_type=link_type_value, limit=limit, offset=offset
             )
         return _page(rows, total, limit, offset, KnowledgeLinkRead)
 
@@ -1243,10 +1345,11 @@ class KnowledgeService:
         *,
         owner: User,
         query: str,
-        entity_type: KnowledgeEntityType | None = None,
+        entity_type: KnowledgeSearchKind | KnowledgeEntityType | str | None = None,
         limit: int = MAX_SEARCH_ROWS,
+        include_archived: bool = False,
     ) -> KnowledgeSearchResult:
-        """Search notes, concepts, resources and bookmarks in one call.
+        """Search notes, concepts, resources, bookmarks and documents in one call.
 
         **Grouped, not merged** — one list per entity type, so a client can render
         "3 notes, 1 concept" as two sections. This is deliberately not the unified
@@ -1255,12 +1358,22 @@ class KnowledgeService:
         types and sorting by ``created_at``) would answer a different question from
         the one asked.
 
-        **All four kinds are searched when no ``entity_type`` is given** —
-        notes, concepts, resources *and* bookmarks. Bookmarks were previously
+        **Every kind is searched when no ``entity_type`` is given** — notes,
+        concepts, resources, bookmarks *and* documents. Bookmarks were previously
         unreachable here, because this method shared the graph's list of node
         types and a bookmark is not a node; the result was a permanently empty
         ``bookmarks`` group that a caller could not tell apart from a bookmark
-        that matched nothing. See :data:`_SEARCH_TABLES`.
+        that matched nothing. Documents were missing for the mirror-image reason:
+        they are not graph nodes either, so ``GET /knowledge/documents?search=``
+        found them and this endpoint — the one a client asks when it does not know
+        which table a thing is in — did not, and the same term answered
+        differently depending on which route the caller happened to know. See
+        :data:`_SEARCH_TABLES`.
+
+        **``include_archived`` reaches the bookmarks a search would otherwise skip.**
+        Archived bookmarks are out of the working set by default, which is right for
+        a search and useless for "where did I put that link?"; the flag is the same
+        one the bookmark list takes.
 
         **One bounded query per entity type**, never a ``SELECT *`` filtered in
         Python. ``ILIKE`` and not ``pg_trgm``: this is a portable build where the
@@ -1271,7 +1384,8 @@ class KnowledgeService:
 
         Raises:
             ValidationError: For an empty term, a term longer than
-                :data:`MAX_SEARCH_LENGTH`, or a ``limit`` outside 1-20.
+                :data:`MAX_SEARCH_LENGTH`, a ``limit`` outside 1-20, or an
+                unknown ``entity_type``.
         """
         term = query.strip()
         if not term:
@@ -1280,8 +1394,8 @@ class KnowledgeService:
             raise ValidationError(f"q must be at most {MAX_SEARCH_LENGTH} characters.")
         if limit < 1 or limit > MAX_SEARCH_ROWS:
             raise ValidationError(f"limit must be between 1 and {MAX_SEARCH_ROWS}.")
-        entity = _entity_or_none(entity_type)
-        wanted = {entity.value} if entity is not None else set(_SEARCH_TABLES)
+        kind = _search_kind_or_none(entity_type)
+        wanted = {kind.value} if kind is not None else set(_SEARCH_TABLES)
 
         result = KnowledgeSearchResult(query=term, limit=limit)
         if "note" in wanted:
@@ -1303,8 +1417,13 @@ class KnowledgeService:
             rows = await self.resources.search(owner.id, term, limit=limit)
             result.resources = [ResourceRead.model_validate(row) for row in rows]
         if "bookmark" in wanted:
-            rows = await self.bookmarks.search(owner.id, term, limit=limit)
+            rows = await self.bookmarks.search(
+                owner.id, term, limit=limit, include_archived=include_archived
+            )
             result.bookmarks = [BookmarkRead.model_validate(row) for row in rows]
+        if "document" in wanted:
+            rows = await self.documents.search(owner.id, term, limit=limit)
+            result.documents = [DocumentRead.model_validate(row) for row in rows]
         return result
 
     # -- Internals ----------------------------------------------------------
@@ -1427,6 +1546,50 @@ class KnowledgeService:
         """
         tags = await self._concept_joins([concept])
         return _concept_read_from(concept, tags.get(concept.id, []))
+
+    async def _own_tags(self, tag_ids: Sequence[uuid.UUID] | None, owner: User) -> None:
+        """Refuse a ``tag_ids`` set naming a tag the caller does not own.
+
+        **This is the scoped lookup the module used to say was missing.** Writing
+        ``concept_tags`` unchecked is a way to attach *somebody else's* label to
+        the caller's own concept: ``concept_tags.tag_id`` is a foreign key to any
+        tag, so the write succeeds and the concept then carries a tag rendered by
+        every client that lists them. That is why ``tag_ids`` was accepted and
+        dropped here rather than applied — but "inert" turned out to cost more
+        than it bought, because a client that sends the field (the concept rename
+        dialog always does) got a **500** instead of an edit.
+
+        Args:
+            tag_ids: The requested set, or ``None`` for "not supplied".
+            owner: The caller whose tags these must be.
+
+        Raises:
+            ValidationError: If any id is not one of this caller's tags. Nothing
+                has been written when this fires.
+        """
+        if not tag_ids:
+            return
+        owned = await self.concepts.owned_tag_ids(tag_ids, owner.id)
+        missing = [str(tag_id) for tag_id in dict.fromkeys(tag_ids) if tag_id not in owned]
+        if missing:
+            raise ValidationError(
+                "tag_ids must name tags you own.",
+                details={"fields": ["tag_ids"], "unknown_tag_ids": missing},
+            )
+
+    async def _annotate_concept(self, concept: Concept) -> Concept:
+        """Attach ``tag_ids`` to a concept row about to be serialised.
+
+        The single-row counterpart of :meth:`_concept_page`, and it exists for the
+        reason :meth:`_annotate` gives for notes: ``ConceptRead.tag_ids`` is not a
+        column, and Pydantic fills a field from its default when the object it is
+        validating does not carry it — so a PATCH that replaced the tag set would
+        otherwise answer with the previous set, or with an empty one, and either
+        way with a number nobody measured.
+        """
+        tags = await self._concept_joins([concept])
+        concept.tag_ids = [tag.id for tag in tags.get(concept.id, [])]
+        return concept
 
     async def _resolve_endpoint(
         self, entity: KnowledgeEntityType, entity_id: uuid.UUID | None, owner: User
@@ -1723,7 +1886,6 @@ def _resource_type_or_raise(value: ResourceType | str) -> ResourceType:
 
 
 def _check_url(value: str | None, *, required: bool) -> str | None:
-    """Validate a URL's scheme and shape, or refuse it.
 
     **An allowlist of two, not a denylist.** ``javascript:`` is the reason this
     check exists — a bookmark list renders links, so a stored ``javascript:`` URL

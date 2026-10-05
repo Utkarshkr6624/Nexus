@@ -1,8 +1,11 @@
 export { AnalyticsBarChart, AnalyticsBarChart as BarChart } from './bar-chart'
 export type { AnalyticsBarChartProps, BarSeries } from './bar-chart'
 
-export { CHART_AXIS_PROPS, formatChartValue } from '@/features/analytics/chart-theme'
-export type { ChartValueUnit } from '@/features/analytics/chart-theme'
+export { CHART_AXIS_PROPS, chartNumber, describeSeries, formatChartValue } from '@/features/analytics/chart-theme'
+export type { ChartValueUnit, SeriesSummaryOptions } from '@/features/analytics/chart-theme'
+
+export { ChartDataTable } from './chart-data-table'
+export type { ChartDataTableProps } from './chart-data-table'
 
 export { ChartShell, ChartTooltip } from './chart-shell'
 export type { ChartShellProps, TooltipEntry } from './chart-shell'

@@ -11,13 +11,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
   BacklinksPanel,
   ConceptFormDialog,
-  EmptyKnowledge,
   LinkEditor,
 } from '@/features/knowledge/components'
 import { useConcepts, useDeleteConcept, useOutboundLinks } from '@/features/knowledge/hooks'
 import { MarkdownView } from '@/features/knowledge/markdown'
 import { ConfirmDialog } from '@/features/work/components'
 import { useTags } from '@/features/work/hooks'
+import { ApiError } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
 import { toApiError } from '@/services/errors'
 import { toast } from '@/stores/toast-store'
@@ -119,8 +119,14 @@ export default function ConceptDetailPage() {
     [list.data, conceptId],
   )
 
+  /**
+   * Edges are read only for a concept that resolved. An id that is stale, another
+   * account's or not a UUID at all cannot own an edge, so asking would spend a
+   * request to be told 404 or 422 — and, on a link opened from a search result,
+   * put that red refusal on screen next to a page it does not belong to.
+   */
   const outbound = useOutboundLinks(
-    conceptId ? { source_type: 'concept', source_id: conceptId } : undefined,
+    concept ? { source_type: 'concept', source_id: concept.id } : undefined,
   )
   const { data: tagPage } = useTags({ limit: MAX_PAGE_SIZE })
   const remove = useDeleteConcept()
@@ -176,25 +182,35 @@ export default function ConceptDetailPage() {
   }
 
   if (!concept) {
-    const beyondWindow = (list.data?.meta.total ?? 0) > list.data?.items.length
+    const fetched = list.data?.items.length ?? 0
+    const beyondWindow = (list.data?.meta.total ?? 0) > fetched
     return (
       <div className="app-container space-y-4 py-6">
         <Button variant="ghost" size="sm" onClick={() => navigate('/knowledge?tab=concepts')}>
           <ArrowLeft aria-hidden="true" />
           Back to concepts
         </Button>
-        <EmptyKnowledge
-          kind="concepts"
-          action={
-            <Button onClick={() => navigate('/knowledge?tab=concepts')}>Browse concepts</Button>
+        {/*
+         * "No concepts yet" is a claim about the whole account, and it is false
+         * here: the list above answered with rows, and this id is simply not one of
+         * them. Saying so is the same sentence the note route uses for an unknown
+         * id — a stale link, a deleted record and another account's record all
+         * answer identically, and none of them means the account is empty.
+         */}
+        <ErrorState
+          error={
+            new ApiError({
+              status: 404,
+              code: 'not_found',
+              message: 'Concept not found.',
+            })
           }
         />
-        {beyondWindow ? (
-          <p className="mx-auto max-w-md text-center text-xs leading-relaxed text-muted-foreground">
-            This id is not among the first {list.data?.items.length} concepts by name — the list
-            endpoint is the only way to read a concept, and a page holds at most {MAX_PAGE_SIZE}.
-          </p>
-        ) : null}
+        <p className="mx-auto max-w-md text-center text-xs leading-relaxed text-muted-foreground">
+          {beyondWindow
+            ? `This id is not among the first ${fetched} concepts by name — the list endpoint is the only way to read a concept, and a page holds at most ${MAX_PAGE_SIZE}.`
+            : 'It may have been deleted, or it may belong to another account. Both answer the same way, so there is nothing further to check.'}
+        </p>
       </div>
     )
   }

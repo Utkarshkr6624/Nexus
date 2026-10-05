@@ -53,7 +53,7 @@ import type { CommitRead, RepositoryRead, ScanRunRead, UUIDString } from '@/type
  * therefore an answer rather than a failure, and it gets its own screen with a
  * way back instead of a retry button that could never succeed.
  *
- * ## Scanning is the one mutation on this page, and it is deliberately blocking
+ * ## Scanning is blocking, and it is the only way these figures change
  *
  * There is no background scheduler in NEXUS and Phase 8 adds none, so the scan
  * button *is* the scan. It answers 200 whether or not git could read the
@@ -66,6 +66,23 @@ import type { CommitRead, RepositoryRead, ScanRunRead, UUIDString } from '@/type
  * `(repository_id, commit_hash)` — so `commits_discovered` exceeding
  * `commits_added` on a second scan is the deduplication working, and the run
  * record says so rather than letting a reader read it as data loss.
+ *
+ * ## "Not scanned yet" and "scanned and empty" are different facts
+ *
+ * A repository that has been registered but never read answers
+ * `last_scanned_at: null` **and** `last_scan_status: "ok"`, because that is the
+ * model's own default and the enum has no third member for "no scan yet". The
+ * page derives `neverScanned` from the timestamp and normalises the status it
+ * hands down, so nothing on it claims a scan happened when none did. See the
+ * comment on the derivation for the whole argument.
+ *
+ * ## The other mutation is a removal, and it asks first
+ *
+ * Deleting a repository cascades: its commits, branches and scan runs go with it,
+ * and there is no archive flag on this surface. It sits behind the same
+ * `ConfirmDialog` the work feature already uses, naming the repository and saying
+ * what goes with it, because "removed" and "removed along with everything NEXUS
+ * recorded from it" are not the same offer.
  *
  * ## What the page is allowed to say
  *
@@ -220,7 +237,24 @@ export default function DeveloperRepositoryPage() {
     )
   }
 
-  const neverScanned = record.last_scan_status === null
+  /**
+   * "Never scanned" is read off `last_scanned_at`, never off `last_scan_status`.
+   *
+   * A repository the backend has just registered answers `last_scanned_at: null`
+   * **and `last_scan_status: "ok"`** — `DEFAULT_GIT_SCAN_STATUS` is `ok`, because
+   * the contract fixes the enum at two members and a third `unknown` would have
+   * been a guess. The model says so in as many words: the two are told apart by
+   * `last_scanned_at IS NULL`, "which is a fact, rather than by a status word that
+   * would be a guess".
+   *
+   * Reading the status instead would hand a repository that has never been opened
+   * a "Scanned" chip, a "Scan finished" sentence and a "when the scan ran"
+   * working-tree note — every one of them a statement about a scan that did not
+   * happen. So the status handed to the badge and the panel is normalised here,
+   * and the `null` the vocabulary already has a chip for is the one they get.
+   */
+  const neverScanned = record.last_scanned_at === null
+  const scanStatus = neverScanned ? null : record.last_scan_status
   const stale = isScanStale(record.last_scanned_at, DEFAULT_STALE_HOURS)
   const commitRows = commits.data?.items ?? NO_COMMITS
   const branchRows = branches.data?.items ?? []
@@ -236,7 +270,7 @@ export default function DeveloperRepositoryPage() {
         }
         badges={
           <>
-            <ScanStatusBadge status={record.last_scan_status} />
+            <ScanStatusBadge status={scanStatus} />
             <LanguageBadge language={record.primary_language} />
             {record.is_active ? (
               <Badge variant="secondary">Active</Badge>
@@ -263,9 +297,9 @@ export default function DeveloperRepositoryPage() {
       {neverScanned && <NeverScannedHint />}
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <RepositoryFacts repository={record} isStale={stale} />
+        <RepositoryFacts repository={record} isStale={stale} neverScanned={neverScanned} />
         <ScanStatusPanel
-          status={record.last_scan_status}
+          status={scanStatus}
           error={record.last_scan_error}
           lastScannedAt={record.last_scanned_at}
           commitCount={record.commit_count}
@@ -359,12 +393,20 @@ export default function DeveloperRepositoryPage() {
               isLoading={branches.isPending && !branches.data}
               isStale={branches.isPlaceholderData}
               titleLevel="h3"
-              subtitle="The branches the last scan observed. Attribution is reported as git reported it: a commit whose branch could not be resolved is not filed under one, and a detached HEAD leaves no branch marked as checked out."
-              emptyReason="No branch was recorded for this repository. A repository with no commits has no branches yet, and one on a detached HEAD still has them."
+              subtitle={
+                neverScanned
+                  ? 'No scan has observed this repository, so there is no branch list to describe. One appears the moment a scan reads the directory.'
+                  : 'The branches the last scan observed. Attribution is reported as git reported it: a commit whose branch could not be resolved is not filed under one, and a detached HEAD leaves no branch marked as checked out.'
+              }
+              emptyReason={
+                neverScanned
+                  ? 'No scan has read this repository, so git has not been asked which branches it has. Run a scan and they appear here.'
+                  : 'No branch was recorded for this repository. A repository with no commits has no branches yet, and one on a detached HEAD still has them.'
+              }
             />
           </section>
 
-          <LanguageStatistics language={record.primary_language} />
+          <LanguageStatistics language={record.primary_language} neverScanned={neverScanned} />
         </div>
       </div>
 
@@ -412,20 +454,36 @@ function Fact({ label, value }: { label: string; value: number | null }) {
  * different states, so `describeCurrentBranch` distinguishes them by asking the
  * commit count. `latest_commit_at` is null for an empty repository and says so
  * instead of printing a date.
+ *
+ * **A repository no scan has read is a third state, and it has to be told apart
+ * before either of the other two is applied.** Every figure on this card is a
+ * snapshot: `describeCurrentBranch` would report "no branch yet — this repository
+ * has no commits" for a directory git has never been asked about, and the
+ * working-tree row would report what the tree looked like "when the scan ran"
+ * for a scan that did not run. Neither is untrue in the strict sense — nothing has
+ * been read, so nothing contradicts them — but both are *claims about the
+ * repository* rather than statements about what NEXUS knows, and a reader who
+ * registered a work tree minutes ago is owed the difference. So `neverScanned`
+ * takes this card down its own branch, where the copy describes the absence of a
+ * scan rather than the state of the code.
  */
 function RepositoryFacts({
   repository,
   isStale,
+  neverScanned,
 }: {
   repository: RepositoryRead
   isStale: boolean
+  neverScanned: boolean
 }) {
   return (
     <Card className="min-w-0">
       <CardHeader className="pb-3">
         <CardTitle>Repository</CardTitle>
         <CardDescription>
-          Read from the local work tree at its last scan. Nothing here is re-read on its own.
+          {neverScanned
+            ? 'Registered, but nothing has been read out of it yet. A scan is what reads the local work tree, and nothing here re-reads it on its own.'
+            : 'Read from the local work tree at its last scan. Nothing here is re-read on its own.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -440,12 +498,16 @@ function RepositoryFacts({
           <div className="space-y-1">
             <dt className="text-xs text-muted-foreground">Branch checked out</dt>
             <dd className="text-sm font-medium text-foreground">
-              {describeCurrentBranch(repository)}
+              {neverScanned
+                ? 'Not read yet — no scan has looked inside this repository.'
+                : describeCurrentBranch(repository)}
             </dd>
             <dd className="text-xs text-muted-foreground">
-              {repository.default_branch
-                ? `Git resolved ${repository.default_branch} as the default branch.`
-                : 'Git resolved no default branch — there is nothing for one to point at yet.'}
+              {neverScanned
+                ? 'No scan has run, so nothing has asked git which branch is checked out.'
+                : repository.default_branch
+                  ? `Git resolved ${repository.default_branch} as the default branch.`
+                  : 'Git resolved no default branch — there is nothing for one to point at yet.'}
             </dd>
           </div>
 
@@ -458,7 +520,9 @@ function RepositoryFacts({
                 </time>
               ) : (
                 <span className="text-muted-foreground">
-                  No commits yet, so there is no first commit to date.
+                  {neverScanned
+                    ? 'Not read yet — a scan records the first commit when it reads the directory.'
+                    : 'No commits yet, so there is no first commit to date.'}
                 </span>
               )}
             </dd>
@@ -475,7 +539,9 @@ function RepositoryFacts({
                   {formatScanAge(repository.latest_commit_at)}
                 </time>
               ) : (
-                <span className="text-muted-foreground">No commits recorded yet.</span>
+                <span className="text-muted-foreground">
+                  {neverScanned ? 'Not read yet — no scan has recorded a commit.' : 'No commits recorded yet.'}
+                </span>
               )}
             </dd>
           </div>
@@ -483,16 +549,20 @@ function RepositoryFacts({
           <div className="space-y-1">
             <dt className="text-xs text-muted-foreground">Branches recorded</dt>
             <dd className="text-sm font-medium tabular-nums text-foreground">
-              {formatNumber(repository.branch_count)}
+              {neverScanned ? '—' : formatNumber(repository.branch_count)}
             </dd>
           </div>
 
           <div className="space-y-1">
-            <dt className="text-xs text-muted-foreground">Working tree at scan time</dt>
+            <dt className="text-xs text-muted-foreground">
+              {neverScanned ? 'Working tree' : 'Working tree at scan time'}
+            </dt>
             <dd className="text-sm text-foreground">
-              {repository.working_tree_dirty
-                ? 'Uncommitted changes were present when the scan ran.'
-                : 'No uncommitted changes were present when the scan ran.'}
+              {neverScanned
+                ? 'Unknown — no scan has looked at it.'
+                : repository.working_tree_dirty
+                  ? 'Uncommitted changes were present when the scan ran.'
+                  : 'No uncommitted changes were present when the scan ran.'}
             </dd>
           </div>
         </dl>
@@ -575,8 +645,19 @@ function ProjectConnection({
  * something it is not. A repository whose tracked files use extensions outside the
  * recognised set has no primary language at all — which is a real state and gets
  * its own sentence rather than an "Other" bucket the scan never produced.
+ *
+ * A repository no scan has read is **not** that state, though it arrives with the
+ * same `null`: nothing has looked at its extensions, so "the repository tracks no
+ * files, or every file it tracks uses an unrecognised extension" would be a claim
+ * about code nobody has read. `neverScanned` keeps the two apart.
  */
-function LanguageStatistics({ language }: { language: string | null }) {
+function LanguageStatistics({
+  language,
+  neverScanned,
+}: {
+  language: string | null
+  neverScanned: boolean
+}) {
   return (
     <Card className="min-w-0">
       <CardHeader className="pb-3">
@@ -592,6 +673,12 @@ function LanguageStatistics({ language }: { language: string | null }) {
             <Languages aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
             <span className="text-muted-foreground">Most common tracked language</span>
             <span className="font-medium text-foreground">{language}</span>
+          </p>
+        ) : neverScanned ? (
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Not counted yet. No scan has read this repository, so its tracked extensions have not
+            been looked at — this is an absence of a measurement rather than a repository with no
+            recognised language.
           </p>
         ) : (
           <p className="text-sm leading-relaxed text-muted-foreground">

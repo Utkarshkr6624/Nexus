@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -201,16 +202,23 @@ function createTestClient(): QueryClient {
   })
 }
 
-/** Mounts one component inside the same provider stack the app uses. */
+/**
+ * Mounts one component inside the same provider stack the app uses.
+ *
+ * The router comes back with the render result because a card that links is not
+ * enough on its own: "the control did not navigate" is only checkable against
+ * `router.state.location`.
+ */
 function renderComponent(node: ReactElement, entry = '/developer') {
   const router = createMemoryRouter([{ path: '*', element: node }], { initialEntries: [entry] })
-  return render(
+  const view = render(
     <QueryClientProvider client={createTestClient()}>
       <TooltipProvider delayDuration={200}>
         <RouterProvider router={router} />
       </TooltipProvider>
     </QueryClientProvider>,
   )
+  return { ...view, router }
 }
 
 /** The `LazyChart` fallback's body — a marker no resolved chart can produce. */
@@ -1200,6 +1208,57 @@ describe('RepositoryCard', () => {
     expect(commitFilesPhrase(0)).toBe('no files recorded')
     expect(commitFilesPhrase(1)).toBe('1 file changed')
     expect(commitFilesPhrase(3)).toBe('3 files changed')
+  })
+
+  it('draws no controls at all when the caller supplies no actions slot', () => {
+    renderComponent(<RepositoryCard repository={repository()} href={`/developer/${REPO_ID}`} />)
+
+    // An absent slot is not an empty footer, it is **no footer** — the read-only
+    // rendering has to be byte-for-byte what it was before the slot existed, or
+    // every other caller in the app gains a row of buttons nobody asked for.
+    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.queryByRole('group', { name: /Actions for/ })).toBeNull()
+    expect(screen.queryByText('Scan now')).toBeNull()
+    expect(screen.queryByText('Remove')).toBeNull()
+
+    // …and the link the card does have is untouched.
+    expect(screen.getByRole('link', { name: 'Nexo' })).toHaveAttribute(
+      'href',
+      `/developer/${REPO_ID}`,
+    )
+  })
+
+  it('renders a supplied control outside the title link, so a press cannot navigate', async () => {
+    const user = userEvent.setup()
+    let pressed = 0
+    const { router } = renderComponent(
+      <RepositoryCard
+        repository={repository()}
+        href={`/developer/${REPO_ID}`}
+        actions={
+          <button type="button" onClick={() => (pressed += 1)}>
+            Scan now
+          </button>
+        }
+      />,
+    )
+
+    const link = screen.getByRole('link', { name: 'Nexo' })
+    const scan = screen.getByRole('button', { name: 'Scan now' })
+
+    // The structural half, asserted rather than trusted. A `<button>` inside an
+    // `<a>` is invalid HTML and the browser settles the conflict by navigating,
+    // so the control a reader pressed would change the URL and do nothing else.
+    // jsdom builds this tree the way the browser does not, so nothing here would
+    // fail on its own if the slot ever moved inside the link.
+    expect(link.contains(scan)).toBe(false)
+    expect(link.querySelector('button')).toBeNull()
+
+    // The behavioural half: the press acts, and the URL stays exactly where the
+    // card said it was going.
+    await user.click(scan)
+    expect(pressed).toBe(1)
+    expect(router.state.location.pathname).toBe('/developer')
   })
 })
 

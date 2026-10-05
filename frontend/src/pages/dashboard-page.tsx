@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -61,6 +61,7 @@ import { toApiError } from '@/services/errors'
 import { cn } from '@/lib/utils'
 import { formatRangeLabel } from '@/types/analytics'
 import { workEventMeta } from '@/types/work'
+import type { ActivityEvent } from '@/types/work'
 import type { ComparisonTotal, DailyMetricRead } from '@/types/analytics'
 import type { RiskSummaryRead } from '@/types/risk'
 
@@ -677,6 +678,7 @@ function RecentActivity({ query, className }: { query: ReturnType<typeof useActi
                   // on this page. The whole dashboard went to the error boundary
                   // over one event it could not name.
                   const meta = workEventMeta(event.event_type)
+                  const detail = eventDetail(event)
                   return (
                     <li key={event.id} className="flex items-start gap-3 py-2 first:pt-0 last:pb-0">
                       <span
@@ -690,6 +692,13 @@ function RecentActivity({ query, className }: { query: ReturnType<typeof useActi
                         <span className="block truncate text-xs text-muted-foreground">
                           {meta.description}
                         </span>
+                        {/* The measurement the label alone would otherwise
+                            imply. Read from the event, never invented. */}
+                        {detail && (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {detail}
+                          </span>
+                        )}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {Number.isNaN(Date.parse(event.created_at))
@@ -706,6 +715,47 @@ function RecentActivity({ query, className }: { query: ReturnType<typeof useActi
       </CardContent>
     </Card>
   )
+}
+
+/**
+ * The one line an event may carry below its description, or `null`.
+ *
+ * Both claims here are ones the label or the map's fixed description would
+ * otherwise have to assert blind, and one of them was asserting something
+ * false: a `work_session_completed` row read **Session completed / Time
+ * recorded.** for a session whose `actual_minutes` was `0`, because the timer
+ * was stopped inside the same second. The backend records the figure on the
+ * event, so the feed now states the measurement — and states that there was
+ * none, which is the honest reading of a zero rather than a fabricated positive.
+ *
+ * An `*_updated` event records the *names* of the fields it touched, and the row
+ * used to print only "Details edited." The names are what makes the edit
+ * legible; they are read here rather than computed. The values each field held
+ * beforehand are **not** in the payload, so nothing on this row implies a diff
+ * or an undo that the feed cannot actually perform.
+ *
+ * Every read is guarded rather than assumed: `metadata` is a free-form JSON
+ * object, and a row that arrives without the key it needs shows its label and
+ * nothing else, exactly as it did before.
+ */
+function eventDetail(event: ActivityEvent): string | null {
+  const metadata = event.metadata
+  if (metadata === null || typeof metadata !== 'object') return null
+
+  if (event.event_type === 'work_session_completed') {
+    const minutes = metadata.actual_minutes
+    if (typeof minutes !== 'number' || !Number.isFinite(minutes)) return null
+    if (minutes <= 0) return 'No time was recorded.'
+    return `${formatMinutes(minutes)} recorded.`
+  }
+
+  const fields = metadata.fields
+  if (Array.isArray(fields)) {
+    const names = fields.filter((name): name is string => typeof name === 'string')
+    if (names.length > 0) return `Changed: ${names.join(', ')}`
+  }
+
+  return null
 }
 
 /* ------------------------------------------------------------------- risks */
@@ -880,11 +930,62 @@ function HealthRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
+ * How long a reading may stand before the panel stops presenting it as live.
+ *
+ * `useHealth` polls every `HEALTH_POLL_INTERVAL_MS` (30s), so a reading that
+ * has not been replaced for two full intervals is not "green as of a moment
+ * ago" — it is the last thing that was true before the endpoint stopped
+ * answering. Stating the bound here is what lets the panel act on its own
+ * staleness instead of leaving a reader to notice that "Checked: 30s ago" and
+ * a green badge are arguing with each other.
+ */
+const HEALTH_STALE_AFTER_MS = 90_000
+
+/**
+ * A wall clock the panel can re-read on its own schedule.
+ *
+ * Staleness has to be noticed without waiting for the next query to resolve:
+ * when the network is down nothing re-renders this panel, and a reading that
+ * quietly ages from "just now" to "2m ago" would otherwise sit beside an
+ * unchanged green badge forever. The clock is held in state rather than read
+ * from `Date.now()` during render — a component whose output depends on when it
+ * happened to run is not idempotent, and this codebase enforces that.
+ *
+ * The interval is the staleness bound's divisor, so the worst case between a
+ * reading crossing the line and the panel noticing is a third of the bound.
+ */
+function useStalenessClock(): number | null {
+  const [now, setNow] = useState<number | null>(null)
+
+  useEffect(() => {
+    const id = window.setInterval(
+      () => setNow(Date.now()),
+      Math.round(HEALTH_STALE_AFTER_MS / 3),
+    )
+    return () => window.clearInterval(id)
+  }, [])
+
+  return now
+}
+
+/**
  * Backend health, kept at the foot of the page.
  *
  * It is real data from `GET /api/v1/health` rather than a placeholder card, but
  * it is not an intelligence figure, so it sits below the analytics panels
  * instead of competing with the productivity score for the first screen.
+ *
+ * **The badge reports reachability, not the last thing the server said.**
+ * `GET /api/v1/health` answers `healthy` or `degraded` — there is no
+ * `unreachable` member in its schema, and there cannot be, because a request
+ * that never arrives produces no response to carry one. The panel used to print
+ * whatever the last successful body said, which meant that with the network
+ * fully down it kept reading HEALTHY / Database connected / Round trip 9.27 ms
+ * for as long as the tab stayed open: the one widget whose entire job is to say
+ * whether the backend is reachable was the one that lied hardest when it was
+ * not. A failed or overdue check is therefore rendered here as its own state,
+ * and every figure underneath is labelled as the last thing measured rather
+ * than a current reading.
  */
 function HealthCard({
   data,
@@ -902,7 +1003,16 @@ function HealthCard({
   isFetching: boolean
 }) {
   const dbConnected = data?.database.status === 'connected'
-  const degraded = data?.status === 'degraded'
+  const now = useStalenessClock()
+  // Whether this reading still stands for *now*. Either the last attempt did
+  // not complete, or none has been made inside the staleness bound. `null`
+  // before the clock's first tick, which is "not yet known to be overdue"
+  // rather than a verdict.
+  const readingAgeMs = data === undefined || now === null ? null : now - updatedAt
+  const overdue = readingAgeMs !== null && readingAgeMs > HEALTH_STALE_AFTER_MS
+  const unreachable = error !== null || overdue
+  const degraded = !unreachable && data?.status === 'degraded'
+  const statusLabel = unreachable ? 'unreachable' : degraded ? 'degraded' : 'healthy'
 
   return (
     <Card className="min-w-0">
@@ -915,9 +1025,16 @@ function HealthCard({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {data && (
-            <Badge variant={degraded ? 'warning' : 'success'} className="uppercase tracking-[0.08em]">
+            /* `role="status"` so a reader who is already on the page is told
+               when the panel changes its mind; the word is the signal and the
+               dot is only its reinforcement. */
+            <Badge
+              role="status"
+              variant={unreachable ? 'destructive' : degraded ? 'warning' : 'success'}
+              className="uppercase tracking-[0.08em]"
+            >
               <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
-              {data.status}
+              {statusLabel}
             </Badge>
           )}
           <Button
@@ -951,14 +1068,20 @@ function HealthCard({
               <HealthRow label="Version" value={data.version} />
               <HealthRow label="Environment" value={data.environment} />
               <HealthRow label="Database" value={dbConnected ? 'connected' : 'unavailable'} />
-              <HealthRow label="Round trip" value={formatLatency(data.database.latency_ms)} />
+              <HealthRow
+                label={unreachable ? 'Round trip (last measured)' : 'Round trip'}
+                value={formatLatency(data.database.latency_ms)}
+              />
               <HealthRow label="Uptime" value={formatUptime(data.uptime_seconds)} />
               <HealthRow label="Reported at" value={formatTimestamp(data.timestamp)} />
               <HealthRow label="Checked" value={formatRelative(updatedAt)} />
             </dl>
-            {error && (
+            {unreachable && (
               <p className="mt-3 text-xs text-muted-foreground">
-                The most recent refresh failed; showing the last successful reading.
+                {overdue
+                  ? `The last successful check was ${formatRelative(updatedAt, now ?? updatedAt)} and no newer one has arrived.`
+                  : 'The most recent check did not complete.'}{' '}
+                Every figure above is the last reading that was measured, not a current one.
               </p>
             )}
           </>

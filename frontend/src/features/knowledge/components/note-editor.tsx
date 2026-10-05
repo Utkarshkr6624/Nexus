@@ -35,7 +35,7 @@ export interface NoteEditorProps {
   className?: string
 }
 
-type SaveState = 'saved' | 'saving' | 'unsaved' | 'error'
+type SaveState = 'saved' | 'saving' | 'unsaved' | 'error' | 'needs-title'
 
 interface Draft {
   title: string
@@ -125,10 +125,10 @@ const TEXTAREA_CLASSES =
  * round trip are all free.
  *
  * The save state is explicit — `Saved` / `Saving…` / `Unsaved changes` /
- * `Unable to save` — because a note is the one surface where a silent failure
- * costs the user their work. Nothing here ever discards text: the local draft
- * outlives a failed save and a closed tab, and a restored draft says so and
- * offers to be thrown away.
+ * `Needs a title` / `Unable to save` — because a note is the one surface where a
+ * silent failure costs the user their work. Nothing here ever discards text: the
+ * local draft outlives a failed save and a closed tab, and a restored draft says
+ * so and offers to be thrown away.
  */
 /**
  * Reads the server copy, or the local draft when that is the newer text.
@@ -180,9 +180,16 @@ export function NoteEditor({ note, onSaved, readOnly = false, actions, className
   const save = useCallback(async () => {
     if (readOnly || savingRef.current) return
     const trimmedTitle = title.trim()
-    // An empty title is a 422, and creating a note nobody wrote anything into
-    // is worse than waiting: the first autosave waits for real content.
-    if (!trimmedTitle && !content.trim()) return
+    // An empty title is a 422 on both create and update — `title` is
+    // `min_length=1` — so a blank one makes every autosave a request that cannot
+    // succeed. Writing the body first, or clearing the title of a saved note, is
+    // an ordinary thing to do; neither should spend a request per keystroke to be
+    // told so. The draft still holds the text and the state line says what is
+    // missing.
+    if (!trimmedTitle) {
+      setState('needs-title')
+      return
+    }
     if (trimmedTitle === persistedRef.current.title && content === persistedRef.current.content) {
       return
     }
@@ -220,7 +227,7 @@ export function NoteEditor({ note, onSaved, readOnly = false, actions, className
     if (title === persistedRef.current.title && content === persistedRef.current.content) return
 
     writeDraft(noteId, { title, content, at: Date.now() })
-    setState('unsaved')
+    setState(title.trim() === '' ? 'needs-title' : 'unsaved')
 
     if (timerRef.current !== null) window.clearTimeout(timerRef.current)
     timerRef.current = window.setTimeout(() => {
@@ -314,6 +321,12 @@ export function NoteEditor({ note, onSaved, readOnly = false, actions, className
               Unsaved changes
             </span>
           )}
+          {state === 'needs-title' && (
+            <span className="flex items-center gap-1.5 text-xs text-warning">
+              <Save aria-hidden="true" className="size-3.5" />
+              Needs a title
+            </span>
+          )}
           {state === 'saved' && (
             <span className="flex items-center gap-1.5 text-xs text-success">
               <Check aria-hidden="true" className="size-3.5" />
@@ -335,6 +348,14 @@ export function NoteEditor({ note, onSaved, readOnly = false, actions, className
         <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/[0.04] px-3 py-2 text-xs leading-relaxed text-destructive">
           {saveError} Your text is held in a local draft on this device — press{' '}
           <Kbd>Ctrl</Kbd> + <Kbd>S</Kbd> to try again.
+        </p>
+      )}
+
+      {state === 'needs-title' && (
+        <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs leading-relaxed text-warning">
+          A note needs a title before it can be saved — the backend rejects a blank one, so
+          nothing is sent until you give it one. Your text is held in a local draft on this
+          device in the meantime.
         </p>
       )}
 

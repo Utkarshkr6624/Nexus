@@ -23,14 +23,22 @@
  *    nothing, and the panel says what fills it rather than printing a row of
  *    zeroes or an unexplained dash.
  * 4. Otherwise → the caller's children.
+ *
+ * **A panel that throws is caught here too.** Splitting the queries per panel
+ * stops a failed *request* from taking the page down, but a panel body that
+ * throws while rendering still escapes to the route's single error boundary and
+ * replaces the whole page with "NEXUS could not finish loading this view". A
+ * boundary around the caller's own subtree means one bad render costs one card.
  */
-import type { ReactNode } from 'react'
+import { Component } from 'react'
+import type { ErrorInfo, ReactNode } from 'react'
 import { Inbox } from 'lucide-react'
 
 import { EmptyState } from '@/components/feedback/empty-state'
 import { ErrorState } from '@/components/feedback/error-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ApiError } from '@/lib/api-client'
 import { toApiError } from '@/services/errors'
 import { ProvenanceBadge } from '@/features/command-center/components/provenance-badge'
 import type { Provenance } from '@/features/command-center/priority'
@@ -70,6 +78,57 @@ function PanelSkeleton({ rows = 3, className }: PanelSkeletonProps) {
   )
 }
 
+interface PanelBoundaryProps {
+  title: string
+  retry: () => void
+  children: ReactNode
+}
+
+interface PanelBoundaryState {
+  error: Error | null
+}
+
+/**
+ * Catches a render throw from one panel body so the other seven survive.
+ *
+ * The route sits under one error boundary, so without this a single bad render
+ * replaces the entire Command Center. The caught error is normalised the same
+ * way {@link AppErrorBoundary} does it — a crash has no request behind it, so it
+ * is a 500 with its own message — and the panel offers the same retry it offers
+ * for a failed query, because re-rendering is what retrying means here.
+ */
+class PanelBoundary extends Component<PanelBoundaryProps, PanelBoundaryState> {
+  override state: PanelBoundaryState = { error: null }
+
+  static getDerivedStateFromError(error: Error): PanelBoundaryState {
+    return { error }
+  }
+
+  override componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`NEXUS render error in the "${this.props.title}" panel`, error, info.componentStack)
+  }
+
+  override render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <ErrorState
+        error={
+          this.state.error instanceof ApiError
+            ? this.state.error
+            : new ApiError({
+                status: 500,
+                code: 'internal_error',
+                message: this.state.error.message || 'Unexpected application error',
+              })
+        }
+        title={`${this.props.title} could not be shown`}
+        onRetry={this.props.retry}
+        compact
+      />
+    )
+  }
+}
+
 export interface CommandCenterPanelProps {
   title: string
   description?: string
@@ -95,6 +154,11 @@ export function CommandCenterPanel({
   children,
 }: CommandCenterPanelProps) {
   const headingId = `command-center-panel-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+  // An empty panel drops its description: the empty state below it already says
+  // what this panel would hold and what fills it, so the header sentence is a
+  // second paragraph of the same thing. Six empty panels * one duplicated
+  // paragraph was most of the dead space on a brand-new account.
+  const showingEmpty = !state.pending && !state.error && Boolean(state.empty)
 
   return (
     // `role="region"` is explicit rather than implied: a card labelled by its
@@ -110,7 +174,7 @@ export function CommandCenterPanel({
           {provenance && <ProvenanceBadge provenance={provenance} />}
           {badges}
         </div>
-        {description && <CardDescription>{description}</CardDescription>}
+        {description && !showingEmpty && <CardDescription>{description}</CardDescription>}
       </CardHeader>
 
       <CardContent>
@@ -123,17 +187,22 @@ export function CommandCenterPanel({
             onRetry={state.retry}
             compact
           />
-        ) : state.empty ? (
-          state.emptyState ?? (
-            <EmptyState
-              compact
-              icon={Inbox}
-              title="Nothing recorded yet"
-              description="This panel stays empty until a real endpoint has rows to report."
-            />
-          )
         ) : (
-          children
+          <PanelBoundary title={title} retry={state.retry}>
+            {showingEmpty ? (
+              state.emptyState ?? (
+                <EmptyState
+                  compact
+                  className="py-4"
+                  icon={Inbox}
+                  title="Nothing recorded yet"
+                  description="This panel stays empty until a real endpoint has rows to report."
+                />
+              )
+            ) : (
+              children
+            )}
+          </PanelBoundary>
         )}
       </CardContent>
     </Card>

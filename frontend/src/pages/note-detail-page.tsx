@@ -159,13 +159,20 @@ export default function NoteDetailPage() {
                 Archive
               </Button>
             ) : (
+              /*
+               * Named apart from the revision rollbacks further down this page,
+               * which used to offer eight buttons all called "Restore" for two
+               * entirely different writes: this one changes the note's lifecycle,
+               * those rewrite its body from history. The visible label carries the
+               * distinction too, so it survives without a screen reader.
+               */
               <Button
                 variant="outline"
                 disabled={transition.isPending}
                 onClick={() => void run('restore')}
               >
                 <RotateCcw aria-hidden="true" />
-                Restore
+                Restore note
               </Button>
             )}
             <Button

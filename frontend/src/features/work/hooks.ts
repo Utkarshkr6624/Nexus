@@ -29,9 +29,11 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query'
 
+import type { TaskTransitionStatus } from '@/features/work/task-transitions'
 import {
   archiveProject,
   blockTask,
+  cancelTask,
   completeProject,
   completeTask,
   createProject,
@@ -51,6 +53,7 @@ import {
   reopenTask,
   restoreProject,
   setTaskTags,
+  startTask,
   updateProject,
   updateTask,
   type ProjectCreatePayload,
@@ -313,19 +316,26 @@ export function useDeleteTask(): UseMutationResult<void, Error, UUIDString> {
 }
 
 /**
- * The three lifecycle transitions behind one call, for a control that offers a
+ * The lifecycle transitions behind one call, for a control that offers a
  * "what next?" menu. The server decides whether the move is legal and a 422 is
  * surfaced rather than swallowed.
+ *
+ * **Every route in `TaskService._LEGAL_TRANSITIONS` that an endpoint actually
+ * walks appears here**, `/start` included. It used to be missing, which left
+ * the client offering Complete on a `todo` card — a move the server refuses —
+ * while the route that would have made it legal sat unused.
  */
 export function useTaskTransition(): UseMutationResult<
   Task,
   Error,
-  { id: UUIDString; status: 'completed' | 'reopened' | 'blocked'; note?: string }
+  { id: UUIDString; status: TaskTransitionStatus; note?: string }
 > {
   return useMutation({
     mutationFn: ({ id, status, note }) => {
       if (status === 'completed') return completeTask(id)
       if (status === 'reopened') return reopenTask(id)
+      if (status === 'in_progress') return startTask(id)
+      if (status === 'cancelled') return cancelTask(id)
       return blockTask(id, note)
     },
     onSuccess: useInvalidateWork(),

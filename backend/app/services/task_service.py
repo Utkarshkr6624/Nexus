@@ -245,6 +245,33 @@ _SUBTASK_PROJECT_MOVE = (
     "would stay behind on the old one. Detach it from its parent first, then move it."
 )
 
+#: Why a task that carries dependency edges may not be moved to another project.
+#:
+#: The same rule :meth:`TaskService.add_dependency` enforces when the edge is
+#: *created*, applied to the one writer that could get round it. A dependency is a
+#: statement that two cards belong to the same piece of work, and a cross-project
+#: edge is exactly the condition ``POST /dependencies`` answers 422 to — so a
+#: PATCH that moves one end of an existing edge produced a state the API refuses
+#: to build, left a task blocked on work that lives on another board, and could
+#: only be repaired by deleting the edge by hand.
+#:
+#: The wording mirrors :data:`_SUBTASK_PROJECT_MOVE`'s sibling above, because it is
+#: the same promise: refuse rather than repair, and name the operation that undoes
+#: it rather than a sentence that merely sounds kind.
+_TASK_DEPENDENCY_PROJECT_MOVE = (
+    "Move or delete this task's dependency edges before moving the task itself."
+)
+
+#: Edit fields whose *values* are never copied onto the activity event.
+#:
+#: ``TASK_UPDATED`` records what each changed field held before the write, so an
+#: edit can be shown and reversed from the feed alone rather than only listed by
+#: name. ``description`` is the one field left out: it is free text the user
+#: typed, and an activity feed is long-lived and rendered in places the card never
+#: was. Every other writable field is a status, a grade, a date or a number, and
+#: none of them can carry a sentence.
+_UNRECORDED_EDIT_FIELDS = frozenset({"description"})
+
 #: Why a task that already has children may not become a child itself.
 #:
 #: The same rule as the nesting refusal in :func:`_check_parent`, seen from the
@@ -626,6 +653,20 @@ class TaskService:
         client re-send a field it merely echoed would refuse an edit that had
         nothing to do with the subtask tree.
 
+        **A dependency edge is the same kind of linkage, and is refused the same
+        way** (:data:`_TASK_DEPENDENCY_PROJECT_MOVE`). The sibling rules above are
+        checked here because ``_check_parent`` is synchronous and cannot see the
+        other end of an edge; the dependency rule is the same story one level
+        across — a move would leave an edge straddling two projects, which is the
+        exact condition :meth:`add_dependency` refuses to create.
+
+        ``priority`` **is** writable here. It has its own route, and that route
+        exists so the feed can report a re-triage as its own moment — not so the
+        column can be locked. A priority that arrives through this payload emits
+        the very same ``TASK_PRIORITY_CHANGED`` event, with the old and the new
+        grade, that ``PATCH /tasks/{id}/priority`` emits, so "when was this
+        de-prioritised" is answerable no matter which route a client used.
+
         Status is not writable here and not present on the schema; ``position``
         is likewise absent. See :data:`_UPDATABLE_FIELDS`.
 
@@ -644,8 +685,9 @@ class TaskService:
             ValidationError: If the resulting window ends before it starts, the
                 new parent is in another project or is itself a subtask, the
                 task is itself a subtask and is being moved to a project its
-                parent is not in, or the task already has subtasks and is being
-                made one.
+                parent is not in, the task already has subtasks and is being made
+                one, or it carries a dependency edge and is being moved to
+                another project.
         """
         self._owned(task, owner)
         sent = data.model_dump(exclude_unset=True)
@@ -695,6 +737,13 @@ class TaskService:
                     # Only a PATCH that keeps the old parent across a project
                     # boundary is refused.
                     raise ValidationError(_SUBTASK_PROJECT_MOVE)
+                if await self.repository.count_dependency_edges(task.id):
+                    # The dependency half of the same guarantee. ``add_dependency``
+                    # refuses an edge whose two ends are in different projects, so
+                    # a move that keeps an edge would leave behind precisely the
+                    # state the create path exists to prevent — and the caller
+                    # would have no way back except finding the edge by hand.
+                    raise ValidationError(_TASK_DEPENDENCY_PROJECT_MOVE)
             effective_project_id = destination.id
         if "parent_id" in fields and fields["parent_id"] is not None:
             parent = await self.repository.get_by_id_for_user(fields["parent_id"], owner.id)
@@ -725,15 +774,41 @@ class TaskService:
             return task
         # Captured before the write, because ``update_fields`` mutates this very
         # instance — comparing against ``task.due_date`` afterwards would always
-        # find it unchanged and the event below would never fire.
+        # find it unchanged and the event below would never fire. The whole set is
+        # captured for the same reason: ``changes`` below is the old value of each
+        # field, so an edit can be shown and reversed from the feed alone rather
+        # than only listed by name.
         previous_due_date = task.due_date
+        previous = {key: getattr(task, key) for key in fields}
         updated = await self.repository.update_fields(task, **fields)
         await self._record(
             ActivityEvent.TASK_UPDATED,
             owner=owner,
             task=updated,
-            metadata={"fields": sorted(fields)},
+            metadata={
+                "fields": sorted(fields),
+                # Only the fields whose value actually moved: sending a field back
+                # unchanged is a field the client named, not a change, and a feed
+                # full of ``from == to`` entries is harder to read than no entries.
+                "changes": {
+                    key: {"from": _recorded_value(previous[key]), "to": _recorded_value(value)}
+                    for key, value in sorted(fields.items())
+                    if key not in _UNRECORDED_EDIT_FIELDS and previous[key] != value
+                },
+            },
         )
+        if "priority" in fields and previous["priority"] != fields["priority"]:
+            # A re-triage reached through the detail PATCH rather than through
+            # ``PATCH /tasks/{id}/priority``. It is the same event either way —
+            # ``task_priority_changed`` with the old and the new grade — so
+            # "when was this de-prioritised" stays answerable no matter which
+            # route a client used to get there.
+            await self._record(
+                ActivityEvent.TASK_PRIORITY_CHANGED,
+                owner=owner,
+                task=updated,
+                metadata={"from": previous["priority"], "to": fields["priority"]},
+            )
         if "due_date" in fields and fields["due_date"] != previous_due_date:
             # A deadline changing is its own moment in the feed: it is what the
             # schedule report is built from, and burying it inside a generic
@@ -742,7 +817,10 @@ class TaskService:
                 ActivityEvent.TASK_DUE_DATE_CHANGED,
                 owner=owner,
                 task=updated,
-                metadata={"due_date": str(updated.due_date) if updated.due_date else None},
+                metadata={
+                    "from": str(previous_due_date) if previous_due_date else None,
+                    "due_date": str(updated.due_date) if updated.due_date else None,
+                },
             )
         return updated
 
@@ -1042,6 +1120,16 @@ class TaskService:
         usable afterwards, and the event is written after it so a failed delete
         leaves no event claiming the task is gone.
 
+        **What the delete does to the cards that were waiting on it.** A
+        prerequisite that is deleted is a prerequisite that is gone: the edge
+        cascades, the dependent's ``has_blocked_dependencies`` flips from true to
+        false, and its next completion is allowed. That is correct — there is
+        nothing left to wait for — and it used to be **silent**. The dependent's
+        own history still read as though the blocker were there, so "why could I
+        not finish this yesterday?" had no answer in the one place that records
+        what happened. Every affected card therefore gets an event of its own,
+        written after the delete so it is never a claim about work that survived.
+
         Args:
             task: The task, already resolved for this owner.
             owner: The authenticated caller.
@@ -1056,6 +1144,12 @@ class TaskService:
         # attribute access on it would raise rather than return the row's value.
         title = task.title
         status = task.status
+        # Read before the delete for the same reason: the edge rows go with the
+        # task, and after it there is nothing left to ask.
+        dependents = [
+            (row.id, row.project_id)
+            for row in await self.list_dependents(task=task, owner=owner)
+        ]
         await self.repository.delete(task)
         # ``task_id`` is deliberately NOT passed. ``ON DELETE SET NULL`` only
         # rewrites rows that already exist — it does not make a NEW row's
@@ -1063,8 +1157,11 @@ class TaskService:
         # deleted raises ``ForeignKeyViolation`` inside the best-effort audit
         # write, which then swallows it and the deletion event is silently lost.
         # The id still reaches the row, in ``metadata``, so a reader can still
-        # identify what was deleted; what is gone is the join, which no longer
-        # has anything to join to.
+        # identify what was deleted — and ``ActivityRepository.list_for_user``
+        # matches that ``metadata`` value when a caller filters the feed by
+        # ``?task_id=``, so the row is still reachable by the id of a task that no
+        # longer exists. What is gone is the join, which no longer has anything to
+        # join to.
         await self._record(
             ActivityEvent.TASK_DELETED,
             owner=owner,
@@ -1072,6 +1169,22 @@ class TaskService:
             task_id=None,
             metadata={"task_id": str(task_id), "title": title, "status": status},
         )
+        # One event per card that was waiting on this one. Same event type as an
+        # edge removed by hand (``ActivityEvent`` has no TASK_DEPENDENCY_REMOVED,
+        # for the reason :meth:`remove_dependency` gives), plus the two keys that
+        # say *why* this edge disappeared rather than that one did.
+        for dependent_id, dependent_project_id in dependents:
+            await self._record(
+                ActivityEvent.TASK_UPDATED,
+                owner=owner,
+                project_id=dependent_project_id,
+                task_id=dependent_id,
+                metadata={
+                    "removed_dependency": str(task_id),
+                    "depends_on_title": title,
+                    "removed_by": "task_deleted",
+                },
+            )
 
     # -- Scheduling (Phase 4) ----------------------------------------------
 
@@ -1381,6 +1494,36 @@ class TaskService:
         return [
             row
             for row in await self.repository.list_dependencies(task.id)
+            if row.owner_id == owner.id
+        ]
+
+    async def list_dependents(self, *, task: Task, owner: User) -> list[Task]:
+        """Return the tasks waiting on this one — the other end of every edge.
+
+        The mirror of :meth:`list_dependencies`, and the answer to the question
+        that method's docstring warns about: "what is waiting on me?". A card
+        that blocks three others reports ``[]`` from :meth:`list_dependencies`,
+        which is correct and reads like an empty graph to anybody who only has
+        that one method to ask.
+
+        Owned rows only, for the same tripwire reason as the forward direction: the
+        query reaches them through a task the caller already owns, so a cross-tenant
+        edge cannot widen the answer.
+
+        Args:
+            task: The task, already resolved for this owner.
+            owner: The authenticated caller.
+
+        Returns:
+            The tasks whose completion this one is holding up.
+
+        Raises:
+            NotFoundError: If the row does not belong to the caller.
+        """
+        self._owned(task, owner)
+        return [
+            row
+            for row in await self.repository.list_dependents(task.id)
             if row.owner_id == owner.id
         ]
 
@@ -1769,6 +1912,22 @@ def _check_parent(parent: Task, *, project_id: uuid.UUID, task: Task | None = No
             "Subtasks cannot themselves have subtasks; nesting is limited to one level.",
             details={"max_depth": _MAX_SUBTASK_DEPTH},
         )
+
+
+def _recorded_value(value: object) -> object:
+    """Return a task column's value in a form the activity metadata can hold.
+
+    ``activity_events.metadata`` is JSONB, so a ``date`` or a ``UUID`` written into
+    it verbatim fails the write — and :meth:`TaskService._record` swallows that
+    failure, which would lose the whole ``TASK_UPDATED`` event rather than one
+    awkward field. Rendering the two types that reach here as strings is the same
+    choice the neighbouring events already make: ``str(task_id)`` in the delete
+    event, ``str(due_date)`` in the due-date event, and ``_field_value`` in the
+    project service.
+    """
+    if isinstance(value, (date, datetime, uuid.UUID)):
+        return str(value)
+    return value
 
 
 def _current_status(task: Task) -> TaskStatus:

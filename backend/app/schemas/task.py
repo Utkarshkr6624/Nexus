@@ -265,8 +265,10 @@ class TaskPriorityChange(BaseModel):
     """Payload for re-prioritising a task.
 
     Separate from :class:`TaskUpdate` because a priority change is an event the
-    feed reports on its own; a client cannot get one through a generic edit even
-    if it tries.
+    feed reports on its own — with the old and the new grade. The detail PATCH
+    carries a ``priority`` too, and a priority sent there is reported as the same
+    ``task_priority_changed`` event; this payload is the route that asks for one
+    thing, not a gate that keeps the other one from working.
     """
 
     priority: TaskPriority

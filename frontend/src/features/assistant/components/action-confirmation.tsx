@@ -23,7 +23,8 @@ import type { VoiceError } from '@/features/assistant/types'
  * decision about what was read out of the sentence. This file never reassembles
  * one from `payload`: a client-written summary would be a second description of
  * the same write, free to disagree with the first, and the user would be agreeing
- * to the second one.
+ * to the second one. That is *more* important once deletes exist — the summary
+ * naming the row is the only place the user is told which row is about to go.
  *
  * **Confirm and Cancel, and nothing else.** The backend publishes
  * `requires_confirmation: true` as a property rather than a field precisely
@@ -33,11 +34,31 @@ import type { VoiceError } from '@/features/assistant/types'
  * and focus returns to wherever it came from on close. Re-implementing any of
  * that here would be the one thing this file must not do.
  *
+ * **A destructive kind is styled as one, and the styling is the warning.** The
+ * assistant can delete a row now, and `proposal.destructive` is the backend's own
+ * answer to "does this discard something". When it is set, the title says so, a
+ * plain sentence says the write cannot be undone, and the confirm button carries
+ * the destructive variant — so the one irreversible press in this flow is the
+ * one button on screen that looks irreversible. The flag is read from the
+ * proposal rather than inferred from `kind`: which kinds are destructive is the
+ * backend's spec table, and a client that kept its own copy of that list would
+ * eventually disagree with it on exactly the buttons that matter. Nothing is
+ * withheld either — Cancel stays enabled and says so, because an irreversibility
+ * warning that also removes the way out is a trap, not a safeguard.
+ *
  * **A failed confirmation leaves the dialog open.** The `role="alert"` inside it
  * says what went wrong, and both buttons come back: nothing is disabled by a
  * failure except while the request is genuinely in flight, and nothing about
  * this file can leave a reader with no way forward.
  */
+
+/**
+ * What a destructive write cannot offer the person reading it.
+ *
+ * One sentence, said plainly, rather than a hedge. "This cannot be undone" is
+ * the fact; everything else on screen is detail.
+ */
+const IRREVERSIBLE_WARNING = 'This cannot be undone.'
 
 /** One extracted field, shown as the value beside the field it fills. */
 function ExtractedArguments({ items }: { items: ExtractArgumentRead[] }) {
@@ -112,7 +133,8 @@ export interface ActionConfirmationProps {
  * a stray click at that moment would leave the panel showing nothing about a
  * write the backend may well be carrying out, which is the one outcome worse
  * than waiting. This is the same guard `work/components/confirm-dialog.tsx`
- * applies, and for the same reason.
+ * applies, and for the same reason — and it matters more for a delete, where
+ * losing the panel also loses the last chance to say what was removed.
  */
 export function ActionConfirmation({
   proposal,
@@ -121,19 +143,38 @@ export function ActionConfirmation({
   onConfirm,
   onCancel,
 }: ActionConfirmationProps) {
+  const { destructive } = proposal
+
   return (
     <Dialog open onOpenChange={(next) => (next ? undefined : onCancel())}>
       <DialogContent className="max-w-md" showClose={!confirming}>
         <DialogHeader>
-          <DialogTitle>Confirm this action</DialogTitle>
+          <DialogTitle className={cn(destructive && 'text-destructive')}>
+            {destructive ? 'This will delete something' : 'Confirm this action'}
+          </DialogTitle>
           {/* The backend's sentence, verbatim — the whole reason this type
-              publishes `summary`. */}
+              publishes `summary`, and on a delete the only statement of which
+              row is going. */}
           <DialogDescription>{proposal.summary}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <ExtractedArguments items={proposal.arguments} />
           <ExtractedNotes notes={proposal.notes} />
+
+          {destructive && (
+            /* Not the `role="alert"` styling of a failure below: this is not
+               news of a fault, and a live region that announces it would read
+               the warning twice, once as it appeared and once with the panel. */
+            <div className="rounded-md border border-destructive/30 bg-destructive/[0.04] px-3 py-2">
+              <p className="text-xs font-medium text-destructive">{IRREVERSIBLE_WARNING}</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {proposal.target_label
+                  ? `“${proposal.target_label}” will be deleted permanently. There is no undo and no copy left behind.`
+                  : 'The row this refers to will be deleted permanently. There is no undo and no copy left behind.'}
+              </p>
+            </div>
+          )}
 
           <p className="text-xs leading-relaxed text-muted-foreground">
             NEXUS will check that your account is allowed to do this, and will not write anything
@@ -152,11 +193,19 @@ export function ActionConfirmation({
         </div>
 
         <DialogFooter>
+          {/* Cancel stays a ghost button and stays enabled either way. A
+              destructive dialog that disabled the way out would be steering the
+              reader rather than informing them. */}
           <Button type="button" variant="ghost" onClick={onCancel} disabled={confirming}>
             Cancel
           </Button>
-          <Button type="button" onClick={onConfirm} disabled={confirming}>
-            {confirming ? 'Working…' : 'Confirm'}
+          <Button
+            type="button"
+            variant={destructive ? 'destructive' : 'default'}
+            onClick={onConfirm}
+            disabled={confirming}
+          >
+            {confirming ? 'Working…' : destructive ? 'Delete it' : 'Confirm'}
           </Button>
         </DialogFooter>
       </DialogContent>

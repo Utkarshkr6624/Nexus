@@ -173,20 +173,72 @@ export interface MlStatusRead {
  */
 
 /**
- * The closed set of actions the proposal layer can name.
+ * Every write the proposal layer can name, across every surface.
  *
- * Mirrors `app.ml.actions.proposals.ActionKind`. **There is no destructive
- * member, and a client cannot reach one**: the endpoint parses this value as an
- * enum against a frozen table, so anything outside the set is a 422 before the
- * handler runs. Kept a union rather than `string` so a typo in a `switch` is a
- * compile error instead of a branch that silently never fires.
+ * Mirrors `app.ml.actions.proposals.ActionKind`: not only the five creations the
+ * assistant used to be limited to, but the updates, status transitions,
+ * scheduling, tagging, publishing, archiving and **single-row deletions** as
+ * well. The endpoint parses this value as an enum against a frozen table, so
+ * anything outside the set is a 422 before the handler runs. Kept a union rather
+ * than `string` so a typo in a `switch` is a compile error instead of a branch
+ * that silently never fires — which matters more now that the set is this wide.
+ *
+ * **Destructive kinds are here, and that is not the same thing as being
+ * unguarded.** Deletion is safe because of four separate guarantees and not
+ * because of a list this file maintains: every write requires confirmation
+ * (`requires_confirmation` is a property that is always `true`), a destructive
+ * kind carries `destructive: true` and the dialog says so in as many words, a
+ * bulk request naming a whole collection is refused rather than executed, and
+ * the id is re-resolved through an owner-scoped lookup so a forged one is a 404
+ * before anything is written. Which members are destructive is decided by the
+ * backend's spec table and published on the proposal as a boolean; a client
+ * branches on that boolean and never on this list.
  */
 export type ActionKind =
-  | 'complete_task'
-  | 'create_learning_goal'
-  | 'create_note'
-  | 'create_project'
+  // Tasks
   | 'create_task'
+  | 'update_task'
+  | 'delete_task'
+  | 'complete_task'
+  | 'set_task_status'
+  | 'schedule_task'
+  | 'unschedule_task'
+  | 'tag_task'
+  | 'untag_task'
+  // Projects
+  | 'create_project'
+  | 'update_project'
+  | 'delete_project'
+  | 'set_project_status'
+  // Knowledge
+  | 'create_note'
+  | 'update_note'
+  | 'delete_note'
+  | 'archive_note'
+  | 'publish_note'
+  | 'create_bookmark'
+  | 'delete_bookmark'
+  | 'create_concept'
+  | 'delete_concept'
+  | 'create_link'
+  | 'delete_link'
+  // Learning
+  | 'create_learning_goal'
+  | 'update_learning_goal'
+  | 'complete_learning_goal'
+  | 'delete_learning_goal'
+  | 'create_skill'
+  | 'delete_skill'
+  // Planner
+  | 'create_event'
+  | 'update_event'
+  | 'delete_event'
+  | 'create_session'
+  | 'delete_session'
+  // Developer
+  | 'create_repository'
+  // Account
+  | 'update_profile'
 
 /**
  * The closed vocabulary a refusal can report.
@@ -197,11 +249,27 @@ export type ActionKind =
  * and ask again), while `unsupported_intent` means the sentence asked for
  * something NEXUS does not do and no retry will change that. `reason` is the
  * sentence to show; this is the term to branch on.
+ *
+ * The distinction that matters most since deletion was allowed is the pair
+ * `target_ambiguous` / `target_not_found` against `destructive_request`. A
+ * reference that matched nothing, or several rows at once, is **its own refusal**
+ * and never a best guess about which row was meant. `destructive_request` is now
+ * narrower than the name suggests: it reports a request whose *scope* NEXUS will
+ * not act on from one sentence — "delete all my tasks" — and never an ordinary
+ * single-row delete, which is a proposal like any other.
+ *
+ * `task_reference_ambiguous` and `task_reference_not_found` are the older,
+ * task-specific spellings of the two general terms and are retained because the
+ * backend still emits them.
  */
 export type ProposalReasonCode =
   | 'context_missing'
   | 'destructive_request'
+  | 'entity_not_recognised'
+  | 'field_not_recoverable'
   | 'payload_invalid'
+  | 'target_ambiguous'
+  | 'target_not_found'
   | 'task_reference_ambiguous'
   | 'task_reference_not_found'
   | 'title_not_recoverable'
@@ -235,17 +303,23 @@ export interface ExtractArgumentRead {
  * proposal time from the winning intent and the extracted arguments, and it says
  * what will change, under what name, and when — so it is the sentence to render.
  * A client that reassembles its own sentence out of `payload` is a second
- * description of the same write that can drift from the first one.
+ * description of the same write that can drift from the first one. For a delete
+ * that sentence is the only place the user is told what is about to be lost, so
+ * it is rendered verbatim there too.
  *
  * `payload` beside it is what a confirm sends back, and `target_id` is the row a
- * completion acts on. `service`, `module`, `entrypoint` and `payload_schema`
+ * non-creation acts on. `service`, `module`, `entrypoint` and `payload_schema`
  * describe the call that *will* run; the client sends none of them, because
  * `kind` alone is what the endpoint re-derives everything from — a body cannot
  * name a different service.
  *
- * `requires_confirmation` and `destructive` are echoed as the constants they
- * are (always `true` and always `false`), published so a dialog can rely on the
- * invariant instead of hard-coding it.
+ * `requires_confirmation` and `destructive` are published so a dialog can rely on
+ * the invariants rather than hard-code them. The first is a property that is
+ * always `true`: there is no path from an utterance to a write that skips this
+ * step. The second is a **real field, derived from the backend's spec table**,
+ * and it is `true` for the kinds that delete a row — which is what lets the
+ * dialog warn that the write cannot be undone and lets the confirm endpoint
+ * demand the extra acknowledgement in {@link ConfirmActionRequest}.
  */
 export interface ActionProposalRead {
   kind: ActionKind
@@ -256,7 +330,14 @@ export interface ActionProposalRead {
   summary: string
   /** Always `true`. There is no path that skips confirmation. */
   requires_confirmation: boolean
-  /** Always `false`. No proposed action deletes or discards anything. */
+  /**
+   * Whether this kind discards a row, from the backend's spec table.
+   *
+   * `true` for the `delete_*` kinds. A dialog renders the irreversibility in
+   * words and switches its confirm button to the destructive variant; it must
+   * not infer this from `kind`, because which kinds are destructive is the
+   * backend's decision and can change without a client release.
+   */
   destructive: boolean
   /** The capability the confirming call will be re-checked against. */
   permission: string
@@ -272,13 +353,13 @@ export interface ActionProposalRead {
    * The validated payload, JSON-ready.
    *
    * Free-form by design: the schema it must satisfy is a property of `kind`, so
-   * the backend publishes the object rather than a union of five. It is taken
-   * back verbatim on confirm, where the endpoint validates it as untrusted input
-   * — which is what makes a field the user edited in the dialog checked rather
-   * than honoured.
+   * the backend publishes the object rather than a union of every kind's schema.
+   * It is taken back verbatim on confirm, where the endpoint validates it as
+   * untrusted input — which is what makes a field the user edited in the dialog
+   * checked rather than honoured.
    */
   payload: Record<string, unknown>
-  /** `null` for a creation; the row a completion marks done. */
+  /** `null` for a creation; the row any other write acts on, deletes included. */
   target_id: string | null
   /** The caller's own name for `target_id`, so a dialog can quote it. */
   target_label: string | null
@@ -340,10 +421,12 @@ export interface ProposeActionRead {
  *
  * **Every field is untrusted, and the backend checks all of them.** `kind` names
  * the frozen spec the endpoint looks up, so the payload schema, the permission
- * and the entry point are not this body's to choose; `intent` must be the intent
- * that kind can only have come from; the payload is re-validated with unknown
- * keys rejected; and `target_id` is re-resolved through an owner-scoped lookup,
- * so another account's id is a 404 before any row is written.
+ * and the entry point are not this body's to choose; `intent` must be an intent
+ * the kind can only have come from; the payload is re-validated with unknown
+ * keys rejected; `target_id` is re-resolved through an owner-scoped lookup, so
+ * another account's id is a 404 before any row is written; and a kind whose
+ * spec says `destructive` is refused outright unless the extra acknowledgement
+ * below is set.
  *
  * The request model forbids extra keys, so this object is the whole body — a
  * client cannot smuggle a hint past the endpoint.
@@ -354,7 +437,18 @@ export interface ConfirmActionRequest {
   intent: IntentName
   /** The proposal's payload, possibly edited by the user. Validated as untrusted input. */
   payload: Record<string, unknown>
-  /** `null` unless the action acts on a row, e.g. `complete_task`. */
+  /**
+   * The user's second acknowledgement of an irreversible write.
+   *
+   * Always sent, and set from the proposal's `destructive` flag rather than from
+   * `kind`: the flag is the backend's own answer to "does this discard a row",
+   * so the client cannot drift from it. A destructive kind confirmed without
+   * this is a 422 — which is what makes it a real barrier rather than a
+   * decorative one, since the flag travels from the endpoint that proposed the
+   * action to the endpoint that would carry it out.
+   */
+  confirm_destructive: boolean
+  /** `null` unless the action acts on a row, e.g. `complete_task` or `delete_task`. */
   target_id?: string | null
 }
 
@@ -362,11 +456,23 @@ export interface ConfirmActionRequest {
  * What kind of row was written.
  *
  * The backend declares this as `str`, but every value comes from a fixed
- * kind→entity table and the set is those four. Narrowing it here is what lets a
- * cache-invalidation branch be checked at compile time: the caller switches on
- * `entity` to decide which query key to invalidate, and that switch is total.
+ * kind→entity table rather than from free text, so it is narrowed here: a switch
+ * on `entity` — the branch that decides which query key to invalidate — is then
+ * checkable at compile time.
  */
-export type ConfirmEntity = 'learning_goal' | 'note' | 'project' | 'task'
+export type ConfirmEntity =
+  | 'bookmark'
+  | 'concept'
+  | 'event'
+  | 'learning_goal'
+  | 'link'
+  | 'note'
+  | 'profile'
+  | 'project'
+  | 'repository'
+  | 'session'
+  | 'skill'
+  | 'task'
 
 /**
  * What actually happened, said by the service that did it.
@@ -376,6 +482,11 @@ export type ConfirmEntity = 'learning_goal' | 'note' | 'project' | 'task'
  * reports the row that is already there with `applied: false`, because the
  * desired state *was* reached by the first call and telling the user their
  * second press failed would be a lie about a system that worked.
+ *
+ * `deleted` is a first-class outcome rather than an error: a delete is the
+ * service reporting the row it removed, and it renders through the same
+ * sentence the backend composed. There is no `undo` to pair it with — that is
+ * why the dialog warned before the press, not after it.
  *
  * `message` is the sentence to show. It is written from the service's return
  * value rather than from what the caller hoped for, so render it instead of
@@ -387,7 +498,7 @@ export interface ConfirmActionRead {
   entity: ConfirmEntity
   /** The row's identifier, as the service returned it. */
   entity_id: string
-  outcome: 'created' | 'no_op' | 'updated'
+  outcome: 'created' | 'deleted' | 'no_op' | 'updated'
   /** Whether *this request* changed anything. `false` on a replay. */
   applied: boolean
   /** One truthful sentence describing what happened. */

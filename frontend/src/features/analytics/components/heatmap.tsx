@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
+import { useId, useMemo } from 'react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ChartDataTable } from '@/features/analytics/components/chart-data-table'
 import { EmptyAnalytics } from '@/features/analytics/components/empty-analytics'
+import { describeSeries, formatChartValue } from '@/features/analytics/chart-theme'
 import { formatNumber, formatShortDate } from '@/features/analytics/format'
 import { cn } from '@/lib/utils'
 import type { DateOnlyString } from '@/types/analytics'
@@ -49,11 +51,16 @@ function levelFor(value: number, max: number): number {
  * charting package would add a dependency and an SVG overlay to draw thirty
  * rounded rectangles.
  *
- * **The grid is `aria-hidden` and the sentence beside it is the accessible
- * version.** "14 active days in the last 30" is the information a colour grid
- * conveys visually, and a screen reader cannot read a colour at all — so the
- * summary is visible text, not a visually-hidden afterthought. Each square also
- * carries its own `title` for a pointer user.
+ * **The grid is one image, and the sentence beside it is what it says.**
+ * "14 active days in the last 30" is the information a colour grid conveys
+ * visually, and a screen reader cannot read a colour at all — so the summary is
+ * visible text, not a visually-hidden afterthought. Each square also carries its
+ * own `title` for a pointer user.
+ *
+ * The grid and its scale are then a single `role="img"` named from the card's
+ * own heading, described by the busiest day, with the per-day figures behind a
+ * focusable disclosure: a colour grid with nothing behind it leaves anyone not
+ * reading colours with nothing at all.
  *
  * Columns are weeks and rows are weekdays, Monday first, matching the planner's
  * week convention, and the grid is wrapped in a horizontally scrollable region
@@ -99,10 +106,22 @@ export function Heatmap({
   const max = cells.reduce((highest, cell) => Math.max(highest, cell.value), 0)
   const empty = totalDays > 0 && activeDays === 0
 
+  const baseId = useId().replace(/:/g, '')
+  const titleId = `${baseId}-title`
+  const descriptionId = `${baseId}-description`
+
+  const description = `${describeSeries(
+    `Recorded ${valueName}`,
+    cells
+      .filter((cell) => cell.date !== null)
+      .map((cell) => ({ label: formatShortDate(cell.date as DateOnlyString), value: cell.value })),
+    { format: (value) => formatChartValue(value, 'count') },
+  )} ${formatNumber(activeDays)} of ${formatNumber(totalDays)} days recorded any.`
+
   return (
     <Card className={cn('min-w-0', className)}>
       <CardHeader className="pb-3">
-        <CardTitle>{title}</CardTitle>
+        <CardTitle id={titleId}>{title}</CardTitle>
         <CardDescription>{subtitle}</CardDescription>
       </CardHeader>
 
@@ -120,37 +139,59 @@ export function Heatmap({
               <span className="tabular-nums">{formatNumber(totalDays)}</span>
             </p>
 
-            <div className="overflow-x-auto pb-1">
-              <div
-                aria-hidden="true"
-                className="grid w-max grid-flow-col grid-rows-7 gap-[3px]"
-              >
-                {cells.map((cell, index) => (
-                  <span
-                    key={cell.date ?? `blank-${index}`}
-                    title={
-                      cell.date
-                        ? `${formatShortDate(cell.date)} · ${formatNumber(cell.value)} ${valueName}`
-                        : undefined
-                    }
-                    className={cn(
-                      'size-3 rounded-[3px]',
-                      cell.date === null
-                        ? 'bg-transparent'
-                        : LEVELS[levelFor(cell.value, max)],
-                    )}
-                  />
+            {/* The grid and its scale are one image: a colour a reader cannot
+                see, described by the card's heading and the sentence below it. */}
+            <div
+              role="img"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
+              className="space-y-2"
+            >
+              <div className="overflow-x-auto pb-1">
+                <div className="grid w-max grid-flow-col grid-rows-7 gap-[3px]">
+                  {cells.map((cell, index) => (
+                    <span
+                      key={cell.date ?? `blank-${index}`}
+                      title={
+                        cell.date
+                          ? `${formatShortDate(cell.date)} · ${formatNumber(cell.value)} ${valueName}`
+                          : undefined
+                      }
+                      className={cn(
+                        'size-3 rounded-[3px]',
+                        cell.date === null
+                          ? 'bg-transparent'
+                          : LEVELS[levelFor(cell.value, max)],
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span>Less</span>
+                {LEVELS.map((level) => (
+                  <span key={level} className={cn('size-3 rounded-[3px]', level)} />
                 ))}
+                <span>More</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-              <span>Less</span>
-              {LEVELS.map((level) => (
-                <span key={level} className={cn('size-3 rounded-[3px]', level)} />
-              ))}
-              <span>More</span>
-            </div>
+            <p id={descriptionId} className="sr-only">
+              {description}
+            </p>
+
+            <ChartDataTable
+              caption={title}
+              rowHeading="Day"
+              columns={[`${valueName[0]?.toUpperCase() ?? ''}${valueName.slice(1)}`]}
+              rows={cells
+                .filter((cell) => cell.date !== null)
+                .map((cell) => [
+                  formatShortDate(cell.date as DateOnlyString),
+                  formatNumber(cell.value),
+                ])}
+            />
           </>
         )}
       </CardContent>

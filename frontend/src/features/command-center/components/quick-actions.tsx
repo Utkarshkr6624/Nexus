@@ -33,7 +33,7 @@ import { Label } from '@/components/ui/label'
 import { useCreateNote } from '@/features/knowledge/hooks'
 import { useCreateLearningGoal } from '@/features/learning/hooks'
 import { useCreateProject, useCreateTag } from '@/features/work/hooks'
-import { toApiError } from '@/services/errors'
+import { fieldErrorMessages, toApiError } from '@/services/errors'
 import { cn } from '@/lib/utils'
 import type { NoteCreatePayload } from '@/types/knowledge'
 import type { LearningGoalCreatePayload } from '@/types/learning'
@@ -48,10 +48,20 @@ type Outcome = { tone: 'success' | 'error'; message: string } | null
  * Every branch says what did *not* happen as well as what failed: "nothing was
  * created" is the fact a person needs, because the alternative reading is that
  * the record they just typed is now in the database.
+ *
+ * A 422 carries the backend's own field messages, and they name the limit — "a
+ * tag name may be at most 48 characters". Reporting only "the backend rejected
+ * that name" threw that away and made the user guess which part of what they
+ * typed was wrong.
  */
 function failureMessage(error: unknown): string {
   const api = toApiError(error)
-  if (api.status === 422) return 'The backend rejected that name. Nothing was created.'
+  if (api.status === 422) {
+    const [first] = Object.values(fieldErrorMessages(api))
+    return first
+      ? `${first}. Nothing was created.`
+      : 'The backend rejected that name. Nothing was created.'
+  }
   if (api.status === 409) return 'Something with that name already exists. Nothing was created.'
   if (api.status === 403) return 'That record belongs to another account. Nothing was created.'
   if (api.isTimeout) return 'The backend did not answer in time. Nothing was created.'
@@ -63,11 +73,13 @@ interface QuickActionProps {
   label: string
   hint: string
   placeholder: string
+  /** The backend's own cap on the name, from its schema. Enforced here too. */
+  maxLength: number
   icon: typeof Tag
   onCreate: (name: string) => Promise<{ label: string }>
 }
 
-function QuickAction({ id, label, hint, placeholder, icon: Icon, onCreate }: QuickActionProps) {
+function QuickAction({ id, label, hint, placeholder, maxLength, icon: Icon, onCreate }: QuickActionProps) {
   const [name, setName] = useState('')
   const [outcome, setOutcome] = useState<Outcome>(null)
 
@@ -88,6 +100,23 @@ function QuickAction({ id, label, hint, placeholder, icon: Icon, onCreate }: Qui
     create.mutate(trimmed)
   }
 
+  /**
+   * Why `Create` is unavailable, or `null` when it is.
+   *
+   * All four buttons are greyed out on an account with nothing in it, which is
+   * true and useless: a reader cannot tell "you have not typed anything yet"
+   * from "this is closed to you". The reason is the sentence under the field,
+   * and the title rides on a wrapper because `disabled:pointer-events-none`
+   * stops a title on the button itself from ever being read.
+   */
+  const blockedReason = create.isPending
+    ? `Asking the backend. This waits rather than sending a second request.`
+    : name.trim().length === 0
+      ? 'Type a name above and this becomes Create. Nothing is sent until you press it.'
+      : null
+  const hintId = `${id}-hint`
+  const blockedId = `${id}-blocked`
+
   return (
     <form onSubmit={submit} className="space-y-2 rounded-md border border-border p-3">
       <Label htmlFor={id} className="flex items-center gap-2 text-xs">
@@ -99,20 +128,31 @@ function QuickAction({ id, label, hint, placeholder, icon: Icon, onCreate }: Qui
           id={id}
           value={name}
           placeholder={placeholder}
+          maxLength={maxLength}
+          aria-describedby={blockedReason ? `${hintId} ${blockedId}` : hintId}
           onChange={(event) => setName(event.target.value)}
           className="h-8 text-sm"
         />
-        <Button
-          type="submit"
-          size="sm"
-          className="shrink-0"
-          disabled={create.isPending || name.trim().length === 0}
-        >
-          <Plus aria-hidden="true" />
-          Create
-        </Button>
+        <span className="inline-flex shrink-0" title={blockedReason ?? `Create this ${label.toLowerCase()}`}>
+          <Button
+            type="submit"
+            size="sm"
+            aria-describedby={blockedReason ? blockedId : undefined}
+            disabled={blockedReason !== null}
+          >
+            <Plus aria-hidden="true" />
+            {create.isPending ? 'Creating…' : 'Create'}
+          </Button>
+        </span>
       </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p>
+      {blockedReason && (
+        <p id={blockedId} className="text-xs leading-relaxed text-muted-foreground">
+          {blockedReason}
+        </p>
+      )}
+      <p id={hintId} className="text-xs leading-relaxed text-muted-foreground">
+        {hint}
+      </p>
       {outcome && (
         <p
           role="status"
@@ -141,6 +181,7 @@ export function QuickActions() {
         label="New project"
         hint="POST /projects. A name is the only required field."
         placeholder="Atlas migration"
+        maxLength={200}
         icon={FolderKanban}
         onCreate={async (name) => {
           const payload: ProjectCreatePayload = { name }
@@ -154,6 +195,7 @@ export function QuickActions() {
         label="New note"
         hint="POST /notes. Stored as written; nothing is generated for it."
         placeholder="What the Atlas numbers mean"
+        maxLength={300}
         icon={StickyNote}
         onCreate={async (name) => {
           const payload: NoteCreatePayload = { title: name }
@@ -165,8 +207,9 @@ export function QuickActions() {
       <QuickAction
         id="quick-action-tag"
         label="New tag"
-        hint="POST /tags. Tags label work; they create nothing else."
+        hint="POST /tags. Tags label work; they create nothing else. 48 characters, the backend's own cap."
         placeholder="deep-work"
+        maxLength={48}
         icon={Tag}
         onCreate={async (name) => {
           const tag = await createTag.mutateAsync(name)
@@ -179,6 +222,7 @@ export function QuickActions() {
         label="New learning goal"
         hint="POST /learning/goals. Progress stays yours; NEXUS never fills it in."
         placeholder="Finish the linear algebra course"
+        maxLength={200}
         icon={GraduationCap}
         onCreate={async (name) => {
           const payload: LearningGoalCreatePayload = { title: name }

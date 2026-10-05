@@ -30,8 +30,18 @@ const DEBOUNCE_MS = 300
 /** `MAX_SEARCH_LENGTH` upstream: a longer term is a paste, and it is a 422. */
 const MAX_QUERY_LENGTH = 200
 
+/** The three node kinds plus bookmarks, which search covers but the graph does not. */
+type ResultType = KnowledgeEntityType | 'bookmark'
+
 function ResultList({ query, type }: { query: string; type?: KnowledgeEntityType }) {
   const { data, isPending, error, refetch } = useKnowledgeSearch(query, { type })
+  /**
+   * `KnowledgeSearchResult` answers with four lists while
+   * `KNOWLEDGE_ENTITY_TYPES` names three kinds — a bookmark is not a node, so it
+   * has no kind to group under. Filing it under "Resources" rendered a saved link
+   * as though it were a filed resource, so bookmarks get their own heading
+   * instead of borrowing one.
+   */
   const results = data
     ? [
         ...data.notes.map((note) => ({
@@ -54,11 +64,11 @@ function ResultList({ query, type }: { query: string; type?: KnowledgeEntityType
         })),
         ...data.bookmarks.map((bookmark) => ({
           key: bookmark.id,
-          type: 'resource' as const,
+          type: 'bookmark' as const,
           label: bookmark.title ?? bookmark.url,
           detail: bookmark.domain ?? '',
         })),
-      ].filter((row) => row.type === (type ?? row.type))
+      ].filter((row) => type === undefined || row.type === type)
     : []
 
   if (isPending) {
@@ -87,17 +97,26 @@ function ResultList({ query, type }: { query: string; type?: KnowledgeEntityType
 
   // Grouped by kind, because the response is: a relevance ranking across four
   // heterogeneous tables would answer a different question from the one asked.
-  const groups = KNOWLEDGE_ENTITY_TYPES.map((kind) => ({
-    kind,
-    rows: results.filter((row) => row.type === kind),
-  })).filter((group) => group.rows.length > 0)
+  const headings: ReadonlyArray<readonly [ResultType, string]> = [
+    ...KNOWLEDGE_ENTITY_TYPES.map(
+      (kind) => [kind, KNOWLEDGE_ENTITY_META[kind].label] as const,
+    ),
+    ['bookmark', 'Bookmarks'],
+  ]
+  const groups = headings
+    .map(([kind, heading]) => ({
+      kind,
+      heading,
+      rows: results.filter((row) => row.type === kind),
+    }))
+    .filter((group) => group.rows.length > 0)
 
   return (
     <div className="space-y-3">
       {groups.map((group) => (
         <section key={group.kind}>
           <h3 className="mb-1.5 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            {KNOWLEDGE_ENTITY_META[group.kind].label}
+            {group.heading}
           </h3>
           <ul className="space-y-1">
             {group.rows.map((row) => (

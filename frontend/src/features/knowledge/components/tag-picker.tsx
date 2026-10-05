@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
 import { Plus, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -47,8 +46,7 @@ export function TagPicker({
     onChange(value.includes(id) ? value.filter((tagId) => tagId !== id) : [...value, id])
   }
 
-  async function submitNewTag(event: FormEvent) {
-    event.preventDefault()
+  async function submitNewTag() {
     const name = newTag.trim()
     if (!name) return
     try {
@@ -113,7 +111,15 @@ export function TagPicker({
       )}
 
       {creatable && (
-        <form onSubmit={submitNewTag} className="flex items-center gap-2">
+        /*
+         * Not a `<form>`, deliberately. Every host that offers `creatable` renders
+         * the picker inside its own `<form>` — the concept dialog is one — and a
+         * nested form is invalid HTML whose submit event bubbles to the outer
+         * handler: pressing "Add" created the *concept* and closed the dialog
+         * instead of adding the tag. A `<div>` with a `type="button"` cannot
+         * submit anything, so the only write this control can cause is the tag.
+         */
+        <div className="flex items-center gap-2">
           <Input
             value={newTag}
             disabled={disabled}
@@ -121,13 +127,25 @@ export function TagPicker({
             placeholder="New tag"
             aria-label="New tag name"
             onChange={(event) => setNewTag(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                void submitNewTag()
+              }
+            }}
             className="h-8 max-w-40 text-xs"
           />
-          <Button type="submit" variant="outline" size="sm" disabled={disabled || !newTag.trim()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled || !newTag.trim()}
+            onClick={() => void submitNewTag()}
+          >
             <Plus aria-hidden="true" className="size-3.5" />
             Add
           </Button>
-        </form>
+        </div>
       )}
     </div>
   )

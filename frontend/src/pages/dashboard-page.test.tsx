@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -399,6 +399,35 @@ const UNMAPPED_ACTIVITY: ActivityEvent[] = [
   },
 ]
 
+/**
+ * Two events whose own payload says something the fixed description cannot.
+ *
+ * `work_session_completed` fired by a timer stopped inside the same second:
+ * `actual_minutes` is 0, so the row must not claim time was recorded.
+ * `task_updated` carries the field names it touched, which is what makes the
+ * edit legible rather than a bare "Details edited."
+ */
+const MEASURED_ACTIVITY: ActivityEvent[] = [
+  {
+    id: 'e-20',
+    user_id: USER.id,
+    project_id: null,
+    task_id: null,
+    event_type: 'work_session_completed',
+    metadata: { session_id: 's-1', actual_minutes: 0 },
+    created_at: new Date(Date.now() - 60_000).toISOString(),
+  },
+  {
+    id: 'e-21',
+    user_id: USER.id,
+    project_id: null,
+    task_id: 't-1',
+    event_type: 'task_updated',
+    metadata: { fields: ['description', 'priority'] },
+    created_at: new Date(Date.now() - 3 * 60_000).toISOString(),
+  },
+]
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -426,6 +455,7 @@ interface Backend {
   projects?: Route
   activity?: Route
   tasks?: Route
+  health?: Route
 }
 
 /** Every URL the stub answered, in order, so call counts can be asserted. */
@@ -451,7 +481,7 @@ const PROJECTS_PAGE_LIMIT = 20
 function installBackend(overrides: Backend = {}): Calls {
   const routes: [string, Route][] = [
     ['/auth/me', () => json(USER)],
-    ['/health', () => json(HEALTH)],
+    ['/health', overrides.health ?? (() => json(HEALTH))],
     ['/analytics/overview', overrides.overview ?? (() => json(OVERVIEW))],
     ['/analytics/time', overrides.time ?? (() => json(TIME))],
     ['/analytics/projects', overrides.projects ?? (() => page(PROJECTS, PROJECTS_PAGE_LIMIT))],
@@ -942,5 +972,66 @@ async function alertForRequest(requestId: string): Promise<HTMLElement> {
     })
 
     expect(overviewCalls()).toHaveLength(1)
+  })
+
+  it('reports the backend as unreachable once its check stops answering, not as the last green reading', async () => {
+    // Answers once with a healthy body, then fails every later call — the shape
+    // of the tab going into a tunnel. The route counts its own calls because the
+    // transport, not the status line, is what a persona actually cuts.
+    let attempts = 0
+    installBackend({
+      health: () => {
+        attempts += 1
+        return attempts === 1
+          ? json(HEALTH)
+          : envelope('service_unavailable', 'The backend did not answer.', 503, 'req-health-1')
+      },
+    })
+    renderDashboard()
+
+    // While the reading stands, the panel reports what the server last said.
+    await screen.findByText('healthy')
+    await waitForPanels()
+    expect(screen.getByText('connected')).toBeInTheDocument()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Refresh health' }))
+    })
+
+    // The client retries a 5xx twice, so the failure cannot land on the default
+    // 5s budget.
+    const unreachable = await screen.findByText('unreachable', undefined, { timeout: 20_000 })
+    expect(unreachable.closest('span')).toHaveAttribute('role', 'status')
+
+    // The badge no longer reports a liveness the panel has not measured, and the
+    // figures that remain are labelled as the last reading rather than a current
+    // one — a green "Database connected" beside a 9.27ms round trip that is no
+    // longer being taken is the claim that has to go.
+    expect(screen.queryByText('healthy')).not.toBeInTheDocument()
+    expect(screen.getByText(/no newer one has arrived|did not complete/)).toBeInTheDocument()
+    expect(screen.getByText('Round trip (last measured)')).toBeInTheDocument()
+    expect(screen.getByText('1h 2m')).toBeInTheDocument()
+  })
+
+  it('states what a recorded session measured rather than asserting that time was recorded', async () => {
+    installBackend({ activity: () => page(MEASURED_ACTIVITY, 6) })
+    renderDashboard()
+
+    await waitForPanels()
+
+    const activityCard = screen
+      .getByRole('heading', { name: 'Recent activity' })
+      .closest('div.rounded-lg') as HTMLElement
+
+    // A timer stopped inside the same second recorded zero minutes. "Time
+    // recorded." beside that number was a claim the data contradicts.
+    const session = within(activityCard).getByText('Session completed').closest('li') as HTMLElement
+    expect(session).toHaveTextContent('No time was recorded.')
+    expect(session.textContent).not.toContain('Time recorded')
+
+    // The edit names the fields the backend recorded as touched. The values they
+    // held beforehand are not in the payload, so no diff is implied.
+    const update = within(activityCard).getByText('Task updated').closest('li') as HTMLElement
+    expect(update).toHaveTextContent('Changed: description, priority')
   })
 })

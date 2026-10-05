@@ -66,6 +66,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.api.deps import AuthenticatedUser, TaskServiceDep
 from app.core.deps import require_permission
+from app.core.exceptions import ValidationError
 from app.core.permissions import Permission
 from app.models.enums import TaskPriority, TaskStatus
 from app.models.task import Task
@@ -108,6 +109,14 @@ MAX_PAGE_SIZE = 100
 #: ``due_date``, ``position``, ``completed_at``. Anything else — including
 #: ``estimated_minutes`` — is a 422 that never reaches the database.
 _SORT_DESCRIPTION = "Sort key; one of the names the service allowlists."
+
+#: The two names the dependency listing answers to for each end of an edge.
+#:
+#: Declared rather than left to the router's default of discarding an unknown
+#: query parameter, because discarding one is what made ``?direction=reverse``
+#: answer ``200 []`` for a card with three cards downstream of it.
+_FORWARD_DIRECTION_NAMES = frozenset({"forward", "dependencies"})
+_REVERSE_DIRECTION_NAMES = frozenset({"reverse", "dependents"})
 
 
 class _BlockRequest(TaskStatusChange):
@@ -287,11 +296,23 @@ async def update_task(
 
     A move to another project re-checks the destination's ownership, because
     ownership is a property of the row being written and not of the payload
-    proposing it.
+    proposing it. It also refuses a move for a task that carries subtasks or
+    dependency edges, which is the same linkage rule the create path enforces:
+    a move must not produce a parent/child or a dependency edge that straddles
+    two projects.
+
+    **``priority`` is accepted here and reported as its own event.** The
+    dedicated ``PATCH /tasks/{id}/priority`` route exists so a re-triage is a
+    moment the feed can answer for, not so the column can be locked; a priority
+    that arrives in this payload writes the same ``task_priority_changed`` event,
+    with the old and the new grade. Every changed field is recorded with the value
+    it held before the write, so an edit can be shown and reversed from the feed
+    rather than only listed by name.
 
     Errors: 404 for the task, the destination project or the new parent not
-    being the caller's; 422 for an inverted date window or a parent that is in
-    another project or is itself a subtask.
+    being the caller's; 422 for an inverted date window, a parent that is in
+    another project or is itself a subtask, or a move that would separate a
+    subtask, a child task or a dependency edge from the project it belongs to.
     """
     task = await tasks.get(task_id=task_id, owner=current_user)
     updated = await tasks.update(task=task, data=payload, owner=current_user)
@@ -527,6 +548,11 @@ async def set_task_priority(
     and by whom" stays answerable, where folding it into a generic edit would
     leave it indistinguishable from a retyped title.
 
+    **It is not the only way to reach the column.** ``PATCH /tasks/{id}`` also
+    carries ``priority``, and a priority sent there writes the very same event
+    with the same old and new values — so this route is the shorter path to the
+    same record rather than a gate around it.
+
     Errors: 422 for a priority that is not a known value; 404 for a task that is
     not the caller's.
     """
@@ -570,13 +596,22 @@ async def list_subtasks(
 @router.get(
     "/{task_id}/dependencies",
     response_model=list[TaskSummary],
-    summary="List the tasks this one is waiting on",
+    summary="List the tasks this one is waiting on, or waiting on this one",
     dependencies=[Depends(require_permission(Permission.TASKS_READ))],
 )
 async def list_dependencies(
     task_id: UUID,
     current_user: AuthenticatedUser,
     tasks: TaskServiceDep,
+    direction: Annotated[
+        str,
+        Query(
+            description=(
+                "'forward' (the default) lists what this task waits on; 'reverse' "
+                "lists what waits on it."
+            )
+        ),
+    ] = "forward",
 ) -> list[Task]:
     """Return the prerequisites of this task — the direction the user asks about.
 
@@ -586,13 +621,37 @@ async def list_dependencies(
     wrong column answers "what is waiting on me" from a method whose name
     promises the opposite, and nothing fails.
 
+    **``direction`` is the other end of the same edge, and it is declared rather
+    than assumed.** An undeclared query parameter is discarded by the router
+    before the handler runs, so ``?direction=reverse`` used to answer ``200 []``
+    for a card with three cards downstream of it: a request that named a
+    direction the API did not have, answered as though the graph were empty. The
+    two honest answers are a list or a 422, and this is now the first one.
+    ``dependencies``/``dependents`` are accepted as names for the same two
+    directions, because those are the words the model uses everywhere else.
+
     A bare list, for the reason given on the subtasks route. Completing a task
-    walks this same list, and ``COMPLETED`` is the only status that satisfies
+    walks the forward list, and ``COMPLETED`` is the only status that satisfies
     it.
 
-    Errors: 404 for a task that is not the caller's.
+    Errors: 404 for a task that is not the caller's; 422 for a direction that is
+    neither forward nor reverse.
     """
+    if direction in _REVERSE_DIRECTION_NAMES:
+        reverse = True
+    elif direction in _FORWARD_DIRECTION_NAMES:
+        reverse = False
+    else:
+        raise ValidationError(
+            f"Unknown dependency direction: {direction!r}.",
+            details={
+                "field": "direction",
+                "allowed": sorted(_FORWARD_DIRECTION_NAMES | _REVERSE_DIRECTION_NAMES),
+            },
+        )
     task = await tasks.get(task_id=task_id, owner=current_user)
+    if reverse:
+        return await tasks.list_dependents(task=task, owner=current_user)
     return await tasks.list_dependencies(task=task, owner=current_user)
 
 

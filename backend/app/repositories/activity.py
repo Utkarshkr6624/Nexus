@@ -37,7 +37,7 @@ import uuid
 from collections.abc import Mapping
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.activity import ActivityLog
@@ -108,6 +108,13 @@ class ActivityRepository:
         ``total`` comes from a ``COUNT`` over the same filters as the page, so it
         is the size of the result set rather than the size of the slice.
 
+        **A ``task_id`` filter also matches the rows whose task no longer
+        exists.** ``task_deleted`` cannot carry the column — its foreign key is
+        ``ON DELETE SET NULL`` and the row it would point at has just been
+        deleted — so the id travels in ``metadata`` and the predicate reads both
+        places. Without the second half, the documented ``?task_id=`` filter
+        answered ``total: 0`` for the one event that is about that task.
+
         Newest first is the product decision: an activity feed is read from the
         top, and a viewer has no field that could tell them which end is newer.
         """
@@ -115,7 +122,18 @@ class ActivityRepository:
         if project_id is not None:
             filters.append(ActivityLog.project_id == project_id)
         if task_id is not None:
-            filters.append(ActivityLog.task_id == task_id)
+            # ``OR`` with the ``metadata`` copy, not just the column. A
+            # ``task_deleted`` row carries a null ``task_id`` on purpose — the
+            # foreign key is ``ON DELETE SET NULL`` and the task it named is
+            # gone — and keeps the id in ``metadata`` instead, so the documented
+            # ``?task_id=`` filter found nothing at all for the one event type
+            # whose whole purpose is to answer "what happened to that card?".
+            filters.append(
+                or_(
+                    ActivityLog.task_id == task_id,
+                    ActivityLog.metadata_["task_id"].astext == str(task_id),
+                )
+            )
         if event_type is not None:
             filters.append(ActivityLog.event_type == event_type)
 

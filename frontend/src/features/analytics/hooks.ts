@@ -498,7 +498,7 @@ export function useAnalyticsStaleness(
         missingDays,
         windowDays,
         reportedStale,
-        message: `Aggregates run through ${latest ?? 'an unknown date'}; ${missingDays} of ${windowDays} days in this window have not been calculated.`,
+        message: `Daily aggregates run through ${latest ?? 'an unknown date'}; ${missingDays} of ${windowDays} days in this window have none.`,
       }
     }
 
@@ -509,7 +509,15 @@ export function useAnalyticsStaleness(
       missingDays: 0,
       windowDays,
       reportedStale: false,
-      message: `Every day in this window is calculated, through ${latest ?? windowEnd}.`,
+      // **Presence is not calculation, so the banner does not claim it is.**
+      // A row exists for a day whether or not anything was ever computed into
+      // it, and `stale: false` is the backend's word rather than a measurement
+      // made here. What this sentence can honestly say is that a row is there
+      // for every day — and that `POST /rebuild` recomputes those rows from the
+      // live tables, so the figures on screen are never guaranteed to survive a
+      // recalculation. Claiming "calculated" is what let a window of zero
+      // totals present itself as fully worked out.
+      message: `A daily aggregate exists for each of the ${windowDays} days in this window, through ${latest ?? windowEnd}. Recalculating rebuilds them from your recorded activity, so these figures can still change.`,
     }
   }, [range.start_date, range.end_date, overview])
 }

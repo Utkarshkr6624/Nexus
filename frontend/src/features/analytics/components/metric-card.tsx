@@ -126,7 +126,11 @@ export function MetricCard({
             >
               {unavailableReason}
             </p>
-            <p className="text-xs text-muted-foreground/80">Not measurable for this window.</p>
+            {/* Full-strength muted, not `/80`: at 80% over a white card this line
+                measures 3.46:1, under the 4.5:1 WCAG AA asks of 12px text. The
+                card already says what the figure is not; it has no to be faint
+                to be read. */}
+            <p className="text-xs text-muted-foreground">Not measurable for this window.</p>
           </>
         ) : (
           <>

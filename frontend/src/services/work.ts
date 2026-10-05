@@ -45,7 +45,9 @@ export const WORK_ENDPOINTS = {
   task: (id: UUIDString) => `/tasks/${id}`,
   taskComplete: (id: UUIDString) => `/tasks/${id}/complete`,
   taskReopen: (id: UUIDString) => `/tasks/${id}/reopen`,
+  taskStart: (id: UUIDString) => `/tasks/${id}/start`,
   taskBlock: (id: UUIDString) => `/tasks/${id}/block`,
+  taskCancel: (id: UUIDString) => `/tasks/${id}/cancel`,
   taskPriority: (id: UUIDString) => `/tasks/${id}/priority`,
   taskSubtasks: (id: UUIDString) => `/tasks/${id}/subtasks`,
   taskDependencies: (id: UUIDString) => `/tasks/${id}/dependencies`,
@@ -201,8 +203,22 @@ export function completeTask(id: UUIDString): Promise<Task> {
   return apiClient.post<Task>(WORK_ENDPOINTS.taskComplete(id), undefined, { parse: 'json' })
 }
 
+/**
+ * The only route into `in_progress`, and therefore the only route that makes
+ * completing a task reachable at all: `TaskService._LEGAL_TRANSITIONS` allows
+ * `completed` from `in_progress` but not from `todo`.
+ */
+export function startTask(id: UUIDString): Promise<Task> {
+  return apiClient.post<Task>(WORK_ENDPOINTS.taskStart(id), undefined, { parse: 'json' })
+}
+
 export function reopenTask(id: UUIDString): Promise<Task> {
   return apiClient.post<Task>(WORK_ENDPOINTS.taskReopen(id), undefined, { parse: 'json' })
+}
+
+/** `cancelled` is terminal, and cancelling stamps no `completed_at`. */
+export function cancelTask(id: UUIDString): Promise<Task> {
+  return apiClient.post<Task>(WORK_ENDPOINTS.taskCancel(id), undefined, { parse: 'json' })
 }
 
 /** The body is optional; the route pins the resulting status to `blocked`. */

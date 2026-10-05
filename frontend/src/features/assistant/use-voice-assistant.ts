@@ -54,8 +54,10 @@ import type {
 import { confirmAction, proposeAction, routeUtterance } from '@/services/ml'
 import { isAbortError } from '@/services/errors'
 import { findModule } from '@/features/modules/catalog'
+import { developerKeys } from '@/features/developer/hooks'
 import { knowledgeKeys } from '@/features/knowledge/hooks'
 import { learningKeys } from '@/features/learning/hooks'
+import { plannerKeys } from '@/features/planner/hooks'
 import { workKeys } from '@/features/work/hooks'
 import { ApiError } from '@/lib/api-client'
 import { plannerLocalTimezone } from '@/types/planner'
@@ -452,43 +454,106 @@ export function describeActionFailure(cause: unknown, stage: ActionStage): Voice
  * Typed `Partial` deliberately, and the lookup is guarded below: the backend can
  * add a kind before this client learns about it, and an unguarded call into an
  * `undefined` entry inside a mutation's `onSuccess` would be an unhandled
- * rejection — the exact failure this flow exists to stop being possible.
+ * rejection — the exact failure this flow exists to stop being possible. The
+ * same guard is what makes an unmapped kind a no-op rather than a fault.
  *
  * Keyed by `kind` rather than by the response's `entity`, because `kind` is what
- * the proposal named and what the confirm response echoes back; the two agree
- * except for `complete_task`, which writes a task while naming an action whose
- * name says nothing about the row.
+ * the proposal named and what the confirm response echoes back. The two would
+ * mostly agree, but not always: `complete_task` writes a task while naming an
+ * action whose name says nothing about the row, and a kind is the coarser grain
+ * — a note and a bookmark and a link all land in the same tree.
  *
  * The roots are the *aggregate* ones each feature already publishes, for the
  * reason `features/work/hooks.ts` gives when its own mutations invalidate
  * `workKeys.all()`: a new task moves the board, the project counts and the
  * activity feed at once, and picking the single "right" key is how a stale
- * surface ships. Knowledge and learning have their own roots and are untouched
- * by the other two.
+ * surface ships. Knowledge, learning and the planner each have their own root and
+ * are untouched by the others.
+ *
+ * **Every kind that writes to a query-cached surface is listed, including the
+ * deletes.** A deleted row is invisible for exactly as long as a stale one, and
+ * a delete that never invalidates leaves the reader looking at a card that is
+ * already gone — which reads as the assistant inventing rows, and is worse than
+ * the write having silently failed.
+ *
+ * `create_repository` is the only kind that writes outside the task, project,
+ * knowledge, learning and planner trees, and it invalidates the aggregate root
+ * for the same reason the others do: registering a folder changes the repository
+ * count in the developer summary, so the whole `['developer']` tree goes stale
+ * at once — exactly as a scan does. Registration itself runs no scan, so nothing
+ * else about the tree changes, but picking the narrower `repositories` key would
+ * leave the summary card showing the old count beside a list that already has the
+ * new row, and a reader has no way to tell which of the two is wrong.
+ *
+ * `update_profile` is the one kind with no entry, and it is absent on purpose
+ * rather than missed: the signed-in user lives in the auth store, not in a
+ * query, so there is no cache key to invalidate. The profile surfaces re-read
+ * that store on their next render, and a plausible-looking key here would
+ * invalidate the wrong tree for a write that has no tree.
  */
 const CACHE_ROOT_BY_KIND: Partial<Record<ActionKind, () => readonly unknown[]>> = {
   create_task: workKeys.all,
+  update_task: workKeys.all,
+  delete_task: workKeys.all,
   complete_task: workKeys.all,
+  set_task_status: workKeys.all,
+  schedule_task: workKeys.all,
+  unschedule_task: workKeys.all,
+  tag_task: workKeys.all,
+  untag_task: workKeys.all,
   create_project: workKeys.all,
+  update_project: workKeys.all,
+  delete_project: workKeys.all,
+  set_project_status: workKeys.all,
   create_note: knowledgeKeys.all,
+  update_note: knowledgeKeys.all,
+  delete_note: knowledgeKeys.all,
+  archive_note: knowledgeKeys.all,
+  publish_note: knowledgeKeys.all,
+  create_bookmark: knowledgeKeys.all,
+  delete_bookmark: knowledgeKeys.all,
+  create_concept: knowledgeKeys.all,
+  delete_concept: knowledgeKeys.all,
+  create_link: knowledgeKeys.all,
+  delete_link: knowledgeKeys.all,
   create_learning_goal: learningKeys.all,
+  update_learning_goal: learningKeys.all,
+  complete_learning_goal: learningKeys.all,
+  delete_learning_goal: learningKeys.all,
+  create_skill: learningKeys.all,
+  delete_skill: learningKeys.all,
+  create_event: plannerKeys.all,
+  update_event: plannerKeys.all,
+  delete_event: plannerKeys.all,
+  create_session: plannerKeys.all,
+  delete_session: plannerKeys.all,
+  create_repository: developerKeys.all,
 }
 
 /**
  * The confirm body, built from the proposal and nothing else.
  *
- * **Three fields for a creation, four for a completion.** `target_id` is the
- * row a completion acts on and is meaningless for the four creations, so it is
- * left off entirely rather than sent as an explicit `null`. The proposal is not
- * editable anywhere in this panel, so the payload goes back byte for byte as the
- * backend published it — the endpoint re-validates it as untrusted input
- * regardless, and a client that "tidied" it could only introduce a 422.
+ * **Four fields for a creation, five for one that acts on a row, and always the
+ * acknowledgement.** `target_id` is the row a non-creation acts on and is
+ * meaningless for a creation, so it is left off entirely rather than sent as an
+ * explicit `null`. `confirm_destructive` is copied from the proposal's
+ * `destructive` flag — the backend's own answer to "does this discard a row" —
+ * rather than derived from `kind`, so the flag cannot drift from the spec table
+ * that decides it; it is sent on every confirm because the endpoint's model
+ * forbids nothing and a client that omitted it for a creation would be relying
+ * on a default that the destructive kinds depend on.
+ *
+ * The proposal is not editable anywhere in this panel, so the payload goes back
+ * byte for byte as the backend published it — the endpoint re-validates it as
+ * untrusted input regardless, and a client that "tidied" it could only introduce
+ * a 422.
  */
 export function confirmBodyFor(proposal: ActionProposalRead): ConfirmActionRequest {
   const body: ConfirmActionRequest = {
     kind: proposal.kind,
     intent: proposal.intent,
     payload: proposal.payload,
+    confirm_destructive: proposal.destructive,
   }
   if (proposal.target_id !== null) body.target_id = proposal.target_id
   return body

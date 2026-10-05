@@ -11,7 +11,14 @@ import {
 } from 'recharts'
 
 import { ChartShell, ChartTooltip } from '@/features/analytics/components/chart-shell'
-import { CHART_AXIS_PROPS, type ChartValueUnit } from '@/features/analytics/chart-theme'
+import { ChartDataTable } from '@/features/analytics/components/chart-data-table'
+import {
+  CHART_AXIS_PROPS,
+  chartNumber,
+  describeSeries,
+  formatChartValue,
+  type ChartValueUnit,
+} from '@/features/analytics/chart-theme'
 import { EmptyAnalytics, type AnalyticsMetricKey } from '@/features/analytics/components/empty-analytics'
 import { chartColor } from '@/features/analytics/format'
 import type { ChartRow } from '@/features/analytics/components/trend-chart'
@@ -30,6 +37,12 @@ export interface BarSeries {
  * names rotates them into unreadable slanted text; a horizontal one reads
  * top-to-bottom with the labels intact, so the orientation is a prop rather
  * than a second component.
+ *
+ * **The bars are the picture; the sentence and the table are the content.** The
+ * frame names the drawing from the card's heading, hands it the summary
+ * `describeSeries` writes, and puts the same rows behind a focusable disclosure,
+ * so the category names and their values are readable without decoding a
+ * rectangle.
  */
 export interface AnalyticsBarChartProps {
   title: string
@@ -47,6 +60,8 @@ export interface AnalyticsBarChartProps {
   emptyReason?: string | null
   /** Colours every bar differently — for a single-series categorical chart. */
   colorByCategory?: boolean
+  /** Names the first column of the data table: "Status", "Project", "Day". */
+  rowHeading?: string
 }
 
 export function AnalyticsBarChart({
@@ -63,10 +78,27 @@ export function AnalyticsBarChart({
   emptyMetric = 'trend',
   emptyReason,
   colorByCategory = false,
+  rowHeading = 'Category',
 }: AnalyticsBarChartProps) {
   const units = Object.fromEntries(series.map((entry) => [entry.key, entry.unit ?? 'count']))
   const empty = isEmpty || data.length === 0
   const horizontal = orientation === 'horizontal'
+
+  const description = series
+    .map((entry) => {
+      const unit = entry.unit ?? 'count'
+      return describeSeries(
+        entry.label,
+        data.map((row) => ({ label: String(row[xKey] ?? ''), value: chartNumber(row[entry.key]) })),
+        { format: (value) => formatChartValue(value, unit), sums: unit !== 'percent' },
+      )
+    })
+    .join(' ')
+
+  const tableRows = data.map((row) => [
+    String(row[xKey] ?? ''),
+    ...series.map((entry) => formatChartValue(chartNumber(row[entry.key]), entry.unit ?? 'count')),
+  ])
 
   const body = (
     <ResponsiveContainer width="100%" height="100%">
@@ -149,6 +181,17 @@ export function AnalyticsBarChart({
       actions={actions}
       isLoading={isLoading}
       className={className}
+      accessibility={{
+        description,
+        dataTable: (
+          <ChartDataTable
+            caption={title}
+            rowHeading={rowHeading}
+            columns={series.map((entry) => entry.label)}
+            rows={tableRows}
+          />
+        ),
+      }}
       empty={
         empty ? <EmptyAnalytics metric={emptyMetric} reason={emptyReason} /> : undefined
       }

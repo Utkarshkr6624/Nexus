@@ -29,6 +29,28 @@ describe('ErrorState', () => {
     expect(screen.queryByText(/Traceback|at Object\.|\.py:line|stack/i)).not.toBeInTheDocument()
   })
 
+  it('does not ask for a request id the failure never carried', () => {
+    render(
+      <ErrorState
+        error={
+          new ApiError({
+            status: 500,
+            code: 'internal_error',
+            message: "Cannot read properties of undefined (reading 'icon')",
+          })
+        }
+      />,
+    )
+
+    const alert = screen.getByRole('alert')
+    // A render crash is normalised into this surface with no request behind it,
+    // so promising a request id the page never shows is worse than useless:
+    // it is the one line the user would pass on to whoever fixes it.
+    expect(alert).not.toHaveTextContent(/quote the request ID/i)
+    expect(alert).not.toHaveTextContent(/Request ID/)
+    expect(alert).toHaveTextContent('The failure was recorded on the server')
+  })
+
   it('gives transport failures its own copy and wires up the retry action', async () => {
     const onRetry = vi.fn()
     const user = userEvent.setup()

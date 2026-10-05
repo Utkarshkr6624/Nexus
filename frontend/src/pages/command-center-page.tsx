@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCommandPaletteStore } from '@/features/command-palette/command-palette-store'
 import { useOverview } from '@/features/analytics/hooks'
+import { formatShortDate } from '@/features/analytics/format'
 import { useDeveloperSummary } from '@/features/developer/hooks'
 import { useLearningGoals, useLearningSummary } from '@/features/learning/hooks'
 import { usePlannerConflicts } from '@/features/planner/hooks'
@@ -63,7 +64,8 @@ import type { Task, TaskStats } from '@/types/work'
  * Nothing is fabricated. A panel with no records renders its own empty state, a
  * figure the backend could not compute renders with the backend's own reason,
  * and a panel whose request failed renders its own error with a retry while
- * every other panel stays exactly as it was.
+ * every other panel stays exactly as it was. A panel whose body *throws* is
+ * caught at the panel too, for the same reason.
  *
  * ## Layout
  *
@@ -73,6 +75,11 @@ import type { Task, TaskStats } from '@/types/work'
  * the order the panels answer their question, so a phone reads top to bottom
  * in the same order a desktop does. The page reflows rather than merely
  * shrinking.
+ *
+ * **An empty panel spends its height on the empty state alone.** Its header
+ * sentence is dropped, because the empty state beneath it already says what
+ * the panel would hold and what fills it. Eight panels on an account with
+ * nothing in it is where this page used to be mostly whitespace.
  */
 
 /** Page size for each of the queue's sources. Small on purpose: this is a briefing. */
@@ -150,6 +157,16 @@ export default function CommandCenterPage() {
 
   const modKey = usesCommandKey() ? '⌘' : 'Ctrl'
 
+  /**
+   * The goal date the queue filters on, in words.
+   *
+   * The queue reads `target_before`, so a goal with no target date is never in
+   * it. The empty state named "active goal" as one of the things it had counted
+   * and therefore told an account with one undated goal that nothing was
+   * waiting — so the sentence now names the date the query actually used.
+   */
+  const goalsThrough = formatShortDate(horizon)
+
   const queueFeeds: NamedFeed[] = [
     { label: 'Risk findings', query: risks },
     { label: 'Suggestions', query: recommendations },
@@ -192,8 +209,8 @@ export default function CommandCenterPage() {
         about the model — one says the order is arithmetic, the other is the
         model — and a reader meets both before moving on.
       */}
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+      <div className="space-y-5">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
           <CommandCenterPanel
             title="Next up"
             provenance="calculated"
@@ -202,11 +219,11 @@ export default function CommandCenterPage() {
             state={{
               ...feed,
               empty: signals.length === 0 && feed.failures.length === 0,
-              emptyState: <QueueEmptyState />,
+              emptyState: <QueueEmptyState goalsThrough={goalsThrough} />,
             }}
           >
             {signals.length > 0 ? (
-              <PriorityQueue signals={signals} />
+              <PriorityQueue signals={signals} goalsThrough={goalsThrough} />
             ) : (
               <p className="text-sm leading-relaxed text-muted-foreground">
                 Nothing could be read from the sources behind this list, so there is nothing to
@@ -231,7 +248,7 @@ export default function CommandCenterPage() {
           </CommandCenterPanel>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
           <CommandCenterPanel
             title="Findings"
             provenance="measured"
@@ -261,7 +278,7 @@ export default function CommandCenterPage() {
           </CommandCenterPanel>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
           <CommandCenterPanel
             title="Deadlines and blockers"
             provenance="measured"
@@ -296,7 +313,7 @@ export default function CommandCenterPage() {
           two-column grid rather than a 12 — two halves fill the row exactly
           instead of leaving four columns of nothing at the foot of the page.
         */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
           <CommandCenterPanel
             title="Learning"
             provenance="measured"
@@ -378,13 +395,13 @@ function SearchEntry({ modKey }: { modKey: string }) {
   )
 }
 
-function QueueEmptyState() {
+function QueueEmptyState({ goalsThrough }: { goalsThrough: string }) {
   return (
     <EmptyState
       compact
       icon={ShieldCheck}
       title="Nothing is asking for a decision"
-      description="No live finding, unanswered suggestion, open deadline, schedule conflict or active goal is waiting. That is a count of the records that exist — not a claim that nothing is wrong."
+      description={`No live finding, unanswered suggestion, open deadline, schedule conflict or learning goal with a target date on or before ${goalsThrough} is waiting. That is a count of the records that exist — not a claim that nothing is wrong.`}
       action={
         <Button variant="outline" size="sm" asChild>
           <Link to="/tasks">Open tasks</Link>

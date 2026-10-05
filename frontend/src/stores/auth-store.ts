@@ -34,14 +34,22 @@ export const AUTH_STORAGE_KEY = 'nexus.auth'
  * answered: "unverified" is not "rejected", so the store stays in this state
  * and retries within a bounded budget rather than claiming the user is
  * anonymous while their tokens are still attached to every request.
+ *
+ * `unreachable` is where that budget runs out with the backend still silent.
+ * It is a distinct status rather than a slow `initializing` because the two
+ * need different screens: a boot screen implies "wait", while this one has to
+ * say the app cannot reach its backend and offer a Retry. It is emphatically
+ * not `anonymous` — an outage is not a verdict on the session, and reporting
+ * it as one signs the user out of a working app and throws their token away.
  */
-export type AuthStatus = 'initializing' | 'authenticated' | 'anonymous'
+export type AuthStatus = 'initializing' | 'unreachable' | 'authenticated' | 'anonymous'
 
 const ANONYMOUS = {
   accessToken: null,
   refreshToken: null,
   user: null,
   status: 'anonymous',
+  bootError: null,
 } as const
 
 interface AuthState {
@@ -53,6 +61,14 @@ interface AuthState {
   pending: boolean
   /** Last auth failure, rendered inline by the form that triggered it. */
   error: ApiError | null
+  /**
+   * Why the stored session is unverified, held while `status` is
+   * `unreachable` so the guards can show the actual failure instead of a
+   * generic apology. Kept apart from `error`, which belongs to the credential
+   * form that triggered the last sign-in attempt and must not reappear on the
+   * sign-in screen long after it happened.
+   */
+  bootError: ApiError | null
   login: (payload: LoginPayload) => Promise<void>
   register: (payload: RegisterPayload) => Promise<void>
   logout: () => Promise<void>
@@ -159,7 +175,9 @@ type VerifyOutcome = 'verified' | 'unverified' | 'rejected' | 'superseded'
  * one caller and it runs once per mount: a backend that 500s on the first
  * `/auth/me` would otherwise never be asked again, and the user would be
  * stranded on a verdict the server never gave. The budget is small on purpose —
- * it is meant to ride out a blip, not to keep a boot screen up.
+ * it is meant to ride out a blip, not to keep a boot screen up. Spending it
+ * hands the route guards the outage screen to retry against, so a backend that
+ * is down when the tab opens costs a spinner and a Retry rather than a session.
  */
 const VERIFY_MAX_ATTEMPTS = 3
 const VERIFY_RETRY_DELAY_MS = 500
@@ -282,10 +300,11 @@ export const useAuthStore = create<AuthState>()(
        * where it is and `status` stays `initializing`, so the guards render the
        * boot screen instead of bouncing a possibly-signed-in user to /login
        * with a live bearer still attached to their requests. The boot check
-       * retries within its budget; only an exhausted budget may end the session.
+       * retries within its budget; only an exhausted budget may leave it
+       * unverified, and even then without touching the session.
        */
-      function markUnverified(): void {
-        set({ status: 'initializing', pending: false })
+      function markUnverified(error: ApiError): void {
+        set({ status: 'initializing', pending: false, bootError: error })
       }
 
       /**
@@ -321,7 +340,7 @@ export const useAuthStore = create<AuthState>()(
             return false
           }
         }
-        set({ user, status: 'authenticated', pending: false, error: null })
+        set({ user, status: 'authenticated', pending: false, error: null, bootError: null })
         return true
       }
 
@@ -350,7 +369,7 @@ export const useAuthStore = create<AuthState>()(
         const outcome = await refreshSession()
         if (outcome.kind === 'superseded') return 'superseded'
         if (outcome.kind === 'unreachable') {
-          markUnverified()
+          markUnverified(outcome.error)
           return 'unverified'
         }
         if (outcome.kind === 'unusable') {
@@ -366,7 +385,7 @@ export const useAuthStore = create<AuthState>()(
           // about the session the store holds now.
           if (get().accessToken !== accessToken) return 'superseded'
           if (isUnreachable(error)) {
-            markUnverified()
+            markUnverified(error)
             return 'unverified'
           }
           endSession()
@@ -384,7 +403,10 @@ export const useAuthStore = create<AuthState>()(
           // A 401 means the access token is spent; anything else — including a
           // timeout, a 5xx, or a 404 from a wrong base URL — says nothing about
           // the session's validity and is not a verdict at all.
-          if (!error.isUnauthorized) return 'unverified'
+          if (!error.isUnauthorized) {
+            markUnverified(error)
+            return 'unverified'
+          }
           return renewAndVerify()
         }
       }
@@ -402,15 +424,15 @@ export const useAuthStore = create<AuthState>()(
           // nothing left to decide about it and must not decide anything.
           if (outcome === 'superseded') return
           if (attempt < VERIFY_MAX_ATTEMPTS) {
-            markUnverified()
             await delay(VERIFY_RETRY_DELAY_MS)
           }
         }
-        // The budget is spent and the backend never answered. The pair cannot be
-        // shown to be good, and leaving it in place would keep attaching a
-        // bearer to every request from a shell that has already given up on
-        // it — so this, and only this, is where a non-401 ends the session.
-        endSession()
+        // The budget is spent and the backend never answered. The pair is kept:
+        // nothing here is evidence that it is bad, and discarding it would
+        // destroy a working session — persisted tokens rewritten to null — over
+        // a backend that was merely unreachable. The guards render the outage
+        // screen with a Retry against the same `hydrate` this ran on.
+        set({ status: 'unreachable', pending: false })
       }
 
       return {
@@ -553,6 +575,13 @@ export const useAuthStore = create<AuthState>()(
 
         hydrate() {
           if (hydrateInFlight) return hydrateInFlight
+          // A retry from the outage screen starts the check from the top: the
+          // guards show the boot screen again while it runs, which is the
+          // honest thing to be showing. Only from `unreachable` — an
+          // authenticated store must not be dragged back to the boot screen.
+          if (get().status === 'unreachable') {
+            set({ status: 'initializing', bootError: null })
+          }
           const attempt = verifyPersistedSession().finally(() => {
             hydrateInFlight = null
           })

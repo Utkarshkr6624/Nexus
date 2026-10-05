@@ -33,6 +33,14 @@ import {
   useTasks,
   workKeys,
 } from '@/features/work/hooks'
+import {
+  canTransition,
+  describeIllegalMove,
+  describeRefusal,
+  describeUnroutableMove,
+  routeFor,
+} from '@/features/work/task-transitions'
+import type { TaskTransitionStatus } from '@/features/work/task-transitions'
 import { useDebouncedValue } from '@/hooks/use-debounce'
 import { cn } from '@/lib/utils'
 import { toApiError } from '@/services/errors'
@@ -60,6 +68,32 @@ const VIEW_KEY = 'nexus.tasks.view'
 const PAGE_SIZE = 25
 
 type ViewMode = 'list' | 'board'
+
+/**
+ * What each transition says when it lands and when it is refused. One entry per
+ * verb `useTaskTransition` can perform, so a new route cannot arrive without
+ * the page having an opinion about what it announces.
+ */
+const TRANSITION_COPY: Record<TaskTransitionStatus, { done: string; failed: string }> = {
+  in_progress: { done: 'Task started', failed: 'Could not start the task' },
+  completed: { done: 'Task completed', failed: 'Could not complete the task' },
+  reopened: { done: 'Task reopened', failed: 'Could not reopen the task' },
+  blocked: { done: 'Task blocked', failed: 'Could not block the task' },
+  cancelled: { done: 'Task cancelled', failed: 'Could not cancel the task' },
+}
+
+/**
+ * Why one selected row will not complete, in the same words the server uses for
+ * the edge it refuses. A `todo` task has to be started first; a `blocked` one
+ * cannot be completed at all, because the point of blocking is that the work
+ * did not happen.
+ */
+function whyNotCompletable(task: Task): string {
+  const quoted = `“${task.title}”`
+  return task.status === 'blocked'
+    ? `${quoted} is blocked, and blocked work cannot be completed`
+    : `${quoted} is ${TASK_STATUS_META[task.status].label.toLowerCase()}, and work has to be started before it can be completed`
+}
 
 function readView(): ViewMode {
   try {
@@ -268,47 +302,45 @@ export default function TasksPage() {
   }
 
   /**
-   * The backend owns transitions, and it exposes only three: complete, reopen
-   * and block. A drop into a column none of them serves is reported rather than
-   * swallowed, and a drop they do serve is answered by the server — which
-   * refuses an illegal one (an open prerequisite, a cancelled task) with a
-   * message that reaches the user instead of leaving a card in a column it
-   * never entered.
+   * The backend owns transitions, and the lifecycle table in
+   * `features/work/task-transitions.ts` is a mirror of it, so a column the
+   * server will refuse is refused here too — with the sentence that says what
+   * the card *can* do, which the error envelope's `allowed` list makes
+   * possible. An edge the table allows but no route walks is reported as the
+   * gap it is rather than sent to `/reopen`, where it would answer 200 and
+   * leave the card exactly where it was.
    */
   const moveTask = useCallback(
     async (task: Task, next: TaskStatus) => {
       if (task.status === next) return
 
-      const served =
-        next === 'completed' || next === 'blocked' || (task.status === 'completed' && next === 'todo')
-      if (!served) {
-        toast.warning(
-          'No transition to that column',
-          `The API can only complete, reopen or block a task, so "${task.title}" stays ${TASK_STATUS_META[task.status].label.toLowerCase()}.`,
-        )
+      if (!canTransition(task.status, next)) {
+        toast.warning('No transition to that column', describeIllegalMove(task.status, next))
+        return
+      }
+      const status = routeFor(task.status, next)
+      if (status === null) {
+        toast.warning('No endpoint moves it there', describeUnroutableMove(task.status, next))
         return
       }
 
-      const status = next === 'completed' ? 'completed' : next === 'blocked' ? 'blocked' : 'reopened'
       try {
         const saved = await transition.mutateAsync({ id: task.id, status })
         toast.info('Moved', `${saved.title} is now ${TASK_STATUS_META[saved.status].label.toLowerCase()}.`)
       } catch (cause) {
-        toast.error('The transition was refused', toApiError(cause).message)
+        toast.error('The transition was refused', describeRefusal(toApiError(cause)))
       }
     },
     [transition],
   )
 
-  async function runTransition(task: Task, status: 'completed' | 'reopened') {
+  async function runTransition(task: Task, status: TaskTransitionStatus) {
+    const copy = TRANSITION_COPY[status]
     try {
       const saved = await transition.mutateAsync({ id: task.id, status })
-      toast.success(status === 'completed' ? 'Task completed' : 'Task reopened', saved.title)
+      toast.success(copy.done, saved.title)
     } catch (cause) {
-      toast.error(
-        status === 'completed' ? 'Could not complete the task' : 'Could not reopen the task',
-        toApiError(cause).message,
-      )
+      toast.error(copy.failed, describeRefusal(toApiError(cause)))
     }
   }
 
@@ -316,36 +348,67 @@ export default function TasksPage() {
    * There is no bulk endpoint, so this is one request per task and the summary
    * states the partial outcome. A blanket "done" would be a claim the server
    * never made.
+   *
+   * **A task the lifecycle will not complete is named, not counted.** This used
+   * to fire one 422 per un-completable row and summarise the result as "0 of 1
+   * completed — 1 refused", which says neither which task nor why, and then
+   * cleared the whole selection — so the rows the user still had to act on
+   * disappeared from the checkboxes that named them. Each refusal is now
+   * reported by task title with the reason, and only the rows that actually
+   * completed leave the selection.
    */
   async function completeSelected() {
     const ids = [...selected]
     if (ids.length === 0) return
     setBulkRunning(true)
 
+    const rowOf = (id: string): Task | undefined => items.find((task) => task.id === id)
     let completed = 0
-    const failures: string[] = []
+    const kept: string[] = []
+    const refusals: string[] = []
+
     for (const id of ids) {
+      const task = rowOf(id)
+      // The lifecycle answers this before the round trip: a `todo` or `blocked`
+      // row cannot be completed, and asking anyway only produces a 422 to
+      // report.
+      if (task && !canTransition(task.status, 'completed')) {
+        refusals.push(whyNotCompletable(task))
+        kept.push(id)
+        continue
+      }
       try {
         await completeTask(id)
         completed += 1
       } catch (cause) {
-        failures.push(toApiError(cause).message)
+        refusals.push(`“${task?.title ?? 'A task'}”: ${describeRefusal(toApiError(cause))}`)
+        kept.push(id)
       }
     }
 
     setBulkRunning(false)
-    setSelected([])
+    setSelected(kept)
     void queryClient.invalidateQueries({ queryKey: workKeys.tasks() })
     void queryClient.invalidateQueries({ queryKey: workKeys.projects() })
     void queryClient.invalidateQueries({ queryKey: workKeys.stats() })
 
-    if (failures.length === 0) {
+    if (refusals.length === 0) {
       toast.success(`${completed} task${completed === 1 ? '' : 's'} completed`)
       return
     }
+    // Three is as much as a toast can carry before the reasons stop being read;
+    // the count in the summary is the honest answer to "and the rest?".
+    const shown = refusals.slice(0, 3)
+    const rest = refusals.length - shown.length
     toast.warning(
       `${completed} of ${ids.length} completed`,
-      `${failures.length} refused — ${failures[0]}`,
+      [
+        ...shown,
+        rest > 0 ? `…and ${rest} more.` : '',
+        kept.length > 0 ? 'Those tasks are still selected.' : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
     )
   }
 
@@ -462,6 +525,7 @@ export default function TasksPage() {
                     className="flex-1"
                     projectName={projectNames.get(task.project_id)}
                     onOpen={openTask}
+                    onStart={(value) => void runTransition(value as Task, 'in_progress')}
                     onComplete={(value) => void runTransition(value as Task, 'completed')}
                     onReopen={(value) => void runTransition(value as Task, 'reopened')}
                     selected={selected.includes(task.id)}

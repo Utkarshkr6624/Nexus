@@ -20,6 +20,7 @@ import {
   type DeveloperSummaryRead,
   type RepositoryListRead,
   type RepositoryRead,
+  type ScanRunRead,
 } from '@/types/developer'
 import type { Project } from '@/types/work'
 
@@ -118,6 +119,8 @@ interface Backend {
   repositories?: Route
   create?: Route
   projects?: Route
+  scan?: Route
+  remove?: Route
 }
 
 /**
@@ -125,6 +128,10 @@ interface Backend {
  * endpoint — the failing list, the failing series, the refused registration —
  * without restating the rest. Literal sub-paths are matched before
  * `/developer/repositories`, which would otherwise swallow them.
+ *
+ * `scan` and `remove` are matched on **method** before the literal prefixes,
+ * because `POST …/scan` is also a `/developer/repositories` path and would
+ * otherwise be answered as a registration.
  */
 function installBackend(overrides: Backend = {}): Call[] {
   const summary = overrides.summary ?? (() => json(SUMMARY))
@@ -132,6 +139,8 @@ function installBackend(overrides: Backend = {}): Call[] {
   const activity = overrides.activity ?? (() => json(ACTIVITY))
   const commits = overrides.commits ?? (() => json(COMMITS))
   const projects = overrides.projects ?? (() => json(PROJECTS))
+  const scan = overrides.scan ?? (() => json(SCAN_RUN))
+  const remove = overrides.remove ?? (() => new Response(null, { status: 204 }))
   const create =
     overrides.create ??
     ((url) =>
@@ -156,6 +165,8 @@ function installBackend(overrides: Backend = {}): Call[] {
       const method = (init?.method ?? 'GET').toUpperCase()
       calls.push({ url, method })
 
+      if (method === 'POST' && url.includes('/scan')) return scan(url)
+      if (method === 'DELETE' && url.includes('/developer/repositories')) return remove(url)
       if (method === 'POST' && url.includes('/developer/repositories')) return create(url)
       if (url.includes('/developer/summary')) return summary(url)
       if (url.includes('/developer/metrics')) return metrics(url)
@@ -167,6 +178,25 @@ function installBackend(overrides: Backend = {}): Call[] {
     }),
   )
   return calls
+}
+
+/**
+ * A repository-list route over rows that may still change.
+ *
+ * A getter rather than an array, because the two mutation tests rewrite what the
+ * server holds *between* requests: a captured array would keep serving the rows
+ * from before the scan or the removal and the card would never move. The
+ * `?is_active=` filter is honoured exactly as the default route honours it, so a
+ * test that narrows the page and one that does not see the same endpoint.
+ */
+function listOf(rows: () => RepositoryRead[]): Route {
+  return (url) => {
+    const isActive = new URL(url, 'http://test').searchParams.get('is_active')
+    const all = rows()
+    const items =
+      isActive === null ? all : all.filter((row) => row.is_active === (isActive === 'true'))
+    return json({ items, total: items.length, limit: 12, offset: 0 } satisfies RepositoryListRead)
+  }
 }
 
 /** Ships the retry policy from `src/app/query-client.ts`. */
@@ -248,6 +278,29 @@ function tileFor(label: string): HTMLElement {
 
 function getCalls(calls: Call[], needle: string): Call[] {
   return calls.filter((call) => call.url.includes(needle))
+}
+
+/** Requests of one method whose URL carries `needle`. */
+function methodCalls(calls: Call[], method: string, needle: string): Call[] {
+  return calls.filter((call) => call.method === method && call.url.includes(needle))
+}
+
+/**
+ * The repository card that belongs to a named repository.
+ *
+ * Distinct from {@link cardFor}, which finds a metric card by its label: the
+ * repository name is the card's own `<h3>`, and the `Card` around it is the first
+ * rounded ancestor, so the controls a card was given are reachable by scoping to
+ * the card rather than to the page.
+ */
+function repositoryCard(name: string): HTMLElement {
+  return screen.getByRole('heading', { name }).closest('div.rounded-lg') as HTMLElement
+}
+
+/** The same card, once its repository has been found on screen. */
+async function findRepositoryCard(name: string): Promise<HTMLElement> {
+  await screen.findByRole('heading', { name })
+  return repositoryCard(name)
 }
 
 /** Lets every in-flight fetch and its re-render settle before asserting. */
@@ -406,6 +459,26 @@ function repository(overrides: Partial<RepositoryRead> = {}): RepositoryRead {
   }
 }
 
+/** The first work tree, read once and already counted. */
+const NEXO: RepositoryRead = repository()
+
+/** The same directory, which the last scan could not read at all. */
+const BROKEN_MIRROR: RepositoryRead = repository({
+  id: REPO_TWO_ID,
+  name: 'broken-mirror',
+  local_path: '/home/ada/code/broken-mirror',
+  primary_language: null,
+  project_id: null,
+  current_branch: null,
+  default_branch: null,
+  branch_count: 0,
+  commit_count: 0,
+  first_commit_at: null,
+  latest_commit_at: null,
+  last_scan_status: 'error',
+  last_scan_error: SCAN_FAILURE,
+})
+
 /**
  * Two registered work trees, the second of which git could not read.
  *
@@ -413,24 +486,50 @@ function repository(overrides: Partial<RepositoryRead> = {}): RepositoryRead {
  * is still on the page, still counted in the summary, and the reason it could not
  * be read is rendered verbatim underneath.
  */
-const REPOSITORIES: RepositoryRead[] = [
-  repository(),
-  repository({
-    id: REPO_TWO_ID,
-    name: 'broken-mirror',
-    local_path: '/home/ada/code/broken-mirror',
-    primary_language: null,
-    project_id: null,
-    current_branch: null,
-    default_branch: null,
-    branch_count: 0,
-    commit_count: 0,
-    first_commit_at: null,
-    latest_commit_at: null,
-    last_scan_status: 'error',
-    last_scan_error: SCAN_FAILURE,
-  }),
-]
+const REPOSITORIES: RepositoryRead[] = [NEXO, BROKEN_MIRROR]
+
+/**
+ * `broken-mirror` as the dashboard first receives it: registered, proven to be a
+ * work tree, and **never opened**.
+ *
+ * This is the shape the backend actually sends for a repository no scan has read,
+ * and it is the case the card's controls exist for. `last_scanned_at` is null
+ * while `last_scan_status` is `'ok'`, because that is the model's default and the
+ * enum has no third member — so the row reports no branch, no commits and “Never
+ * scanned”, every one of which is an honest sentence about a folder git has not
+ * been asked about rather than a repository with nothing in it.
+ */
+const UNREAD_MIRROR: RepositoryRead = {
+  ...BROKEN_MIRROR,
+  last_scan_status: 'ok',
+  last_scan_error: null,
+  last_scanned_at: null,
+}
+
+/** The same directory once a scan has read it. */
+const SCANNED_MIRROR: RepositoryRead = {
+  ...UNREAD_MIRROR,
+  current_branch: 'main',
+  default_branch: 'main',
+  branch_count: 1,
+  commit_count: 23,
+  first_commit_at: '2019-01-04T09:14:00Z',
+  latest_commit_at: '2019-01-29T14:05:00Z',
+  last_scanned_at: '2019-01-29T14:06:00Z',
+}
+
+const SCAN_RUN: ScanRunRead = {
+  id: '66666666-6666-4666-8666-666666666666',
+  repository_id: REPO_TWO_ID,
+  status: 'ok',
+  commits_discovered: 23,
+  commits_added: 23,
+  branches_discovered: 1,
+  duration_ms: 412,
+  error: null,
+  scanned_at: '2019-01-29T14:06:00Z',
+  created_at: '2019-01-29T14:06:00Z',
+}
 
 function commit(overrides: Partial<CommitRead> = {}): CommitRead {
   return {
@@ -850,6 +949,154 @@ describe('developer dashboard', () => {
     // against the copy that shipped today.
     expect(text).not.toMatch(/\d+\s*hours?\s*(focused|spent|worked)/i)
     expect(text).not.toMatch(/productivity|unproductive|lazy|burnout/i)
+  })
+})
+
+/* --------------------------------------------------- acting from the card */
+
+describe('developer dashboard: acting on a repository from its card', () => {
+  it('scans from the card and redraws its figures, rather than only reporting success', async () => {
+    const user = userEvent.setup()
+    let scanned = false
+    const calls = installBackend({
+      scan: () => {
+        scanned = true
+        return json(SCAN_RUN)
+      },
+      repositories: listOf(() =>
+        scanned ? [NEXO, SCANNED_MIRROR] : [NEXO, UNREAD_MIRROR],
+      ),
+    })
+    renderDeveloperPage()
+
+    // The card the reader is actually looking at: a directory registered but
+    // never read, so every figure reads as an absence.
+    const card = await findRepositoryCard('broken-mirror')
+    expect(within(card).getByText('Never scanned')).toBeInTheDocument()
+    expect(within(card).getByText('No commits yet')).toBeInTheDocument()
+    expect(
+      within(card).getByText(
+        '0 branches recorded at the last scan, and git resolved no default branch.',
+      ),
+    ).toBeInTheDocument()
+
+    // The control is labelled as the scan it is. There is no scheduler, so a
+    // button reading "Refresh" would imply a re-read NEXUS performs on its own.
+    await user.click(within(card).getByRole('button', { name: 'Scan now' }))
+
+    // The scan call, on this repository and nothing else.
+    await waitFor(() =>
+      expect(methodCalls(calls, 'POST', `/developer/repositories/${REPO_TWO_ID}/scan`)).toHaveLength(1),
+    )
+
+    // The figures have to change. A toast over a card still claiming "Never
+    // scanned" and "No commits yet" would be the stale-data bug wearing a
+    // successful message, and the invalidation has to reach the list itself.
+    await waitFor(() =>
+      expect(
+        within(repositoryCard('broken-mirror')).getByText(
+          '1 branch recorded at the last scan, default branch main.',
+        ),
+      ).toBeInTheDocument(),
+    )
+    expect(within(repositoryCard('broken-mirror')).getByText(formatNumber(23))).toBeInTheDocument()
+    expect(within(repositoryCard('broken-mirror')).queryByText('Never scanned')).toBeNull()
+    expect(within(repositoryCard('broken-mirror')).queryByText('No commits yet')).toBeNull()
+    expect(getCalls(calls, '/developer/repositories').length).toBeGreaterThan(1)
+    expectNoFabricatedNumbers()
+  })
+
+  it('shows a scan as pending, and refuses to start a second one while it runs', async () => {
+    const user = userEvent.setup()
+    // A mutable holder rather than a `let`, so the resolver the route installs is
+    // the same one the assertions below call: TypeScript cannot see an assignment
+    // that only ever happens inside a callback.
+    const gate: { release: () => void } = { release: () => undefined }
+    const calls = installBackend({
+      // A scan shells out to git and can take seconds, so the request is held
+      // open rather than answered on the spot.
+      scan: () =>
+        new Promise<Response>((resolve) => {
+          gate.release = () => resolve(json(SCAN_RUN))
+        }),
+      repositories: listOf(() => [NEXO, UNREAD_MIRROR]),
+    })
+    renderDeveloperPage()
+
+    await user.click(
+      within(await findRepositoryCard('broken-mirror')).getByRole('button', { name: 'Scan now' }),
+    )
+
+    // A control that silently stops responding reads as a broken page, so the
+    // pending state is stated rather than only dimmed. The name is matched as a
+    // substring because the shared `Spinner` contributes its own screen-reader
+    // text ("Loading") to the button — the same composition the detail page's
+    // scan panel ships, unchanged here.
+    const busy = await screen.findByRole('button', { name: /Scanning/ })
+    expect(busy).toBeDisabled()
+    expect(busy).toHaveAttribute('aria-busy', 'true')
+
+    // A second press cannot start a second scan.
+    await user.click(busy)
+
+    // And only this card is busy: the state is per card, so a scan of one
+    // repository does not grey out every other repository's control.
+    expect(
+      within(await findRepositoryCard('Nexo')).getByRole('button', { name: 'Scan now' }),
+    ).toBeEnabled()
+
+    gate.release()
+    await waitFor(() =>
+      expect(methodCalls(calls, 'POST', `/developer/repositories/${REPO_TWO_ID}/scan`)).toHaveLength(1),
+    )
+  })
+
+  it('removes a repository from the grid only after a confirmation naming it and its history', async () => {
+    const user = userEvent.setup()
+    let rows: RepositoryRead[] = [NEXO, UNREAD_MIRROR]
+    const calls = installBackend({
+      repositories: listOf(() => rows),
+      remove: (url) => {
+        rows = rows.filter((row) => !url.endsWith(`/developer/repositories/${row.id}`))
+        return new Response(null, { status: 204 })
+      },
+    })
+    renderDeveloperPage()
+
+    await user.click(within(await findRepositoryCard('Nexo')).getByRole('button', { name: 'Remove' }))
+
+    // The offer is specific before it is destructive: it names the repository and
+    // says its recorded evidence goes with it, because "removed" and "removed
+    // along with every commit NEXUS read from it" are not the same offer.
+    const dialog = await screen.findByRole('dialog')
+    expect(
+      within(dialog).getByText(
+        '“Nexo” and every commit, branch and scan record NEXUS read from it will be removed. ' +
+          'The activity event stays in your trail. This cannot be undone.',
+      ),
+    ).toBeInTheDocument()
+
+    // Cancelling is a real exit, and it costs nothing.
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(methodCalls(calls, 'DELETE', `/developer/repositories/${REPO_ID}`)).toHaveLength(0)
+    expect(screen.getByRole('heading', { name: 'Nexo' })).toBeInTheDocument()
+
+    await user.click(within(repositoryCard('Nexo')).getByRole('button', { name: 'Remove' }))
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Remove repository' }),
+    )
+
+    await waitFor(() =>
+      expect(methodCalls(calls, 'DELETE', `/developer/repositories/${REPO_ID}`)).toHaveLength(1),
+    )
+
+    // …and the card leaves the grid, because the list is re-read rather than left
+    // holding the row that was just deleted. The other repository is untouched.
+    await waitFor(() =>
+      expect(screen.queryByRole('heading', { name: 'Nexo' })).not.toBeInTheDocument(),
+    )
+    expect(screen.getByRole('heading', { name: 'broken-mirror' })).toBeInTheDocument()
   })
 })
 

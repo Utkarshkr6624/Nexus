@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { apiClient, ApiError } from '@/lib/api-client'
-import { useAuthStore } from '@/stores/auth-store'
+import { AUTH_STORAGE_KEY, useAuthStore } from '@/stores/auth-store'
 import type { TokenPair, User } from '@/types'
 
 /**
@@ -285,13 +285,25 @@ describe('boot verification of a persisted session', () => {
 
     await hydrating
 
-    // Budget spent, backend still silent: the only place a non-401 is allowed
-    // to end the session, and it ends all of it.
+    // Budget spent, backend still silent. The regression this pins: an outage
+    // is not a verdict, so the pair survives it. Ending the session here
+    // rewrote the persisted tokens to null and dropped the user on the sign-in
+    // form — telling them they had been signed out by a backend that had never
+    // answered, on a form that cannot sign them back in either.
     const settled = useAuthStore.getState()
-    expect(settled.status).toBe('anonymous')
-    expect(settled.accessToken).toBeNull()
-    expect(settled.refreshToken).toBeNull()
-    expect(settled.user).toBeNull()
+    expect(settled.status).toBe('unreachable')
+    expect(settled.accessToken).toBe('boot-access')
+    expect(settled.refreshToken).toBe('boot-refresh')
+    expect(settled.user?.id).toBe(USER_A.id)
+    expect(settled.pending).toBe(false)
+    // The failure that stopped the check is kept, so the guards can say what
+    // actually went wrong instead of a generic apology.
+    expect(settled.bootError?.status).toBe(status)
+    // And nothing was persisted as a sign-out.
+    const persisted = JSON.parse(window.localStorage.getItem(AUTH_STORAGE_KEY) ?? '{}') as {
+      state?: { accessToken?: string | null }
+    }
+    expect(persisted.state?.accessToken).toBe('boot-access')
   }
 
   it('holds an unverified session unverified on a 500 rather than half-signing it out', async () => {
@@ -604,5 +616,69 @@ describe('401 recovery', () => {
     expect(useAuthStore.getState().status).toBe('authenticated')
     expect(useAuthStore.getState().accessToken).toBe('a0')
     expect(useAuthStore.getState().refreshToken).toBe('r0')
+  })
+})
+
+describe('a 401 that is an answer rather than an expiry', () => {
+  /**
+   * `PATCH /auth/password` refuses a wrong `current_password` with 401, which
+   * says what the user typed was wrong — not that the token was spent. Handed
+   * to the 401 recovery it read as an expiry, spent a single-use refresh
+   * rotation on the typo, replayed the same wrong password, and the second one
+   * crossed the renewal-failure streak and ended the session: two mistyped
+   * passwords signed the user out of the entire app.
+   */
+  it('surfaces a wrong current password without spending a rotation or the session', async () => {
+    signIn('a0', 'r0', USER_A)
+
+    let refreshCalls = 0
+    let passwordCalls = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input)
+        if (url.includes('/auth/refresh')) {
+          refreshCalls += 1
+          return json(tokenPair('a1', 'r1', SESSION_A))
+        }
+        if (url.includes('/auth/password')) {
+          passwordCalls += 1
+          return json(errorBody('unauthorized', 'The current password is incorrect.'), 401)
+        }
+        return json(errorBody('not_found', 'Not found'), 404)
+      }),
+    )
+
+    await useAuthStore.getState().changePassword({
+      current_password: 'wrong',
+      new_password: 'New-Pass9!',
+    })
+
+    const first = useAuthStore.getState()
+    expect(first.error?.message).toBe('The current password is incorrect.')
+    expect(first.pending).toBe(false)
+    // The form is told what happened; the session is untouched.
+    expect(refreshCalls).toBe(0)
+    expect(passwordCalls).toBe(1)
+    expect(first.status).toBe('authenticated')
+    expect(first.accessToken).toBe('a0')
+    expect(first.refreshToken).toBe('r0')
+
+    // And the second attempt, which is where the old behaviour crossed the
+    // streak and called endSession().
+    await useAuthStore.getState().changePassword({
+      current_password: 'still-wrong',
+      new_password: 'New-Pass9!',
+    })
+
+    const second = useAuthStore.getState()
+    expect(second.error?.message).toBe('The current password is incorrect.')
+    expect(second.pending).toBe(false)
+    expect(passwordCalls).toBe(2)
+    expect(refreshCalls).toBe(0)
+    expect(second.status).toBe('authenticated')
+    expect(second.accessToken).toBe('a0')
+    expect(second.refreshToken).toBe('r0')
+    expect(second.user?.id).toBe(USER_A.id)
   })
 })

@@ -60,6 +60,7 @@ from app.api.deps import (
 )
 from app.core.deps import require_permission
 from app.core.permissions import Permission
+from app.repositories.analytics import AnalyticsRepository
 from app.schemas.analytics import (
     ConsistencyRead,
     CsvExportManifestRead,
@@ -77,7 +78,6 @@ from app.schemas.analytics import (
     TrendPoint,
     WorkloadRead,
 )
-from app.repositories.analytics import AnalyticsRepository
 from app.schemas.common import Page
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])

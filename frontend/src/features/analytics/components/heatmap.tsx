@@ -10,8 +10,18 @@ import type { DateOnlyString } from '@/types/analytics'
 
 export interface HeatmapDay {
   date: DateOnlyString
-  /** What "active" means for this chart — the magnitude of the day. */
-  value: number
+  /**
+   * What "active" means for this chart — the magnitude of the day.
+   *
+   * **`unknown`, not `number`.** Every producer of this row sums or forwards
+   * fields straight off a response, and a response that has been degraded,
+   * partially cached or shape-shifted puts a nested object where a figure was
+   * expected. Typing the field `number` does not make it one, it only moves the
+   * `ToNumber` that throws `Cannot convert object to primitive value` down into
+   * whoever reads it next. The grid reads the value through `chartNumber` and
+   * keeps an unreadable day apart from a day measured as empty.
+   */
+  value: unknown
 }
 
 export interface HeatmapProps {

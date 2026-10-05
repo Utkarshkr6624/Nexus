@@ -1569,7 +1569,7 @@ run](#what-has-not-been-run) records what has actually been executed.
 | `test_analytics_edge_cases.py` | — | 27 | What analytics says when the data is thin, wrong-shaped or gone |
 | `test_analytics_export_api.py` | — | 27 | CSV export over HTTP: the manifest, the download, and what the file promises |
 | `test_developer_schema.py` | 26 | — | Model/migration agreement for Phase 8, rendering `0008` offline |
-| `test_analytics_daily_metrics.py` | — | 25 | The `daily_metrics` tier: one row per user per UTC day, and nothing else |
+| `test_analytics_daily_metrics.py` | — | 25 | The `daily_metrics` tier: one row per user per calendar day, and nothing else |
 | `test_analytics_learning_api.py` | — | 25 | The learning, knowledge and ML-feature reads, end to end over HTTP |
 | `test_learning_gaps.py` | 24 | — | The skill-gap formulas as pure arithmetic — the module that cannot lie about a level |
 | `test_risk_detection.py` | — | 32 | One detection pass: what it writes, what it refuses, what it closes |

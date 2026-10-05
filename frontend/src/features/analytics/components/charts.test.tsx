@@ -230,7 +230,13 @@ const SEVEN_BUCKETS: TimeBucketRead[] = [
   { key: 'p-e', label: 'Papers', minutes: 20, share: 9.09 },
 ]
 
-const HEATMAP_DAYS: HeatmapDay[] = [
+/**
+ * `satisfies`, not an annotation: `HeatmapDay['value']` is `unknown` because it
+ * comes off the wire, and an annotation would widen every fixture value here to
+ * `unknown` too, leaving the expectations below unable to name the number they
+ * are checking. The shape is still checked against the real prop type.
+ */
+const HEATMAP_DAYS = [
   { date: '2019-01-07', value: 3 },
   { date: '2019-01-08', value: 0 },
   { date: '2019-01-09', value: 1 },
@@ -238,7 +244,7 @@ const HEATMAP_DAYS: HeatmapDay[] = [
   { date: '2019-01-11', value: 6 },
   { date: '2019-01-12', value: 0 },
   { date: '2019-01-13', value: 0 },
-]
+] satisfies readonly HeatmapDay[]
 
 /* -------------------------------------------------------------- chart shell */
 

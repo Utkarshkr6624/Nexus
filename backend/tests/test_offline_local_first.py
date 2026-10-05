@@ -157,13 +157,20 @@ FORBIDDEN_TOP_LEVEL = frozenset(
 #: make. Each entry maps a dotted module to the names it may be imported *for*;
 #: importing anything else from one of them is a failure.
 #:
-#: ``urllib.parse`` — four call sites, all operating on a URL string NEXUS already
-#:   holds: splitting a stored source URL to find its host, and quoting a path
-#:   segment for a label. Neither opens a socket; ``urllib.request`` is the module
-#:   that does, and it is forbidden above.
+#: ``urllib.parse`` — every call site is string surgery on a URL NEXUS already
+#:   holds: splitting a stored source URL to find its host, quoting a credential
+#:   for a DSN, and ``urlunsplit`` to rebuild one after its host was lowercased.
+#:   None of them opens a socket; ``urllib.request`` is the module that does, and
+#:   it is forbidden above. The names are listed individually rather than the
+#:   module being waved through wholesale, because ``urllib.parse`` is a package
+#:   that can grow a sibling — and ``urljoin`` resolving a path against a base
+#:   read off a stored URL is the kind of name that should be argued for here
+#:   rather than inherited.
 #: ``http.HTTPStatus`` — three call sites reading an stdlib enum for a status code.
 ALLOWED_IMPORTS: dict[str, frozenset[str] | None] = {
-    "urllib.parse": frozenset({"quote", "unquote", "urlsplit", "urlparse", "urlencode"}),
+    "urllib.parse": frozenset(
+        {"quote", "unquote", "urlsplit", "urlunsplit", "urlparse", "urlencode"}
+    ),
     "http": frozenset({"HTTPStatus"}),
 }
 

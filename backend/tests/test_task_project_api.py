@@ -245,6 +245,12 @@ async def test_a_completed_task_cannot_be_cancelled_because_the_work_happened(
 
     The error must name the illegal edge and the states that were available
     instead, so a client can render a reason rather than a bare status code.
+
+    ``details`` also carries the envelope's guaranteed ``errors`` list. A
+    state-machine refusal names no single input, so the synthesised entry has a
+    ``message`` alone and no ``field`` — a renderer that keys form errors by
+    field keeps treating this as a banner rather than inventing an input to hang
+    it off. Asserting the whole mapping pins both halves of that contract.
     """
     _seed, auth = await seeded_client(client, db_session)
     project = await _new_project(client, auth)
@@ -254,10 +260,13 @@ async def test_a_completed_task_cannot_be_cancelled_because_the_work_happened(
 
     refused = await client.post(f"/api/v1/tasks/{task_id}/cancel", headers=auth)
     error = assert_error_envelope(refused, status_code=422, code="validation_error")
+    refusal = "A task cannot move from 'completed' to 'cancelled'."
+    assert error["message"] == refusal
     assert error["details"] == {
         "from": "completed",
         "to": "cancelled",
         "allowed": ["in_progress", "todo"],
+        "errors": [{"message": refusal}],
     }, error
 
     after = await client.get(f"/api/v1/tasks/{task_id}", headers=auth)

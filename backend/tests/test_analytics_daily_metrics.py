@@ -1,4 +1,4 @@
-"""The ``daily_metrics`` tier: one row per user per UTC day, and nothing else.
+"""The ``daily_metrics`` tier: one row per user per calendar day, and nothing else.
 
 **Every test here requires a live PostgreSQL and is marked ``integration.**
 
@@ -44,9 +44,10 @@ import contextlib
 import uuid
 from collections.abc import Iterator
 from datetime import UTC, date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
-from sqlalchemy import event, select, text
+from sqlalchemy import event, func, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import IntegrityError
@@ -192,6 +193,52 @@ async def _late_session(
     return row
 
 
+async def _database_zone(session: AsyncSession) -> ZoneInfo:
+    """The calendar the aggregate is cut on: the connection's own ``TimeZone``.
+
+    Asked of the database rather than assumed, because the whole point of the
+    rule under test is that it is *the server's* zone and not a constant written
+    into the SQL. A test that hard-coded ``Asia/Calcutta`` would pass on this
+    box and then quietly assert a rule the code does not follow anywhere else.
+    """
+    name = await session.scalar(select(func.current_setting("TimeZone")))
+    return ZoneInfo(str(name))
+
+
+def _local_instant(zone: ZoneInfo, day: date, hour: int, minute: int = 0) -> datetime:
+    """The instant at ``hour:minute`` on ``day`` as the database reads it.
+
+    :func:`~tests.analytics_fixtures.at` builds UTC instants, which is right for
+    a fixture that must not care where the boundary is and wrong for one that is
+    about it: "23:59" is the last minute of a day in one calendar and a small
+    hour of the next in another, so a UTC-hour fixture pins nothing about where
+    the cut falls. This one asks which calendar the buckets use and builds the
+    wall-clock time *there*.
+    """
+    return datetime(day.year, day.month, day.day, hour, minute, tzinfo=zone).astimezone(UTC)
+
+
+async def _session_starting_at(
+    seed: AnalyticsSeed, *, start: datetime, minutes: int
+) -> WorkSession:
+    """A work session beginning at an exact instant rather than at an hour.
+
+    ``AnalyticsSeed.work_session`` takes a start *hour*, which is the right
+    granularity everywhere else in this file and the wrong one here: the claim
+    under test is where the **midnight** cut falls, and an hour-granular fixture
+    cannot distinguish a cut at 00:00 from one at 01:00. The row is written by
+    the shared helper — which gets the status, the estimated and actual ends and
+    the ownership right — and then moved onto the exact instant.
+    """
+    row = await seed.work_session(day=start.date(), minutes=minutes, start_hour=start.hour)
+    row.scheduled_start = start
+    row.scheduled_end = start + timedelta(minutes=minutes)
+    row.actual_start = start
+    row.actual_end = start + timedelta(minutes=minutes)
+    await seed.flush()
+    return row
+
+
 @contextlib.contextmanager
 def _recorded_statements(engine: Engine) -> Iterator[list[str]]:
     """Capture every SQL statement the engine sends while the block runs.
@@ -301,15 +348,31 @@ async def test_a_day_with_no_activity_is_written_as_zeros_not_omitted(
 async def test_tasks_created_counts_by_created_at(db_session: AsyncSession) -> None:
     """``tasks_created`` is grouped on ``created_at``, and nothing else moves.
 
-    A task that was created inside the window but finished outside it still
-    counts here: it entered the system on that day, which is what a "tasks
-    created" chart means.
+    The seeds are written at **local midday** — twelve o'clock in the database's
+    own zone, which :func:`_local_instant` builds — so every task lands on the
+    same calendar day whatever offset the server is configured for. A fixture at
+    23:00 *UTC* would be a fixture whose expected day depends on that offset: on
+    ``Asia/Calcutta`` that is half past four the following morning, and the third
+    task below would quietly become a task created on :data:`DAY` plus one.
+
+    The third task is created on :data:`DAY` and finished on the day after it,
+    which is the other half of the attribution rule: it entered the system on
+    ``DAY``, so it counts here, and the whole-row assertion is what proves its
+    completion did not leak into ``tasks_completed``.
     """
     seed = await _seed(db_session)
     project = await _project(seed)
-    await seed.task(created_at=at(DAY), project_id=project.id)
-    await seed.task(created_at=at(DAY), project_id=project.id)
-    await seed.task(created_at=at(DAY, 23), project_id=project.id)
+    zone = await _database_zone(db_session)
+    midday = _local_instant(zone, DAY, 12)
+    tomorrow = _local_instant(zone, DAY + timedelta(days=1), 12)
+    await seed.task(created_at=midday, project_id=project.id)
+    await seed.task(created_at=midday, project_id=project.id)
+    await seed.task(
+        created_at=midday,
+        completed_at=tomorrow,
+        status=TaskStatus.COMPLETED.value,
+        project_id=project.id,
+    )
 
     await _service(db_session).rebuild_range(owner=seed.owner, start=DAY, end=DAY)
 
@@ -787,29 +850,59 @@ async def test_a_wide_rebuild_agrees_with_a_narrow_one_on_every_day(
 # ---------------------------------------------------------------------------
 
 
-async def test_day_boundaries_are_cut_in_utc(db_session: AsyncSession) -> None:
-    """A block at 23:00 and one at 00:00 the next day are two different days.
+async def test_day_boundaries_are_cut_at_the_databases_local_midnight(
+    db_session: AsyncSession,
+) -> None:
+    """A block at 23:59 and one at 00:01 the next day are two different days.
 
-    ``daily_metrics.metric_date`` is a UTC cut, written into the SQL as
-    ``date(column AT TIME ZONE 'UTC')`` rather than left to the connection's
-    ``TimeZone``. The consequence is that the same query buckets identically from
-    every process; the price is that a 23:30 completion in Berlin lands on the
-    previous UTC day here. Both are the reason the boundary is asserted rather
-    than assumed.
+    ``daily_metrics.metric_date`` is cut at **the connection's own midnight**,
+    written into the SQL as ``date(column AT TIME ZONE current_setting('TimeZone'))``
+    so that the answer is a property of the query rather than of whichever
+    connection happened to run it. A daily figure belongs to the day the user
+    experienced: on a box at ``+05:30`` an evening's work is filed under that
+    evening, not under the UTC day that is already tomorrow.
+
+    Three blocks are seeded, at local wall-clock times read from the zone
+    :func:`_database_zone` reports — one either side of the cut, and one at 04:00
+    the following morning, which is still the *first* day in UTC and is the row
+    that separates the two halves of the rule:
+
+    * each day's bucket holds exactly its own blocks, so **a day's bucket does
+      not straddle two days** and neither day's minutes leak into the other;
+    * a read of one day returns that day and no other, because the window
+      predicate is cut at the *same* local midnight the buckets are. Bucketing
+      and bounding are two separate expressions, and a suite that only ever
+      agreed with both at once would not notice one of them being wrong.
+
+    Which of these catches which break is not an accident: hard-coding UTC in
+    both expressions fails on the bucket figures, and hard-coding it in the
+    window alone fails on the one-day read.
     """
     seed = await _seed(db_session)
-    await seed.work_session(day=DAY, minutes=30, start_hour=23)
-    await seed.work_session(day=DAY + timedelta(days=1), minutes=45, start_hour=0)
+    zone = await _database_zone(db_session)
+    tomorrow = DAY + timedelta(days=1)
+    await _session_starting_at(seed, start=_local_instant(zone, DAY, 23, 59), minutes=30)
+    await _session_starting_at(seed, start=_local_instant(zone, tomorrow, 0, 1), minutes=45)
+    await _session_starting_at(seed, start=_local_instant(zone, tomorrow, 4, 0), minutes=10)
 
-    await _service(db_session).rebuild_range(
-        owner=seed.owner, start=DAY, end=DAY + timedelta(days=1)
-    )
+    # The *window* a read is bounded by is cut at the same local midnight. The
+    # 04:00 block is 22:30 UTC on the first day, so a predicate still cut at UTC
+    # midnight would hand it to a read of the first day even though it belongs
+    # to the second — and every caller that sums these groups, the service's
+    # ``task_analytics`` and ``/overview`` totals among them, would count it.
+    assert await AnalyticsRepository(db_session).session_minutes_by_day(
+        seed.owner.id, start=DAY, end=DAY
+    ) == [(DAY, 30, 1)]
+
+    service = _service(db_session)
+
+    await service.rebuild_range(owner=seed.owner, start=DAY, end=tomorrow)
 
     assert await _row(db_session, seed.owner.id, DAY) == _expected(
         planned_minutes=30, actual_minutes=30, work_sessions=1
     )
-    assert await _row(db_session, seed.owner.id, DAY + timedelta(days=1)) == _expected(
-        planned_minutes=45, actual_minutes=45, work_sessions=1
+    assert await _row(db_session, seed.owner.id, tomorrow) == _expected(
+        planned_minutes=55, actual_minutes=55, work_sessions=2
     )
 
 

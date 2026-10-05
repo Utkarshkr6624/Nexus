@@ -189,7 +189,15 @@ async def sessions(
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
     summary="Revoke one of the caller's sessions",
-    responses={204: {"headers": {"Warning": {"description": "Present when the revoked session is the caller's own — see below."}}}},
+    responses={
+        204: {
+            "headers": {
+                "Warning": {
+                    "description": "Present when the revoked session is the caller's own — see below."
+                }
+            }
+        }
+    },
 )
 async def revoke_session(
     session_id: UUID,
@@ -226,8 +234,10 @@ async def revoke_session(
         user_agent=agent,
     )
     headers = (
-        {"Warning": '199 - "This request revoked the session it was made with; '
-        "further requests on this credential will be refused.\""}
+        {
+            "Warning": '199 - "This request revoked the session it was made with; '
+            'further requests on this credential will be refused."'
+        }
         if session_id_of_request is not None and session_id == session_id_of_request
         else None
     )

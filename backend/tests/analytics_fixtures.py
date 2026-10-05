@@ -15,9 +15,17 @@ Two things make the numbers exact:
   = now()`` on :class:`~app.db.base.TimestampMixin`. The alternative — sleeping,
   or freezing the clock — makes a test's expected values depend on the wall
   clock, and a suite that fails only at midnight is worse than no suite.
-* **Days are UTC days.** ``daily_metrics.metric_date`` is cut at UTC midnight
-  (see :mod:`app.models.analytics`), so the helpers here take naive-looking
-  UTC instants via :func:`at` and never introduce a local offset.
+* **Days are the server's days.** ``daily_metrics.metric_date`` is cut at the
+  **database's** local midnight (see :mod:`app.models.analytics` and
+  :func:`app.repositories.analytics.local_day`), so the helpers here take
+  UTC instants via :func:`at` and never introduce a local offset. That keeps a
+  fixture independent of the server's zone: :func:`at` builds a wall-clock hour
+  *in UTC*, and the test that cares where the boundary falls builds its instants
+  in the server's zone instead —
+  ``_local_instant`` in ``test_analytics_daily_metrics.py`` and in
+  ``test_analytics_day_agreement.py``. Writing "Days are UTC days" here, as this
+  module once did, is what let six suites go on assuming a UTC cut they were
+  never asserting.
 
 The builder is a plain object rather than a set of pytest fixtures because each
 test needs a different shape of data, and a fixture per shape would be a
@@ -68,9 +76,19 @@ DAY = date(2026, 1, 5)
 def at(day: date, hour: int = 9, minute: int = 0) -> datetime:
     """A timezone-aware UTC instant on ``day``.
 
-    The analytics tables are compared against UTC days, so a fixture built with
-    a local offset would land in a neighbouring day and quietly invalidate
-    every expected count in the test.
+    Deliberately *not* built in the database's zone, and worth saying why that is
+    still correct now that :func:`app.repositories.analytics.local_day` buckets in
+    that zone. What a day-bucketed assertion needs is that the row lands on
+    ``day``, and an instant at ``hour`` UTC lands on ``day`` in the server's
+    calendar for every offset under fifteen hours — which is every zone in
+    practical use. So the helpers here stay zone-independent, and a suite does
+    not change meaning when the server's ``TimeZone`` changes.
+
+    The price is that ``hour`` is a UTC hour: ``at(day, 23)`` is 04:30 the next
+    morning in ``Asia/Calcutta``. A test whose claim *is* about the hour — about
+    the cut, about a time-of-day feature — must not use this helper and must ask
+    the database for its zone first, the way ``_local_instant`` does in
+    ``test_analytics_daily_metrics.py`` and ``test_analytics_day_agreement.py``.
     """
     return datetime(day.year, day.month, day.day, hour, minute, tzinfo=UTC)
 

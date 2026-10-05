@@ -2,15 +2,15 @@
 
 What this file is for
 ---------------------
-``GET /api/v1/search`` is a read-only projection over eleven tables that already
+``GET /api/v1/search`` is a read-only projection over thirteen tables that already
 exist. That makes it structurally unlike every other endpoint in the API: there
 is no write to authorise, no state to reconcile and no service rule behind it —
 so the only way its correctness is visible is by looking at what comes back.
 
 The questions asked here, in the order they matter.
 
-**Can it reach every kind it claims to?** ``:func:`test_each_of_the_eleven_declared_kinds_finds_its_row`
-seeds one row per table with the same term and asserts all eleven come back, and
+**Can it reach every kind it claims to?** ``:func:`test_each_of_the_thirteen_declared_kinds_finds_its_row`
+seeds one row per table with the same term and asserts all thirteen come back, and
 :func:`test_the_search_table_and_the_wire_enum_agree` pins the SQL routing table
 to the wire enum — the one place in this feature where a drift would be silent,
 because a kind present in one and absent from the other fails closed and simply
@@ -19,7 +19,7 @@ never matches.
 **Can one account's rows leak into another's?** This is the test that matters.
 :func:`test_an_identically_named_row_belonging_to_another_account_never_appears`
 gives two accounts rows with *identical* titles and descriptions, asks each for
-the same term, and asserts that each gets exactly their own eleven rows back.
+the same term, and asserts that each gets exactly their own thirteen rows back.
 Identical titles are the point: with distinct titles a scoping bug could hide
 behind the text not matching, and the test would pass for the wrong reason.
 
@@ -54,7 +54,7 @@ from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.developer import GitRepository
-from app.models.knowledge import Concept, Note, Resource
+from app.models.knowledge import Bookmark, Concept, Document, Note, Resource
 from app.models.learning import LearningGoal, Skill
 from app.models.planner import CalendarEvent
 from app.models.project import Project
@@ -109,14 +109,18 @@ async def _seed_all_kinds(
     touched: datetime = TOUCHED,
     target_date: date = DAY,
 ) -> dict[SearchEntityKind, uuid.UUID]:
-    """Write one row into each of the eleven searched tables, all containing ``term``.
+    """Write one row into each of the thirteen searched tables, all containing ``term``.
 
     Every row is labelled with the same term **in its own first text column**, so
-    a single query has a reason to reach all eleven tables. Rows are written
-    through the ORM with explicit timestamps rather than through the API: this
-    file is testing the search projection, and driving eleven different creation
-    endpoints would make a failure here ambiguous between "search cannot reach
-    this table" and "this table's create endpoint wants a different payload".
+    a single query has a reason to reach all thirteen tables. For most kinds that
+    column is ``name`` or ``title``; for a ``bookmark`` it is ``url`` and for a
+    ``document`` it is ``filename``, because both of their titles are nullable and
+    the label must not be — so the two rows below put the term in *those* columns
+    and nowhere else. Rows are written through the ORM with explicit timestamps
+    rather than through the API: this file is testing the search projection, and
+    driving thirteen different creation endpoints would make a failure here
+    ambiguous between "search cannot reach this table" and "this table's create
+    endpoint wants a different payload".
 
     Returns:
         The id written for each kind, keyed by kind.
@@ -196,11 +200,30 @@ async def _seed_all_kinds(
         reason="the risk score rose",
         updated_at=touched,
     )
+    # The term goes in the *url* and the *filename* respectively, not in the
+    # titles, because that is the column each of these targets leads with — see
+    # ``SearchTarget.columns`` in app/repositories/search.py.
+    bookmark = Bookmark(
+        owner_id=owner_id,
+        url=f"https://example.test/{term}",
+        title="a saved link",
+        description="a citation",
+        updated_at=touched,
+    )
+    document = Document(
+        owner_id=owner_id,
+        filename=f"{term}-report.pdf",
+        title="an attachment",
+        description="a metadata row",
+        updated_at=touched,
+    )
 
     written = [
         ("task", task),
         ("note", note),
         ("resource", resource),
+        ("bookmark", bookmark),
+        ("document", document),
         ("concept", concept),
         ("repository", repository),
         ("goal", goal),
@@ -261,8 +284,8 @@ def test_the_type_filter_cap_is_the_size_of_the_vocabulary():
     assert len(SearchEntityKind) == MAX_TYPE_FILTERS
 
 
-async def test_each_of_the_eleven_declared_kinds_finds_its_row(client, db_session):
-    """One row per table, all labelled with the same term, and all eleven come back.
+async def test_each_of_the_thirteen_declared_kinds_finds_its_row(client, db_session):
+    """One row per table, all labelled with the same term, and all thirteen come back.
 
     If any target named a column that does not exist, or a table this module does
     not import, the search would raise on every request rather than quietly
@@ -318,7 +341,13 @@ async def test_the_snippet_marks_the_matched_region(client, db_session):
     for hit in body["hits"]:
         matched = hit["snippet"][hit["match_start"] : hit["match_end"]]
         assert TERM in matched.lower(), hit
-        assert hit["matched_field"] in {"name", "title"}, hit
+        # ``matched_field`` is the column *order* the hit was found in, not a
+        # pick between two labels — so it is checked against the target's own
+        # first column rather than against a fixed set. That is what lets a
+        # ``bookmark`` answer ``url`` and a ``document`` answer ``filename``:
+        # both titles are nullable, so neither may lead with one.
+        target = SEARCH_TARGETS[hit["kind"]]
+        assert hit["matched_field"] == target.columns[0].key, hit
         assert hit["title"], hit
 
     # The term was written into each row's first text column, which is what the
@@ -359,7 +388,7 @@ async def test_a_row_filed_under_a_project_reports_that_project(client, db_sessi
 async def test_an_identically_named_row_belonging_to_another_account_never_appears(
     client, db_session
 ):
-    """Two accounts, eleven identically-labelled rows each, and total isolation.
+    """Two accounts, thirteen identically-labelled rows each, and total isolation.
 
     The rows are identical on purpose. A test with distinct titles can pass
     without the ownership predicate doing anything at all, because the text alone
@@ -368,7 +397,7 @@ async def test_an_identically_named_row_belonging_to_another_account_never_appea
     for both accounts, so a row can only be excluded by ``owner_id``.
 
     The assertion is stated twice over: each account gets exactly their own
-    eleven ids back, and neither account's id appears in the other's results.
+    thirteen ids back, and neither account's id appears in the other's results.
     """
     first_seed, first_auth = await seeded_client(client, db_session, username="ada")
     second_seed, second_auth = await seeded_client(client, db_session, username="grace")
@@ -413,7 +442,7 @@ async def test_the_search_needs_a_bearer_token(client, db_session):
     """No credentials, no rows — and no hint that rows exist.
 
     The unauthenticated answer is a 401 through the shared envelope, the same as
-    every other surface. Pinning it here because this endpoint reads eleven
+    every other surface. Pinning it here because this endpoint reads thirteen
     tables at once and is the widest read in the product.
     """
     seed, _ = await seeded_client(client, db_session)
@@ -712,7 +741,7 @@ async def test_a_date_range_narrows_by_each_kinds_own_date_column(client, db_ses
 async def test_types_narrows_the_union_to_the_kinds_asked_for(client, db_session):
     """``types`` reads only the tables it names.
 
-    All eleven rows carry the term; asking for two kinds must return only those
+    All thirteen rows carry the term; asking for two kinds must return only those
     two, which also proves the default really is "all of them" rather than a
     subset that happened to look complete.
     """
@@ -894,9 +923,9 @@ async def test_a_wildcard_in_the_term_is_escaped_rather_than_run(client, db_sess
 async def test_pagination_slices_the_union_once(client, db_session):
     """``limit``/``offset`` page the flat ranked list, and both views agree.
 
-    Page 1 and page 2 with ``limit=4`` over eleven hits must partition them with
+    Page 1 and page 2 with ``limit=4`` over thirteen hits must partition them with
     no overlap and no gap, and page 2's groups must describe page 2 only. A
-    per-kind pagination scheme would return eleven rows per page instead of four
+    per-kind pagination scheme would return thirteen rows per page instead of four
     and the page sizes themselves would give it away.
     """
     seed, auth = await seeded_client(client, db_session)
@@ -908,7 +937,7 @@ async def test_pagination_slices_the_union_once(client, db_session):
 
     assert len(first["hits"]) == 4
     assert len(second["hits"]) == 4
-    assert first["meta"] == {"total": 11, "limit": 4, "offset": 0}
+    assert first["meta"] == {"total": 13, "limit": 4, "offset": 0}
     assert second["meta"]["offset"] == 4
 
     seen = [hit["id"] for hit in first["hits"]] + [hit["id"] for hit in second["hits"]]
@@ -930,7 +959,7 @@ async def test_an_offset_past_the_end_is_an_empty_page_and_not_an_error(client, 
     body = (await _search(client, auth, offset=500)).json()
     assert body["hits"] == []
     assert body["groups"] == []
-    assert body["meta"]["total"] == 11
+    assert body["meta"]["total"] == 13
 
 
 async def test_each_kind_is_capped_at_the_documented_per_entity_scan(client, db_session):

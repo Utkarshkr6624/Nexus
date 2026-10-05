@@ -544,7 +544,12 @@ async def test_a_degraded_classifier_answers_503_rather_than_fabricating_a_decis
     response = await authorised_client.post("/api/v1/ml/route", json={"text": _TASK_UTTERANCE})
 
     error = assert_error_envelope(response, status_code=503, code="ml_unavailable")
-    assert error["details"] == {"reason": degraded_runtime.status.reason}
+    reason = degraded_runtime.status.reason
+    # ``errors`` is guaranteed on every non-empty ``details``. When the details
+    # already carry a ``reason``, that string is the synthesised entry's message
+    # too, so a renderer reading only the documented key still learns why ML is
+    # out without having to know about ``reason`` at all.
+    assert error["details"] == {"reason": reason, "errors": [{"message": reason}]}
     body = response.json()
     assert set(body) == {"error"}
     assert not DECISION_FIELDS.intersection(body["error"])
@@ -598,7 +603,7 @@ async def test_every_degraded_reason_reaches_the_caller_verbatim(
         response = await authorised_client.post("/api/v1/ml/route", json={"text": _TASK_UTTERANCE})
 
     error = assert_error_envelope(response, status_code=503, code="ml_unavailable")
-    assert error["details"] == {"reason": reason}
+    assert error["details"] == {"reason": reason, "errors": [{"message": reason}]}
     _assert_no_internals(response)
 
 

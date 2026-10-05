@@ -36,11 +36,12 @@ reason that has nothing to do with the code under test.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import Date, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import ActivityEvent, CalendarEventType, NoteStatus, TaskPriority
@@ -113,20 +114,31 @@ async def tag_note(seed: AnalyticsSeed, *, note_id: uuid.UUID, name: str) -> Tag
 
 
 async def db_today(session: AsyncSession) -> date:
-    """The current date on the database clock, normalised to UTC.
+    """The current date on the database clock, in the database's own calendar.
 
     ``feature-snapshot`` has no window parameter and reads "now" from
     ``SELECT now()``, so the exact expected values for ``task_age_days``,
     ``deadline_distance_days`` and ``overdue_count`` have to be derived from the
     same clock rather than from ``date.today()`` on the test host.
 
-    Normalised to UTC because ``now()`` is a ``timestamptz`` returned **labelled
-    with the connection's** ``TimeZone`` — ``Asia/Calcutta`` on this server — so a
-    bare ``.date()`` on it is the server-local day, while the service converts to
-    UTC first. The two disagree for five and a half hours a day, and each of those
-    figures is a whole-day difference when they do.
+    **Not** normalised to UTC, which is what this once did. ``now()`` is a
+    ``timestamptz`` returned labelled with the connection's ``TimeZone``, so a
+    bare ``.date()`` on it is the server-local day — which is now exactly what
+    :meth:`AnalyticsRepository.today` returns. Converting first put the two a
+    whole day apart for five and a half hours a day, and each of those figures is
+    a whole-day difference when they do.
     """
-    return (await session.scalar(select(func.now()))).astimezone(UTC).date()
+    return await session.scalar(select(func.now().cast(Date)))
+
+
+async def db_zone(session: AsyncSession) -> ZoneInfo:
+    """The calendar ``time_of_day`` is read in.
+
+    Asked of the database rather than assumed: the feature is an hour in the
+    server's own zone, so a fixture that means "the user started at 14:00" has
+    to mean it in *that* calendar.
+    """
+    return ZoneInfo(str(await session.scalar(select(func.current_setting("TimeZone")))))
 
 
 async def snapshot_for(
@@ -636,7 +648,19 @@ async def _feature_fixture(seed: AnalyticsSeed) -> tuple[uuid.UUID, date]:
             completed_at=at(recent, 17),
             actual_minutes=30,
         )
-    await seed.work_session(day=DAY, minutes=45, task_id=subject.id, start_hour=14)
+    # Placed at 14:00 in the *server's* calendar rather than 14:00 UTC.
+    # ``time_of_day`` is read from that calendar, and ``AnalyticsSeed.work_session``
+    # builds its ``start_hour`` as a UTC instant — 14:00 UTC is 19:30 in
+    # ``Asia/Calcutta``, so leaving it there would make the asserted 14 a
+    # statement about this server's offset rather than about the fixture.
+    zone = await db_zone(seed.session)
+    started = datetime(DAY.year, DAY.month, DAY.day, 14, tzinfo=zone).astimezone(UTC)
+    tracked = await seed.work_session(day=DAY, minutes=45, task_id=subject.id)
+    tracked.scheduled_start = started
+    tracked.scheduled_end = started + timedelta(minutes=45)
+    tracked.actual_start = started
+    tracked.actual_end = started + timedelta(minutes=45)
+    await seed.flush()
     for _ in range(2):
         await seed.activity(
             ActivityEvent.TASK_RESCHEDULED, day=DAY, task_id=subject.id, project_id=project.id

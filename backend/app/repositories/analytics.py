@@ -75,7 +75,17 @@ from collections.abc import Mapping, Sequence
 from datetime import date, datetime, time, timedelta
 from typing import Any
 
-from sqlalchemy import Date, DateTime, cast, delete, func, literal_column, select, union_all
+from sqlalchemy import (
+    Date,
+    DateTime,
+    cast,
+    delete,
+    func,
+    literal,
+    literal_column,
+    select,
+    union_all,
+)
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -103,7 +113,7 @@ from app.models.project import Project
 from app.models.tag import Tag
 from app.models.task import Task
 
-__all__ = ["METRIC_COLUMNS", "AnalyticsRepository"]
+__all__ = ["METRIC_COLUMNS", "AnalyticsRepository", "local_midnight"]
 
 #: The counter columns the upsert will write.
 #:
@@ -204,7 +214,7 @@ _KNOWLEDGE_EVENTS = (
 _STUDY_EVENT_TYPE = CalendarEventType.STUDY.value
 
 
-def _local_midnight(day: date) -> Any:
+def local_midnight(day: date) -> Any:
     """The instant ``day`` begins on, in the server's own zone.
 
     ``CAST(:day AS TIMESTAMP) AT TIME ZONE current_setting('TimeZone')`` converts
@@ -215,6 +225,14 @@ def _local_midnight(day: date) -> Any:
     buckets with, the zone ``now()`` is labelled with, and the zone
     :meth:`AnalyticsRepository.today` cuts the day at. Three readings of "a day"
     is exactly the disagreement this module is written to prevent.
+
+    Public because it is also the answer to "where does this calendar range
+    start" for callers *above* this module. The service has to open a rolling
+    window ("completions in the last thirty days") as a predicate on a
+    ``timestamptz`` column; building that bound in Python with a hard-coded
+    ``tzinfo=UTC`` is the fourth reading of "a day", and it was the one that made
+    a thirty-day window 29.8 days long on a ``+05:30`` host. Imported rather than
+    re-derived, so the bound is the same expression the buckets use.
     """
     return func.cast(day, DateTime).op("AT TIME ZONE")(func.current_setting("TimeZone"))
 
@@ -228,7 +246,7 @@ def _day_window(start: date, end: date) -> tuple[Any, Any]:
     rather than Python datetimes so no offset is baked in here: a ``+05:30`` host
     and a UTC host running the same query must bucket the same rows.
     """
-    return _local_midnight(start), _local_midnight(end + timedelta(days=1))
+    return local_midnight(start), local_midnight(end + timedelta(days=1))
 
 
 def utc_day(instant_column: Any) -> Any:
@@ -515,6 +533,30 @@ class AnalyticsRepository:
         value = await self.session.scalar(select(func.now().cast(Date)))
         return value if isinstance(value, date) else datetime.now().date()
 
+    async def as_local_time(self, instant: datetime) -> datetime:
+        """``instant`` restated in the server's own zone.
+
+        The Python-side counterpart of :func:`local_day`, for the instants a
+        caller already holds rather than a column it can bucket in SQL. Its
+        ``.date()`` is the day that column would have been filed under and its
+        ``.hour`` is the hour the user actually lived through, both because the
+        same expression is applied by the server rather than by a
+        ``ZoneInfo`` looked up on the application host.
+
+        That distinction is the whole point. ``instant.astimezone(UTC).hour`` was
+        how the feature snapshot read ``time_of_day``, and on a ``+05:30`` server
+        it labelled an evening's work as the early afternoon — a training input
+        shifted by half a day for a quarter of the population, and a number that
+        looks like a plain hour of the day and is not one.
+        """
+        return await self.session.scalar(
+            select(
+                literal(instant, DateTime(timezone=True)).op("AT TIME ZONE")(
+                    func.current_setting("TimeZone")
+                )
+            )
+        )
+
     async def aggregate_watermarks(
         self, user_id: uuid.UUID, *, start: date, end: date
     ) -> tuple[datetime | None, datetime | None]:
@@ -546,11 +588,11 @@ class AnalyticsRepository:
                 )
             )
         ).scalar_one()
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         sources = union_all(
             *(
                 select(func.max(column).label("at")).where(
-                    owner_column == user_id, column >= start_utc, column < end_utc
+                    owner_column == user_id, column >= start_local, column < end_local
                 )
                 for column, owner_column in (
                     (Task.created_at, Task.owner_id),
@@ -605,7 +647,7 @@ class AnalyticsRepository:
     async def count_tasks_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int]]:
-        """``(utc_day, tasks_created)`` for the window, in one query.
+        """``(local_day, tasks_created)`` for the window, in one query.
 
         Grouped on ``created_at``: that is the instant the row came into being, and
         it is the one a "tasks created" chart means. The window predicate is on the
@@ -619,14 +661,14 @@ class AnalyticsRepository:
         account's whole history. ``0011`` added ``ix_tasks_owner_created`` for
         this shape, and the plan is now a ``Bitmap Heap Scan``.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(Task.created_at)
         result = await self.session.execute(
             select(day, func.count())
             .where(
                 Task.owner_id == owner_id,
-                Task.created_at >= start_utc,
-                Task.created_at < end_utc,
+                Task.created_at >= start_local,
+                Task.created_at < end_local,
             )
             .group_by(day)
             .order_by(day.asc())
@@ -636,22 +678,22 @@ class AnalyticsRepository:
     async def count_tasks_completed_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int]]:
-        """``(utc_day, tasks_completed)`` for the window, in one query.
+        """``(local_day, tasks_completed)`` for the window, in one query.
 
         Grouped on ``completed_at`` rather than ``updated_at``: the latter is
         rewritten by every later edit, so a task completed last week and renamed
         today would move to today. ``completed_at`` is stamped once, at the
         transition.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(Task.completed_at)
         result = await self.session.execute(
             select(day, func.count())
             .where(
                 Task.owner_id == owner_id,
                 Task.completed_at.is_not(None),
-                Task.completed_at >= start_utc,
-                Task.completed_at < end_utc,
+                Task.completed_at >= start_local,
+                Task.completed_at < end_local,
             )
             .group_by(day)
             .order_by(day.asc())
@@ -661,7 +703,7 @@ class AnalyticsRepository:
     async def count_tasks_overdue_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int]]:
-        """``(utc_day, tasks_overdue)`` for the window, in one query.
+        """``(local_day, tasks_overdue)`` for the window, in one query.
 
         **"Overdue" here means "was due on this day and was not finished by the end
         of it."** The definition is stated because the word is overloaded: a task
@@ -673,8 +715,11 @@ class AnalyticsRepository:
         A task whose ``due_date`` falls on the day but which was completed that same
         day is not counted: ``due_date`` is a date and ``completed_at`` an instant,
         so a task completed at 09:00 on its due date is on time. The comparison
-        casts the instant to a date in UTC, consistently with every other day
-        boundary in this module.
+        cuts the instant with :func:`local_day`, so it lands on the same day the
+        row was bucketed on and the same day
+        :meth:`app.services.analytics.service.AnalyticsService._deadline_result`
+        files the completion under — which is the reason it is not a
+        ``timestamptz::date`` cast here and a UTC date there.
 
         **A cancelled task is not counted**, and that is the same rule
         :meth:`overdue_count_as_of` applies rather than a second opinion about
@@ -694,9 +739,9 @@ class AnalyticsRepository:
         comparison elsewhere reports as a late completion.
         """
         day = Task.due_date
-        # ``utc_day`` rather than a plain ``CAST(... AS DATE)``: the bare cast
-        # resolves ``timestamptz::date`` through the session's ``TimeZone``, so the
-        # boundary it cuts would depend on how the connection was configured —
+        # ``local_day`` rather than a plain ``CAST(... AS DATE)``: the bare cast
+        # resolves ``timestamptz::date`` through the session's ``TimeZone``, which
+        # happens to be the right zone but by accident rather than by statement —
         # see this module's docstring.
         completed_day = local_day(Task.completed_at)
         result = await self.session.execute(
@@ -716,7 +761,7 @@ class AnalyticsRepository:
     async def count_tasks_cancelled_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int]]:
-        """``(utc_day, tasks_cancelled)`` for the window, in one query.
+        """``(local_day, tasks_cancelled)`` for the window, in one query.
 
         A limitation stated rather than hidden: cancellation has no timestamp of its
         own, so this buckets on ``updated_at`` for tasks whose status is *now*
@@ -728,15 +773,15 @@ class AnalyticsRepository:
         write path has to honour, and this is the honest approximation until that
         cost is worth paying.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(Task.updated_at)
         result = await self.session.execute(
             select(day, func.count())
             .where(
                 Task.owner_id == owner_id,
                 Task.status == TaskStatus.CANCELLED.value,
-                Task.updated_at >= start_utc,
-                Task.updated_at < end_utc,
+                Task.updated_at >= start_local,
+                Task.updated_at < end_local,
             )
             .group_by(day)
             .order_by(day.asc())
@@ -751,7 +796,7 @@ class AnalyticsRepository:
         end: date,
         event_types: Sequence[str],
     ) -> list[tuple[date, int]]:
-        """``(utc_day, count)`` for a set of activity event types, in one query.
+        """``(local_day, count)`` for a set of activity event types, in one query.
 
         The only honest source for "rescheduled" and "blocked by hand". Neither has
         a column: a reschedule is a due-date edit, indistinguishable from any other
@@ -759,15 +804,15 @@ class AnalyticsRepository:
         the feed. Reading the task table instead would report a fabricated zero for
         both.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(ActivityLog.created_at)
         result = await self.session.execute(
             select(day, func.count())
             .where(
                 ActivityLog.user_id == owner_id,
                 ActivityLog.event_type.in_(list(event_types)),
-                ActivityLog.created_at >= start_utc,
-                ActivityLog.created_at < end_utc,
+                ActivityLog.created_at >= start_local,
+                ActivityLog.created_at < end_local,
             )
             .group_by(day)
             .order_by(day.asc())
@@ -776,13 +821,23 @@ class AnalyticsRepository:
 
     async def completed_pairs_in_range(
         self, owner_id: uuid.UUID, *, start: date, end: date
-    ) -> list[tuple[uuid.UUID, int | None, int | None, date | None, datetime]]:
-        """``(task_id, estimated, actual, due_date, completed_at)`` for completions.
+    ) -> list[tuple[uuid.UUID, int | None, int | None, date | None, date]]:
+        """``(task_id, estimated, actual, due_date, completed_day)`` for completions.
 
         One query, and the single source for three figures at once — estimation
         accuracy (estimated vs actual), deadline adherence (due_date vs the
         completion's day) and cycle time. Pulling them from one read is what stops
         those three from disagreeing: they are literally the same rows.
+
+        **The fifth element is a ``date``, not an instant: the completion's day
+        as :func:`local_day` cuts it.** The window predicate is already the same
+        local midnight, so the bucket and the bound are one calendar; returning
+        the raw ``timestamptz`` instead left the caller to re-derive that day, and
+        every caller that did so reached for ``.astimezone(UTC).date()``. On a
+        ``+05:30`` server that is a different day from the one this query
+        bucketed on for five and a half hours a day, which made
+        ``/overview`` report ``deadlines.late: 0`` beside a ``tasks_overdue`` total
+        counting the same task as late — one response, two verdicts, one row.
 
         **``actual`` is ``None`` when no time was ever recorded against the task.**
         It used to be ``int(row[2] or 0)`` — the ``tasks.actual_minutes`` column,
@@ -806,7 +861,7 @@ class AnalyticsRepository:
         Only completions inside the window appear; an open task has no
         ``completed_at`` and so cannot be here at all.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         recorded = (
             select(
                 WorkSession.task_id.label("task_id"),
@@ -826,14 +881,14 @@ class AnalyticsRepository:
                 Task.estimated_minutes,
                 func.coalesce(recorded.c.minutes, Task.actual_minutes).label("actual"),
                 Task.due_date,
-                Task.completed_at,
+                local_day(Task.completed_at).label("completed_day"),
             )
             .outerjoin(recorded, recorded.c.task_id == Task.id)
             .where(
                 Task.owner_id == owner_id,
                 Task.completed_at.is_not(None),
-                Task.completed_at >= start_utc,
-                Task.completed_at < end_utc,
+                Task.completed_at >= start_local,
+                Task.completed_at < end_local,
             )
         )
         return [
@@ -850,20 +905,25 @@ class AnalyticsRepository:
         ``created_at`` to count them, and ``None`` — not ``0`` — when nothing was
         completed in the window.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         statement = select(
             func.avg(func.extract("epoch", Task.completed_at - Task.created_at) / 60.0)
         ).where(
             Task.owner_id == owner_id,
             Task.completed_at.is_not(None),
-            Task.completed_at >= start_utc,
-            Task.completed_at < end_utc,
+            Task.completed_at >= start_local,
+            Task.completed_at < end_local,
         )
         value = (await self.session.execute(statement)).scalar_one()
         return None if value is None else round(float(value), 1)
 
     async def overdue_count_as_of(
-        self, owner_id: uuid.UUID, as_of: date, *, start: date | None = None, end: date | None = None
+        self,
+        owner_id: uuid.UUID,
+        as_of: date,
+        *,
+        start: date | None = None,
+        end: date | None = None,
     ) -> int:
         """Open tasks whose due date is strictly before ``as_of``.
 
@@ -892,9 +952,7 @@ class AnalyticsRepository:
             filters.append(Task.due_date >= start)
         if end is not None:
             filters.append(Task.due_date <= end)
-        result = await self.session.execute(
-            select(func.count()).select_from(Task).where(*filters)
-        )
+        result = await self.session.execute(select(func.count()).select_from(Task).where(*filters))
         return int(result.scalar_one())
 
     async def status_counts(self, owner_id: uuid.UUID) -> dict[str, int]:
@@ -951,7 +1009,7 @@ class AnalyticsRepository:
     async def session_minutes_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int, int]]:
-        """``(utc_day, actual_minutes, session_count)`` for the window, in one query.
+        """``(local_day, actual_minutes, session_count)`` for the window, in one query.
 
         Summed from ``actual_minutes`` rather than measured from
         ``actual_start``/``actual_end``, so the aggregate cannot disagree with the
@@ -964,7 +1022,7 @@ class AnalyticsRepository:
         the planner's own per-day minutes. A cancelled session holds no time, and
         including it would inflate both the day total and the focus score.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(WorkSession.actual_start)
         result = await self.session.execute(
             select(
@@ -975,8 +1033,8 @@ class AnalyticsRepository:
             .where(
                 WorkSession.owner_id == owner_id,
                 WorkSession.actual_start.is_not(None),
-                WorkSession.actual_start >= start_utc,
-                WorkSession.actual_start < end_utc,
+                WorkSession.actual_start >= start_local,
+                WorkSession.actual_start < end_local,
                 WorkSession.status.not_in((WorkSessionStatus.CANCELLED.value,)),
             )
             .group_by(day)
@@ -987,14 +1045,14 @@ class AnalyticsRepository:
     async def planned_minutes_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int]]:
-        """``(utc_day, scheduled_minutes)`` for the window, in one query.
+        """``(local_day, scheduled_minutes)`` for the window, in one query.
 
         The *committed* span rather than the copied ``estimated_minutes``: what a day
         was going to cost is a property of the calendar, and the task's estimate is
         a separate figure that belongs to the estimation-accuracy comparison.
         Cancelled sessions are excluded, as everywhere else.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(WorkSession.scheduled_start)
         minutes = (
             func.extract("epoch", WorkSession.scheduled_end - WorkSession.scheduled_start) / 60.0
@@ -1003,8 +1061,8 @@ class AnalyticsRepository:
             select(day, func.coalesce(func.sum(minutes), 0))
             .where(
                 WorkSession.owner_id == owner_id,
-                WorkSession.scheduled_start >= start_utc,
-                WorkSession.scheduled_start < end_utc,
+                WorkSession.scheduled_start >= start_local,
+                WorkSession.scheduled_start < end_local,
                 WorkSession.status.in_(_LIVE_SESSION_STATUSES),
             )
             .group_by(day)
@@ -1028,7 +1086,7 @@ class AnalyticsRepository:
         attention, and the focus score's own explanation string says so where a user
         reads it.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         completed = WorkSession.status == WorkSessionStatus.COMPLETED.value
         statement = select(
             func.count().label("sessions"),
@@ -1042,8 +1100,8 @@ class AnalyticsRepository:
         ).where(
             WorkSession.owner_id == owner_id,
             WorkSession.actual_start.is_not(None),
-            WorkSession.actual_start >= start_utc,
-            WorkSession.actual_start < end_utc,
+            WorkSession.actual_start >= start_local,
+            WorkSession.actual_start < end_local,
             WorkSession.status.not_in((WorkSessionStatus.CANCELLED.value,)),
         )
         row = (await self.session.execute(statement)).one()
@@ -1071,7 +1129,7 @@ class AnalyticsRepository:
         Sessions with no project are absent from the mapping; the caller reports them
         separately as unassigned rather than folding them into a real project.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         result = await self.session.execute(
             select(
                 WorkSession.project_id,
@@ -1081,8 +1139,8 @@ class AnalyticsRepository:
                 WorkSession.owner_id == owner_id,
                 WorkSession.project_id.is_not(None),
                 WorkSession.actual_start.is_not(None),
-                WorkSession.actual_start >= start_utc,
-                WorkSession.actual_start < end_utc,
+                WorkSession.actual_start >= start_local,
+                WorkSession.actual_start < end_local,
                 WorkSession.status.not_in((WorkSessionStatus.CANCELLED.value,)),
             )
             .group_by(WorkSession.project_id)
@@ -1092,20 +1150,20 @@ class AnalyticsRepository:
     async def calendar_events_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int]]:
-        """``(utc_day, calendar_events)`` for the window, in one query.
+        """``(local_day, calendar_events)`` for the window, in one query.
 
         Counted on ``starts_at``. An event that ends tomorrow and started today is
         counted today, matching the planner's own per-day overlap arithmetic — a day
         with a twelve-hour block is one event on the day it begins.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(CalendarEvent.starts_at)
         result = await self.session.execute(
             select(day, func.count())
             .where(
                 CalendarEvent.owner_id == owner_id,
-                CalendarEvent.starts_at >= start_utc,
-                CalendarEvent.starts_at < end_utc,
+                CalendarEvent.starts_at >= start_local,
+                CalendarEvent.starts_at < end_local,
             )
             .group_by(day)
             .order_by(day.asc())
@@ -1115,21 +1173,21 @@ class AnalyticsRepository:
     async def projects_touched_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int]]:
-        """``(utc_day, distinct projects with activity that day)``, in one query.
+        """``(local_day, distinct projects with activity that day)``, in one query.
 
         ``COUNT(DISTINCT project_id)`` over the feed. "Projects worked on" is a
         distinct count on purpose: six edits to one task are one project touched, and
         counting six would make a focused day look like a broad one.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(ActivityLog.created_at)
         result = await self.session.execute(
             select(day, func.count(func.distinct(ActivityLog.project_id)))
             .where(
                 ActivityLog.user_id == owner_id,
                 ActivityLog.project_id.is_not(None),
-                ActivityLog.created_at >= start_utc,
-                ActivityLog.created_at < end_utc,
+                ActivityLog.created_at >= start_local,
+                ActivityLog.created_at < end_local,
             )
             .group_by(day)
             .order_by(day.asc())
@@ -1151,14 +1209,14 @@ class AnalyticsRepository:
         read pairs it with an ``available`` flag derived from whether anything was
         ever recorded at all.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         minutes = func.extract("epoch", CalendarEvent.ends_at - CalendarEvent.starts_at) / 60.0
         result = await self.session.execute(
             select(func.count(), func.coalesce(func.sum(minutes), 0)).where(
                 CalendarEvent.owner_id == owner_id,
                 CalendarEvent.event_type == _STUDY_EVENT_TYPE,
-                CalendarEvent.starts_at >= start_utc,
-                CalendarEvent.starts_at < end_utc,
+                CalendarEvent.starts_at >= start_local,
+                CalendarEvent.starts_at < end_local,
             )
         )
         row = result.one()
@@ -1167,7 +1225,7 @@ class AnalyticsRepository:
     async def activity_days_in_range(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[date]:
-        """UTC days carrying at least one activity event, ascending.
+        """Local days carrying at least one activity event, ascending.
 
         The consistency denominator's other half. It reads the *feed* rather than the
         task or session tables on purpose: "did the user show up" is about touching
@@ -1175,14 +1233,14 @@ class AnalyticsRepository:
         anything was still present. Days with no event simply do not appear, which is
         how a gap stays visible instead of becoming a zero.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(ActivityLog.created_at)
         result = await self.session.execute(
             select(day)
             .where(
                 ActivityLog.user_id == owner_id,
-                ActivityLog.created_at >= start_utc,
-                ActivityLog.created_at < end_utc,
+                ActivityLog.created_at >= start_local,
+                ActivityLog.created_at < end_local,
             )
             .group_by(day)
             .order_by(day.asc())
@@ -1230,7 +1288,7 @@ class AnalyticsRepository:
     async def knowledge_events_by_day(
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> list[tuple[date, int]]:
-        """``(utc_day, knowledge_events)`` for the window, in one query.
+        """``(local_day, knowledge_events)`` for the window, in one query.
 
         **What this counts, precisely:** every knowledge event in the feed, which is
         a record of *writes* — see :data:`_KNOWLEDGE_EVENTS`.
@@ -1242,15 +1300,15 @@ class AnalyticsRepository:
         computable from what Phases 1-5 store, and inventing a proxy for it would be
         exactly the fabrication this phase forbids.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         day = local_day(ActivityLog.created_at)
         result = await self.session.execute(
             select(day, func.count())
             .where(
                 ActivityLog.user_id == owner_id,
                 ActivityLog.event_type.in_(list(_KNOWLEDGE_EVENTS)),
-                ActivityLog.created_at >= start_utc,
-                ActivityLog.created_at < end_utc,
+                ActivityLog.created_at >= start_local,
+                ActivityLog.created_at < end_local,
             )
             .group_by(day)
             .order_by(day.asc())
@@ -1268,14 +1326,14 @@ class AnalyticsRepository:
         *created* today. The feed records what happened, which is the question being
         asked.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         result = await self.session.execute(
             select(ActivityLog.event_type, func.count())
             .where(
                 ActivityLog.user_id == owner_id,
                 ActivityLog.event_type.in_(list(_KNOWLEDGE_EVENTS)),
-                ActivityLog.created_at >= start_utc,
-                ActivityLog.created_at < end_utc,
+                ActivityLog.created_at >= start_local,
+                ActivityLog.created_at < end_local,
             )
             .group_by(ActivityLog.event_type)
         )
@@ -1441,14 +1499,14 @@ class AnalyticsRepository:
         self, owner_id: uuid.UUID, *, start: date, end: date
     ) -> dict[uuid.UUID, int]:
         """``{project_id: activity_events}`` in the window, in one grouped query."""
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         result = await self.session.execute(
             select(ActivityLog.project_id, func.count())
             .where(
                 ActivityLog.user_id == owner_id,
                 ActivityLog.project_id.is_not(None),
-                ActivityLog.created_at >= start_utc,
-                ActivityLog.created_at < end_utc,
+                ActivityLog.created_at >= start_local,
+                ActivityLog.created_at < end_local,
             )
             .group_by(ActivityLog.project_id)
         )
@@ -1473,7 +1531,7 @@ class AnalyticsRepository:
         one call instead — see :meth:`project_completion_by_week` — so this stays
         for the single-project callers and does not become an N+1.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         week = cast(func.date_trunc("week", local_day(Task.completed_at)), Date)
         result = await self.session.execute(
             select(week, func.count())
@@ -1481,8 +1539,8 @@ class AnalyticsRepository:
                 Task.owner_id == owner_id,
                 Task.project_id == project_id,
                 Task.completed_at.is_not(None),
-                Task.completed_at >= start_utc,
-                Task.completed_at < end_utc,
+                Task.completed_at >= start_local,
+                Task.completed_at < end_local,
             )
             .group_by(week)
             .order_by(week.asc())
@@ -1511,7 +1569,7 @@ class AnalyticsRepository:
         """
         if not project_ids:
             return {}
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         week = cast(func.date_trunc("week", local_day(Task.completed_at)), Date)
         result = await self.session.execute(
             select(Task.project_id, week, func.count())
@@ -1519,8 +1577,8 @@ class AnalyticsRepository:
                 Task.owner_id == owner_id,
                 Task.project_id.in_(list(project_ids)),
                 Task.completed_at.is_not(None),
-                Task.completed_at >= start_utc,
-                Task.completed_at < end_utc,
+                Task.completed_at >= start_local,
+                Task.completed_at < end_local,
             )
             .group_by(Task.project_id, week)
             .order_by(Task.project_id.asc(), week.asc())
@@ -1562,15 +1620,15 @@ class AnalyticsRepository:
         """
         if not project_ids:
             return {}
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         result = await self.session.execute(
             select(
                 Task.project_id,
-                func.count().filter(Task.created_at >= start_utc, Task.created_at < end_utc),
+                func.count().filter(Task.created_at >= start_local, Task.created_at < end_local),
                 func.count().filter(
                     Task.completed_at.is_not(None),
-                    Task.completed_at >= start_utc,
-                    Task.completed_at < end_utc,
+                    Task.completed_at >= start_local,
+                    Task.completed_at < end_local,
                 ),
             )
             .where(Task.owner_id == owner_id, Task.project_id.in_(list(project_ids)))
@@ -1645,13 +1703,16 @@ class AnalyticsRepository:
         return int(row[0]), int(row[1])
 
     async def recent_work_minutes(self, owner_id: uuid.UUID, *, days: int = 30) -> int:
-        """Minutes actually worked in the ``days`` UTC days ending *now*.
+        """Minutes actually worked in the ``days`` local days ending *now*.
 
         "Now" is the database clock: the predicate is ``func.now() - interval`` and
         nothing is computed on the application host, so the window is the server's
-        answer and does not drift with a client whose clock is wrong. ``days`` is
-        clamped to at least 1 — zero would be an empty window and a negative one a
-        range whose ends are swapped.
+        answer and does not drift with a client whose clock is wrong. A rolling
+        ``interval`` rather than a set of day boundaries, so it is deliberately
+        *not* cut with :func:`local_midnight` — it is the same length either way
+        and lands on the same instants, but it costs no expression to write.
+        ``days`` is clamped to at least 1 — zero would be an empty window and a
+        negative one a range whose ends are swapped.
         """
         span = max(int(days), 1)
         statement = select(func.coalesce(func.sum(WorkSession.actual_minutes), 0)).where(
@@ -1662,15 +1723,23 @@ class AnalyticsRepository:
         )
         return int((await self.session.execute(statement)).scalar_one())
 
-    async def task_created_at(self, owner_id: uuid.UUID, task_id: uuid.UUID) -> datetime | None:
-        """A task's creation instant, owner-scoped.
+    async def task_created_day(self, owner_id: uuid.UUID, task_id: uuid.UUID) -> date | None:
+        """The calendar day a task was created on, owner-scoped.
 
-        The feature snapshot needs the task's age, and an age measured from a row the
-        caller may not see would be a cross-tenant leak. Returns ``None`` for another
-        user's task exactly as for one that does not exist.
+        A ``date`` and not an instant, cut by :func:`local_day`: the feature
+        snapshot needs the task's age, and an age is a subtraction between two
+        calendar days. Returning the instant only to have the caller reduce it
+        again is how ``task_age_days`` came to be measured from
+        ``created_at.astimezone(UTC).date()`` against a *local* ``today`` — a day
+        bucket and an age that disagreed for five and a half hours every day.
+        Bucketed here, the two are the same calendar by construction.
+
+        An age measured from a row the caller may not see would be a cross-tenant
+        leak, so this stays owner-scoped: it returns ``None`` for another user's
+        task exactly as for one that does not exist.
         """
         result = await self.session.execute(
-            select(Task.created_at).where(Task.owner_id == owner_id, Task.id == task_id)
+            select(local_day(Task.created_at)).where(Task.owner_id == owner_id, Task.id == task_id)
         )
         return result.scalar_one_or_none()
 
@@ -1683,6 +1752,11 @@ class AnalyticsRepository:
         ``created_at``, because "when was this picked up" is the moment the behaviour
         is actually about. When no session ever ran the answer is ``None`` and the
         snapshot reports ``None`` rather than guessing from the creation time.
+
+        Returned as an instant on purpose: an hour-of-day is not a *day*, so there
+        is no day bucket to fold it into. The zone it is read in is the caller's to
+        choose, and the caller that chose UTC was reporting an evening's work as
+        the early afternoon — see :meth:`as_local_time`.
         """
         result = await self.session.execute(
             select(func.min(WorkSession.actual_start)).where(
@@ -1708,7 +1782,7 @@ class AnalyticsRepository:
         description or content — an export is a file the user keeps, and nothing
         private is copied into it by default.
         """
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         result = await self.session.execute(
             select(
                 Task.id,
@@ -1725,7 +1799,9 @@ class AnalyticsRepository:
             .select_from(Task)
             .outerjoin(Project, Project.id == Task.project_id)
             .where(
-                Task.owner_id == owner_id, Task.created_at >= start_utc, Task.created_at < end_utc
+                Task.owner_id == owner_id,
+                Task.created_at >= start_local,
+                Task.created_at < end_local,
             )
             .order_by(Task.created_at.asc(), Task.id.asc())
         )
@@ -1768,7 +1844,7 @@ class AnalyticsRepository:
                 "work_session_rows accepts only 'scheduled' and 'actual'."
             )
         column = WorkSession.scheduled_start if basis == "scheduled" else WorkSession.actual_start
-        start_utc, end_utc = _day_window(start, end)
+        start_local, end_local = _day_window(start, end)
         result = await self.session.execute(
             select(
                 WorkSession.id,
@@ -1784,8 +1860,8 @@ class AnalyticsRepository:
             )
             .where(
                 WorkSession.owner_id == owner_id,
-                column >= start_utc,
-                column < end_utc,
+                column >= start_local,
+                column < end_local,
             )
             .order_by(column.asc(), WorkSession.id.asc())
         )

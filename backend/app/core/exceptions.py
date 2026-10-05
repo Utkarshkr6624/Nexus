@@ -53,8 +53,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.logging import request_id_var
 
 __all__ = [
-    "ConflictError",
     "DETAILS_ERRORS_KEY",
+    "ConflictError",
     "ErrorCode",
     "ForbiddenError",
     "NexusError",

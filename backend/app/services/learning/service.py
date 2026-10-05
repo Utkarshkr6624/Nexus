@@ -738,8 +738,7 @@ class LearningIntelligenceService:
         writes = dict(values)
         if "name" in writes and writes["name"] is None:
             raise ValidationError(
-                "A skill cannot be left without a name; omit the field to leave the "
-                "name alone."
+                "A skill cannot be left without a name; omit the field to leave the name alone."
             )
         # An explicit null on a level *clears the claim* rather than storing SQL
         # NULL: the column is NOT NULL, and "clear it" has to mean the one thing
@@ -753,9 +752,7 @@ class LearningIntelligenceService:
         if "current_level" in writes:
             writes["level_source"] = SkillLevelSource.USER_DEFINED.value
 
-        await self._require_free_skill_name(
-            owner=owner, skill_id=skill_id, name=writes.get("name")
-        )
+        await self._require_free_skill_name(owner=owner, skill_id=skill_id, name=writes.get("name"))
 
         try:
             skill = await self.repositories.update_skill(owner.id, skill_id, writes)
@@ -798,7 +795,9 @@ class LearningIntelligenceService:
             raise ConflictError("That skill is already tracked for this account.")
 
     async def delete_skill(self, *, owner: User, skill_id: uuid.UUID) -> None:
-        """Remove one skill. **Its recorded activities are kept, not cascaded.**
+        """Remove one skill, and keep every activity recorded against it.
+
+        **Its recorded activities are kept, not cascaded.**
 
         ``learning_activities.skill_id`` is ``ON DELETE SET NULL``, so the rows
         survive as append-only facts with an unattributed subject — the same state

@@ -36,6 +36,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from sqlalchemy import Date, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 pytestmark = pytest.mark.integration
 
@@ -100,10 +102,31 @@ def authed(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-def window() -> dict[str, str]:
-    """A 31-day window ending today, which every analytics route requires."""
-    today = date.today()
-    return {"start": (today - timedelta(days=30)).isoformat(), "end": today.isoformat()}
+async def database_today(db_session: AsyncSession) -> date:
+    """Today's calendar day on the **database's** clock.
+
+    Read as ``now()::date`` rather than ``date.today()`` because that is the
+    clock the analytics surface resolves its window from and the calendar it
+    buckets rows into. The host and the server can be in different zones, and a
+    window built from the host's idea of today would be the wrong one for five
+    and a half hours a day on a box at ``+05:30``.
+    """
+    return await db_session.scalar(select(func.now().cast(Date)))
+
+
+def window(today: date) -> dict[str, str]:
+    """A 31-day window ending on ``today``, in the names the routes read.
+
+    Spelled ``start_date``/``end_date`` on purpose: the analytics routes resolve
+    a ``Window`` dependency with those two names and ignore anything else, so a
+    ``{"start": ..., "end": ...}`` mapping would be silently dropped and the
+    request would answer from the route's own default instead of the one the
+    test meant to ask about.
+    """
+    return {
+        "start_date": (today - timedelta(days=30)).isoformat(),
+        "end_date": today.isoformat(),
+    }
 
 
 # `git` is invoked with a fixed argument list, no shell, and no path from a test
@@ -159,16 +182,28 @@ def git_available() -> bool:
 # ---------------------------------------------------------------------------
 
 
-async def test_journey_work_carries_a_task_from_creation_to_analytics(client):
+async def test_journey_work_carries_a_task_from_creation_to_analytics(client, db_session):
     """Create a project, a task, work a session against it, complete it, see it.
 
     The last step is the one that matters. Everything before it is Phase 3 and 4
     working correctly; the assertion is that the Analytics surface counts a task
     completed through the ordinary API, which is the seam between the execution
     layer and the intelligence layer.
+
+    Analytics answers ``tasks_created`` and ``tasks_completed`` out of the stored
+    daily aggregates, and no read route writes there: ``POST /analytics/rebuild``
+    is the step that computes them. So the journey performs it, over a window
+    whose ends are named explicitly and whose "today" comes from the database
+    clock — the same calendar the rows are bucketed into. Skipping that step
+    would leave the journey asserting an empty table rather than the seam it
+    exists to pin.
     """
     token = await register(client, username="work")
     headers = authed(token)
+    # One "today" for the whole journey, read from the clock Analytics buckets
+    # on rather than from the host's, so the due date, the window and the rows
+    # that land in them are all speaking about the same calendar day.
+    today = await database_today(db_session)
 
     response = await client.post(
         "/api/v1/projects",
@@ -184,7 +219,7 @@ async def test_journey_work_carries_a_task_from_creation_to_analytics(client):
             "project_id": project_id,
             "title": "Ship the rollout plan",
             "priority": "high",
-            "due_date": date.today().isoformat(),
+            "due_date": today.isoformat(),
         },
         headers=headers,
     )
@@ -227,11 +262,19 @@ async def test_journey_work_carries_a_task_from_creation_to_analytics(client):
     assert response.json()["status"] == "completed"
 
     # Task analytics is its own route; `overview` folds in the score and
-    # deadlines rather than the task counts.
-    response = await client.get("/api/v1/analytics/tasks", params=window(), headers=headers)
+    # deadlines rather than the task counts. The counters it reports come from
+    # the daily aggregates, which only exist once the window has been computed.
+    rebuilt = await client.post("/api/v1/analytics/rebuild", params=window(today), headers=headers)
+    assert rebuilt.status_code == 202, rebuilt.text
+
+    response = await client.get("/api/v1/analytics/tasks", params=window(today), headers=headers)
     assert response.status_code == 200, response.text
     measured = response.json()
     assert measured["total_tasks"] == 1, measured
+    assert measured["tasks_created"] == 1, (
+        "a task created through the API is invisible to Analytics — the two "
+        "surfaces disagree about the same rows"
+    )
     assert measured["tasks_completed"] == 1, (
         "a task completed through the API is invisible to Analytics — the two "
         "surfaces disagree about the same rows"
@@ -273,7 +316,7 @@ async def test_journey_work_is_invisible_to_another_account(client):
 # ---------------------------------------------------------------------------
 
 
-async def test_journey_intelligence_runs_detection_and_reads_its_output(client):
+async def test_journey_intelligence_runs_detection_and_reads_its_output(client, db_session):
     """Activity → analytics → risk detection → recommendations.
 
     The risk pass is the interesting step: it is the first thing NEXUS computes
@@ -281,6 +324,7 @@ async def test_journey_intelligence_runs_detection_and_reads_its_output(client):
     would break.
     """
     headers = authed(await register(client, username="intel"))
+    today = await database_today(db_session)
 
     response = await client.post("/api/v1/projects", json={"name": "Risk fixture"}, headers=headers)
     project_id = response.json()["id"]
@@ -290,18 +334,18 @@ async def test_journey_intelligence_runs_detection_and_reads_its_output(client):
             "project_id": project_id,
             "title": "Overdue by a fortnight",
             "priority": "critical",
-            "due_date": (date.today() - timedelta(days=14)).isoformat(),
+            "due_date": (today - timedelta(days=14)).isoformat(),
         },
         headers=headers,
     )
 
-    response = await client.get("/api/v1/analytics/tasks", params=window(), headers=headers)
+    response = await client.get("/api/v1/analytics/tasks", params=window(today), headers=headers)
     assert response.status_code == 200, response.text
     assert response.json()["total_tasks"] == 1
 
     response = await client.post(
         "/api/v1/intelligence/evaluate",
-        json={"today": date.today().isoformat(), "window_days": 30},
+        json={"today": today.isoformat(), "window_days": 30},
         headers=headers,
     )
     assert response.status_code == 200, response.text
@@ -667,7 +711,7 @@ async def test_journey_voice_transcript_reaches_the_one_classifier(client, loade
 # ---------------------------------------------------------------------------
 
 
-async def test_journey_command_center_reads_are_consistent_and_tenant_scoped(client):
+async def test_journey_command_center_reads_are_consistent_and_tenant_scoped(client, db_session):
     """Every surface the Command Center composes, for one account, and no other's.
 
     The page is frontend code; what it needs from the backend is that all of its
@@ -675,6 +719,7 @@ async def test_journey_command_center_reads_are_consistent_and_tenant_scoped(cli
     the failure this would catch.
     """
     headers = authed(await register(client, username="centre"))
+    today = await database_today(db_session)
 
     response = await client.post(
         "/api/v1/projects", json={"name": "Command Center fixture"}, headers=headers
@@ -686,13 +731,13 @@ async def test_journey_command_center_reads_are_consistent_and_tenant_scoped(cli
             "project_id": project_id,
             "title": "Overdue and visible",
             "priority": "critical",
-            "due_date": (date.today() - timedelta(days=7)).isoformat(),
+            "due_date": (today - timedelta(days=7)).isoformat(),
         },
         headers=headers,
     )
     await client.post(
         "/api/v1/intelligence/evaluate",
-        json={"today": date.today().isoformat(), "window_days": 30},
+        json={"today": today.isoformat(), "window_days": 30},
         headers=headers,
     )
     await client.post(
@@ -704,7 +749,7 @@ async def test_journey_command_center_reads_are_consistent_and_tenant_scoped(cli
         "risks": ("/api/v1/risks", {}),
         "recommendations": ("/api/v1/recommendations", {}),
         "learning goals": ("/api/v1/learning/goals", {}),
-        "analytics": ("/api/v1/analytics/overview", window()),
+        "analytics": ("/api/v1/analytics/overview", window(today)),
         "projects": ("/api/v1/projects", {"limit": 100}),
     }
     for label, (path, params) in reads.items():

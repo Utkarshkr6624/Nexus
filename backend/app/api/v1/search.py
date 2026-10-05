@@ -110,7 +110,7 @@ def get_search_service(session: DbSession) -> SearchService:
     :mod:`app.api.deps` takes a pile of them because its rules genuinely read
     several tables; this one reads many tables but touches no business rule, and
     the repository that knows how to scan them is the same object for all of
-    them. Wiring eleven repositories here would be eleven collaborators that are
+    them. Wiring thirteen repositories here would be thirteen collaborators that are
     passed straight through and used to answer nothing.
 
     The dependency lives in this module rather than in :mod:`app.api.deps`

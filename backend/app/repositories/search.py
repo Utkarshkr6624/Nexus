@@ -7,9 +7,9 @@ project/status/priority/tag joins that kind actually has. :meth:`SearchRepositor
 builds one statement from that description and returns rows; it does not rank,
 trim or format anything.
 
-Why a table rather than eleven methods
--------------------------------------
-Eleven hand-written ``search_*`` methods would be eleven places to forget the
+Why a table rather than thirteen methods
+--------------------------------------
+Thirteen hand-written ``search_*`` methods would be thirteen places to forget the
 ownership predicate, and that is the one thing this table must never let a
 refactor drop. Here the predicate is written once, in one ``where`` clause, for
 every kind: **there is no code path through this file that emits a statement

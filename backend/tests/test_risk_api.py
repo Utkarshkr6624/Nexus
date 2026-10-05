@@ -409,6 +409,24 @@ async def _seed_ordering(db_session: AsyncSession, owner: User) -> dict[str, uui
     return rows
 
 
+def _counts_only(summary: dict) -> dict:
+    """The six tally keys of a summary response, with the band definitions split off.
+
+    ``severity_bands`` describes the deployment's ladder rather than this
+    account's work, so the "these are Ada's counts and nobody else's"
+    assertions compare the counts alone and check the bands separately.
+    """
+    return {key: value for key, value in summary.items() if key != "severity_bands"}
+
+
+def _severity_band_edges(summary: dict) -> list[tuple[str, int, int | None]]:
+    """``(severity, minimum_score, maximum_score)`` per stated band, in order."""
+    return [
+        (band["severity"], band["minimum_score"], band["maximum_score"])
+        for band in summary["severity_bands"]
+    ]
+
+
 # ---------------------------------------------------------------------------
 # The gate: 401 anonymous, 403 without analytics.read, on all fourteen routes
 # ---------------------------------------------------------------------------
@@ -478,7 +496,15 @@ async def test_the_summary_route_is_not_swallowed_by_the_id_route(client, db_ses
     assert response.status_code == 200, response.text
     body = response.json()
     assert "needs_attention" in body, body
-    assert set(body) == {"critical", "high", "medium", "low", "total", "needs_attention"}
+    assert set(body) == {
+        "critical",
+        "high",
+        "medium",
+        "low",
+        "total",
+        "needs_attention",
+        "severity_bands",
+    }
 
 
 async def test_the_summary_counts_only_live_risks(client, db_session, account):
@@ -493,7 +519,7 @@ async def test_the_summary_counts_only_live_risks(client, db_session, account):
     owner = seed.owner
     empty = await client.get("/api/v1/risks/summary", headers=headers)
     assert empty.status_code == 200, empty.text
-    assert empty.json() == {
+    assert _counts_only(empty.json()) == {
         "critical": 0,
         "high": 0,
         "medium": 0,
@@ -518,7 +544,7 @@ async def test_the_summary_counts_only_live_risks(client, db_session, account):
     response = await client.get("/api/v1/risks/summary", headers=headers)
 
     assert response.status_code == 200, response.text
-    assert response.json() == {
+    assert _counts_only(response.json()) == {
         "critical": 1,
         "high": 2,
         "medium": 1,
@@ -526,6 +552,15 @@ async def test_the_summary_counts_only_live_risks(client, db_session, account):
         "total": 4,
         "needs_attention": True,
     }
+    # The bands are a property of the deployment, not of the account, so an empty
+    # account and a flagged one state the same ladder. Asserting it here is what
+    # stops the field silently becoming an empty list again.
+    assert _severity_band_edges(response.json()) == [
+        ("critical", 75, None),
+        ("high", 50, 74),
+        ("medium", 25, 49),
+        ("low", 0, 24),
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -1161,7 +1196,9 @@ async def test_an_answered_recommendation_is_409_naming_the_status_it_is_in(
         recommendation_id=rejected.id,
     )
     error = assert_error_envelope(response, status_code=409, code="conflict")
-    assert error["message"] == "This recommendation is rejected and cannot be moved to accepted."
+    assert (
+        error["message"] == "This recommendation was declined, so it cannot be marked as accepted."
+    )
 
     second = await _request(
         client,
@@ -1172,7 +1209,8 @@ async def test_an_answered_recommendation_is_409_naming_the_status_it_is_in(
     )
     second_error = assert_error_envelope(second, status_code=409, code="conflict")
     assert (
-        second_error["message"] == "This recommendation is completed and cannot be moved to viewed."
+        second_error["message"]
+        == "This recommendation was completed, so it cannot be marked as read."
     )
 
 
@@ -1584,7 +1622,7 @@ async def test_no_response_to_one_account_ever_contains_another_accounts_data(cl
     assert {item["title"] for item in risks["items"]} == {"Ada's own risk", "Ada's second risk"}
     assert risks["by_severity"] == {"critical": 0, "high": 1, "medium": 0, "low": 1}
     summary = (await _request(client, "GET", "/api/v1/risks/summary", headers=ada_headers)).json()
-    assert summary == {
+    assert _counts_only(summary) == {
         "critical": 0,
         "high": 1,
         "medium": 0,

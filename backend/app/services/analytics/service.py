@@ -93,7 +93,7 @@ from app.models.analytics import DailyMetric
 from app.models.enums import ActivityEvent, TaskPriority
 from app.models.task import Task
 from app.models.user import User
-from app.repositories.analytics import METRIC_COLUMNS, AnalyticsRepository
+from app.repositories.analytics import METRIC_COLUMNS, AnalyticsRepository, local_midnight
 from app.repositories.knowledge import NoteRepository
 from app.repositories.planner import (
     AvailabilityRuleRepository,
@@ -1212,10 +1212,10 @@ class AnalyticsService:
         their comparison and the headline scores together rather than making the
         client make four requests and reconcile them.
 
-        **The window is completed before it is read.** Any day the aggregates do
-        not already cover is rebuilt first, so the totals and the daily series
-        describe the whole requested window rather than whatever fraction of it
-        some earlier request happened to compute.
+        **A read never writes.** Any day the aggregates do not already cover is
+        left alone, so the totals and the daily series describe what has actually
+        been measured rather than silently becoming measured by the act of asking.
+        See :meth:`_totals` for what removing the on-the-fly fill was worth.
 
         ``stale`` reports whether the stored aggregates still describe the window:
         ``true`` means a day of the window has never been aggregated, or something
@@ -1225,8 +1225,10 @@ class AnalyticsService:
         out of date, which is worse than no flag at all because a client trusts it.
 
         ``aggregates_through`` says how far the stored aggregates reach, which is
-        what a client renders as "updated N minutes ago". ``POST /analytics/rebuild``
-        is the answer to a ``true`` flag; this read never recomputes anything.
+        what a client renders as "updated N minutes ago" — and ``None`` when
+        nothing has ever been aggregated, rather than the end of the window that
+        was merely asked about. ``POST /analytics/rebuild`` is the answer to a
+        ``true`` flag; this read never recomputes anything.
         """
         self._check_range(start, end)
         previous_start, previous_end = _previous_window(start, end)
@@ -1549,7 +1551,14 @@ class AnalyticsService:
         overdue_by_project = await self.metrics.open_task_counts_by_project(owner.id, today)
         session_count, session_minutes = await self.metrics.task_session_totals(owner.id, task.id)
         first_work = await self.metrics.task_first_work_instant(owner.id, task.id)
-        created_at = await self.metrics.task_created_at(owner.id, task.id)
+        created_day = await self.metrics.task_created_day(owner.id, task.id)
+        # `local_midnight`, not `datetime.combine(..., time.min, tzinfo=UTC)`: the
+        # window opens at the same instant a day bucket does, in the server's own
+        # zone. The UTC spelling subtracted five and a half hours from the window
+        # on a `+05:30` host, so a feature named "completions in the last 30 days"
+        # was a 29.8-day count — and it disagreed with `task_age_days` below, which
+        # was cut in yet another calendar.
+        window_start = local_midnight(today - timedelta(days=30))
         reschedules = await self.metrics.task_event_count(
             owner.id, task.id, ActivityEvent.TASK_RESCHEDULED.value
         )
@@ -1559,10 +1568,7 @@ class AnalyticsService:
                     select(
                         func.count(Task.id),
                         func.count(Task.id).filter(Task.status == "completed"),
-                        func.count(Task.id).filter(
-                            Task.completed_at
-                            >= datetime.combine(today - timedelta(days=30), time.min, tzinfo=UTC)
-                        ),
+                        func.count(Task.id).filter(Task.completed_at >= window_start),
                     ).where(Task.project_id == task.project_id, Task.owner_id == owner.id)
                 )
             ).one()
@@ -1571,10 +1577,15 @@ class AnalyticsService:
         )
 
         due_date = task.due_date
+        if created_day is None:  # pragma: no cover - the task was just read owner-scoped
+            created_day = (await self.metrics.as_local_time(task.created_at)).date()
         total_tasks, completed, velocity = (
             (int(project_stats[0]), int(project_stats[1]), int(project_stats[2]))
             if project_stats is not None
             else (None, None, None)
+        )
+        first_work_local = (
+            None if first_work is None else await self.metrics.as_local_time(first_work)
         )
         return {
             "schema_version": ANALYTICS_FEATURE_SCHEMA_VERSION,
@@ -1582,9 +1593,12 @@ class AnalyticsService:
             "task_id": str(task.id),
             "features": {
                 "priority": _priority_rank(task.priority),
-                "task_age_days": max(
-                    0, (today - (created_at or task.created_at).astimezone(UTC).date()).days
-                ),
+                # Measured from the day the row was *filed under*, which is the day
+                # this creation appears in `tasks_created`. It was a UTC date
+                # subtracted from a local `today`, so a task created in the early
+                # hours of this morning read as a day older than the aggregate it
+                # is counted in.
+                "task_age_days": max(0, (today - created_day).days),
                 "estimated_minutes": task.estimated_minutes,
                 # `tasks.actual_minutes` is NOT NULL with a zero default, so it cannot
                 # distinguish "never tracked" from "tracked as zero" — the ambiguity
@@ -1597,7 +1611,12 @@ class AnalyticsService:
                 "historical_completion_rate": rate(completed, total_tasks),
                 "recent_work_minutes": session_minutes if session_count else None,
                 "work_session_count": session_count,
-                "time_of_day": first_work.astimezone(UTC).hour if first_work is not None else None,
+                # The hour the user actually worked, in the server's own calendar.
+                # It is a training input, so the zone is part of the label: it used
+                # to be `first_work.astimezone(UTC).hour`, which on a `+05:30` host
+                # filed an evening's session under the early afternoon and moved
+                # every night worker into the wrong part of the distribution.
+                "time_of_day": first_work_local.hour if first_work_local is not None else None,
                 # The weekday of the *deadline*, or `None` when there is no deadline. It was
                 # once `(due_date or task.created_at.date()).weekday()`, which reported
                 # the creation weekday under the name of a deadline weekday: beside
@@ -1697,6 +1716,9 @@ class AnalyticsService:
         )
         if oldest_row is None or newest_source is None:
             return False
+        # Both sides are timestamps being *ordered*, not days being cut, so UTC is
+        # the right label here: it is a total order over instants and it cancels
+        # out of the comparison. The zone would matter only if these were dates.
         if newest_source.tzinfo is None:  # pragma: no cover - asyncpg returns aware
             newest_source = newest_source.replace(tzinfo=UTC)
         if oldest_row.tzinfo is None:  # pragma: no cover - asyncpg returns aware
@@ -1766,13 +1788,22 @@ class AnalyticsService:
         a task completed on its due date is on time, one completed after it is
         late, at the day granularity the data has. ``still_overdue`` is "today"
         against the **database** clock.
+
+        ``completed_day`` arrives from the repository already cut in the database's
+        own zone, which is what makes this figure agree with the ``tasks_overdue``
+        total ``/overview`` serves beside it. It used to be
+        ``completed_at.astimezone(UTC).date()`` computed here, and for five and a
+        half hours of every day on a ``+05:30`` server that named a different day
+        from the one :meth:`count_tasks_overdue_by_day` buckets on: the dashboard
+        counted a task as overdue in one card and punctual in another, from one
+        row, in one response.
         """
         pairs = await self.metrics.completed_pairs_in_range(owner_id, start=start, end=end)
         on_time = late = 0
-        for _task_id, _estimated, _actual, due_date, completed_at in pairs:
+        for _task_id, _estimated, _actual, due_date, completed_day in pairs:
             if due_date is None:
                 continue
-            if completed_at.astimezone(UTC).date() <= due_date:
+            if completed_day <= due_date:
                 on_time += 1
             else:
                 late += 1

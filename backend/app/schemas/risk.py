@@ -338,8 +338,7 @@ class SeverityBandRead(BaseModel):
 
 
 class RiskSummaryRead(BaseModel):
-    """The compact tallies the dashboard shows, the bands they are counted in,
-    and nothing else.
+    """The compact tallies the dashboard shows, the bands they are counted in, and nothing else.
 
     A whole page of risks behind five numbers is the wrong shape for a dashboard
     tile, and it is the wrong shape for a screen reader announcement too. The

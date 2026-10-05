@@ -383,20 +383,27 @@ async def test_revoking_the_callers_own_session_says_so(client, assert_error_env
     204 is indistinguishable from revoking somebody's phone, and the very next
     request with that token is a 401. A header closes the gap without changing
     the status code a client legitimately signing itself out already handles.
+
+    ``POST /auth/register`` returns a user and opens no session, so the two
+    logins below are the *only* two sessions in play. That is asserted rather than
+    assumed: this used to fish a third id out of the list to revoke "somebody
+    else's" session, and once registration stopped issuing a session there was
+    nothing left to fish, so it raised ``StopIteration`` before it ever reached
+    the header it exists to check.
     """
     await _register(client)
     mine = await _login(client)
     other = await _login(client)
     sessions = await client.get("/api/v1/auth/sessions", headers=_bearer(mine["access_token"]))
     assert sessions.status_code == 200, sessions.text
-    other_id = next(
-        row["id"]
-        for row in sessions.json()["sessions"]
-        if not row["is_current"] and row["id"] != other["session_id"]
-    )
+    assert sessions.json()["current_id"] == mine["session_id"]
+    assert {row["id"] for row in sessions.json()["sessions"]} == {
+        mine["session_id"],
+        other["session_id"],
+    }
 
     someone_else = await client.delete(
-        f"/api/v1/auth/sessions/{other_id}", headers=_bearer(mine["access_token"])
+        f"/api/v1/auth/sessions/{other['session_id']}", headers=_bearer(mine["access_token"])
     )
     assert someone_else.status_code == 204, someone_else.text
     assert "Warning" not in someone_else.headers

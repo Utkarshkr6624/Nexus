@@ -27,8 +27,8 @@ notes   concepts  matched       statements
 20      20        20 and 20     64
 ======  ========  ============  =============
 
-which is ``3 * notes + concepts + 5`` — textbook N+1, and the four base
-statements are the four table searches plus one owner lookup.
+which is ``3 * notes + concepts + 5`` — textbook N+1, and the five base
+statements are the five table searches plus one owner lookup.
 
 It was an oversight rather than a decision: the very same class already had
 :meth:`KnowledgeService._note_page`, documented as *"two queries for the page,
@@ -38,14 +38,14 @@ serialises more than one note now goes through :meth:`_note_joins` /
 :meth:`_concept_joins` and the shared pure builders, so there is no fourth route
 to forget the batch in.
 
-After the fix the count is **7 at every size**, because both repositories
+After the fix the count is **8 at every size**, because both repositories
 short-circuit on an empty id list rather than emitting a pointless ``IN ()`` —
-which is also why the "nothing matched" case costs 4.
+which is also why the "nothing matched" case costs 5.
 
 What is asserted
 ----------------
 1. **The cost does not grow.** The same search is measured at 1+1 and at 20+20
-   matched rows and the two totals are asserted equal, and equal to the seven
+   matched rows and the two totals are asserted equal, and equal to the eight
    derived in :data:`SEARCH_STATEMENTS`.
 2. **The joins are still filled in.** A statement count that went to zero would
    pass the first test, so the note's ``tag_ids`` and ``revision_count`` and the
@@ -55,8 +55,18 @@ What is asserted
    inheriting its neighbour's answer — the failure a per-row lookup by index
    would produce.
 3. **The narrowing still filters.** ``entity_type=note`` must not start reading
-   the other three tables, which is the property that keeps the fan-out from
-   coming back sideways.
+   the other tables, which is the property that keeps the fan-out from coming
+   back sideways.
+
+Where the number comes from
+---------------------------
+``_SEARCH_TABLES`` grew a fifth entry — ``document`` — when Phase 5 added the
+table, and this file's counts were written for four. The drift is invisible from
+the code: a search that read one table too many costs one extra statement and
+returns a perfectly plausible empty list, which is exactly what a *correct*
+search also returns. Both figures are therefore derived from ``_SEARCH_TABLES``
+rather than written out, so the next table cannot be added without this file
+noticing.
 
 House style, following ``tests/test_career_query_efficiency.py``
 ---------------------------------------------------------------
@@ -90,7 +100,7 @@ from app.repositories.knowledge import (
     NoteRepository,
     ResourceRepository,
 )
-from app.services.knowledge_service import KnowledgeService
+from app.services.knowledge_service import _SEARCH_TABLES, KnowledgeService
 from tests.analytics_fixtures import register_user
 
 pytestmark = pytest.mark.integration
@@ -103,17 +113,20 @@ LARGE_ACCOUNT = 20
 
 #: How many statements one search costs, derived from the code:
 #:
-#: * the four table searches — notes, concepts, resources, bookmarks — because
-#:   ``search`` is called with no ``entity_type`` and searches every kind in
-#:   ``_SEARCH_TABLES``;
+#: * one per entry in ``_SEARCH_TABLES`` — notes, concepts, resources, bookmarks
+#:   and documents — because ``search`` is called with no ``entity_type`` and
+#:   searches every kind;
 #: * one statement per joined batch that matched anything: ``note_tags`` and
 #:   ``note_revisions`` for the notes, ``concept_tags`` for the concepts. Each is
 #:   skipped entirely when the batch is empty, which is what keeps the
-#:   "nothing matched" case at four.
+#:   "nothing matched" case at the bare table count.
 #:
-#: Four plus three. The per-row version cost four plus ``2 * notes + concepts``:
-#: seven at one and one, sixty-four at twenty and twenty.
-SEARCH_STATEMENTS = 7
+#: The per-row version this replaced cost the table count plus
+#: ``2 * notes + concepts``: seven at one and one, sixty-four at twenty and
+#: twenty. Both figures below are *computed* rather than spelled out, because a
+#: hand-written count is a tripwire that goes quiet the day the table list grows.
+SEARCH_TABLE_STATEMENTS = len(_SEARCH_TABLES)
+SEARCH_STATEMENTS = SEARCH_TABLE_STATEMENTS + 3
 
 
 # ---------------------------------------------------------------------------
@@ -282,7 +295,7 @@ async def test_the_cost_of_a_search_does_not_grow_with_the_number_of_rows_it_mat
     assert counts[LARGE_ACCOUNT] == SEARCH_STATEMENTS
 
 
-async def test_a_search_that_matches_nothing_costs_only_the_four_table_searches(
+async def test_a_search_that_matches_nothing_costs_only_the_table_searches(
     db_session: AsyncSession, engine: AsyncEngine
 ) -> None:
     """The joins are skipped when there is nothing to join, rather than queried empty.
@@ -303,7 +316,11 @@ async def test_a_search_that_matches_nothing_costs_only_the_four_table_searches(
         [],
         [],
     )
-    assert len(seen) == 4
+    # ``documents`` is asserted here too: it is the kind Phase 5 added to
+    # ``_SEARCH_TABLES`` after these counts were written, and a search that read
+    # it and found nothing is indistinguishable from one that correctly did not.
+    assert result.documents == []
+    assert len(seen) == SEARCH_TABLE_STATEMENTS
 
 
 # ---------------------------------------------------------------------------
@@ -359,6 +376,11 @@ async def test_narrowing_to_one_entity_type_does_not_read_the_other_tables(
         )
 
     assert len(result.notes) == 3
-    assert (result.concepts, result.resources, result.bookmarks) == ([], [], [])
+    assert (result.concepts, result.resources, result.bookmarks, result.documents) == (
+        [],
+        [],
+        [],
+        [],
+    )
     # one notes search + note_tags + note_revisions
     assert len(seen) == 3

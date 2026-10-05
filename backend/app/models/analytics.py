@@ -38,15 +38,29 @@ range with the same inputs writes the same rows and leaves no duplicates. That i
 what makes the operation safe to run from a worker that may retry, and it is why
 this table needs no "first seen / last seen" bookkeeping.
 
-``metric_date`` is a **UTC** day
---------------------------------
-The column is a bare ``Date`` with no zone, and it is cut at UTC midnight. Every
-instant above it is timezone-aware UTC (see :mod:`app.models.planner`), so a UTC
-cut needs no tzdata lookup in the database and cannot disagree with itself. The
-planner's local-day views stay local because they take an explicit ``tz``; an
-analytics day does not, because no analytics route accepts one — a metric whose
-day boundary moved with a query parameter could not be compared against the
-previous period it is being compared to.
+``metric_date`` is the **database's** day
+---------------------------------------
+The column is a bare ``Date`` with no zone. It is cut at the **database server's**
+local midnight, written into every read as
+``date(column AT TIME ZONE current_setting('TimeZone'))`` and into every window
+bound as ``CAST(:day AS TIMESTAMP) AT TIME ZONE current_setting('TimeZone')`` —
+see :mod:`app.repositories.analytics`. Naming the zone in the SQL rather than
+leaving it to the connection is what makes the answer a property of the query, and
+naming *that* zone is what makes it the day the user experienced: on a ``+05:30``
+server an evening's work belongs to that evening, not to the UTC day already
+tomorrow.
+
+It used to be cut at UTC midnight. That was a defensible choice when every
+instant in the schema was UTC and nothing else in the system had an opinion, and
+it stopped being one the moment :meth:`app.repositories.analytics.
+AnalyticsRepository.today` began resolving "today" from the server's clock: for
+five and a half hours a day the router resolved the dashboard's window as
+*today* while this module filed the rows under *yesterday*.
+
+The planner's local-day views are still a separate cut, and deliberately so: they
+take an explicit ``tz``. An analytics day does not, because no analytics route
+accepts one — a metric whose day boundary moved with a query parameter could not
+be compared against the previous period it is being compared to.
 """
 
 from __future__ import annotations
@@ -64,7 +78,7 @@ __all__ = ["DailyMetric"]
 
 
 class DailyMetric(UUIDPrimaryKeyMixin, TimestampMixin, Base):
-    """One user's activity for one UTC day, as counts and minutes.
+    """One user's activity for one calendar day, as counts and minutes.
 
     Every column is ``NOT NULL`` with a zero default, so a day with no activity
     is a row of zeroes rather than a missing row. That distinction is the whole

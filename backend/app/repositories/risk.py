@@ -244,9 +244,7 @@ def allowed_risk_transitions(status: str | RiskStatus) -> list[str]:
     cannot disagree. Exposed because :mod:`app.api.v1.risks` needs it to answer a
     refusal with something the caller can act on rather than with a bare "no".
     """
-    return [
-        target for target, targets in _RISK_TRANSITIONS.items() if status in targets
-    ]
+    return [target for target, targets in _RISK_TRANSITIONS.items() if status in targets]
 
 
 def allowed_recommendation_transitions(status: str | RecommendationStatus) -> list[str]:
@@ -257,9 +255,7 @@ def allowed_recommendation_transitions(status: str | RecommendationStatus) -> li
     instead, which is the difference between a message they can act on and one
     they have to go and look up.
     """
-    return [
-        target for target, targets in _RECOMMENDATION_TRANSITIONS.items() if status in targets
-    ]
+    return [target for target, targets in _RECOMMENDATION_TRANSITIONS.items() if status in targets]
 
 
 def _severity_rank(column: Any) -> Case[Any]:

@@ -8,8 +8,9 @@ route layer asserted the property:
   kind whose date column is a timestamp;
 * ``GET /tasks?tag_ids=`` is documented as all-of and was implemented as any-of,
   so it disagreed with ``GET /search?types=task`` for the same filter;
-* the overdue series has to cut its day boundary in UTC, which a bare
-  ``CAST(timestamptz AS DATE)`` silently defers to the connection's ``TimeZone``;
+* the overdue series has to cut its day boundary at the connection's own
+  midnight, which a bare ``CAST(timestamptz AS DATE)`` silently defers to
+  whichever connection ran it;
 * ``by_priority`` sits beside ``total`` in the recommendations response, so it has
   to count the rows ``total`` counts;
 * replacing a whole weekly availability pattern is bounded at 168 rules, so it
@@ -190,18 +191,36 @@ async def test_tag_ids_requires_every_listed_tag(db_session, owner, project):
 
 
 # ----------------------------------------------------------------------
-# analytics: the overdue series is cut in UTC
+# analytics: the overdue series is cut at the connection's own midnight
 # ----------------------------------------------------------------------
 
 
-async def test_the_overdue_series_cuts_its_boundary_in_utc(db_session, owner, project):
-    """A completion late in the UTC day is on time, whatever the session zone says.
+async def test_the_overdue_series_cuts_its_boundary_at_the_connection_midnight(
+    db_session, owner, project
+):
+    """A completion after the connection's midnight is the next day, and overdue.
 
-    ``CAST(completed_at AS DATE)`` on a ``timestamptz`` resolves through the
-    connection's ``TimeZone``, so under ``Asia/Tokyo`` this completion would land
-    on the following day and read as an overdue day. Setting the session zone is
-    what makes the two spellings distinguishable; every sibling ``*_by_day``
-    method names the zone in SQL and must stay in step with them.
+    ``count_tasks_overdue_by_day`` decides "was it finished by the end of its due
+    day?" by comparing ``due_date`` against
+    ``date(completed_at AT TIME ZONE current_setting('TimeZone'))`` — the
+    **connection's** calendar, named in the SQL rather than left to a bare
+    ``CAST(timestamptz AS DATE)``, which would defer to whichever connection ran
+    it and be invisible in the query. Setting the session zone is what makes the
+    two spellings distinguishable at all; every sibling ``*_by_day`` method
+    names the same zone and has to stay in step with them.
+
+    Both directions are asserted, because one of them passes by accident under
+    either rule and the other cannot:
+
+    * in ``Asia/Tokyo`` the completion below is 08:30 the next day, so the task
+      **was** late on its due date and the series reports it;
+    * in ``UTC`` the same instant is 23:30 on the due date itself, so it was on
+      time and the series is empty.
+
+    A query that hard-coded either zone fails one of the two. A query that fell
+    back to the implicit cast still passes both — it happens to agree — but it
+    would then answer from whatever connection it was handed, which is the bug
+    this test was written for.
     """
     await db_session.execute(text("SET TIME ZONE 'Asia/Tokyo'"))
 
@@ -217,11 +236,22 @@ async def test_the_overdue_series_cuts_its_boundary_in_utc(db_session, owner, pr
     db_session.add(task)
     await db_session.commit()
 
-    rows = await AnalyticsRepository(db_session).count_tasks_overdue_by_day(
-        owner.id, start=ANCHOR_DATE, end=ANCHOR_DATE
+    repository = AnalyticsRepository(db_session)
+
+    rows = await repository.count_tasks_overdue_by_day(owner.id, start=ANCHOR_DATE, end=ANCHOR_DATE)
+    assert rows == [(ANCHOR_DATE, 1)], (
+        "the overdue series cut its boundary at UTC midnight while the connection "
+        "was on Asia/Tokyo, so a task finished the morning after it was due "
+        "read as on time"
     )
 
-    assert rows == []
+    await db_session.execute(text("SET TIME ZONE 'UTC'"))
+
+    rows = await repository.count_tasks_overdue_by_day(owner.id, start=ANCHOR_DATE, end=ANCHOR_DATE)
+    assert rows == [], (
+        "the overdue series called a task late under a zone where its completion "
+        "falls on the due date itself"
+    )
 
 
 # ----------------------------------------------------------------------

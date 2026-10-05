@@ -73,6 +73,7 @@ import math
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import func, select, text
@@ -347,10 +348,34 @@ def _assert_honest(response: Any, *, where: str) -> None:
         assert _unavailable_paths(payload) == [], where
 
 
+async def _database_zone(session: Any) -> ZoneInfo:
+    """The calendar ``daily_metrics`` is cut on: the connection's ``TimeZone``.
+
+    Asked of the database rather than assumed. The rule under test is that the
+    boundary is the *server's* midnight and not a constant compiled into the
+    SQL, so a fixture that hard-coded an offset would pin a deployment rather
+    than the rule.
+    """
+    name = await session.scalar(select(func.current_setting("TimeZone")))
+    return ZoneInfo(str(name))
+
+
+def _local_instant(zone: ZoneInfo, day: date, hour: int, minute: int = 0) -> datetime:
+    """The instant at ``hour:minute`` on ``day`` as the database reads it.
+
+    :func:`~tests.analytics_fixtures.at` builds UTC instants, which is right for
+    a fixture that must not care where the boundary is and wrong for one that is
+    about it. ``23:59 UTC`` is the last minute of a day in London and half past
+    five in the morning of the *next* day in Calcutta, so a UTC-hour fixture
+    cannot say anything about where the cut falls.
+    """
+    return datetime(day.year, day.month, day.day, hour, minute, tzinfo=zone).astimezone(UTC)
+
+
 async def _session_at(
     seed: AnalyticsSeed, *, start: datetime, minutes: int, project_id: uuid.UUID
 ) -> None:
-    """A work session starting at an exact minute-precision UTC instant.
+    """A work session starting at an exact minute-precision instant.
 
     ``AnalyticsSeed.work_session`` takes a start *hour*, which is the right
     granularity for every other case in the suite and the wrong one here: the
@@ -359,7 +384,9 @@ async def _session_at(
     therefore written by the shared helper — which gets the status, the estimated
     and actual ends, and the ownership right — and then moved onto the exact
     instant. The helper has no ``minute`` parameter and this file does not edit a
-    shared fixture to add one for a single caller.
+    shared fixture to add one for a single caller. Pair it with
+    :func:`_local_instant` to place the block on the calendar the buckets are
+    actually cut on.
     """
     row = await seed.work_session(
         day=start.date(), minutes=minutes, project_id=project_id, start_hour=start.hour
@@ -494,18 +521,16 @@ async def test_the_read_only_routes_report_the_empty_shape_not_a_zero_score(clie
 async def test_the_gap_filling_routes_answer_unavailable_for_an_empty_account(client, db_session):
     """``/overview``, ``/productivity``, ``/focus`` and ``/tasks`` on nothing.
 
-    These four are separated from the sweep above because each of them fills an
+    These four are separated from the sweep above because they used to fill an
     uncovered window in ``daily_metrics`` before reading it. Sharing one account
     with the read-only routes would make ``/series`` there return this account's
     own freshly-written zero rows rather than the empty list the rule is about,
     and the two questions would silently become one.
 
     Each body is taken from **the first and only** time its route is called. That
-    matters: once the first route has filled the window, a second call to
-    ``/overview`` reports an ``aggregates_through`` where the first one reported
-    none, and asserting against the later call would be asserting a state the
-    test never set up. The freshness of the aggregates is the refresh section's
-    subject, not this one's.
+    still matters, and for the opposite reason to the one it used to: these
+    routes no longer write, so nothing a later call sees could differ from this
+    one — but pinning "first and only" keeps that true if a write ever comes back.
 
     ``by_status`` is the one counter that legitimately reads zero, and
     ``completion_rate`` is the one that must not: no work entered the system, so
@@ -541,15 +566,17 @@ async def test_the_gap_filling_routes_answer_unavailable_for_an_empty_account(cl
         "tasks_rescheduled",
         "work_sessions",
     }
-    # Nothing had ever been aggregated, so this request had to build the window
-    # itself. `stale` says exactly that: the figures were recomputed now rather
-    # than served from an existing aggregate. It is `true` for the *maximally*
-    # incomplete window — the old `bool(covered) and ...` guard read "nothing
-    # computed yet" as "nothing to be stale about", which is backwards. And
-    # `aggregates_through` is a date, not null, because the fill really did
-    # write the rows.
+    # Nothing had ever been aggregated, and asking did not aggregate it either.
+    # `stale` says exactly that: these figures describe no measurement at all, so
+    # they are maximally stale rather than not stale at all — the old
+    # `bool(covered) and ...` guard read "nothing computed yet" as "nothing to be
+    # stale about", which is backwards. And `aggregates_through` is `None`, not the
+    # end of the window: these routes used to fill the gap and report themselves
+    # measured through it, which is how an account that had never been rebuilt
+    # once came to claim it was measured through 2030.
     assert overview["stale"] is True
-    assert overview["aggregates_through"] == WINDOW_END.isoformat()
+    assert overview["aggregates_through"] is None
+    assert overview["data_as_of"] is None
 
     assert productivity["available"] is False
     assert productivity["score"] is None
@@ -1134,15 +1161,15 @@ async def test_a_previous_period_of_zero_yields_null_never_infinity(client, db_s
 # ---------------------------------------------------------------------------
 
 
-async def test_a_block_at_2359_utc_and_one_at_0001_utc_the_next_day_are_two_days(
+async def test_a_block_at_2359_local_and_one_at_0001_local_the_next_day_are_two_days(
     client, db_session
 ):
-    """The UTC day boundary, at minute precision, from both sides.
+    """The database's day boundary, at minute precision, from both sides.
 
-    ``daily_metrics.metric_date`` is a UTC cut, written into the SQL as
-    ``date(column AT TIME ZONE 'UTC')`` rather than left to the connection's
-    ``TimeZone``. Two consequences are asserted here, and neither is observable
-    at hour granularity:
+    ``daily_metrics.metric_date`` is cut at the connection's own midnight,
+    written into the SQL as ``date(column AT TIME ZONE current_setting('TimeZone'))``
+    rather than left to an implicit cast. Two consequences are asserted here, and
+    neither is observable at hour granularity:
 
     * a block starting at **23:59** belongs to the first day, and one starting
       at **00:01** the next morning belongs to the second — so the cut is at
@@ -1150,15 +1177,27 @@ async def test_a_block_at_2359_utc_and_one_at_0001_utc_the_next_day_are_two_days
     * a window that straddles the boundary includes both, and a window that ends
       on the first day excludes the second one entirely.
 
+    Both minutes are **local to the server's zone**, read from
+    ``current_setting('TimeZone')`` rather than assumed, so the pair sits either
+    side of the cut the code actually cuts. Spelled in UTC it would prove
+    nothing: 23:59 UTC is half past five the following morning in
+    ``Asia/Calcutta``, and both blocks would land on the same day.
+
     The two minutes columns are read from two different timestamps on the same
     row (``scheduled_start`` and ``actual_start``), so a boundary bug in either
     would show up as a disagreement between them rather than as a shifted day.
     """
     seed, auth = await seeded_client(client, db_session)
+    zone = await _database_zone(db_session)
     project = await seed.project()
-    await _session_at(seed, start=at(DAY, 23, 59), minutes=30, project_id=project.id)
     await _session_at(
-        seed, start=at(DAY + timedelta(days=1), 0, 1), minutes=45, project_id=project.id
+        seed, start=_local_instant(zone, DAY, 23, 59), minutes=30, project_id=project.id
+    )
+    await _session_at(
+        seed,
+        start=_local_instant(zone, DAY + timedelta(days=1), 0, 1),
+        minutes=45,
+        project_id=project.id,
     )
 
     await _rebuild(client, auth, start=DAY, end=DAY + timedelta(days=1))
@@ -1241,17 +1280,25 @@ async def test_a_block_that_runs_past_midnight_is_counted_whole_on_the_day_it_st
 ):
     """A 23:00 block that ends at 00:30 is ninety minutes, all of them on the first day.
 
-    The one place a UTC day cut could plausibly be expected to split a figure, and
+    The one place a day cut could plausibly be expected to split a figure, and
     it deliberately does not. ``session_minutes_by_day`` buckets on
     ``actual_start`` and sums the row's own ``actual_minutes``, so a block is
     attributed to the day it began and is never halved across two rows. Splitting
     it would also make the daily series stop summing back into the totals
     ``/overview`` reports, which is the reconciliation the aggregate tier exists
     to preserve.
+
+    The block starts at 23:00 **in the server's own zone**, so it genuinely runs
+    past that calendar's midnight. Seeded at 23:00 UTC it would not: in
+    ``Asia/Calcutta`` that is half past four the next morning, and the block
+    would already have started on the following day.
     """
     seed, auth = await seeded_client(client, db_session)
+    zone = await _database_zone(db_session)
     project = await seed.project()
-    await _session_at(seed, start=at(DAY, 23, 0), minutes=90, project_id=project.id)
+    await _session_at(
+        seed, start=_local_instant(zone, DAY, 23, 0), minutes=90, project_id=project.id
+    )
     await _rebuild(client, auth, start=DAY, end=DAY + timedelta(days=1))
 
     rows = _by_day(await _series(client, auth, start=DAY, end=DAY + timedelta(days=1)))
@@ -1677,6 +1724,16 @@ async def test_deleting_a_task_removes_it_from_every_figure_without_a_server_err
     Seeded: one task completed on :data:`DAY` estimated at 60 and taken 90 (so
     the single estimation pair is an absolute error of 30.0 and a bias of -30.0),
     one open task, and a 45-minute session against the first.
+
+    The **actual** half of the pair is the 45 recorded session minutes, not the
+    ``tasks.actual_minutes`` column's 90. ``tasks.actual_minutes`` is a cache of
+    the observation that the session write path does not maintain, and
+    ``completed_pairs_in_range`` reads the observation: an estimate of 60 against
+    45 minutes actually spent is an absolute error of **15.0** and — signed
+    ``estimated - actual`` — a bias of **+15.0**, i.e. an over-estimation rate
+    of 100% and an under-estimation rate of 0%. The distinction is the point:
+    a figure that read the stale column would be measuring something no user ever
+    recorded, and would keep doing so on every read.
     """
     seed, auth = await seeded_client(client, db_session)
     project = await seed.project(name="Kept")
@@ -1690,8 +1747,14 @@ async def test_deleting_a_task_removes_it_from_every_figure_without_a_server_err
     before = await _get(client, auth, "/api/v1/analytics/estimation")
     assert before["available"] is True
     assert before["sample_count"] == 1
-    assert before["absolute_error"] == 30.0
-    assert before["bias"] == -30.0
+    assert before["pairs_compared"] == 1
+    # (estimated 60, recorded 45): signed ``estimated - actual`` = +15.
+    assert before["absolute_error"] == 15.0
+    assert before["bias"] == 15.0
+    # The sign convention is pinned beside the figure it explains: a positive
+    # bias next to a 0% under-estimation rate, never beside a 100%.
+    assert before["under_estimation_rate"] == 0.0
+    assert before["over_estimation_rate"] == 100.0
 
     deleted = await client.delete(f"/api/v1/tasks/{finished.id}", headers=auth)
     assert deleted.status_code == 204, deleted.text
@@ -2001,12 +2064,13 @@ async def test_a_partially_rebuilt_window_reports_itself_as_stale(client, db_ses
     assert partial.status_code == 200, partial.text
     assert partial.json()["stale"] is True
     assert partial.json()["is_stale"] is True
-    # `aggregates_through` reads *after* the fill this request performed, so it
-    # already spans the whole window rather than the three days that existed
-    # before it. That is the honest answer — the aggregates really were complete
-    # by the time the response was built — and it is why `stale` has to be
-    # sampled before the fill to mean anything at all.
-    assert partial.json()["aggregates_through"] == WINDOW_END.isoformat()
+    # `aggregates_through` reads the *stored* table, so it stops where the rebuild
+    # stopped: three days in, not the six the request asked about. That is what
+    # makes it the other half of the answer — a client can say "measured through
+    # Monday" and mean it. It used to read `WINDOW_END` here, because this route
+    # filled the remaining three days on its way to answering; that a `GET` wrote
+    # three rows nobody asked for was the behaviour, not a rounding of it.
+    assert partial.json()["aggregates_through"] == (WINDOW_START + timedelta(days=2)).isoformat()
 
     await _rebuild(client, auth)
 

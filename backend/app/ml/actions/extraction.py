@@ -97,6 +97,15 @@ label at all — and there the folder's own final segment is the answer, since
 that is what the server would default to anyway. It is recorded as a note and
 shown beside the path, never in place of it.
 
+**A knowledge link is the one proposal with no title.** Everything else in this
+module ends in a subject: a name to write, or a reference to resolve. A link has
+neither — it is written from two spoken references joined by "to", "and", "with"
+or an arrow, and the two are cut out of the sentence *before* any other rule
+sees it, because the connector between them is ordinary English that those rules
+would each read differently. What is left is nothing, so nothing can become a
+title, and each end is recovered by the same reference rules as any other row the
+user already owns.
+
 **Timezones are the caller's, and the conversion mirrors the planner.** A date
 resolves against the caller's IANA zone, and :attr:`Extraction.due_at` is the
 day's local midnight converted to offset-aware UTC — built exactly as
@@ -131,6 +140,7 @@ __all__ = [
     "Argument",
     "ExtractedVerb",
     "Extraction",
+    "LinkEndpointMatch",
     "PathMatch",
     "RowCandidate",
     "RowMatch",
@@ -144,6 +154,7 @@ __all__ = [
     "extract_title",
     "extract_verb",
     "find_date",
+    "find_link_endpoints",
     "find_path",
     "local_day",
     "match_reference",
@@ -1155,6 +1166,12 @@ class Extraction:
     ``notes`` are the softer observations — a date phrase recognised but not
     resolved, a title clipped to the schema bound — which belong on the proposal,
     so the user hears about them rather than discovering them after confirming.
+
+    ``link`` is the one extraction with no :attr:`title` at all, and the reason is
+    the point rather than an omission: a knowledge edge is written as its two
+    ends, so the ends are what the user stated (they are also in
+    :attr:`values`, under the keys the payload reads) and there is no name for the
+    leftover text to become.
     """
 
     intent: str
@@ -1171,6 +1188,7 @@ class Extraction:
     target_status: str | None = None
     values: Mapping[str, str] = _NO_VALUES
     bulk: bool = False
+    link: LinkEndpointMatch | None = None
     text: str = field(default="", repr=False)
 
     @property
@@ -1181,8 +1199,12 @@ class Extraction:
         title, because the one thing the proposal layer must do with it is refuse
         it. Reporting otherwise would mean a caller that checks this property
         before reading :attr:`bulk` can build a proposal over a collection.
+
+        A link is the one usable extraction with no :attr:`title`: what the user
+        stated is the two ends of the edge, so a check on the title alone would
+        drop the request the assistant can otherwise act on.
         """
-        return self.title is not None and self.reason is None and not self.bulk
+        return bool(self.reason is None and not self.bulk and (self.title is not None or self.link))
 
 
 @dataclass(frozen=True, slots=True)
@@ -2497,6 +2519,134 @@ def extract_title(
 
 
 # --------------------------------------------------------------------------- #
+# Knowledge links
+# --------------------------------------------------------------------------- #
+
+#: The intents a knowledge edge may be proposed on. Both halves of the knowledge
+#: router, for the reason every other knowledge write is answered by the routing
+#: table rather than refused: "link the ADR to the scoring note" and "what links
+#: the ADR to the scoring note" are one sentence, and only the user's intent
+#: tells them apart. Nothing else may propose one — a link is a row of the
+#: knowledge base, so a task or a calendar request that happens to contain the
+#: word is a request about that task.
+_LINK_INTENTS: frozenset[str] = frozenset(
+    {str(Intent.KNOWLEDGE_CAPTURE), str(Intent.KNOWLEDGE_LOOKUP)}
+)
+
+#: The verbs that name the act of joining two rows. Deliberately few, and none of
+#: them with a suffix: "link" is a noun in half of its uses, and "relate" and
+#: "associate" are ordinary English inside titles. Each of these therefore only
+#: reaches this rule because the *whole* sentence has to resolve into two
+#: references joined by one of :data:`_LINK_CONNECTORS` — the verb is the weakest
+#: of the three requirements, not the strongest.
+_LINK_VERB: str = r"(?:link|connect|relate|associate)"
+
+#: The noun form: "add a link from A to B". A preposition is **required** after
+#: the noun, and that requirement is the whole of the rule's narrowness here:
+#: "add a link to https://example.com" has one end and is a bookmark, and an edge
+#: written from half a sentence is a row with a dangling end.
+_LINK_NOUN_LEAD: str = (
+    r"(?:add|create|save|make|record|new|insert|draw|put)\s+"
+    r"(?:an?|the|my|our)\s+(?:new\s+|knowledge\s+)?links?\s+"
+    r"(?:from|between|joining|connecting|linking|link)\s+"
+)
+
+#: What joins the two ends, in the order it is tried. An arrow is unambiguous
+#: and is tried first. "to" is tried before "and" and "with" because an endpoint
+#: may itself be a conjunction — "the note about tokens and auth" — and cutting
+#: the sentence at the one *inside* an endpoint is the single way this rule can
+#: split a sentence in the wrong place. The same argument decides "link A to B
+#: and C": the trailing "and" belongs to C, and reading "to" first is what leaves
+#: it there instead of proposing an edge to "B and C".
+_LINK_CONNECTORS: tuple[str, ...] = (
+    r"(?:-{1,2}>|<->|=>|→|⟷)",
+    r"\bto\b",
+    r"\band\b",
+    r"\bwith\b",
+)
+
+#: The two shapes, verb first. Both are anchored to the **whole** sentence, which
+#: is what makes the leftover text empty by construction: a link is written as
+#: its two ends, so there is nothing else in the sentence for a title to be
+#: recovered from, and a rule that left framing behind would invite one.
+_LINK_REQUEST_RES: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(
+        rf"\A\s*(?:{lead})(?P<source>.+?)\s*{connector}\s+(?P<target>.+?)\s*[.!?]?\s*\Z",
+        re.IGNORECASE,
+    )
+    for lead in (_LINK_VERB + r"\s+", _LINK_NOUN_LEAD)
+    for connector in _LINK_CONNECTORS
+)
+
+
+@dataclass(frozen=True, slots=True)
+class LinkEndpointMatch:
+    """The two ends of a spoken knowledge edge, and the span they were read from.
+
+    ``source`` and ``target`` are **references**, not the words as typed: the
+    determiner and the entity noun are cut off each end exactly as they are cut
+    from any other reference, because "the note about token rotation" is named by
+    "token rotation" and it is that which is matched against the caller's rows.
+    Either may be ``None`` when nothing survived, and the layer above answers that
+    by naming the end it could not read.
+
+    ``matched_text`` is the sentence the two were read out of, so a confirm
+    dialog can show the words NEXUS resolved rather than only the rows it landed
+    on.
+    """
+
+    source: str | None
+    target: str | None
+    matched_text: str
+
+
+def _endpoint_reference(fragment: str, intent: str) -> str | None:
+    """Cut one end of an edge down to the words that name a row.
+
+    The same cut every other reference gets, by the same function: a determiner,
+    a leading entity noun with its connector ("the note about …") and a trailing
+    one ("the ADR note"). ``None`` when nothing confident is left, which is an
+    answer rather than a failure — the end the user did not name is named in the
+    refusal that follows.
+    """
+    reference, _reason, _removed, _notes = extract_title(fragment, intent=intent, reference=True)
+    return reference
+
+
+def find_link_endpoints(text: str, intent: str) -> LinkEndpointMatch | None:
+    """Read the two ends of a spoken knowledge edge, or report that there are none.
+
+    Both shapes are anchored to the whole sentence, so there are three outcomes
+    and no fourth: two references, no match at all, or a sentence that only
+    *looks* like one. A near miss is the third — "add a link to https://example.com"
+    names one end and is a bookmark, and "link the ADR to the concept" with the
+    connector written in a place this table does not cover is a sentence whose
+    split NEXUS would have to invent. Both are ``None`` here, which the layer
+    above answers by refusing rather than by guessing an endpoint.
+
+    Args:
+        text: The raw utterance, as the classifier saw it.
+        intent: The predicted intent, which chooses the entity nouns to strip
+            from each end.
+
+    Returns:
+        The :class:`LinkEndpointMatch` for the first shape that matched, or
+        ``None`` when the sentence does not name two rows joined by something.
+    """
+    bare = strip_command_prefix(text, _POLITENESS_PREFIXES)
+    for pattern in _LINK_REQUEST_RES:
+        match = pattern.match(bare)
+        if match is None:
+            continue
+        return LinkEndpointMatch(
+            source=_endpoint_reference(match.group("source"), intent),
+            target=_endpoint_reference(match.group("target"), intent),
+            matched_text=_collapse(match.group(0)),
+        )
+    return None
+
+
+# --------------------------------------------------------------------------- #
 # Row reference matching
 # --------------------------------------------------------------------------- #
 
@@ -2724,13 +2874,47 @@ def extract_arguments(
     values: dict[str, str] = {}
     bulk = _is_bulk(text)
 
+    remaining = _strip_verb_prefix(text, verb)
+
+    # A knowledge link is the one proposal with no title: what the user stated is
+    # the two ends of the edge, and both are cut out of the sentence before any
+    # other rule sees it. Read **first** because the connector between the ends
+    # is ordinary English that the rules below would each read differently — "and"
+    # is a second clause, "to" names the new value of a rename — and a sentence
+    # split in the wrong place is two halves that match nothing. What is left is
+    # nothing at all, which is the point: a link has no name for the leftover
+    # text to become.
+    #
+    # The verb is only read off a sentence that already resolved into two ends, so
+    # it cannot override one the user actually wrote: "delete the link between A
+    # and B" keeps its delete. And ``UNKNOWN`` is here because a bare "link A to
+    # B" contains none of this module's command phrases, which is the same reason
+    # the routing table needs a verb at all.
+    link: LinkEndpointMatch | None = None
+    if intent in _LINK_INTENTS and verb in (ExtractedVerb.UNKNOWN, ExtractedVerb.CREATE):
+        link = find_link_endpoints(text, intent)
+    if link is not None:
+        verb = ExtractedVerb.CREATE
+        entity = "link"
+        remaining = ""
+        for which, reference_text in (("source", link.source), ("target", link.target)):
+            if reference_text is None:
+                continue
+            values[which] = reference_text
+            arguments.append(
+                Argument(
+                    field=which,
+                    value=reference_text,
+                    matched_text=link.matched_text,
+                    rule=f"the {which} end of the link, read from '{link.matched_text}'",
+                )
+            )
+
     # Everything except a creation is about a row that already exists, and that
     # changes three things: the subject may legitimately be a pronoun, its
     # determiner is part of the reference rather than part of a name, and the
     # words after a connector are the *new* value rather than the title.
     reference = verb is not ExtractedVerb.CREATE
-
-    remaining = _strip_verb_prefix(text, verb)
 
     # The folder is read before every other value rule, for the reason
     # :func:`_remove_path` gives: a path is the one field that holds words the
@@ -2942,9 +3126,16 @@ def extract_arguments(
                     "choose another."
                 )
 
-    title, reason, removed, title_notes = extract_title(
-        remaining, intent=intent, reference=reference
-    )
+    if link is not None:
+        # A link is written as its two ends, so there is no subject to recover and
+        # no reason to report: the ends are already in ``values`` with their own
+        # provenance, and ``extract_title("")`` would only answer "there was
+        # nothing left to name" about a sentence that named everything it had to.
+        title, reason, removed, title_notes = None, None, [], []
+    else:
+        title, reason, removed, title_notes = extract_title(
+            remaining, intent=intent, reference=reference
+        )
     removed = [*framing, *removed]
     notes.extend(title_notes)
     notes.extend(_unresolved_date_notes(remaining))
@@ -2986,6 +3177,7 @@ def extract_arguments(
         entity=entity,
         target_status=target_status,
         values=MappingProxyType(dict(values)),
+        link=link,
         bulk=bulk,
         text=text,
     )

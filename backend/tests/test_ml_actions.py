@@ -109,7 +109,7 @@ from app.ml.actions.proposals import (
     render_summary,
 )
 from app.ml.schemas import IntentPrediction
-from app.models.enums import ProjectPriority, TaskPriority, TaskStatus
+from app.models.enums import KnowledgeEntityType, ProjectPriority, TaskPriority, TaskStatus
 from app.schemas.knowledge import NoteCreate
 from app.schemas.learning import LearningGoalWrite
 from app.schemas.project import ProjectCreate
@@ -145,6 +145,16 @@ RUST_SKILL_ID = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
 REVIEW_EVENT_ID = UUID("cccccccc-cccc-4ccc-8ccc-cccccccccccc")
 MORNING_SESSION_ID = UUID("dddddddd-dddd-4ddd-8ddd-dddddddddddd")
 NEXO_REPOSITORY_ID = UUID("eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee")
+#: The rows a knowledge link draws its two ends from. Two notes rather than one,
+#: because "token rotation" is deliberately a fragment of *both* their labels and
+#: of neither exactly: the pair is what makes ``target_ambiguous`` reachable
+#: without a hand-built matcher, and the distinction between the two ends of an
+#: edge is the whole of what a link proposal has to get right.
+TOKEN_NOTE_ID = UUID("ffffffff-ffff-4fff-8fff-ffffffffffff")
+ROTATION_MEMO_ID = UUID("ffffffff-ffff-4fff-8fff-fffffffffffe")
+ADR_NOTE_ID = UUID("ffffffff-ffff-4fff-8fff-fffffffffffd")
+AUTH_CONCEPT_ID = UUID("ffffffff-ffff-4fff-8fff-fffffffffffc")
+DETERMINISM_CONCEPT_ID = UUID("ffffffff-ffff-4fff-8fff-fffffffffffb")
 
 
 def prediction(intent: str = str(Intent.TASK_MANAGE)) -> IntentPrediction:
@@ -205,6 +215,32 @@ def full_context(**overrides) -> ProposalContext:
     return context(**{**_CANDIDATE_ROWS, **overrides})
 
 
+#: The two pools a knowledge edge may draw its ends from, with the rows the link
+#: utterances below name.
+#:
+#: ``"ADR"`` is a fragment of one note's label and not the whole of it — "the ADR
+#: note" is how a user refers to that row, and the reference rules cut the
+#: trailing noun off exactly as they do for a task. ``"token rotation"`` is
+#: deliberately *inside* two labels and equal to neither, which is the only shape
+#: that makes an ambiguous end reachable through the ordinary matcher.
+LINK_CANDIDATE_ROWS = {
+    "note_candidates": (
+        RowCandidate(TOKEN_NOTE_ID, "Token rotation notes"),
+        RowCandidate(ROTATION_MEMO_ID, "Token rotation memo"),
+        RowCandidate(ADR_NOTE_ID, "ADR note"),
+    ),
+    "concept_candidates": (
+        RowCandidate(AUTH_CONCEPT_ID, "auth"),
+        RowCandidate(DETERMINISM_CONCEPT_ID, "Deterministic scoring"),
+    ),
+}
+
+
+def link_context(**overrides) -> ProposalContext:
+    """:func:`full_context` with the knowledge rows a link draws its ends from."""
+    return full_context(**{**LINK_CANDIDATE_ROWS, **overrides})
+
+
 def extract(text: str, intent: str = str(Intent.TASK_MANAGE)) -> Extraction:
     """Run the extractor with a fixed clock and zone."""
     return extract_arguments(text, prediction(intent), tz=LISBON, now=NOW)
@@ -237,12 +273,12 @@ def refuse(text: str, intent: str = str(Intent.TASK_MANAGE), ctx=None) -> Propos
 #: exist. Read it as a claim about the *user's* vocabulary — every entry is a
 #: sentence somebody could plausibly type — not as a restatement of the table.
 #:
-#: ``create_link`` is deliberately absent and has a test of its own below. A link
-#: is written from two spoken references, and no extraction rule in
-#: :mod:`app.ml.actions.extraction` populates the ``source`` and ``target`` keys
-#: the payload builder reads, so no sentence reaches it. Asserting the other 37
-#: kinds plus that one gap keeps the set honest in both directions: a kind added
-#: tomorrow has to be added here or this test fails.
+#: All thirty-eight kinds are here, and the set is asserted to be exactly them:
+#: a kind joined to the table without a sentence somebody would type is a row
+#: nothing reaches, and a sentence added for a kind that does not exist is a
+#: proposal this layer cannot make. ``create_link`` is the one entry whose payload
+#: carries no title, so its ends are resolved by the same rule and the sentence
+#: reads like one.
 REACHABLE_KINDS: tuple[tuple[str, str, str], ...] = (
     (str(Intent.TASK_MANAGE), "Add a task to finish DSA", "create_task"),
     (
@@ -290,6 +326,11 @@ REACHABLE_KINDS: tuple[tuple[str, str, str], ...] = (
     (str(Intent.KNOWLEDGE_CAPTURE), "delete the Rust book bookmark", "delete_bookmark"),
     (str(Intent.KNOWLEDGE_CAPTURE), "Add a concept called Async", "create_concept"),
     (str(Intent.KNOWLEDGE_CAPTURE), "delete the Async concept", "delete_concept"),
+    (
+        str(Intent.KNOWLEDGE_CAPTURE),
+        "link the prune suffix note to the async concept",
+        "create_link",
+    ),
     (str(Intent.KNOWLEDGE_CAPTURE), "delete the Prune suffix link", "delete_link"),
     (
         str(Intent.LEARNING_TRACK),
@@ -1947,45 +1988,326 @@ def test_each_reachable_kind_is_reached_by_the_sentence_that_names_it(
     assert proposal.requires_confirmation is True
 
 
-def test_the_table_covers_every_kind_but_the_one_no_sentence_can_reach() -> None:
-    """Adding a kind means adding a sentence here, and the one gap stays a gap.
+def test_the_table_covers_every_kind() -> None:
+    """Adding a kind means adding a sentence here, and the set is exactly the kinds.
 
-    Written as a union rather than an equality because ``create_link`` is
-    genuinely unreachable from an utterance — see the next test — and pretending
-    otherwise would mean either an assertion that could not pass or a table with
-    a fudged row. Everything *else* must be here, so a new kind cannot join the
-    table without somebody deciding how a user asks for it.
+    An equality rather than a union, because every kind is now reachable from an
+    utterance — :data:`ActionKind.CREATE_LINK` included, which used to be the one
+    row no sentence could produce. A kind that joins :data:`ACTION_SPECS` without
+    a sentence somebody would type is a proposal nothing reaches, and that is the
+    defect this assertion exists to catch rather than to document.
     """
     listed = {kind for _intent, _utterance, kind in REACHABLE_KINDS}
-    assert listed | {ActionKind.CREATE_LINK} == set(ActionKind)
+    assert listed == set(ActionKind)
 
 
-def test_a_link_cannot_be_proposed_from_one_sentence_because_nothing_parses_its_ends() -> None:
-    """``create_link`` needs two spoken references and no rule recovers either.
+# --------------------------------------------------------------------------- #
+# Knowledge links
+# --------------------------------------------------------------------------- #
 
-    A knowledge link is written as four typed ids resolved from two references,
-    so the payload builder reads ``source`` and ``target`` out of
-    :attr:`Extraction.values`. No rule in :mod:`app.ml.actions.extraction`
-    populates either key, so every attempt is ``field_not_recoverable`` — a
-    refusal — rather than an edge with a guessed endpoint. A dangling edge is a
-    row nobody will ever see again, which is exactly what "NEXUS will not pick
-    between them" exists to prevent.
+#: Every way of asking for an edge, each naming the same two rows so that a
+#: failure is about the **form** rather than about the match. The connector is the
+#: part that can be read wrong: an endpoint may itself contain one — "the note
+#: about tokens and auth" — and cutting the sentence at the one inside an endpoint
+#: is the single way this rule can propose an edge to half a phrase.
+LINK_PHRASINGS: tuple[tuple[str, str], ...] = (
+    ("to", "link the ADR note to the deterministic scoring concept"),
+    ("and", "link the ADR note and the deterministic scoring concept"),
+    ("with", "connect the ADR note with the deterministic scoring concept"),
+    ("arrow", "link ADR note -> deterministic scoring concept"),
+    ("noun form", "Add a link from the ADR note to the deterministic scoring concept"),
+    ("knowledge noun", "add a knowledge link from the ADR note to the scoring concept"),
+    ("polite", "please link the ADR note to the deterministic scoring concept"),
+    ("verb form", "relate the ADR note to the scoring concept"),
+)
 
-    The kind itself is not dead: ``POST /ml/action/confirm`` implements it in
-    full for a caller that supplies the endpoints itself, which is what
-    ``app/api/v1/actions.py`` documents.
+
+@pytest.mark.parametrize(
+    ("form", "utterance"), LINK_PHRASINGS, ids=[form for form, _utterance in LINK_PHRASINGS]
+)
+def test_a_link_request_proposes_the_edge_with_both_its_ends(form: str, utterance: str) -> None:
+    """One sentence, two rows, one payload — however the joiner was written.
+
+    ``create_link`` is the only payload in the table that carries no title, so
+    what used to be impossible is now the thing under test: both ends have to
+    come out of the sentence, be resolved against the caller's **own** rows, and
+    arrive typed. An end that resolved to nothing, or to two rows, is one of the
+    refusals below rather than a third reading.
+
+    The two ids are the caller's own rows and the summary quotes their stored
+    labels — the same two things every other kind's test checks, because a link
+    that resolved against the wrong pool would be correct against the wrong
+    table and wrong on screen.
     """
-    extraction = extract("Add a link from Prune suffix to Async", str(Intent.KNOWLEDGE_CAPTURE))
+    proposal = propose(utterance, str(Intent.KNOWLEDGE_CAPTURE), ctx=link_context())
+    assert proposal.kind is ActionKind.CREATE_LINK, form
+    assert proposal.requires_confirmation is True
+    assert proposal.destructive is False
+    assert proposal.target_id is None, "a link acts on two rows, so it has no single target"
+
+    payload = proposal.payload
+    assert str(payload.source_type) == str(KnowledgeEntityType.NOTE), form
+    assert payload.source_id == ADR_NOTE_ID, form
+    assert str(payload.target_type) == str(KnowledgeEntityType.CONCEPT), form
+    assert payload.target_id == DETERMINISM_CONCEPT_ID, form
+    assert proposal.summary == (
+        "Link the note 'ADR note' to the concept 'Deterministic scoring'."
+    ), form
+
+
+def test_a_link_payload_is_published_with_its_four_ids_and_nothing_else() -> None:
+    """No title, and no leftover of the sentence, reaches the confirm route.
+
+    A link is written as four typed ids, and anything else in the payload is a
+    field the confirm route would reject on a dialog the user already said yes
+    to. The leftover is the sharper half: "link the ADR note to the deterministic
+    scoring concept" has no title to recover, and a title made of the framing
+    around the two ends would be a row named after the request that made it.
+    """
+    proposal = propose(
+        "link the ADR note to the deterministic scoring concept",
+        str(Intent.KNOWLEDGE_CAPTURE),
+        ctx=link_context(),
+    )
+    assert set(proposal.payload.model_fields_set) == {
+        "source_type",
+        "source_id",
+        "target_type",
+        "target_id",
+    }
+    assert set(proposal.to_dict()["payload"]) == {
+        "source_type",
+        "source_id",
+        "target_type",
+        "target_id",
+        "link_type",
+    }
+
+
+def test_a_link_request_recovers_both_ends_and_keeps_no_title() -> None:
+    """The extraction side of the same claim, with its provenance attached.
+
+    Each end is cut down to the words that name a row — the determiner and the
+    entity noun go, exactly as they do for a task reference — and each carries an
+    :class:`~app.ml.actions.extraction.Argument` saying which sentence it was
+    read from. ``title`` is ``None`` and ``reason`` is ``None`` together: there
+    was nothing left to name, and that is not a failure of this request.
+    """
+    extraction = extract(
+        "link the note about token rotation to the auth concept", str(Intent.KNOWLEDGE_CAPTURE)
+    )
     assert extraction.verb == ExtractedVerb.CREATE
+    assert extraction.entity == "link"
+    assert extraction.title is None
+    assert extraction.reason is None
+    assert extraction.usable, "a link is a proposal even though it has no title"
+    assert extraction.values["source"] == "token rotation"
+    assert extraction.values["target"] == "auth"
+
+    fields = {argument.field: argument for argument in extraction.arguments}
+    assert "title" not in fields
+    assert fields["source"].matched_text == "link the note about token rotation to the auth concept"
+    assert fields["target"].rule.startswith("the target end of the link")
+
+
+def test_a_link_end_that_names_no_row_is_refused() -> None:
+    """A dangling end is a row nobody will ever see again, so it is not written.
+
+    The matcher answers "no such row" rather than its nearest match, which is the
+    rule every other kind obeys and the reason an unknown end is a refusal the
+    user can act on instead of a silent second-best guess.
+    """
+    refusal = refuse(
+        "link the note about billing to the auth concept",
+        str(Intent.KNOWLEDGE_CAPTURE),
+        ctx=link_context(),
+    )
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
+    assert refusal.kind is ActionKind.CREATE_LINK
+    assert "billing" in refusal.reason
+    assert "source" in refusal.reason
+
+
+def test_a_link_target_that_names_no_row_is_refused_by_name() -> None:
+    """The other end refuses the same way, and says which end it could not read.
+
+    Both ends are named in the refusal because the two are the whole of the
+    request: a user who hears "could not find the source" when the missing word
+    was the second one has learned nothing about how to ask again.
+    """
+    refusal = refuse(
+        "link the ADR note to the note about billing",
+        str(Intent.KNOWLEDGE_CAPTURE),
+        ctx=link_context(),
+    )
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
+    assert "target" in refusal.reason
+    assert "billing" in refusal.reason
+
+
+def test_a_link_end_that_matches_two_rows_is_refused() -> None:
+    """The reference "token rotation" is inside two notes and equal to neither.
+
+    This is the pass the matcher refuses to make: two rows the user could mean,
+    and picking one of them would be a guess about which note the edge belongs to
+    — on a row that will be joined to another row and shown in both.
+    """
+    refusal = refuse(
+        "link the note about token rotation to the auth concept",
+        str(Intent.KNOWLEDGE_CAPTURE),
+        ctx=link_context(),
+    )
+    assert refusal.reason_code == ProposalReason.TARGET_AMBIGUOUS
+    assert "more than one" in refusal.reason
+
+
+def test_an_exact_match_in_one_pool_does_not_out_vote_an_ambiguous_one() -> None:
+    """A certain concept does not settle a reference two notes also match.
+
+    The pools are searched because the endpoint carries its own type, and a
+    unique match in one of them is not a reason to ignore an ambiguous answer in
+    another: the user has a concept called "token rotation" **and** two notes
+    whose titles contain it, and the exact hit is the one row of the three whose
+    identity was never in doubt — not the one they meant. Counting only the
+    successes answers "token rotation" with the concept and never asks.
+    """
+    ctx = link_context(
+        concept_candidates=(
+            RowCandidate(AUTH_CONCEPT_ID, "token rotation"),
+            RowCandidate(DETERMINISM_CONCEPT_ID, "Deterministic scoring"),
+        )
+    )
+    refusal = refuse(
+        "link the note about token rotation to the auth concept",
+        str(Intent.KNOWLEDGE_CAPTURE),
+        ctx=ctx,
+    )
+    assert refusal.reason_code == ProposalReason.TARGET_AMBIGUOUS
+    assert "token rotation" in refusal.reason
+
+
+def test_a_link_resolves_only_against_the_rows_the_caller_offered() -> None:
+    """The candidate lists are the caller's, so no other account's row is reachable.
+
+    The proposal layer never reads the database: it resolves against the rows the
+    router gathered, already owner-scoped, and a row the caller was not offered is
+    a row NEXUS cannot see. The same sentence is the control — it names rows the
+    caller *does* own, and it resolves to exactly those two ids.
+    """
+    proposal = propose(
+        "link the ADR note to the deterministic scoring concept",
+        str(Intent.KNOWLEDGE_CAPTURE),
+        ctx=link_context(),
+    )
+    assert proposal.payload.source_id == ADR_NOTE_ID
+    assert proposal.payload.target_id == DETERMINISM_CONCEPT_ID
+
+    nobody = link_context(note_candidates=(), concept_candidates=())
+    refusal = refuse(
+        "link the ADR note to the deterministic scoring concept",
+        str(Intent.KNOWLEDGE_CAPTURE),
+        ctx=nobody,
+    )
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
+
+
+def test_a_link_to_itself_is_refused_rather_than_written() -> None:
+    """Both ends of an edge are the same row, which the database refuses as a self edge.
+
+    Caught here rather than at confirm time so the confirm dialog never offers a
+    write the service is going to reject — the same round-trip contract every
+    other kind in the table is held to.
+    """
+    refusal = refuse(
+        "link the ADR note to the ADR note", str(Intent.KNOWLEDGE_CAPTURE), ctx=link_context()
+    )
+    assert refusal.reason_code == ProposalReason.PAYLOAD_INVALID
+    assert "same row" in refusal.reason
+
+
+def test_a_bulk_link_request_is_refused() -> None:
+    """A request to link *every* note is a collection, and a collection is not one row.
+
+    Same rule as "delete every task" and for the same reason: an unbounded write
+    needs a count and a preview, and neither travels inside an utterance. It is
+    checked before the routing table, so it holds for a request that never
+    reaches an entity.
+    """
+    refusal = refuse(
+        "link every note to the auth concept", str(Intent.KNOWLEDGE_CAPTURE), ctx=link_context()
+    )
+    assert refusal.reason_code == ProposalReason.DESTRUCTIVE_REQUEST
+    assert not is_proposal(refusal)
+
+
+def test_a_link_with_only_one_named_end_is_refused() -> None:
+    """One end is a bookmark with a URL in it, not an edge.
+
+    This is the case the old refusal described, re-pointed at the request it is
+    actually about: "add a link to https://example.com/rust" names one thing to
+    join and nothing to join it to, so there is no second reference to resolve
+    and the proposal is refused with the reason that says so. A rule that
+    accepted it would have to invent the far end, and the far end is an id.
+    """
+    extraction = extract("Add a link to https://example.com/rust", str(Intent.KNOWLEDGE_CAPTURE))
     assert extraction.entity == "link"
     assert "source" not in extraction.values
     assert "target" not in extraction.values
 
     refusal = refuse(
-        "Add a link from Prune suffix to Async", str(Intent.KNOWLEDGE_CAPTURE), ctx=full_context()
+        "Add a link to https://example.com/rust", str(Intent.KNOWLEDGE_CAPTURE), ctx=link_context()
     )
     assert refusal.reason_code == ProposalReason.FIELD_NOT_RECOVERABLE
     assert "both ends" in refusal.reason
+
+
+def test_a_link_outside_the_knowledge_surface_is_not_a_link() -> None:
+    """A task sentence containing the word is a task request, or nothing at all.
+
+    The extraction is gated on the knowledge intents, because a link is a row of
+    the knowledge base and a task sentence that happens to contain the word is a
+    request about that task. What the classifier said is the surface, and nothing
+    here overrides it — so this one is refused for saying it could not tell what
+    the request asks to be done, which is the truth about it.
+    """
+    extraction = extract(
+        "link the Draft the API contract task to the Run the retro", str(Intent.TASK_MANAGE)
+    )
+    assert extraction.verb == ExtractedVerb.UNKNOWN
+    refusal = refuse(
+        "link the Draft the API contract task to the Run the retro", str(Intent.TASK_MANAGE)
+    )
+    assert refusal.reason_code == ProposalReason.VERB_NOT_RECOVERED
+
+
+def test_deleting_a_link_is_still_a_delete_and_not_a_creation() -> None:
+    """Deleting the link between two rows reads as a delete, and stays one.
+
+    The two shapes share a connector and a word, and the destruction verb is the
+    one that wins: the sentence names a row that exists — the edge — and a
+    proposal that created a second one would be the opposite of the request. The
+    verb is read from the text before the ends are, which is what keeps this one
+    a ``delete_link`` even though both ends are perfectly resolvable.
+    """
+    extraction = extract(
+        "delete the link between the ADR note and the scoring concept",
+        str(Intent.KNOWLEDGE_CAPTURE),
+    )
+    assert extraction.verb == ExtractedVerb.DELETE
+    assert extraction.entity == "link"
+    assert extraction.link is None
+
+    outcome = propose_action(
+        "delete the link between the ADR note and the scoring concept",
+        prediction(str(Intent.KNOWLEDGE_CAPTURE)),
+        context=link_context(),
+    )
+    assert isinstance(outcome, ProposalRefusal)
+    # The row it looks for is the **edge**, not either of its ends: the reference
+    # matcher is given the fragment between the two connector words, and the one
+    # edge in this context is called something else.
+    assert outcome.reason_code == ProposalReason.TARGET_NOT_FOUND
+    assert "ADR" in outcome.reason
 
 
 def test_the_routing_table_and_the_spec_table_describe_the_same_kinds() -> None:

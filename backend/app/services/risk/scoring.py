@@ -120,9 +120,13 @@ def severity_band_descriptions(
     ordered = sorted(thresholds, key=lambda pair: pair[0], reverse=True)
     bands: list[dict[str, Any]] = []
     for index, (floor, severity) in enumerate(ordered):
-        # The floor below is the *next* band's floor minus one, because the
+        # The ceiling is the *band above* this one's floor minus one, because the
         # floors are inclusive: a score of exactly 50 is `high`, not `medium`.
-        ceiling = (ordered[index + 1][0] - 1) if index + 1 < len(ordered) else None
+        # The top band is the exception and has no ceiling — hence the open-ended
+        # `None` and `_band_sentence`'s "or more". Reading `ordered[index + 1]`
+        # instead puts each band's ceiling below its own floor, which is how this
+        # shipped: `critical` 75-49, `medium` 25--1 and an unbounded `low`.
+        ceiling = (ordered[index - 1][0] - 1) if index else None
         bands.append(
             {
                 "severity": severity,

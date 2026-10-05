@@ -834,6 +834,44 @@ Configure the required database and application settings inside `.env`.
 
 Do not commit secrets or your real `.env` file to GitHub.
 
+## Groups
+
+`.env.example` is the annotated, exhaustive list; the table below is the same
+settings grouped by what they control, so a reader can find the one they want
+without reading 400 lines of comments. `Settings` in `backend/app/core/config.py`
+also looks for `.env` in `../.env` and `../../.env`, `backend/run.py` resolves the
+repository-root file from its own location, and `frontend/vite.config.ts` points
+`envDir` at the repository root — so the one file at the root is found by both
+processes regardless of the working directory. Every variable is case-insensitive.
+
+| Group | Variables |
+| --- | --- |
+| Application | `ENVIRONMENT`, `DEBUG`, `APP_NAME`, `APP_VERSION`, `APP_DESCRIPTION` (shown in the OpenAPI schema and the docs UI), `OPENAPI_URL`, `DOCS_URL`, `REDOC_URL`, `API_V1_PREFIX` (the prefix every versioned route is mounted under; change it and `VITE_API_BASE_URL` has to change with it) |
+| Security | `SECRET_KEY`, `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `REFRESH_TOKEN_EXPIRE_DAYS`, `DEV_EXPOSE_RESET_TOKEN` (false — leave it off; true makes `POST /auth/password/forgot` return the raw reset token, which defeats the endpoint's protection against account enumeration) |
+| Accounts, sessions and audit (Phase 2) | `PASSWORD_MIN_LENGTH` (default 8, plus uppercase/lowercase/digit/special), `PASSWORD_RESET_EXPIRE_MINUTES` (30), `SESSION_ABSOLUTE_LIFETIME_DAYS` (30), `MAX_ACTIVE_SESSIONS` (20), `AUDIT_LOG_RETENTION_DAYS` (400 — **declared, not enforced**; no pruning job exists) |
+| Rate limiting | `RATE_LIMIT_ENABLED` (true), `RATE_LIMIT_WINDOW_SECONDS` (60), `RATE_LIMIT_GENERAL_MAX_REQUESTS` (600 per route per address per window), `RATE_LIMIT_CREDENTIAL_MAX_REQUESTS` (120, for `/auth/login` and `/auth/password/forgot`), `RATE_LIMIT_MAX_ENTRIES` (10000 — the backstop that keeps the in-memory store from becoming the leak it prevents), `RATE_LIMIT_TRUST_FORWARDED_FOR` (false — turn it on **only** behind a trusted reverse proxy) |
+| Backend server (read by `backend/run.py`) | `NEXUS_HOST`, `NEXUS_PORT`, `NEXUS_RELOAD` |
+| CORS | `CORS_ORIGINS` (comma-separated, no trailing slashes) |
+| Database | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, `POSTGRES_PORT`, `DATABASE_URL`, `TEST_DATABASE_URL`, `DB_ECHO`, `DB_POOL_SIZE`, `DB_MAX_OVERFLOW`, `DB_POOL_TIMEOUT`, `DB_POOL_RECYCLE`, `DB_PROBE_TIMEOUT_SECONDS`, `DB_CONNECT_TIMEOUT_SECONDS` |
+| Planner (Phase 4) | `PLANNER_DEFAULT_TIMEZONE` (`UTC` — the zone that decides which *day boundaries* a view spans; every stored instant stays UTC), `PLANNER_DAY_START_HOUR` (8), `PLANNER_DAY_END_HOUR` (20) — the fallback working window for a user with no availability rules, `PLANNER_MIN_SESSION_MINUTES` (15), `PLANNER_MAX_SESSION_MINUTES` (240), `PLANNER_MAX_SUGGESTIONS_PER_TASK` (3), `PLANNER_LOOKAHEAD_DAYS` (30) |
+| Analytics (Phase 6) | `ANALYTICS_PRODUCTIVITY_WEIGHT_COMPLETION` (30), `ANALYTICS_PRODUCTIVITY_WEIGHT_DEADLINE` (25), `ANALYTICS_PRODUCTIVITY_WEIGHT_CONSISTENCY` (20), `ANALYTICS_PRODUCTIVITY_WEIGHT_FOCUS` (25) — **these four must sum to 100 or the process refuses to start**. Also `ANALYTICS_COMPARISON_WINDOWS` (`7,30,90` — **read by no code**; the analytics endpoints derive each comparison period from the requested range, so the value is kept only so an existing `.env` still validates), `ANALYTICS_DEFAULT_RANGE_DAYS` (7), `ANALYTICS_MAX_RANGE_DAYS` (366), `ANALYTICS_REBUILD_MAX_DAYS` (180) |
+| Logging | `LOG_LEVEL`, `LOG_JSON`, `LOG_FILE`, `LOG_REQUEST_BODY`, `SLOW_REQUEST_MS` |
+| Frontend — read by the app (only `VITE_*` reaches the browser) | `VITE_API_BASE_URL` (`/api/v1` — keep it **relative** so the browser stays same-origin and the Vite proxy forwards to the backend; an absolute URL bypasses the proxy and puts CORS and cookies back in play) |
+| Frontend — dev server only | `VITE_DEV_PROXY_TARGET` — server-side, read by `frontend/vite.config.ts`; it is never bundled into the browser build |
+| Frontend — **reserved, read by no code** | `VITE_API_SERVER_URL`, `VITE_APP_NAME`, `VITE_ENABLE_COMMAND_PALETTE` — declared in `frontend/src/vite-env.d.ts` and in `.env.example`, but no module in `frontend/src` reads them. They are kept so the names stay stable for whoever wires those features up; changing them has no effect today. |
+| Docker Compose | `BIND_HOST` (default `127.0.0.1`, which prefixes every published port mapping in `docker-compose.yml`), `POSTGRES_CONTAINER_NAME`, `POSTGRES_VOLUME_NAME`, `BACKEND_CONTAINER_NAME`, `FRONTEND_CONTAINER_NAME` |
+| Developer intelligence (Phase 8) | `DEVELOPER_GIT_TIMEOUT_SECONDS` (30), `DEVELOPER_MAX_COMMITS_PER_SCAN` (2000), `DEVELOPER_MAX_REPOSITORIES` (100), `DEVELOPER_DEFAULT_WINDOW_DAYS` (30), `DEVELOPER_MAX_WINDOW_DAYS` (366), `DEVELOPER_ACTIVITY_GRANULARITY_DEFAULT` (`day`), `DEVELOPER_PATH_ALLOWLIST` (unset) |
+| Learning and career (Phase 9) | `LEARNING_DEFAULT_WINDOW_DAYS` (30), `LEARNING_MAX_WINDOW_DAYS` (366), `LEARNING_MAX_GOALS` (200), `LEARNING_MAX_SKILLS` (100), `LEARNING_MIN_EVIDENCE_FOR_ESTIMATE` (3), `CAREER_MAX_EVIDENCE` (500), `CAREER_STALE_INACTIVE_DAYS` (21) |
+| ML integration (Phase 11) | `ML_ENABLED` (true — off means no checkpoint is loaded and the ML endpoints answer `503 ml_unavailable`), `ML_MODEL_PATH` (**empty**, which resolves `<backend>/ml/artifacts/small-model/final` relative to the repository; never a hard-coded absolute path), `ML_DEVICE` (`auto` — CUDA when the machine has a working build, CPU otherwise), `ML_CONFIDENCE_THRESHOLD` (0.90 — an **integration threshold, not a calibrated probability**), `ML_MAX_INPUT_CHARS` (2000), `ML_REJECT_CREDENTIALS` (true), `ML_FAIL_FAST` (false) |
+
+`ML_CONFIDENCE_THRESHOLD` deserves its own note, because 0.90 is easy to misread. It was
+chosen by re-running the Phase 10 checkpoint over the held-out split and measuring what
+each threshold costs and buys. That measurement was taken on synthetic,
+template-generated text. On real user input the model will be less confident and less
+often right, so 0.90 is a starting point to tune against real traffic, not a claim about
+how well the classifier generalises. See [Phase 11](#phase-11--ml-integration) for the
+full table and for what the number does *not* mean.
+
 ---
 
 # Design Principles

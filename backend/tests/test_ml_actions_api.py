@@ -255,6 +255,19 @@ async def _task(
     return response.json()
 
 
+async def _knowledge_row(client: Any, auth: dict[str, Any], path: str, body: dict[str, Any]) -> Any:
+    """Create a note or a concept through its own route.
+
+    A link's two ends are spoken references, so the round trip needs rows that
+    exist **before** the sentence is proposed and that were written the ordinary
+    way rather than inserted into the table — otherwise the test would be proving
+    that a link can join two rows nothing else can make.
+    """
+    response = await client.post(path, json=body, headers=auth["headers"])
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
 async def _event_types(db_session: AsyncSession, owner_id: UUID) -> list[str]:
     """Every activity event recorded for one account, oldest first."""
     rows = (
@@ -918,6 +931,91 @@ async def test_every_creation_kind_round_trips_through_the_same_two_routes(
     stored = await client.get(read_back[0].format(id=result["entity_id"]), headers=read_back[1])
     assert stored.status_code == 200, stored.text
     assert stored.json()["id"] == result["entity_id"]
+
+
+async def test_a_link_spoken_as_a_sentence_is_proposed_and_then_actually_written(
+    client, ada, serving
+) -> None:
+    """The one kind whose payload is four ids: resolved here, and written there.
+
+    Everything else in this file can hand the confirm route a payload it built by
+    hand. A link cannot — its two endpoints are spoken references resolved against
+    the caller's own notes and concepts — so a link that *proposes* but cannot be
+    *confirmed* would be a dialog offering a write the backend refuses, which is
+    the one outcome worth more than the honest refusal this kind used to give.
+
+    So the whole path is exercised: two rows the caller owns are created through
+    their own routes, the sentence names them, the proposal carries their ids,
+    and confirming it leaves an edge that ``GET /knowledge/links`` serves back
+    from the note's side. The next test is the same sentence asked by an account
+    that owns neither row.
+    """
+    note = await _knowledge_row(client, ada, "/api/v1/knowledge/notes", {"title": "ADR note"})
+    concept = await _knowledge_row(
+        client, ada, "/api/v1/knowledge/concepts", {"name": "Deterministic scoring"}
+    )
+
+    with serving(NOTE_INTENT):
+        proposed = await _propose(
+            client, ada, text="link the ADR note to the deterministic scoring concept"
+        )
+
+    proposal = proposed["proposal"]
+    assert proposal["kind"] == "create_link", proposed
+    assert proposal["payload"]["source_id"] == note["id"]
+    assert proposal["payload"]["source_type"] == "note"
+    assert proposal["payload"]["target_id"] == concept["id"]
+    assert proposal["payload"]["target_type"] == "concept"
+    assert "title" not in proposal["payload"]
+    assert proposal["requires_confirmation"] is True
+    assert proposal["destructive"] is False
+
+    result = await _confirm(
+        client,
+        ada,
+        kind=proposal["kind"],
+        intent=proposal["intent"],
+        payload=proposal["payload"],
+    )
+    assert result["outcome"] == "created", result
+    assert result["entity"] == "link"
+
+    stored = await client.get(
+        "/api/v1/knowledge/links",
+        params={"source_type": "note", "source_id": note["id"]},
+        headers=ada["headers"],
+    )
+    assert stored.status_code == 200, stored.text
+    edges = stored.json()["items"]
+    assert len(edges) == 1, stored.text
+    assert edges[0]["target_id"] == concept["id"]
+    assert edges[0]["source_id"] == note["id"]
+
+
+async def test_a_link_spoken_by_an_account_that_owns_neither_end_is_refused(
+    client, ada, grace, serving
+) -> None:
+    """The candidate pools are owner-scoped, so a foreign row cannot be linked.
+
+    The confirmation that matters is the one that is *absent*: Grace owns no note
+    called "ADR note" and no concept called "Deterministic scoring", so the
+    matcher has nothing to resolve either end against and the request is refused
+    with a reason rather than resolved against a row the caller may not see. Ada
+    already proved the same sentence succeeds for the account that owns both
+    ends, so the difference between the two answers is ownership and nothing else.
+    """
+    await _knowledge_row(client, ada, "/api/v1/knowledge/notes", {"title": "ADR note"})
+    await _knowledge_row(
+        client, ada, "/api/v1/knowledge/concepts", {"name": "Deterministic scoring"}
+    )
+
+    with serving(NOTE_INTENT):
+        proposed = await _propose(
+            client, grace, text="link the ADR note to the deterministic scoring concept"
+        )
+
+    assert proposed["proposed"] is False, proposed
+    assert proposed["refusal"]["reason_code"] == "target_not_found", proposed
 
 
 # --------------------------------------------------------------------------- #

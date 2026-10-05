@@ -21,7 +21,7 @@ changed behaviour.
 ```text
 raw rows (tasks, work_sessions, calendar_events, notes, activity_events)
   ↓  AnalyticsService.rebuild_range()  — one grouped query per source, upserted in one statement
-daily_metrics (one row per user per UTC day)
+daily_metrics (one row per user per calendar day, cut at the database's local midnight)
   ↓  pure scoring functions in analytics/scoring.py
 derived metrics + previous-period comparisons
   ↓  18 endpoints under /api/v1/analytics
@@ -65,11 +65,24 @@ counter are identical, and that the unique constraint is what makes it safe.
 
 ### Day boundaries
 
-Cut at **UTC midnight**, spelled as `func.date(<ts> AT TIME ZONE 'UTC')` in every grouped
-query. Calling `func.date()` on a `timestamptz` without naming a zone converts through the
+Cut at the **database server's** local midnight, spelled as
+`func.date(<ts> AT TIME ZONE current_setting('TimeZone'))` in every grouped query and
+`CAST(:day AS TIMESTAMP) AT TIME ZONE current_setting('TimeZone')` for every window bound.
+Calling `func.date()` on a `timestamptz` without naming a zone converts through the
 connection's `TimeZone` setting first, so the answer would silently depend on how the
-connection was configured. Pinned by a test that seeds a session at 23:59 UTC and one at
-00:01 UTC the next day and asserts they land in different rows.
+connection was configured; naming the zone makes it a property of the query instead.
+
+This was **UTC midnight** — `func.date(<ts> AT TIME ZONE 'UTC')` — when this report was
+written, on the reasoning that every stored instant is UTC and a fixed cut therefore needs
+no tzdata lookup. That stopped holding once `AnalyticsRepository.today()` began resolving
+"today" from the server's clock: the router resolved the dashboard's window as *today*
+while the rows were filed under *yesterday*, for five and a half hours a day on a `+05:30`
+host. A daily figure now belongs to the day its owner experienced.
+
+Pinned by tests that seed sessions at 23:59 and 00:01 in the *server's* zone and assert they
+land in different rows, and — in `tests/test_analytics_day_agreement.py` — that two figures
+computed from one row on one `/overview` response cannot disagree about which day it fell
+on.
 
 ### Event architecture
 
@@ -254,7 +267,7 @@ frontend/src/pages/dashboard-page.test.tsx                         10
 Coverage follows the brief's TESTING section: daily/weekly/monthly calculations, all four
 scores, deadline adherence, estimation accuracy, project metrics, project velocity,
 workload, time distribution, date-range filtering, granularity bucketing, empty datasets,
-zero division, UTC boundaries, user isolation across all 18 endpoints, and CSV export.
+zero division, day boundaries, user isolation across all 18 endpoints, and CSV export.
 
 The brief's worked examples are asserted **exactly**, not approximately:
 

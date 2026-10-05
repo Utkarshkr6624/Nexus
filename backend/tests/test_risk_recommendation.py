@@ -1570,9 +1570,11 @@ async def test_a_terminal_recommendation_refuses_a_further_transition_naming_its
     """The conflict has to say which state the row is in, or the message is useless.
 
     A rejection is terminal: the user has answered, and re-opening the same row
-    would overwrite the label that makes it worth having. The message quotes the
-    current status and the target, both exactly, because this string is what the
-    API surfaces to the person who pressed the button.
+    would overwrite the label that makes it worth having. The message names the
+    state and the move in words the reader already uses — "was declined", "marked
+    as accepted" — because this string is what the API surfaces to the person
+    who pressed the button, and the bare enum members told them two machine words
+    and no sentence. The machine-readable pair stays on ``details``.
     """
     fixture = await _build("reduce_workload", seed, risks, owner, service)
     await service.reject(owner=owner, recommendation_id=fixture.primary.id)
@@ -1580,7 +1582,11 @@ async def test_a_terminal_recommendation_refuses_a_further_transition_naming_its
     with pytest.raises(ConflictError) as raised:
         await service.accept(owner=owner, recommendation_id=fixture.primary.id)
 
-    assert str(raised.value) == ("This recommendation is rejected and cannot be moved to accepted.")
+    assert (
+        str(raised.value) == "This recommendation was declined, so it cannot be marked as accepted."
+    )
+    assert raised.value.details["status"] == RecommendationStatus.REJECTED.value
+    assert raised.value.details["target"] == RecommendationStatus.ACCEPTED.value
 
 
 async def test_a_completed_recommendation_cannot_be_viewed_afterwards(
@@ -1600,7 +1606,7 @@ async def test_a_completed_recommendation_cannot_be_viewed_afterwards(
     with pytest.raises(ConflictError) as raised:
         await service.view(owner=owner, recommendation_id=fixture.primary.id)
 
-    assert str(raised.value) == ("This recommendation is completed and cannot be moved to viewed.")
+    assert str(raised.value) == "This recommendation was completed, so it cannot be marked as read."
 
 
 async def test_transitioning_a_recommendation_that_does_not_exist_is_not_found(

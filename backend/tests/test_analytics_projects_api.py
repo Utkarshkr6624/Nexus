@@ -773,6 +773,30 @@ TASK_WINDOW = {
 #: whenever the suite runs.
 TASK_WINDOW_DUE_DATE = DAY + timedelta(days=2)
 
+#: The task window as dates, for the callers that hand it to a route other than
+#: a ``GET``.
+TASK_WINDOW_DAYS = (DAY, DAY + timedelta(days=6))
+
+
+async def _rebuild(client, headers: dict[str, str]) -> None:
+    """Aggregate the task window, which is what ``GET /analytics/tasks`` reads.
+
+    Several of that route's figures — ``tasks_created``, ``tasks_completed``,
+    ``tasks_rescheduled``, ``tasks_overdue`` — are sums of the rows in
+    ``daily_metrics``, and no read route writes there any more: a ``GET`` that
+    filled the window it was asked about made every dashboard request a writer,
+    and let an account that had never been rebuilt claim it was measured through
+    a window it never had. A test that wants those counters therefore has to ask
+    for the aggregation, exactly as a client does.
+    """
+    start, end = TASK_WINDOW_DAYS
+    response = await client.post(
+        "/api/v1/analytics/rebuild",
+        params={"start_date": start.isoformat(), "end_date": end.isoformat()},
+        headers=headers,
+    )
+    assert response.status_code == 202, response.text
+
 
 async def _seed_task_board(seed: AnalyticsSeed):
     """Six tasks covering every status, with known events and tracked minutes.
@@ -891,9 +915,14 @@ async def test_task_analytics_counts_creation_completion_and_the_backlog(client,
     * ``completion_rate`` 33.3333 — 2 completions over the 6 tasks created in
       the window.
     * ``overdue_rate`` 16.6667 — 1 over those same 6.
+
+    Every "in the window" figure above is a sum of the stored daily aggregates,
+    so the window is aggregated first: reading it without a rebuild would report
+    zeroes from an empty table rather than the seeded board.
     """
     seed, auth = await seeded_client(client, db_session)
     await _seed_task_board(seed)
+    await _rebuild(client, auth)
 
     response = await client.get("/api/v1/analytics/tasks", params=TASK_WINDOW, headers=auth)
 
@@ -970,9 +999,14 @@ async def test_one_tasks_recorded_events_are_counted_in_the_window(client, db_se
     behind — so the feed is the only honest source and the window total is the
     sum of the events that fall inside it. ``slow`` carries the three
     reschedules; ``stuck`` carries the block.
+
+    The events are folded into ``daily_metrics`` by the rebuild, so a window that
+    was never aggregated reports none of them — which is why the aggregation is
+    explicit here rather than left to whichever route happened to be called.
     """
     seed, auth = await seeded_client(client, db_session)
     await _seed_task_board(seed)
+    await _rebuild(client, auth)
 
     response = await client.get("/api/v1/analytics/tasks", params=TASK_WINDOW, headers=auth)
 

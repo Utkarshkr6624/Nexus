@@ -33,15 +33,16 @@ seam Phase 10 calls — ``models/analytics.py`` says so.
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, date, timedelta
+from datetime import UTC, date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import Date, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.models.enums import ActivityEvent, CalendarEventType, TaskStatus
-from app.models.planner import CalendarEvent
+from app.models.planner import CalendarEvent, WorkSession
 from app.repositories.analytics import AnalyticsRepository
 from app.repositories.knowledge import NoteRepository
 from app.repositories.planner import (
@@ -77,21 +78,62 @@ END = DAY + timedelta(days=6)
 
 
 async def db_today(session: AsyncSession) -> date:
-    """Today on the *database* clock, normalised to UTC.
+    """Today on the *database* clock, in the database's own calendar.
 
     ``feature_snapshot`` and the overdue drill-down both read "now" from
     ``SELECT now()`` so a deadline agrees with the rest of the system, which
     means the expected figures have to be derived from the same clock rather than
     from ``date.today()`` on the test host.
 
-    Normalised to UTC because ``now()`` is a ``timestamptz`` returned **labelled
-    with the connection's** ``TimeZone`` — ``Asia/Calcutta`` on this server — so a
-    bare ``.date()`` on it is the server-local day, while the service converts to
-    UTC before taking the date. The two differ for five and a half hours out of
-    every twenty-four, and every figure derived from ``today`` would then be off
-    by one day for exactly that stretch of the evening.
+    **Not** normalised to UTC, which is what this once did. ``now()`` is a
+    ``timestamptz`` returned labelled with the connection's ``TimeZone``, so a
+    bare ``.date()`` on it is the server-local day — which is now exactly what
+    :meth:`AnalyticsRepository.today` returns. Converting first put the two a
+    whole day apart for five and a half hours out of every twenty-four, and
+    every figure derived from ``today`` would then be off by one for exactly that
+    stretch of the evening.
     """
-    return (await session.scalar(select(func.now()))).astimezone(UTC).date()
+    return await session.scalar(select(func.now().cast(Date)))
+
+
+async def db_zone(session: AsyncSession) -> ZoneInfo:
+    """The calendar ``feature_snapshot`` reads an hour-of-day in.
+
+    Asked of the database rather than assumed: ``time_of_day`` is the hour in the
+    server's zone, so a fixture that means "the user started at 14:00" has to mean
+    it in *that* calendar. Asking keeps the expectation independent of the
+    server's offset.
+    """
+    return ZoneInfo(str(await session.scalar(select(func.current_setting("TimeZone")))))
+
+
+async def work_session_at_local_hour(
+    session: AsyncSession,
+    seed: AnalyticsSeed,
+    *,
+    day: date,
+    hour: int,
+    minutes: int,
+    task_id: uuid.UUID | None = None,
+) -> WorkSession:
+    """A work session starting at ``hour`` in the server's own calendar.
+
+    ``AnalyticsSeed.work_session`` builds its start as a **UTC** instant, so its
+    ``start_hour`` names a different hour of the day from the one the caller
+    means once the day is cut locally — ``14`` is 19:30 in ``Asia/Calcutta``.
+    ``time_of_day`` is read from the server's calendar, so a fixture that pins it
+    has to place the session in that calendar or accept a figure that moves with
+    the server's offset.
+    """
+    zone = await db_zone(session)
+    start = datetime(day.year, day.month, day.day, hour, tzinfo=zone).astimezone(UTC)
+    row = await seed.work_session(day=day, minutes=minutes, task_id=task_id)
+    row.scheduled_start = start
+    row.scheduled_end = start + timedelta(minutes=minutes)
+    row.actual_start = start
+    row.actual_end = start + timedelta(minutes=minutes)
+    await seed.flush()
+    return row
 
 
 async def study_block(seed: AnalyticsSeed, *, day: date, minutes: int = 45) -> CalendarEvent:
@@ -172,7 +214,8 @@ async def test_a_bare_row_and_a_fully_measured_row_carry_the_same_version(db_ses
     bare one is ``estimated_minutes=None``, ``deadline_distance_days=None``,
     ``time_of_day=None``, ``actual_minutes=None``, ``recent_work_minutes=None``
     and ``work_session_count=0``; the measured one carries 60 estimated minutes,
-    45 actual and 45 recent, one session, ``time_of_day=14``, a deadline
+    45 actual and 45 recent, one session, ``time_of_day=14`` — the hour in the
+    *server's* calendar, which is where the session was placed — a deadline
     ``deadline_distance_days`` days out and ``reschedule_count=0``. The version
     must be identical for both, because it describes the extractor and not the
     task.
@@ -188,7 +231,9 @@ async def test_a_bare_row_and_a_fully_measured_row_carry_the_same_version(db_ses
         estimated_minutes=60,
         actual_minutes=45,
     )
-    await seed.work_session(day=DAY, minutes=45, task_id=measured.id, start_hour=14)
+    await work_session_at_local_hour(
+        db_session, seed, day=DAY, hour=14, minutes=45, task_id=measured.id
+    )
 
     bare_snapshot = await service.feature_snapshot(owner=owner, task_id=bare.id)
     measured_snapshot = await service.feature_snapshot(owner=owner, task_id=measured.id)

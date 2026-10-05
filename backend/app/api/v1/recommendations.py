@@ -118,7 +118,9 @@ async def list_recommendations(
     risks: RiskRepositoryDep,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
     offset: Annotated[int, Query(ge=0)] = 0,
-    recommendation_status: Annotated[list[RecommendationStatus] | None, Query(alias="status")] = None,
+    recommendation_status: Annotated[
+        list[RecommendationStatus] | None, Query(alias="status")
+    ] = None,
     recommendation_type: Annotated[list[RecommendationType] | None, Query()] = None,
 ) -> RecommendationListRead:
     """One page of suggestions, ordered by priority and then by age.

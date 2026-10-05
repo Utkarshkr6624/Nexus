@@ -4,7 +4,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { ChartShell, ChartTooltip } from '@/features/analytics/components/chart-shell'
 import { ChartDataTable } from '@/features/analytics/components/chart-data-table'
 import { EmptyAnalytics } from '@/features/analytics/components/empty-analytics'
-import { describeSeries, formatChartValue } from '@/features/analytics/chart-theme'
+import { chartNumber, describeSeries, formatChartValue } from '@/features/analytics/chart-theme'
 import { chartColor, formatMinutes, formatPercent } from '@/features/analytics/format'
 import type { TimeBucketRead } from '@/types/analytics'
 
@@ -70,18 +70,36 @@ export function TimeDistributionChart({
   className,
   maxSlices = 6,
 }: TimeDistributionChartProps) {
-  const meaningful = buckets.filter((bucket) => bucket.minutes > 0)
+  /**
+   * Each bucket's minutes, read once, where the response object is still in hand.
+   *
+   * `bucket.minutes > 0` and `total + bucket.minutes` below both reach `ToNumber`
+   * on a wire value, and on a nested object that throws `Cannot convert object to
+   * primitive value` — the same crash `chartNumber` exists to stop, here before
+   * the donut is even described. A bucket whose minutes cannot be read is
+   * **dropped** rather than drawn: a wedge sized from a value nobody could read
+   * is a shape asserting a share of the user's time, and the legend prints that
+   * share next to a label. Nothing is invented to replace it.
+   */
+  const readable = buckets
+    .map((bucket) => ({ bucket, minutes: chartNumber(bucket.minutes) }))
+    .filter((row): row is { bucket: TimeBucketRead; minutes: number } => row.minutes !== null)
+
+  const assignedTotal = chartNumber(unassignedMinutes)
+  const reportedTotal = chartNumber(totalMinutes)
+
+  const meaningful = readable.filter((row) => row.minutes > 0)
 
   // Beyond a handful of slices the donut stops being readable, so the tail is
   // summed into one named slice and shown as such rather than silently dropped.
   const head = meaningful.slice(0, maxSlices)
   const tail = meaningful.slice(maxSlices)
-  const tailMinutes = tail.reduce((total, bucket) => total + bucket.minutes, 0)
+  const tailMinutes = tail.reduce((total, row) => total + row.minutes, 0)
 
-  const slices: DonutSlice[] = head.map((bucket, index) => ({
-    key: bucket.key || bucket.label,
-    label: bucket.label,
-    value: bucket.minutes,
+  const slices: DonutSlice[] = head.map((row, index) => ({
+    key: row.bucket.key || row.bucket.label,
+    label: row.bucket.label,
+    value: row.minutes,
     color: chartColor(index),
   }))
   if (tailMinutes > 0) {
@@ -92,17 +110,20 @@ export function TimeDistributionChart({
       color: chartColor(head.length),
     })
   }
-  if (unassignedMinutes > 0) {
+  if (assignedTotal !== null && assignedTotal > 0) {
     slices.push({
       key: '__unassigned',
       label: 'Unassigned',
-      value: unassignedMinutes,
+      value: assignedTotal,
       color: chartColor(slices.length),
     })
   }
 
   const empty = slices.length === 0
-  const total = totalMinutes || slices.reduce((sum, slice) => sum + slice.value, 0)
+  // The backend's own total when it is readable, and otherwise the sum of the
+  // buckets actually drawn — a real figure, rather than a zero that would print
+  // every share as "no share" for a window that plainly has some.
+  const total = reportedTotal || slices.reduce((sum, slice) => sum + slice.value, 0)
 
   const description = `${describeSeries(
     'Recorded time',

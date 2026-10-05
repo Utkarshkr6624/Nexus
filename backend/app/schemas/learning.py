@@ -677,7 +677,7 @@ class SkillWrite(BaseModel):
         max_length=120,
         description="The user's own name for the skill. A single technology or "
         "discipline; a paragraph about it belongs in `description`. Trimmed, so "
-        "`\"  FastAPI  \"` is the skill `FastAPI` rather than a second row beside "
+        '`"  FastAPI  "` is the skill `FastAPI` rather than a second row beside '
         "it. Unique within this account, and a duplicate is a 409 rather than a "
         "silently merged row.",
     )
@@ -749,6 +749,7 @@ class SkillUpdate(BaseModel):
         column is ``NOT NULL`` and the duplicate lookup keys on it.
         """
         return _trimmed(value)
+
     category: str | None = Field(
         default=None,
         max_length=64,

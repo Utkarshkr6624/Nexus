@@ -1116,11 +1116,20 @@ async def test_a_fresh_account_gets_the_documented_empty_overview(client, db_ses
 
     The first account is seeded first, so the table really does hold another
     user's rows while this one is asked for the dashboard.
+
+    The window is aggregated for this account explicitly, because ``/overview``
+    is a read and never writes: with nothing aggregated, ``daily`` comes back
+    empty and the privacy claim below would be satisfied by a route that had
+    simply produced no rows. Aggregating first is what puts this account's own
+    zero row on every day of the window, which is the state a leaking query
+    would turn into another user's figures.
     """
     world = await _seed_world(client, db_session)
     _seed, headers = await seeded_client(
         client, db_session, username="carol", email="carol-isolation@nexus.test"
     )
+    rebuilt = await client.post("/api/v1/analytics/rebuild", params=WINDOW, headers=headers)
+    assert rebuilt.status_code == 202, rebuilt.text
 
     response = await client.get("/api/v1/analytics/overview", params=WINDOW, headers=headers)
 
@@ -1134,11 +1143,11 @@ async def test_a_fresh_account_gets_the_documented_empty_overview(client, db_ses
     assert {point["current"] for point in body["totals"]} == {0.0}
     assert {point["label"] for point in body["totals"]} == set(TRENDABLE_METRICS)
     # `daily` is populated, but every counter in it is this account's own zero.
-    # `/overview` completes the window before reading it, so a never-aggregated
-    # window comes back as one row of zeroes per day rather than as an empty
-    # list — "nothing happened" and "never computed" are different states, and
-    # this endpoint now answers the second by doing the work. The privacy claim
-    # under test is that none of those rows carry another user's figures.
+    # The window was aggregated for this account alone, so a never-aggregated
+    # day comes back as one row of zeroes per day rather than as an empty list —
+    # "nothing happened" and "never computed" are different states. The privacy
+    # claim under test is that none of those rows carry another user's figures,
+    # and it is only a real claim because the rows exist.
     assert body["daily"]
     assert all(all(row[key] == 0 for key in TRENDABLE_METRICS) for row in body["daily"])
     assert [row["metric_date"] for row in body["daily"]] == [
@@ -1155,12 +1164,15 @@ async def test_a_fresh_account_gets_the_documented_empty_overview(client, db_ses
     assert body["estimation"]["available"] is False
     assert body["estimation"]["sample_count"] == 0
     assert body["reason_if_empty"].startswith("Not enough activity yet")
-    # The window had to be computed on this request, which is precisely what
-    # `stale` reports. Every score above is still unavailable and the totals are
-    # still zero: `stale` describes the state of the *aggregates*, not the
-    # user's activity, and conflating the two would tell a brand-new user they
-    # have out-of-date data rather than none.
-    assert body["stale"] is True
+    # The window was aggregated a moment ago and this account has recorded
+    # nothing since, so the dashboard reports itself as current — and
+    # `aggregates_through` names *this* account's rebuild, not the first
+    # account's rows read back. Every score above is still unavailable and the
+    # totals are still zero: "no data" and "measured, and the measurement is
+    # empty" are different answers, and this response is both.
+    assert body["stale"] is False
+    assert body["is_stale"] is False
+    assert body["aggregates_through"] == WINDOW_END.isoformat()
     world.assert_no_alpha_data(body, where="/overview (empty account)")
 
 

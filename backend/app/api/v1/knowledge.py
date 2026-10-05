@@ -224,15 +224,13 @@ def _only(*allowed: str) -> Any:
     Returns:
         A dependency callable for a route's ``dependencies=[...]``.
     """
-
     permitted = frozenset(allowed)
 
     async def _guard(request: Request) -> None:
         unknown = sorted(set(request.query_params) - permitted)
         if unknown:
             raise ValidationError(
-                f"Unknown query parameter{'s' if len(unknown) > 1 else ''}: "
-                f"{', '.join(unknown)}.",
+                f"Unknown query parameter{'s' if len(unknown) > 1 else ''}: {', '.join(unknown)}.",
                 details={"fields": unknown, "allowed": sorted(permitted)},
             )
 
@@ -1580,10 +1578,12 @@ async def search_knowledge(
         ),
     ],
     type_: Annotated[
-        KnowledgeEntityType | None,
+        KnowledgeSearchKind | None,
         Query(
             alias="type",
-            description="Restrict the search to one kind of knowledge object.",
+            description="Restrict the search to one kind of knowledge object. Wider "
+            "than the graph's entity types: a bookmark and a document are both "
+            "searchable even though neither is a node an edge may point at.",
         ),
     ] = None,
     limit: Annotated[

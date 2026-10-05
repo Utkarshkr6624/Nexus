@@ -146,6 +146,7 @@ from app.models.knowledge import (
     note_tags,
 )
 from app.models.tag import Tag
+from app.schemas.knowledge import KnowledgeSearchKind
 from tests.analytics_fixtures import seeded_client
 
 pytestmark = pytest.mark.integration
@@ -1001,8 +1002,8 @@ async def test_search_never_returns_another_accounts_notes(client, db_session):
     assert str(grace_note["id"]) not in response.text
 
 
-async def test_search_covers_bookmarks_as_well_as_the_other_three_kinds(client, db_session):
-    """An unfiltered search looks at all four kinds, bookmarks included.
+async def test_search_covers_bookmarks_as_well_as_the_other_kinds(client, db_session):
+    """An unfiltered search looks at every kind a search may look in.
 
     Regression. The list of kinds was the *graph's* list — a bookmark is not a
     node, so it cannot be drawn — and the search inherited it, which left
@@ -1033,8 +1034,54 @@ async def test_search_covers_bookmarks_as_well_as_the_other_three_kinds(client, 
     narrowed = await client.get(
         f"{KNOWLEDGE}/search", params={"q": "Pruner suffix", "type": "note"}, headers=auth
     )
+    assert narrowed.status_code == 200, narrowed.text
     assert [item["id"] for item in narrowed.json()["notes"]] == [note["id"]]
     assert narrowed.json()["bookmarks"] == []
+
+
+async def test_the_search_type_filter_accepts_every_kind_the_search_looks_in(client, db_session):
+    """``?type=`` is as wide as the search itself, so no kind is a 422.
+
+    Regression, and a worse shape than the one above. ``?type=`` was annotated
+    with :class:`~app.models.enums.KnowledgeEntityType` — the *graph's* node
+    types — while the service underneath it coerced through
+    :func:`~app.services.knowledge_service._search_kind_or_none` and knew five
+    kinds. FastAPI validated the query string before the handler was ever
+    reached, so ``GET /knowledge/search?q=x&type=bookmark`` answered **422** for
+    exactly the kind the same response fills in unfiltered: a filter that refuses
+    the one value that would have been legal, and whose absence the unfiltered
+    answer does nothing to reveal.
+
+    Asserting every member of ``KnowledgeSearchKind`` is what keeps the router
+    and the service from drifting apart again — the service side already had the
+    wider set and said so, and nothing checked that the router agreed.
+    """
+    _, auth = await seeded_client(client, db_session)
+
+    for kind in KnowledgeSearchKind:
+        response = await client.get(
+            f"{KNOWLEDGE}/search", params={"q": "Pruner suffix", "type": kind.value}, headers=auth
+        )
+        assert response.status_code == 200, f"{kind.value}: {response.text}"
+
+
+async def test_the_search_type_filter_still_refuses_a_kind_no_search_covers(
+    client, db_session, assert_error_envelope
+):
+    """``?type=category`` is a 422, because a category is a label with no text.
+
+    The widening above is not "accept anything": a category holds no free text to
+    match, so it is absent from the search kind vocabulary and asking for it is
+    still the refusal it was. Both halves are asserted because only having one
+    would let a regression hide in the other.
+    """
+    _, auth = await seeded_client(client, db_session)
+
+    response = await client.get(
+        f"{KNOWLEDGE}/search", params={"q": "Pruner suffix", "type": "category"}, headers=auth
+    )
+
+    assert_error_envelope(response, status_code=422, code="validation_error")
 
 
 async def test_a_search_term_is_matched_literally_rather_than_as_a_wildcard(client, db_session):

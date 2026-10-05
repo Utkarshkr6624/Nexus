@@ -1665,6 +1665,13 @@ def _resolve_link_endpoints(
     match supplies both the id *and* the type. Zero matches and several matches
     are refusals, which is the same rule every other row obeys — an edge to a
     guessed endpoint is a dangling row nobody will ever see again.
+
+    An **ambiguous** pool counts as a match NEXUS will not make rather than as no
+    match at all. Collecting only the successes — which is what the two answers
+    used to be built from — reports "nothing matches" about a reference that
+    matched two rows, and it lets a single concept out-vote two equally good
+    notes because only one of the three pools came back certain. Both are the
+    same wrong answer: an endpoint picked without asking.
     """
     resolved: list[_Endpoint] = []
     for which in ("source", "target"):
@@ -1675,21 +1682,24 @@ def _resolve_link_endpoints(
                 f"A link needs both ends named, and NEXUS could not tell which row is the {which}.",
             )
         hits = []
+        ambiguous = False
         for entity, field in _LINK_POOLS:
             match = match_reference(reference, getattr(context, field))
-            if not isinstance(match, RowMatchFailure):
+            if isinstance(match, RowMatchFailure):
+                ambiguous = ambiguous or match.reason_code == "ambiguous"
+            else:
                 hits.append(_Endpoint(entity, match.candidate.id, match.candidate.label))
+        if ambiguous or len(hits) > 1:
+            return _Refused(
+                ProposalReason.TARGET_AMBIGUOUS,
+                f"'{reference}' matches more than one row as the {which}, and NEXUS "
+                "will not pick between them.",
+            )
         if not hits:
             return _Refused(
                 ProposalReason.TARGET_NOT_FOUND,
                 f"Nothing in your notes or concepts matches the {which} '{reference}', "
                 "so NEXUS will not link a row it would have to guess at.",
-            )
-        if len(hits) > 1:
-            return _Refused(
-                ProposalReason.TARGET_AMBIGUOUS,
-                f"'{reference}' matches more than one row as the {which}, and NEXUS "
-                "will not pick between them.",
             )
         resolved.append(hits[0])
     source, target = resolved
@@ -1834,7 +1844,14 @@ def propose_action(
         unroutable = _unroutable(verb, intent, entity)
         return refuse(unroutable.reason_code, unroutable.reason)
 
-    if extraction.title is None:
+    # A knowledge link is the one kind with no title to recover: the utterance
+    # names two rows and no name, and the payload is four typed ids rather than a
+    # string. Its extractor has already cut both ends out of the sentence, so
+    # there is nothing left for a title to be invented from and the check below
+    # would refuse the one request whose subject *is* complete. Every other kind
+    # keeps the rule, which is what makes "a title is recovered or refused, never
+    # invented" true of all thirty-seven others.
+    if extraction.title is None and spec.kind is not ActionKind.CREATE_LINK:
         return refuse(
             ProposalReason.TITLE_NOT_RECOVERABLE,
             extraction.reason or "NEXUS could not recover a title.",

@@ -1147,8 +1147,7 @@ class TaskService:
         # Read before the delete for the same reason: the edge rows go with the
         # task, and after it there is nothing left to ask.
         dependents = [
-            (row.id, row.project_id)
-            for row in await self.list_dependents(task=task, owner=owner)
+            (row.id, row.project_id) for row in await self.list_dependents(task=task, owner=owner)
         ]
         await self.repository.delete(task)
         # ``task_id`` is deliberately NOT passed. ``ON DELETE SET NULL`` only

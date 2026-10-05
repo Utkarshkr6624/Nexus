@@ -35,6 +35,7 @@ import {
   TrendChart,
 } from '@/features/analytics/components'
 import type { ChartRow } from '@/features/analytics/components'
+import { chartNumber } from '@/features/analytics/chart-theme'
 import {
   useAnalyticsStaleness,
   useAnalyticsWindow,
@@ -440,11 +441,7 @@ function OverviewTab({
               valueName="events"
               days={overview.daily.map((row) => ({
                 date: row.metric_date,
-                value:
-                  row.tasks_completed +
-                  row.work_sessions +
-                  row.calendar_events +
-                  row.knowledge_events,
+                value: dayEventTotal(row),
               }))}
             />
 
@@ -1231,6 +1228,32 @@ function KnowledgeTab({
 }
 
 /* -------------------------------------------------------------- small pieces */
+
+/**
+ * Everything recorded on one day, as the Active days grid counts it.
+ *
+ * `+` on a wire value reaches `ToNumber` on each operand, so a nested object
+ * where a figure was expected threw `TypeError: Cannot convert object to
+ * primitive value` and took the Overview tab to its error boundary. Each term is
+ * read through `chartNumber` instead.
+ *
+ * **One unreadable term makes the whole day unreadable.** Summing the other
+ * three would produce a smaller, entirely plausible number for a day whose real
+ * total is unknown, and the grid would shade that day as if it had been
+ * measured — which is the one thing a count of active days must not do. `null`
+ * says "not measured"; the grid prints `—` for it and leaves it out of the
+ * active-day total.
+ */
+function dayEventTotal(row: DailyMetricRead): number | null {
+  const parts = [
+    chartNumber(row.tasks_completed),
+    chartNumber(row.work_sessions),
+    chartNumber(row.calendar_events),
+    chartNumber(row.knowledge_events),
+  ]
+  if (parts.some((part) => part === null)) return null
+  return parts.reduce<number>((sum, part) => sum + (part ?? 0), 0)
+}
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

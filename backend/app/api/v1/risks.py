@@ -102,6 +102,7 @@ from app.repositories.risk import RiskRepository, allowed_risk_transitions
 from app.schemas.risk import RiskListRead, RiskRead, RiskSummaryRead
 from app.services.activity_service import ActivityService
 from app.services.risk.detection import ENTITY_PROJECT, ENTITY_TASK
+from app.services.risk.scoring import severity_band_descriptions
 
 __all__ = ["router"]
 
@@ -419,9 +420,21 @@ async def risk_summary(
     An account with nothing flagged gets ``200`` with five zeroes and
     ``needs_attention: false``. That is a real answer rather than an error, and
     it is the good news the widget exists to deliver.
+
+    ``severity_bands`` travels with the counts because the four band names carry
+    no meaning on their own — a client that wants to say why a risk is critical
+    has nothing to say until somebody states the ladder. It is the same ladder
+    :func:`app.services.risk.scoring.risk_severity_for` classifies with, derived
+    rather than restated here, so a deployment that retunes one retunes both.
     """
     counts = await risks.count_by_severity(current_user.id, statuses=list(LIVE_RISK_STATUSES))
-    return RiskSummaryRead(**counts, total=sum(counts.values()))
+    return RiskSummaryRead(
+        **counts,
+        total=sum(counts.values()),
+        # Already in ``SeverityBandRead``'s shape; the response model is what
+        # checks it, rather than a second construction here.
+        severity_bands=severity_band_descriptions(),
+    )
 
 
 @router.get(

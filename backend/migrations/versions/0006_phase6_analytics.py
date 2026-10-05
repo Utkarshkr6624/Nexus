@@ -45,14 +45,25 @@ What the one table buys is that a dashboard read is one indexed probe into a
 table bounded by (days x users) instead of a re-scan of ``activity_events``,
 ``work_sessions``, ``tasks`` and ``calendar_events`` on every render.
 
-``metric_date`` is a UTC day
------------------------------
-A bare ``Date``, cut at UTC midnight, because every stored instant above it is
-timezone-aware UTC (see ``app/models/planner.py``). Cutting there needs no
-tzdata lookup in the database and cannot disagree with itself; the planner's
-local-day views stay local because they take an explicit ``tz``, and an analytics
-day deliberately does not — a day boundary that moved with a query parameter
-could not be compared against the previous period it is being compared to.
+``metric_date`` is a calendar day
+--------------------------------
+A bare ``Date``. This migration is the one that *created* it, cut at UTC midnight,
+because every stored instant above it was timezone-aware UTC (see
+``app/models/planner.py``) and a fixed cut needs no tzdata lookup in the
+database.
+
+It is **no longer cut at UTC midnight**. The column still carries no zone, but the
+bucket is now the database server's local day —
+``date(col AT TIME ZONE current_setting('TimeZone'))``, with window bounds at the
+matching ``local_midnight``. Nothing about the schema changed: a bare ``Date`` was
+always able to hold it, and the historical rows are re-read under the current rule
+by the next rebuild rather than reinterpreted in place. ``app/models/analytics.py``
+and ``app/repositories/analytics.py`` document the rule as it now stands.
+
+The planner's local-day views stay local because they take an explicit ``tz``, and
+an analytics day deliberately does not — a day boundary that moved with a query
+parameter could not be compared against the previous period it is being compared
+to.
 """
 
 from __future__ import annotations

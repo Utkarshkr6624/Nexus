@@ -75,8 +75,8 @@ and the two must describe the same day: a task's deadline is measured in hours
 from the pass's instant to the end of its due day
 (:func:`app.services.risk.detection._hours_until`), so a ``today`` from the host
 clock and a ``now`` from the server would put every deadline in the wrong band.
-The residual risk is the two reads straddling UTC midnight, a window of
-milliseconds in twenty-four hours.
+The residual risk is the two reads straddling the database's local midnight, a
+window of milliseconds in twenty-four hours.
 
 ``_hours_until`` measuring to the *end* of the due day is also why the fixtures
 place deadlines two or three days out rather than "tomorrow". A due date of

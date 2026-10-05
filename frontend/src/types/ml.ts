@@ -193,6 +193,12 @@ export interface MlStatusRead {
  * before anything is written. Which members are destructive is decided by the
  * backend's spec table and published on the proposal as a boolean; a client
  * branches on that boolean and never on this list.
+ *
+ * Note that a destructive kind need not remove exactly one table. `delete_project`
+ * takes its tasks and `delete_repository` takes its commits, branches and scan
+ * runs through the schema's cascade — which is why `summary` says so and why a
+ * client renders it verbatim rather than composing its own sentence from
+ * `kind`.
  */
 export type ActionKind =
   // Tasks
@@ -237,6 +243,7 @@ export type ActionKind =
   | 'delete_session'
   // Developer
   | 'create_repository'
+  | 'delete_repository'
   // Account
   | 'update_profile'
 

@@ -53,6 +53,15 @@ database — :class:`ProposalContext` carries the candidate rows, already scoped
 whoever read them — so the scoping is the caller's, and the caller's scoping is
 what the confirm route repeats.
 
+*And the reverse half holds too: nothing is published that confirm would refuse.*
+The confirm route re-validates the JSON rendering of a payload against the same
+schema it was built from, so a payload that is a legal object but not a legal
+round trip would be a dialog that offers a write the backend then refuses. Every
+payload leaves :func:`_build_payload` through :func:`_publishable`, which performs
+that round trip once at the producing end and answers a failure with a
+``payload_invalid`` refusal. The user is asked again; they are never handed a
+proposal that cannot be carried out.
+
 **Only what was actually said appears in the summary.** "Create a high-priority
 task" is not written when the user said nothing about priority: ``medium`` is a
 *default*, and printing it would make the sentence claim a choice nobody made.

@@ -104,8 +104,9 @@ believed.** In order:
    ``project_id`` is refused by ``TaskService.create``'s own scoped lookup, and a
    forged ``target_id`` by ``TaskService.get``, ``KnowledgeService.get_note``,
    ``PlannerService.get_event``, ``LearningIntelligenceService.get_goal`` or
-   whichever the kind needs — all a 404, all before the row is written, all
-   indistinguishable from an id nobody has issued.
+   ``DeveloperIntelligenceService.get_repository`` — whichever the kind needs, all
+   a 404, all before the row is written, all indistinguishable from an id nobody
+   has issued.
 
 **Deletions are possible here, and the safety is not in their absence.** The
 earlier version of this module refused every destructive request outright, on the
@@ -930,7 +931,11 @@ async def confirm_action(
     **A delete removes one row.** There is no code path here that takes a
     collection: the id comes from the single ``target_id`` the proposal carried,
     and the proposal layer refuses a request that named more than one row with
-    ``destructive_request``.
+    ``destructive_request``. One row is not always one *table* — deleting a
+    project takes its tasks, deleting a repository takes its commits, branches and
+    scan runs through the schema's cascade — and the confirm sentence is where
+    that is stated, because it is the only place the user is told what the press
+    will take with it.
 
     **The activity trail is written by the service, not by this router.** Every
     service arrives from :mod:`app.api.deps`, which wires ``activity=`` for all
@@ -1821,6 +1826,39 @@ async def _delete_session(
     )
 
 
+async def _delete_repository(
+    services: _Services, owner: User, body: ConfirmActionRequest, data: BaseModel
+) -> ConfirmActionRead:
+    """Delete one repository, and everything that was ever observed under it.
+
+    **The widest cascade on this surface, and the confirm sentence says so.**
+    ``DeveloperIntelligenceService.delete_repository`` resolves the row through
+    its own owner-scoped lookup and lets the schema's ``ON DELETE CASCADE`` take
+    the commits, the branches and every scan run with it — deliberately not a
+    deactivation, because a row that kept its history while claiming the
+    repository was gone would leave the account's metrics reading commits from a
+    work tree the user has explicitly removed. The row is read first so the
+    message names what went from storage rather than from the phrase that asked.
+
+    The folder on the user's disk is **not** touched: this removes a registration
+    and what NEXUS recorded about it, and the confirm sentence is careful to say
+    "delete the repository" rather than anything that reads as "delete the code".
+    """
+    identifier = _target(body, "repository")
+    repository = await services.developer.get_repository(owner=owner, repository_id=identifier)
+    await services.developer.delete_repository(owner=owner, repository_id=identifier)
+    return _read(
+        ActionKind.DELETE_REPOSITORY,
+        repository,
+        outcome="deleted",
+        applied=True,
+        message=(
+            f"Deleted the repository '{repository.name}'; its commits, branches and "
+            "scan runs went with it."
+        ),
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Confirm: transitions, scheduling and tags
 # --------------------------------------------------------------------------- #
@@ -2182,8 +2220,8 @@ async def _untag_task(
 # --------------------------------------------------------------------------- #
 
 #: What every dispatcher is handed, and what it must answer with. The arguments
-#: are the same for all thirty-seven so the table below reads as a list of what
-#: each kind does rather than as thirty-seven signatures.
+#: are the same for all thirty-eight so the table below reads as a list of what
+#: each kind does rather than as thirty-eight signatures.
 _Handler = Callable[
     ["_Services", User, ConfirmActionRequest, BaseModel], Awaitable[ConfirmActionRead]
 ]
@@ -2234,6 +2272,7 @@ _HANDLERS: Mapping[ActionKind, _Handler] = MappingProxyType(
         ActionKind.UPDATE_PROFILE: _update_profile,
         # --- developer intelligence -------------------------------------- #
         ActionKind.CREATE_REPOSITORY: _create_repository,
+        ActionKind.DELETE_REPOSITORY: _delete_repository,
     }
 )
 

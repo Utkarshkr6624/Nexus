@@ -276,11 +276,66 @@ interface ConfirmRequest {
   signal: AbortSignal
 }
 
+/**
+ * One entry inside a `details` value, as a sentence fragment.
+ *
+ * The backend's 422 `details` are not a flat map of field to string. The two
+ * shapes that arrive are a list of strings (`accepted_intents`) and a list of
+ * `{ field, message, type }` objects (`errors`, from a payload that did not
+ * validate) — and an object handed straight to `String()` is how a confirm
+ * failure reached the user as `(errors: [object Object])`, which says nothing at
+ * all about what went wrong.
+ *
+ * The `message` is preferred because it is the sentence the backend wrote for a
+ * person; the `field` is folded in when the entry names one *and* the caller did
+ * not already print it, so a per-field failure reads as
+ * `name — String should have at least 1 character` rather than as a bare
+ * complaint. Anything else falls through to a shape-appropriate rendering, and
+ * an object with neither member is JSON-stringified rather than stringified, so
+ * no value on any path can ever produce `[object Object]`.
+ */
+function describeDetailEntry(entry: unknown): string {
+  if (typeof entry === 'string') return entry
+  if (typeof entry === 'number' || typeof entry === 'boolean') return String(entry)
+  if (entry !== null && typeof entry === 'object') {
+    const record = entry as Record<string, unknown>
+    const message = record.message
+    if (typeof message === 'string' && message.length > 0) {
+      const field = typeof record.field === 'string' ? record.field : ''
+      return field.length > 0 ? `${field} — ${message}` : message
+    }
+    const parts = Object.entries(record)
+      .filter((entry): entry is [string, string | number | boolean] => {
+        const value = entry[1]
+        return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+      })
+      .map(([key, value]) => `${key}: ${String(value)}`)
+    if (parts.length > 0) return parts.join(', ')
+    try {
+      return JSON.stringify(record) ?? ''
+    } catch {
+      return ''
+    }
+  }
+  // `null` and `undefined` carry no information worth showing, and `String(null)`
+  // reading "null" beside a field name reads as a value the user supplied.
+  return ''
+}
+
 function flattenFieldErrors(details: Record<string, unknown>): string {
   const parts: string[] = []
   for (const [field, value] of Object.entries(details)) {
-    if (Array.isArray(value)) parts.push(`${field}: ${value.map(String).join(', ')}`)
-    else if (typeof value === 'string') parts.push(`${field}: ${value}`)
+    if (value === null || value === undefined) continue
+    if (Array.isArray(value)) {
+      const rendered = value
+        .map(describeDetailEntry)
+        .filter((entry) => entry.length > 0)
+        .join(', ')
+      if (rendered.length > 0) parts.push(`${field}: ${rendered}`)
+    } else {
+      const rendered = describeDetailEntry(value)
+      if (rendered.length > 0) parts.push(`${field}: ${rendered}`)
+    }
   }
   return parts.join('; ')
 }
@@ -476,14 +531,17 @@ export function describeActionFailure(cause: unknown, stage: ActionStage): Voice
  * already gone — which reads as the assistant inventing rows, and is worse than
  * the write having silently failed.
  *
- * `create_repository` is the only kind that writes outside the task, project,
- * knowledge, learning and planner trees, and it invalidates the aggregate root
- * for the same reason the others do: registering a folder changes the repository
- * count in the developer summary, so the whole `['developer']` tree goes stale
- * at once — exactly as a scan does. Registration itself runs no scan, so nothing
- * else about the tree changes, but picking the narrower `repositories` key would
- * leave the summary card showing the old count beside a list that already has the
- * new row, and a reader has no way to tell which of the two is wrong.
+ * `create_repository` and `delete_repository` are the only kinds that write
+ * outside the task, project, knowledge, learning and planner trees, and they
+ * invalidate the aggregate root for the same reason the others do: registering or
+ * removing a folder changes the repository count in the developer summary, so the
+ * whole `['developer']` tree goes stale at once — exactly as a scan does.
+ * Registration itself runs no scan, so nothing else about the tree changes, but
+ * picking the narrower `repositories` key would leave the summary card showing
+ * the old count beside a list that already has the new row, and a reader has no
+ * way to tell which of the two is wrong. A delete invalidates for the reason
+ * every other delete here does: the row is gone, and a list still holding it is
+ * worse than one that is merely stale.
  *
  * `update_profile` is the one kind with no entry, and it is absent on purpose
  * rather than missed: the signed-in user lives in the auth store, not in a
@@ -528,6 +586,7 @@ const CACHE_ROOT_BY_KIND: Partial<Record<ActionKind, () => readonly unknown[]>> 
   create_session: plannerKeys.all,
   delete_session: plannerKeys.all,
   create_repository: developerKeys.all,
+  delete_repository: developerKeys.all,
 }
 
 /**

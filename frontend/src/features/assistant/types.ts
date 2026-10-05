@@ -3,10 +3,10 @@
  * wrong, and what one turn of a conversation is.
  *
  * These are deliberately separate from `@/types/ml`, which describes the
- * backend's classifier contract. The distinction matters: the classifier is
- * single-utterance and stateless, and the assistant is a session with history
- * and a lifecycle. Conflating them is how a conversation manager ends up
- * quietly sending history to a model that only ever wanted one sentence.
+ * backend's classifier and action contracts. The distinction matters: the
+ * classifier is single-utterance and stateless, and the assistant is a session
+ * with history and a lifecycle. Conflating them is how a conversation manager
+ * ends up quietly sending history to a model that only ever wanted one sentence.
  */
 
 import type { RoutingDecisionRead } from '@/types/ml'
@@ -53,7 +53,15 @@ export type VoiceErrorCode =
   | 'classifier_unavailable'
   /** The session is gone or was never there — a 401. */
   | 'not_authenticated'
-  /** The account is signed in but lacks `analytics.read` — a 403. */
+  /**
+   * The account is signed in but not allowed — a 403.
+   *
+   * Two different denials share this one code: the `/ml` route gate
+   * (`analytics.read`), and the action's own capability on
+   * `/ml/action/confirm` (`projects.write`, `tasks.write`, …). They are one code
+   * because they are one fact to the reader — this account may not do this —
+   * and the *messages* differ, because what to do about it differs.
+   */
   | 'not_permitted'
   /** The backend answered something the assistant cannot use. */
   | 'invalid_response'
@@ -90,12 +98,14 @@ export interface VoiceTurn {
 }
 
 /**
- * What the assistant can offer to do next.
+ * The validated NEXUS call an accepted turn maps onto.
  *
- * Phase 12 establishes the foundation only: NEXO decides *which* validated
- * action a request maps to, and the user sees it. Executing it is Phase 13's
- * Command Center, and this type is deliberately shaped so that adding an
- * `execute` there is a change to this file rather than to the classifier.
+ * **Routing, not a to-do list.** This names a destination the reader can be sent
+ * to; it does not name a row to create. The action a sentence actually asks for
+ * arrives separately, as an `ActionProposalRead` from `POST /ml/action/propose`,
+ * and is only ever carried out after the reader has agreed to it. Keeping the
+ * two apart is the point: "this goes to Projects" and "this creates a project"
+ * are different claims, and one must not be read as the other.
  */
 export interface VoiceAction {
   /** The service the classifier named, e.g. `TaskService`. */

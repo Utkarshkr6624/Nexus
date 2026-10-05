@@ -10,7 +10,9 @@
  *    no way to read a transcript. Conversation history is therefore never sent
  *    — not to protect the user's privacy alone, but because the model would
  *    ignore it. The history exists only in this browser, and only to offer a
- *    suggestion when a turn comes back `uncertain`.
+ *    suggestion when a turn comes back `uncertain`. The action pair below is
+ *    held to the same rule: it is the same classifier over the same one
+ *    sentence, so it is sent the same one string and nothing else.
  * 2. **NEXO routes, it does not answer.** The assistant cannot compose prose, so
  *    nothing here speaks or renders as though it did. What it does is name a
  *    service and its destination, and the user decides what happens next.
@@ -18,6 +20,13 @@
  *    are recognised correctly and then have nowhere to go, because NEXO runs no
  *    generative model. That is reported as a gap in the product, never as an
  *    error state or a retry prompt.
+ *
+ * **Routing is not the whole of it any more.** An accepted turn also asks
+ * `POST /ml/action/propose` what NEXUS could *do* about the sentence, and
+ * offers the user's own confirm before `POST /ml/action/confirm` writes
+ * anything. Both halves survive: the destination and its "Go to X" button
+ * answer "where does this go", which is a different question from "what would
+ * this create", and a reader who asked the first still needs the answer.
  *
  * **Why the state is driven by handlers and callbacks, never by effects.**
  * React Compiler treats a synchronous `setState` inside a `useEffect` as a
@@ -27,7 +36,7 @@
  * are event handlers too. The single effect marks the panel mounted and, on
  * unmount, aborts work in flight.
  */
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
@@ -42,11 +51,22 @@ import type {
   VoiceState,
   VoiceTurn,
 } from './types'
-import { routeUtterance } from '@/services/ml'
+import { confirmAction, proposeAction, routeUtterance } from '@/services/ml'
 import { isAbortError } from '@/services/errors'
 import { findModule } from '@/features/modules/catalog'
+import { knowledgeKeys } from '@/features/knowledge/hooks'
+import { learningKeys } from '@/features/learning/hooks'
+import { workKeys } from '@/features/work/hooks'
 import { ApiError } from '@/lib/api-client'
-import type { RoutingDecisionRead } from '@/types/ml'
+import { plannerLocalTimezone } from '@/types/planner'
+import type {
+  ActionKind,
+  ActionProposalRead,
+  ConfirmActionRead,
+  ConfirmActionRequest,
+  ProposeActionRead,
+  RoutingDecisionRead,
+} from '@/types/ml'
 import {
   createSpeechRecogniser,
   isSpeechRecognitionSupported,
@@ -146,6 +166,28 @@ export interface VoiceAssistant {
   turns: VoiceTurn[]
   /** The newest turn, which is what a summary panel renders. */
   lastTurn: VoiceTurn | null
+  /**
+   * The action the last turn described, awaiting the user's answer, or `null`.
+   *
+   * `null` is the ordinary case and covers three different things that all mean
+   * the same thing to a reader: there was no proposal, there was a refusal, and
+   * the reader has already answered. Nothing about the panel distinguishes them.
+   */
+  proposal: ActionProposalRead | null
+  /** True while the confirm request is in flight. */
+  confirming: boolean
+  /** What the confirmed action actually did, or `null`. */
+  actionOutcome: ConfirmActionRead | null
+  /**
+   * A failure of the action layer, or `null`.
+   *
+   * Separate from `error` on purpose: that one is the *turn* failing, and it
+   * moves the panel into its `error` state. This one happened after a turn that
+   * succeeded, so the routing decision it followed is still true and still on
+   * screen. Retracting a good answer because an optional second question was
+   * refused would be worse than the failure itself.
+   */
+  actionError: VoiceError | null
   context: VoiceContext | null
   canListen: boolean
   supportsRecognition: boolean
@@ -157,6 +199,12 @@ export interface VoiceAssistant {
   submitText: (text: string) => void
   retry: () => void
   dismissError: () => void
+  /** Carries out the pending proposal. A no-op without one. */
+  confirmProposal: () => void
+  /** Discards the pending proposal. Makes no request. */
+  cancelProposal: () => void
+  dismissActionOutcome: () => void
+  dismissActionError: () => void
   /** Abandons whatever is in flight and returns to `idle`. */
   cancel: () => void
   clearConversation: () => void
@@ -171,6 +219,9 @@ interface Lifecycle {
   lastDecision: RoutingDecisionRead | null
   lastAction: VoiceAction | null
   suggestion: VoiceSuggestion | null
+  proposal: ActionProposalRead | null
+  actionOutcome: ConfirmActionRead | null
+  actionError: VoiceError | null
 }
 
 const IDLE_LIFECYCLE: Lifecycle = {
@@ -181,6 +232,9 @@ const IDLE_LIFECYCLE: Lifecycle = {
   lastDecision: null,
   lastAction: null,
   suggestion: null,
+  proposal: null,
+  actionOutcome: null,
+  actionError: null,
 }
 
 /**
@@ -198,6 +252,26 @@ interface TurnRequest {
   signal: AbortSignal
   context: VoiceContext
   at: number
+}
+
+/**
+ * The request a proposal is built from.
+ *
+ * `generation` is the turn that asked for it. Aborting the previous request is
+ * not on its own enough: a response that was already in flight can still land
+ * after the next turn has started, and without this the panel would offer to
+ * create something the reader has moved on from.
+ */
+interface ProposalRequest {
+  text: string
+  signal: AbortSignal
+  generation: number
+}
+
+/** A confirm request, with the cancellation the panel tears down on unmount. */
+interface ConfirmRequest {
+  body: ConfirmActionRequest
+  signal: AbortSignal
 }
 
 function flattenFieldErrors(details: Record<string, unknown>): string {
@@ -262,6 +336,164 @@ function humaniseServiceName(service: string): string {
   return spaced.length > 0 ? spaced : service
 }
 
+/* --------------------------------------------------------------- actions -- */
+
+/**
+ * The wording for the failures the propose/confirm pair can genuinely return.
+ *
+ * **This does not reuse `VOICE_COPY`, on purpose.** A 403 on `/ml/route` means
+ * the account may not ask the question at all; a 403 on `/action/confirm` means
+ * it asked, was answered, and may not make *that* change. Same status, two
+ * different problems with two different fixes, and the second one says nothing
+ * whatever about whether the assistant is still working — which is the sentence
+ * a reader of a proposal dialog most needs to hear.
+ *
+ * Every message says what did **not** happen. A panel that only says what went
+ * wrong leaves the reader guessing whether the write landed, and on the action
+ * pair the honest answer is not always "it did not".
+ */
+const ACTION_COPY = {
+  proposeForbidden:
+    'NEXUS read that, but this account is not allowed to ask the backend what to do with it. Nothing was changed, and routing still works.',
+  proposeValidation:
+    'NEXUS would not accept the request as it was written. Rephrase it as one short instruction — nothing was changed.',
+  classifierUnavailable:
+    "NEXUS's intent classifier is not running on this backend, so it could not work out what to do with that. Routing still works; carrying out a request needs the model loaded.",
+  proposeUnreachable:
+    'NEXUS could not reach the backend to ask what to do, so there is nothing to agree to. The decision above is unaffected.',
+  confirmForbidden:
+    'NEXUS read that, but this account is not allowed to make this kind of change, so nothing was written.',
+  confirmValidation:
+    'NEXUS would not accept the details it read out of that request, so nothing was written. Rephrase it with the value spelled out in full.',
+  confirmNotFound:
+    'The row that request referred to is not there any more, so nothing was written.',
+  // Not the same as the propose wording, because on confirm it is genuinely
+  // unknown: the request may have reached the backend before the connection
+  // broke. Asking again is safe — the endpoint answers a repeat with the row it
+  // already has rather than making a second one — and that is the honest advice
+  // rather than a guess in either direction.
+  confirmUnreachable:
+    'NEXUS could not reach the backend, so it is not known whether anything was written. Ask again if you like — NEXUS will not create the same row twice.',
+  fallback:
+    'NEXUS could not carry that out. Nothing this panel claimed was changed.',
+} as const
+
+/**
+ * Which of the two calls failed.
+ *
+ * The stage is a parameter because the two surfaces fail for different reasons
+ * under the same status: a 422 on propose means the *utterance* was refused
+ * (blank, too long, credential-shaped), while a 422 on confirm means the
+ * *extracted payload* did not validate, and the advice for those is not the same.
+ */
+export type ActionStage = 'propose' | 'confirm'
+
+/**
+ * Maps a failure of either action call onto something a person can act on.
+ *
+ * Ordered as in `describeRoutingFailure` — transport and timeout first, because
+ * they arrive with a status of `0` beside the 503 — and 503 before the auth
+ * cases for the same reason: a runtime with no classifier loaded is a fact
+ * about the backend, not about the session. A 401 reuses the routing copy
+ * verbatim, because it is the same fact: the session is gone.
+ */
+export function describeActionFailure(cause: unknown, stage: ActionStage): VoiceError {
+  const unreachable = stage === 'confirm' ? ACTION_COPY.confirmUnreachable : ACTION_COPY.proposeUnreachable
+  if (!(cause instanceof ApiError)) {
+    return { code: 'invalid_response', message: ACTION_COPY.fallback, retryable: true }
+  }
+  if (cause.isTimeout || cause.isTransportError) {
+    return { code: 'timeout', message: unreachable, retryable: true }
+  }
+  if (cause.status === 503) {
+    return {
+      code: 'classifier_unavailable',
+      message: ACTION_COPY.classifierUnavailable,
+      retryable: false,
+    }
+  }
+  if (cause.isUnauthorized) {
+    return AUTH_ERRORS.unauthorized
+  }
+  if (cause.isForbidden) {
+    return {
+      code: 'not_permitted',
+      message: stage === 'confirm' ? ACTION_COPY.confirmForbidden : ACTION_COPY.proposeForbidden,
+      retryable: false,
+    }
+  }
+  if (cause.isNotFound) {
+    // Deliberately not branched by stage. A 404 on confirm is the row a
+    // completion named having gone; a 404 on propose is unreachable from this
+    // panel, which never sends a `project_id` for one to be resolved from, so
+    // the sentence that is true of the reachable case is the one shipped.
+    return {
+      code: 'invalid_response',
+      message: ACTION_COPY.confirmNotFound,
+      retryable: false,
+    }
+  }
+  if (cause.isValidationError) {
+    const fields = flattenFieldErrors(cause.fieldErrors)
+    const base =
+      stage === 'confirm' ? ACTION_COPY.confirmValidation : ACTION_COPY.proposeValidation
+    return {
+      code: 'invalid_response',
+      message: fields ? `${base} (${fields})` : base,
+      retryable: false,
+    }
+  }
+  return { code: 'invalid_response', message: ACTION_COPY.fallback, retryable: true }
+}
+
+/**
+ * The cache root each action writes into.
+ *
+ * Typed `Partial` deliberately, and the lookup is guarded below: the backend can
+ * add a kind before this client learns about it, and an unguarded call into an
+ * `undefined` entry inside a mutation's `onSuccess` would be an unhandled
+ * rejection — the exact failure this flow exists to stop being possible.
+ *
+ * Keyed by `kind` rather than by the response's `entity`, because `kind` is what
+ * the proposal named and what the confirm response echoes back; the two agree
+ * except for `complete_task`, which writes a task while naming an action whose
+ * name says nothing about the row.
+ *
+ * The roots are the *aggregate* ones each feature already publishes, for the
+ * reason `features/work/hooks.ts` gives when its own mutations invalidate
+ * `workKeys.all()`: a new task moves the board, the project counts and the
+ * activity feed at once, and picking the single "right" key is how a stale
+ * surface ships. Knowledge and learning have their own roots and are untouched
+ * by the other two.
+ */
+const CACHE_ROOT_BY_KIND: Partial<Record<ActionKind, () => readonly unknown[]>> = {
+  create_task: workKeys.all,
+  complete_task: workKeys.all,
+  create_project: workKeys.all,
+  create_note: knowledgeKeys.all,
+  create_learning_goal: learningKeys.all,
+}
+
+/**
+ * The confirm body, built from the proposal and nothing else.
+ *
+ * **Three fields for a creation, four for a completion.** `target_id` is the
+ * row a completion acts on and is meaningless for the four creations, so it is
+ * left off entirely rather than sent as an explicit `null`. The proposal is not
+ * editable anywhere in this panel, so the payload goes back byte for byte as the
+ * backend published it — the endpoint re-validates it as untrusted input
+ * regardless, and a client that "tidied" it could only introduce a 422.
+ */
+export function confirmBodyFor(proposal: ActionProposalRead): ConfirmActionRequest {
+  const body: ConfirmActionRequest = {
+    kind: proposal.kind,
+    intent: proposal.intent,
+    payload: proposal.payload,
+  }
+  if (proposal.target_id !== null) body.target_id = proposal.target_id
+  return body
+}
+
 /** The validated action an accepted decision maps onto, or `null`. */
 function actionFor(decision: RoutingDecisionRead): VoiceAction | null {
   const target = decision.target
@@ -311,6 +543,11 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
 
   const [lifecycle, setLifecycle] = useState<Lifecycle>(IDLE_LIFECYCLE)
 
+  // Read only from a mutation's `onSuccess`, to invalidate the surface the
+  // write just landed in. Present from the first render — TanStack Query
+  // resolves it during render — so the callbacks below can close over it.
+  const queryClient = useQueryClient()
+
   const turns = useAssistantStore((store) => store.turns)
   const accepted = useAssistantStore((store) => store.accepted)
   const addTurn = useAssistantStore((store) => store.addTurn)
@@ -331,6 +568,19 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
   const previousRef = useRef<AcceptedDestination | null>(null)
   /** False once the panel is gone; keeps a late response out of a dead tree. */
   const mountedRef = useRef(true)
+  /** Bumped per turn; a proposal belonging to an older one is discarded. */
+  const generationRef = useRef(0)
+  /**
+   * The propose request in flight.
+   *
+   * Its own controller rather than a second slot in `requestRef`, because the
+   * two overlap: the routing call is finished by the time a proposal is asked
+   * for, and reusing the one ref would abort the proposal the moment a *retry*
+   * re-used the routing ref.
+   */
+  const proposalRequestRef = useRef<AbortController | null>(null)
+  /** The confirm request in flight. Aborted on unmount, like the others. */
+  const confirmRequestRef = useRef<AbortController | null>(null)
 
   const state: VoiceState = supportsRecognition ? lifecycle.state : 'unsupported'
 
@@ -426,10 +676,16 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
    */
   function run(text: string, context: VoiceContext, at: number): void {
     requestRef.current?.abort()
+    // A proposal belongs to the turn that asked for it. Dropping the request and
+    // the pending one together means a stale proposal can neither arrive late
+    // nor sit on screen while the reader is already talking about something else.
+    proposalRequestRef.current?.abort()
+    proposalRequestRef.current = null
     const controller = new AbortController()
     requestRef.current = controller
     pendingRef.current = { text, retryable: true, at }
     previousRef.current = accepted ?? null
+    generationRef.current += 1
 
     moveTo('processing')
     apply({
@@ -439,6 +695,9 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
       lastAction: null,
       suggestion: null,
       error: null,
+      proposal: null,
+      actionOutcome: null,
+      actionError: null,
     })
     routeMutation.mutate({ text, signal: controller.signal, context, at })
   }
@@ -482,6 +741,15 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
           decision.status === 'uncertain' && previous ? suggestionFor(previous) : null,
       })
       speakDecision(decision)
+
+      // Only an accepted turn is worth asking about. The proposal layer runs the
+      // *same* classifier over the *same* string against the *same* threshold, so
+      // an `uncertain`, `out_of_scope` or `generation_unavailable` decision
+      // could only ever come back as a refusal — a request spent to be told
+      // nothing, on every out-of-scope sentence a user ever types.
+      if (decision.status === 'accepted') {
+        proposeFor(request.text)
+      }
     },
     onError: (cause) => {
       // An abort is our own doing — unmount, or the user cancelled — and must
@@ -490,6 +758,116 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
       failTurn(describeRoutingFailure(cause))
     },
   })
+
+  /**
+   * Asks what NEXUS would do about the sentence this turn carried.
+   *
+   * The same single utterance and nothing else: the proposal layer is the same
+   * classifier, so a history would enlarge the request without informing it and
+   * would send the reader's earlier sentences to the backend for no gain. The
+   * zone is the caller's own, read through the planner's helper, because "by
+   * friday" has to cut on the same instant a day planned on the board would.
+   */
+  function proposeFor(text: string): void {
+    proposalRequestRef.current?.abort()
+    const controller = new AbortController()
+    proposalRequestRef.current = controller
+    proposeMutation.mutate({ text, signal: controller.signal, generation: generationRef.current })
+  }
+
+  const proposeMutation = useMutation<ProposeActionRead, Error, ProposalRequest>({
+    mutationFn: ({ text, signal }) => proposeAction(text, { signal, tz: plannerLocalTimezone() }),
+    // Same reasoning as the routing call: a 503 means the checkpoint is not
+    // loaded and asking again in two seconds produces the same 503, only slower.
+    retry: false,
+    onSuccess: (answer, request) => {
+      if (!mountedRef.current || request.generation !== generationRef.current) return
+      // **A refusal is a 200, and the common case.** Most things a person says
+      // to an assistant are not a row to create, so `proposed: false` is the
+      // ordinary answer rather than a failure: nothing is set, nothing is
+      // shown, and the routing decision this arrived after is untouched. The
+      // refusal's prose is deliberately not rendered — a panel that reddened
+      // itself for a sentence that was not a create request would cry wolf on
+      // nearly every turn.
+      if (!answer.proposed || answer.proposal === null) return
+      apply({ proposal: answer.proposal, actionError: null })
+    },
+    onError: (cause, request) => {
+      if (!mountedRef.current || isAbortError(cause)) return
+      // A failure belonging to a turn the reader has already moved past is not
+      // news about this one, and putting it on screen would blame the sentence
+      // in front of them for something the previous sentence did.
+      if (request.generation !== generationRef.current) return
+      // **The lifecycle does not move.** The turn that produced this failed
+      // nowhere; it routed, and its routing decision is on screen. Moving to
+      // `error` here would replace a good answer with a failure of an optional
+      // second question, and would hand the panel's retry button — which re-runs
+      // a *turn* — to a failure that re-running a turn would not fix.
+      apply({ proposal: null, actionError: describeActionFailure(cause, 'propose') })
+    },
+  })
+
+  const confirmMutation = useMutation<ConfirmActionRead, Error, ConfirmRequest>({
+    mutationFn: ({ body, signal }) => confirmAction(body, signal),
+    // Not because a retry would be wrong but because it would be *invisible*: the
+    // endpoint already answers a repeat with `no_op` and the row that is already
+    // there, so a client-side retry would turn one visible "no second copy" into
+    // a second request the reader never asked for.
+    retry: false,
+    onSuccess: (result) => {
+      if (!mountedRef.current) return
+      apply({ proposal: null, actionOutcome: result, actionError: null })
+
+      // Only a request that actually moved the row invalidates anything. A
+      // `no_op` found the desired state already there, and refetching every
+      // project and task list on the strength of it would be work with no
+      // reason behind it.
+      const root = CACHE_ROOT_BY_KIND[result.kind]
+      if (result.applied && root !== undefined) {
+        void queryClient.invalidateQueries({ queryKey: root() })
+      }
+    },
+    onError: (cause) => {
+      if (!mountedRef.current || isAbortError(cause)) return
+      // The proposal stays put, so the dialog stays open with both answers back.
+      // A failure that closed the dialog would take away the reader's only way
+      // to try again.
+      apply({ actionError: describeActionFailure(cause, 'confirm') })
+    },
+  })
+
+  /** Carries out the pending proposal, or does nothing when there is none. */
+  function confirmProposal(): void {
+    const proposal = lifecycle.proposal
+    if (proposal === null) return
+    // Guarded by the mutation's own pending flag rather than by local state:
+    // TanStack returns that to `false` the moment the promise settles, on the
+    // success path and the failure path alike, so there is no branch in this
+    // file that can leave the dialog's buttons switched off for good.
+    if (confirmMutation.isPending) return
+    const controller = new AbortController()
+    confirmRequestRef.current = controller
+    confirmMutation.mutate({ body: confirmBodyFor(proposal), signal: controller.signal })
+  }
+
+  /**
+   * Discards the proposal. Makes no request — nothing has been written yet, so
+   * there is nothing to undo, and sending a "cancel" would be inventing an
+   * endpoint that does not exist.
+   */
+  function cancelProposal(): void {
+    proposalRequestRef.current?.abort()
+    proposalRequestRef.current = null
+    apply({ proposal: null, actionError: null })
+  }
+
+  function dismissActionOutcome(): void {
+    apply({ actionOutcome: null })
+  }
+
+  function dismissActionError(): void {
+    apply({ actionError: null })
+  }
 
   function suggestionFor(previous: AcceptedDestination): VoiceSuggestion {
     return {
@@ -536,6 +914,13 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
       lastDecision: null,
       lastAction: null,
       suggestion: null,
+      // A new utterance supersedes the last turn's pending agreement, exactly
+      // as it supersedes its decision: leaving a confirm dialog open across a
+      // new turn would ask the reader to agree to a sentence they have since
+      // replaced.
+      proposal: null,
+      actionOutcome: null,
+      actionError: null,
     })
 
     // A fresh recogniser per turn. One utterance per session: `continuous` would
@@ -599,16 +984,29 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
     cancelSpeech()
     requestRef.current?.abort()
     requestRef.current = null
+    // Every request in flight, not just the turn's. Cancelling and leaving a
+    // proposal or a confirmation to land afterwards would put a dialog in front
+    // of a panel the reader has already walked away from.
+    proposalRequestRef.current?.abort()
+    proposalRequestRef.current = null
+    confirmRequestRef.current?.abort()
+    confirmRequestRef.current = null
     pendingRef.current = null
     previousRef.current = null
     moveTo('idle')
-    apply({ error: null, interimTranscript: '' })
+    apply({ error: null, interimTranscript: '', proposal: null })
   }
 
   function clearConversation(): void {
     clearTurns()
     pendingRef.current = null
     previousRef.current = null
+    // Bumped as well as cleared, so a proposal for the turn being erased cannot
+    // land after the erase and repopulate a conversation the reader has just
+    // emptied.
+    generationRef.current += 1
+    proposalRequestRef.current?.abort()
+    proposalRequestRef.current = null
     const phase = phaseRef.current
     if (phase === 'idle' || phase === 'error') moveTo('idle')
     apply({
@@ -618,12 +1016,15 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
       lastAction: null,
       suggestion: null,
       error: null,
+      proposal: null,
+      actionOutcome: null,
+      actionError: null,
     })
   }
 
   // Arms on mount, disarms and releases on unmount. Nothing here sets state, so
-  // it is not a render loop; it stops a microphone, a voice and a request that
-  // would otherwise outlive the panel.
+  // it is not a render loop; it stops a microphone, a voice and the three
+  // requests that would otherwise outlive the panel.
   //
   // The arming half is not decoration. StrictMode mounts, runs the cleanup and
   // runs the effect again, so a flag that is only ever cleared would stay false
@@ -639,6 +1040,10 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
       cancelSpeech()
       requestRef.current?.abort()
       requestRef.current = null
+      proposalRequestRef.current?.abort()
+      proposalRequestRef.current = null
+      confirmRequestRef.current?.abort()
+      confirmRequestRef.current = null
     }
   }, [])
 
@@ -652,6 +1057,13 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
     suggestion: lifecycle.suggestion,
     turns,
     lastTurn: turns.length > 0 ? (turns[turns.length - 1] ?? null) : null,
+    proposal: lifecycle.proposal,
+    // Read from the mutation rather than mirrored into lifecycle state: TanStack
+    // owns it, so it returns to `false` on every path out of the promise and
+    // this file has no branch that could leave the dialog's buttons dead.
+    confirming: confirmMutation.isPending,
+    actionOutcome: lifecycle.actionOutcome,
+    actionError: lifecycle.actionError,
     context: accepted?.context ?? null,
     canListen: supportsRecognition && (state === 'idle' || state === 'error'),
     supportsRecognition,
@@ -662,6 +1074,10 @@ export function useVoiceAssistant(options: UseVoiceAssistantOptions = {}): Voice
     submitText: submitTranscript,
     retry,
     dismissError,
+    confirmProposal,
+    cancelProposal,
+    dismissActionOutcome,
+    dismissActionError,
     cancel,
     clearConversation,
   }

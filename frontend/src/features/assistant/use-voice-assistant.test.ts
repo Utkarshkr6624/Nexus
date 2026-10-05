@@ -11,13 +11,15 @@ import {
 } from '@/features/assistant/types'
 import { resetAssistantStore, useAssistantStore } from '@/features/assistant/assistant-store'
 import {
+  describeActionFailure,
   describeRoutingFailure,
   useVoiceAssistant,
   type UseVoiceAssistantOptions,
   type VoiceAssistant,
 } from '@/features/assistant/use-voice-assistant'
+import { workKeys } from '@/features/work/hooks'
 import { ApiError } from '@/lib/api-client'
-import type { RoutingDecisionRead } from '@/types/ml'
+import type { ConfirmActionRead, ProposeActionRead, RoutingDecisionRead } from '@/types/ml'
 
 /**
  * jsdom implements no speech recognition and no speech synthesis, and the
@@ -27,6 +29,16 @@ import type { RoutingDecisionRead } from '@/types/ml'
  * The fakes are literal on purpose. The hook's whole job is the state machine
  * between three unreliable parties, so a fake that "helpfully" behaved like the
  * real thing would hide exactly the edges these tests exist to pin.
+ *
+ * **A turn now makes two requests.** `POST /ml/route` decides where the
+ * utterance goes, and — for an accepted turn — `POST /ml/action/propose` asks
+ * what NEXUS could do about it. The two have different response shapes, so
+ * `installEndpoints` below answers them separately; a stub that handed a
+ * routing decision to the proposal endpoint would be answering a question with a
+ * body the endpoint never sends. The single `respond` lever is kept for the
+ * tests that only care about the turn, where the routing decision doubles as the
+ * proposal answer — it carries no `proposed` flag, which the hook reads as a
+ * refusal, which is the silent path.
  */
 
 class FakeSpeechRecognition {
@@ -222,6 +234,103 @@ const OUT_OF_SCOPE: RoutingDecisionRead = {
   alternatives: [],
 }
 
+/** The routing answer for the sentence the proposal fixtures below belong to. */
+const ACCEPTED_PROJECT: RoutingDecisionRead = {
+  intent: 'project_manage',
+  confidence: 0.98,
+  threshold: 0.6,
+  status: 'accepted',
+  destination: 'api/v1/projects',
+  destination_kind: 'router',
+  target: {
+    service: 'ProjectService',
+    module: 'app.services.project_service',
+    entrypoint: 'ProjectService.list',
+  },
+  reason: 'confidence above threshold',
+  alternatives: [],
+}
+
+/** Shaped exactly as the live endpoint answers a creatable utterance. */
+const CREATE_PROJECT_PROPOSAL: ProposeActionRead = {
+  proposed: true,
+  intent: 'project_manage',
+  confidence: 0.98,
+  proposal: {
+    kind: 'create_project',
+    intent: 'project_manage',
+    confidence: 0.98,
+    summary: "Create a project named 'HelloWorld'.",
+    requires_confirmation: true,
+    destructive: false,
+    permission: 'projects.write',
+    service: 'ProjectService',
+    module: 'app.services.project_service',
+    entrypoint: 'create',
+    payload_schema: 'ProjectCreate',
+    payload: {
+      name: 'HelloWorld',
+      description: null,
+      priority: 'medium',
+      start_date: null,
+      target_date: null,
+    },
+    target_id: null,
+    target_label: null,
+    arguments: [
+      {
+        field: 'title',
+        value: 'HelloWorld',
+        matched_text: 'add a project called HelloWorld',
+        rule: "the utterance with 'a project called' removed",
+      },
+    ],
+    notes: [],
+  },
+  refusal: null,
+}
+
+/** A refusal is a 200. This is the shape most utterances produce. */
+const REFUSED: ProposeActionRead = {
+  proposed: false,
+  intent: 'task_manage',
+  confidence: 0.98,
+  proposal: null,
+  refusal: {
+    kind: 'create_task',
+    intent: 'task_manage',
+    confidence: 0.98,
+    reason_code: 'context_missing',
+    reason:
+      "Creating a task needs the project it belongs to, and no project was supplied with the request. Open the project's board and add it there.",
+    arguments: [],
+    notes: [],
+  },
+}
+
+const CREATED_PROJECT: ConfirmActionRead = {
+  kind: 'create_project',
+  entity: 'project',
+  entity_id: 'a9e9ce1c-0000-4000-8000-000000000000',
+  outcome: 'created',
+  applied: true,
+  message: "Created the project 'HelloWorld'.",
+}
+
+/** The replay: the row is already there, so nothing was written. */
+const PROJECT_ALREADY_THERE: ConfirmActionRead = {
+  kind: 'create_project',
+  entity: 'project',
+  entity_id: 'a9e9ce1c-0000-4000-8000-000000000000',
+  outcome: 'no_op',
+  applied: false,
+  message: "A project named 'HelloWorld' already exists; NEXO did not create a second one.",
+}
+
+const ROUTE_PATH = '/ml/route'
+const PROPOSE_PATH = '/ml/action/propose'
+const CONFIRM_PATH = '/ml/action/confirm'
+
 interface FetchCall {
   url: string
   body: unknown
@@ -246,6 +355,42 @@ function installFetch(handler?: (call: FetchCall) => Response | Promise<Response
       return respond(call)
     }),
   )
+}
+
+/**
+ * Answers each `/ml` endpoint with the body it actually receives in life.
+ *
+ * The proposal endpoint's shape is not the router's, and a stub that answered
+ * both with one fixture would be describing a backend that does not exist. The
+ * first matching path wins; anything unnamed falls through to `fallback`, so a
+ * test can pin one endpoint and leave the other on the ordinary routing answer.
+ */
+function installEndpoints(
+  endpoints: Record<string, () => Response>,
+  fallback: () => Response = () => json(ACCEPTED),
+): void {
+  installFetch((call) => {
+    for (const [path, answer] of Object.entries(endpoints)) {
+      if (call.url.includes(path)) return answer()
+    }
+    return fallback()
+  })
+}
+
+/**
+ * Only the calls to one endpoint.
+ *
+ * A turn sends the utterance twice — once to be routed, once to be proposed an
+ * action for — so a bare `calls.length` no longer says "one request per turn".
+ * Counting one path is what each of these assertions is actually about, and it
+ * stays true when the second half of the flow changes again.
+ */
+function callsTo(path: string): FetchCall[] {
+  return calls.filter((call) => call.url.includes(path))
+}
+
+function routeCalls(): FetchCall[] {
+  return callsTo(ROUTE_PATH)
 }
 
 interface Rendered {
@@ -392,7 +537,7 @@ describe('feature detection', () => {
     // classifier — and the text field is the only way in on such a browser, so
     // it must keep working while the state stays where it is.
     expect(result.current.state).toBe('unsupported')
-    expect(calls).toHaveLength(1)
+    expect(routeCalls()).toHaveLength(1)
     expect(result.current.lastDecision?.status).toBe('accepted')
     expect(result.current.turns).toHaveLength(1)
   })
@@ -447,7 +592,7 @@ describe('the happy path', () => {
       ])
     })
 
-    await waitFor(() => expect(calls).toHaveLength(1))
+    await waitFor(() => expect(routeCalls()).toHaveLength(1))
     expect(calls[0]?.body).toEqual({ text: 'show my open tasks' })
     expect(result.current.interimTranscript).toBe('')
   })
@@ -626,7 +771,9 @@ describe('the state machine guards', () => {
     })
 
     expect(result.current.state).toBe('speaking')
-    expect(calls).toHaveLength(1)
+    // One routing request for the turn already under way, and nothing for the
+    // press that was correctly ignored.
+    expect(routeCalls()).toHaveLength(1)
     expect(FakeSpeechRecognition.instances).toHaveLength(0)
   })
 
@@ -639,7 +786,7 @@ describe('the state machine guards', () => {
       await Promise.resolve()
     })
 
-    expect(calls).toHaveLength(1)
+    expect(routeCalls()).toHaveLength(1)
   })
 
   it('ignores blank typed input entirely', async () => {
@@ -748,13 +895,13 @@ describe('the model sees one utterance and nothing else', () => {
     await submit(result, 'show my overdue tasks')
     await waitFor(() => expect(result.current.turns).toHaveLength(2))
 
-    expect(calls).toHaveLength(2)
-    expect(calls[1]?.body).toEqual({ text: 'show my overdue tasks' })
-    const secondBody = JSON.stringify(calls[1]?.body)
+    expect(routeCalls()).toHaveLength(2)
+    expect(routeCalls()[1]?.body).toEqual({ text: 'show my overdue tasks' })
+    const secondBody = JSON.stringify(routeCalls()[1]?.body)
     // The classifier has no dialogue state, so a transcript in the body would be
     // data the model cannot use and the user did not agree to send.
     expect(secondBody).not.toContain('atlas')
-    expect(Object.keys(calls[1]?.body as object)).toEqual(['text'])
+    expect(Object.keys(routeCalls()[1]?.body as object)).toEqual(['text'])
   })
 
   it('never sends conversation history on a retry either', async () => {
@@ -769,10 +916,10 @@ describe('the model sees one utterance and nothing else', () => {
       result.current.retry()
       await Promise.resolve()
     })
-    await waitFor(() => expect(calls).toHaveLength(2))
+    await waitFor(() => expect(routeCalls()).toHaveLength(2))
 
-    expect(calls).toHaveLength(2)
-    expect(calls[1]?.body).toEqual({ text: 'show my tasks' })
+    expect(routeCalls()).toHaveLength(2)
+    expect(routeCalls()[1]?.body).toEqual({ text: 'show my tasks' })
   })
 })
 
@@ -895,8 +1042,8 @@ describe('backend failures', () => {
     })
 
     await waitFor(() => expect(result.current.turns).toHaveLength(2))
-    expect(calls).toHaveLength(2)
-    expect(calls[1]?.body).toEqual({ text: 'show my tasks' })
+    expect(routeCalls()).toHaveLength(2)
+    expect(routeCalls()[1]?.body).toEqual({ text: 'show my tasks' })
   })
 
   it('will not retry a turn that failed for a reason retrying cannot fix', async () => {
@@ -1049,6 +1196,429 @@ describe('unmount', () => {
     })
 
     expect(useAssistantStore.getState().turns).toHaveLength(0)
+  })
+})
+
+/**
+ * Submits a turn whose proposal endpoint answers `proposal`.
+ *
+ * The routing answer is the project one, so the decision and the proposal
+ * describe the same sentence. The confirm endpoint is left on the routing answer
+ * — a body it never sends — so a test that never confirms cannot pass by
+ * accident, and a test that does has to install its own.
+ */
+async function submitProposable(
+  result: { current: VoiceAssistant },
+  proposal: ProposeActionRead,
+  text = 'add a project called HelloWorld',
+): Promise<void> {
+  installEndpoints({
+    [ROUTE_PATH]: () => json(ACCEPTED_PROJECT),
+    [PROPOSE_PATH]: () => json(proposal),
+  })
+  const before = useAssistantStore.getState().turns.length
+  await act(async () => {
+    result.current.submitTranscript(text)
+    await Promise.resolve()
+  })
+  await waitFor(() => expect(useAssistantStore.getState().turns.length).toBe(before + 1))
+  await settleSpeech(result)
+}
+
+/** Presses Confirm and waits for the confirm endpoint's answer to land. */
+async function pressConfirm(
+  result: { current: VoiceAssistant },
+  answer: () => Response,
+): Promise<void> {
+  respond = (call) => (call.url.includes(CONFIRM_PATH) ? answer() : json(ACCEPTED_PROJECT))
+  await act(async () => {
+    result.current.confirmProposal()
+    await Promise.resolve()
+  })
+  await waitFor(() => expect(callsTo(CONFIRM_PATH)).toHaveLength(1))
+  // `confirming` comes from the mutation rather than from local state, so this
+  // is the assertion that no error path left the dialog's buttons switched off.
+  await waitFor(() => expect(result.current.confirming).toBe(false))
+}
+
+/** The one proposal that names a row rather than creating one. */
+const COMPLETE_TASK_PROPOSAL: ProposeActionRead = {
+  proposed: true,
+  intent: 'task_manage',
+  confidence: 0.95,
+  proposal: {
+    kind: 'complete_task',
+    intent: 'task_manage',
+    confidence: 0.95,
+    summary: "Mark the task 'draft the API contract' as done.",
+    requires_confirmation: true,
+    destructive: false,
+    permission: 'tasks.write',
+    service: 'TaskService',
+    module: 'app.services.task_service',
+    entrypoint: 'set_status',
+    payload_schema: 'TaskStatusChange',
+    payload: { status: 'done', note: null },
+    target_id: '7c1f0f2e-0000-4000-8000-000000000000',
+    target_label: 'draft the API contract',
+    arguments: [
+      {
+        field: 'task',
+        value: 'draft the API contract',
+        matched_text: 'draft the API contract',
+        rule: 'matched against the caller’s open tasks',
+      },
+    ],
+    notes: [],
+  },
+  refusal: null,
+}
+
+/**
+ * The write half of a turn.
+ *
+ * Every assertion here is about something the user can observe — a request that
+ * was or was not made, a body that is exactly what the backend published, a
+ * cache that was invalidated, a control that came back — because the failure
+ * modes of this flow are all silent: a proposal that never arrives, a confirm
+ * that never fires, a dialog that never re-enables.
+ */
+describe('a turn that can become a row', () => {
+  it('asks for a proposal after an accepted turn, with the same one utterance', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+    // The sentence the backend composed, not one assembled here: it encodes what
+    // the extractor actually read, which is the thing being agreed to.
+    expect(result.current.proposal?.summary).toBe("Create a project named 'HelloWorld'.")
+
+    const asked = callsTo(PROPOSE_PATH)
+    expect(asked).toHaveLength(1)
+    expect(asked[0]?.body).toEqual({ text: 'add a project called HelloWorld' })
+    // The zone rides in the query string, so a date the user said resolves on
+    // the same instant a day planned on the board would.
+    expect(asked[0]?.url).toContain('tz=')
+  })
+
+  it('keeps the routing decision and its destination while a proposal is pending', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    // Routing answers "where does this go"; a proposal answers "what would this
+    // create". Losing the first to the second would break a reader who asked
+    // only for the destination.
+    expect(result.current.lastAction).toEqual({
+      service: 'ProjectService',
+      entrypoint: 'ProjectService.list',
+      destination: 'api/v1/projects',
+    })
+    expect(result.current.error).toBeNull()
+    expect(result.current.state).toBe('idle')
+    expect(result.current.canListen).toBe(true)
+  })
+
+  it('reads a refusal as nothing to do rather than as a failure', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, REFUSED, 'add a task called hello there')
+
+    // Wait for the proposal request to have landed, so "nothing" is observed
+    // after the answer rather than before it.
+    await waitFor(() => expect(callsTo(PROPOSE_PATH)).toHaveLength(1))
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(result.current.proposal).toBeNull()
+    expect(result.current.actionError).toBeNull()
+    expect(result.current.error).toBeNull()
+    expect(result.current.state).toBe('idle')
+    expect(result.current.canListen).toBe(true)
+    // The turn itself is still recorded and still routed: a refusal says NEXUS
+    // read the sentence, which is information and not a fault.
+    expect(result.current.turns).toHaveLength(1)
+    expect(result.current.lastDecision?.status).toBe('accepted')
+  })
+
+  it('never sends the transcript to the proposal endpoint either', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL, 'add a project called HelloWorld')
+    await waitFor(() => expect(callsTo(PROPOSE_PATH)).toHaveLength(1))
+
+    const body = callsTo(PROPOSE_PATH)[0]?.body as Record<string, unknown>
+    expect(Object.keys(body)).toEqual(['text'])
+    // Same model, same rule: it reads one string and has no way to use a
+    // transcript, so sending one would cost privacy and buy nothing.
+    expect(JSON.stringify(body)).not.toContain('pageLabel')
+  })
+
+  it('sends exactly the kind, intent and payload the proposal published', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await pressConfirm(result, () => json(CREATED_PROJECT))
+
+    const confirmed = callsTo(CONFIRM_PATH)
+    expect(confirmed).toHaveLength(1)
+    expect(confirmed[0]?.body).toEqual({
+      kind: 'create_project',
+      intent: 'project_manage',
+      payload: CREATE_PROJECT_PROPOSAL.proposal?.payload,
+    })
+    // No `target_id: null` on a creation. The field is not part of the story and
+    // an explicit null would be a fourth key to have to keep correct.
+    expect(Object.keys(confirmed[0]?.body as object).sort()).toEqual(['intent', 'kind', 'payload'])
+  })
+
+  it('carries the target on a completion, because the endpoint needs it', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, COMPLETE_TASK_PROPOSAL, 'mark the API contract as done')
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await pressConfirm(result, () =>
+      json({
+        kind: 'complete_task',
+        entity: 'task',
+        entity_id: '7c1f0f2e-0000-4000-8000-000000000000',
+        outcome: 'updated',
+        applied: true,
+        message: "Marked the task 'draft the API contract' as done.",
+      }),
+    )
+
+    // The four fields for a completion, where the row it acts on is named. A
+    // client that sent three here would earn a 422 on every completion.
+    expect(callsTo(CONFIRM_PATH)[0]?.body).toEqual({
+      kind: 'complete_task',
+      intent: 'task_manage',
+      payload: { status: 'done', note: null },
+      target_id: '7c1f0f2e-0000-4000-8000-000000000000',
+    })
+  })
+
+  it('invalidates the work tree so the new row appears without a refresh', async () => {
+    const { result, client } = renderAssistant()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await pressConfirm(result, () => json(CREATED_PROJECT))
+
+    // The aggregate root, for the reason `features/work/hooks.ts` gives: a new
+    // project moves the list, the counts and the feed, and picking one key is
+    // how a stale surface ships.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: workKeys.all() })
+  })
+
+  it('invalidates nothing when the backend reports the row was already there', async () => {
+    const { result, client } = renderAssistant()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await pressConfirm(result, () => json(PROJECT_ALREADY_THERE))
+
+    expect(result.current.actionOutcome).toEqual(PROJECT_ALREADY_THERE)
+    expect(invalidate).not.toHaveBeenCalled()
+  })
+
+  it('discards the proposal when the reader cancels, without a request', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+    const before = calls.length
+
+    act(() => {
+      result.current.cancelProposal()
+    })
+
+    // Nothing was written, so there is nothing to undo and no endpoint to undo
+    // it through — the cancel is local on purpose.
+    expect(calls).toHaveLength(before)
+    expect(callsTo(CONFIRM_PATH)).toHaveLength(0)
+    expect(result.current.proposal).toBeNull()
+    expect(result.current.actionError).toBeNull()
+    expect(result.current.state).toBe('idle')
+    expect(result.current.canListen).toBe(true)
+  })
+
+  it('confirms nothing when there is no proposal to agree to', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, REFUSED, 'add a task called hello there')
+    await waitFor(() => expect(callsTo(PROPOSE_PATH)).toHaveLength(1))
+
+    act(() => {
+      result.current.confirmProposal()
+    })
+
+    expect(callsTo(CONFIRM_PATH)).toHaveLength(0)
+  })
+
+  it('supersedes the previous turn’s proposal, so nothing stale is on screen', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await submitProposable(result, REFUSED, 'show my open tasks')
+
+    // The second turn refused, and a refusal may not be allowed to leave the
+    // first turn's proposal sitting there waiting for an answer about a sentence
+    // the reader has replaced.
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(result.current.proposal).toBeNull()
+  })
+
+  it('keeps the proposal on screen when the confirm is refused, and re-enables both answers', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await pressConfirm(result, () =>
+      errorEnvelope('forbidden', 'You do not have permission to perform this action.', null, 403),
+    )
+
+    // Closing the dialog on failure would take away the reader's only way to
+    // try again, and would hide which proposal they were agreeing to.
+    expect(result.current.proposal).not.toBeNull()
+    expect(result.current.actionError?.code).toBe('not_permitted')
+    expect(result.current.actionError?.message).toMatch(/nothing was written/i)
+    expect(result.current.confirming).toBe(false)
+    // The turn is untouched: it routed, and it routed successfully.
+    expect(result.current.state).toBe('idle')
+    expect(result.current.error).toBeNull()
+    expect(result.current.canListen).toBe(true)
+  })
+
+  it('does not move the lifecycle when the payload is rejected', async () => {
+    const { result } = renderAssistant()
+    await submitProposable(result, CREATE_PROJECT_PROPOSAL)
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await pressConfirm(result, () =>
+      errorEnvelope('validation_error', 'The confirmed payload is not valid for this action.', {
+        unknown_fields: ['colour'],
+      }),
+    )
+
+    expect(result.current.actionError?.message).toMatch(/nothing was written/i)
+    expect(result.current.actionError?.message).toContain('colour')
+    expect(result.current.state).toBe('idle')
+    expect(result.current.error).toBeNull()
+  })
+
+  it('says the classifier is unavailable without retracting the decision', async () => {
+    const { result } = renderAssistant()
+    installEndpoints({
+      [ROUTE_PATH]: () => json(ACCEPTED_PROJECT),
+      [PROPOSE_PATH]: () => errorEnvelope('ml_unavailable', 'no classifier', null, 503),
+    })
+    await act(async () => {
+      result.current.submitTranscript('add a project called HelloWorld')
+      await Promise.resolve()
+    })
+    await waitFor(() => expect(result.current.actionError).not.toBeNull())
+    await settleSpeech(result)
+
+    expect(result.current.actionError?.code).toBe('classifier_unavailable')
+    expect(result.current.actionError?.retryable).toBe(false)
+    // The routing decision survived. Turning the panel's `error` state on for
+    // an optional second question would retract a good answer.
+    expect(result.current.error).toBeNull()
+    expect(result.current.state).toBe('idle')
+    expect(result.current.lastDecision?.status).toBe('accepted')
+    expect(result.current.proposal).toBeNull()
+  })
+
+  it('asks for no proposal at all when the turn was not accepted', async () => {
+    const { result } = renderAssistant()
+    await submit(result, 'what is the weather in Oslo', OUT_OF_SCOPE)
+
+    // The proposal layer runs the same classifier over the same string against
+    // the same threshold, so this could only ever come back a refusal. Spending
+    // a request to be told nothing, on every out-of-scope sentence, is waste.
+    expect(callsTo(PROPOSE_PATH)).toHaveLength(0)
+    expect(result.current.proposal).toBeNull()
+  })
+})
+
+describe('describeActionFailure', () => {
+  it('tells the two denials apart, because they have different fixes', () => {
+    const asking = describeActionFailure(
+      new ApiError({ status: 403, code: 'forbidden', message: 'no analytics.read' }),
+      'propose',
+    )
+    const acting = describeActionFailure(
+      new ApiError({ status: 403, code: 'forbidden', message: 'no projects.write' }),
+      'confirm',
+    )
+
+    expect(asking.code).toBe('not_permitted')
+    expect(acting.code).toBe('not_permitted')
+    expect(asking.retryable).toBe(false)
+    // Same status, two different problems: one says this account may not ask,
+    // the other says it may not make this change — and only the first implies
+    // the assistant is broken.
+    expect(asking.message).not.toBe(acting.message)
+    expect(acting.message).toMatch(/nothing was written/i)
+  })
+
+  it('tells the two rejections apart, because the advice differs', () => {
+    const utterance = describeActionFailure(
+      new ApiError({ status: 422, code: 'validation_error', message: 'text too long' }),
+      'propose',
+    )
+    const payload = describeActionFailure(
+      new ApiError({ status: 422, code: 'validation_error', message: 'payload invalid' }),
+      'confirm',
+    )
+
+    expect(utterance.message).toMatch(/one short instruction/i)
+    expect(payload.message).toMatch(/details it read out/i)
+    expect(payload.retryable).toBe(false)
+  })
+
+  it('tells the reader that routing still works when the model is missing', () => {
+    const error = describeActionFailure(
+      new ApiError({ status: 503, code: 'ml_unavailable', message: 'checkpoint missing' }),
+      'propose',
+    )
+
+    expect(error.code).toBe('classifier_unavailable')
+    expect(error.message).toMatch(/routing still works/i)
+    // A checkpoint that is not loaded will not load itself in two seconds.
+    expect(error.retryable).toBe(false)
+  })
+
+  it('says a lost confirm is unknown, and that asking again is safe', () => {
+    const error = describeActionFailure(
+      new ApiError({ status: 0, code: 'network_error', message: 'Failed to fetch' }),
+      'confirm',
+    )
+
+    expect(error.code).toBe('timeout')
+    expect(error.retryable).toBe(true)
+    // On a write, a dropped connection does not mean the write did not happen —
+    // claiming either way would be a guess dressed as a fact.
+    expect(error.message).toMatch(/not known whether anything was written/i)
+    expect(error.message).toMatch(/will not create the same row twice/i)
+  })
+
+  it('never leaks a raw backend message into the copy', () => {
+    const error = describeActionFailure(
+      new ApiError({
+        status: 500,
+        code: 'internal_error',
+        message: 'Traceback (most recent call last): File "/app/app/ml/runtime.py"',
+      }),
+      'confirm',
+    )
+
+    expect(error.message).not.toContain('Traceback')
+    expect(error.message).not.toContain('/app/app/ml')
   })
 })
 

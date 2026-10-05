@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { VoiceAssistant } from '@/features/assistant/components/voice-assistant'
 import { resetAssistantStore } from '@/features/assistant/assistant-store'
-import type { RoutingDecisionRead } from '@/types/ml'
+import type { ConfirmActionRead, ProposeActionRead, RoutingDecisionRead } from '@/types/ml'
 
 /**
  * The panel, mounted for real against the real hook.
@@ -24,6 +24,11 @@ import type { RoutingDecisionRead } from '@/types/ml'
  * a conversation is never sent to a model that cannot read one — and the backend
  * forbids unknown fields, so an accidental `history` key would be a 422 rather
  * than a leak. Pinning the body is what makes that claim testable.
+ *
+ * **A turn is two requests now**, so the stub answers by endpoint: a routing
+ * decision for `/ml/route`, a propose answer for `/ml/action/propose`, and a
+ * confirm answer for `/ml/action/confirm`. Handing one fixture to all three
+ * would be describing a backend that does not exist.
  */
 
 const ACCEPTED: RoutingDecisionRead = {
@@ -61,6 +66,89 @@ function jsonResponse(body: unknown): Response {
   })
 }
 
+/** A refusal is a 200. This is the answer most utterances produce. */
+const REFUSED: ProposeActionRead = {
+  proposed: false,
+  intent: 'task_manage',
+  confidence: 0.98,
+  proposal: null,
+  refusal: {
+    kind: 'create_task',
+    intent: 'task_manage',
+    confidence: 0.98,
+    reason_code: 'context_missing',
+    reason:
+      "Creating a task needs the project it belongs to, and no project was supplied with the request. Open the project's board and add it there.",
+    arguments: [],
+    notes: [],
+  },
+}
+
+const CREATE_PROJECT: ProposeActionRead = {
+  proposed: true,
+  intent: 'project_manage',
+  confidence: 0.98,
+  proposal: {
+    kind: 'create_project',
+    intent: 'project_manage',
+    confidence: 0.98,
+    summary: "Create a project named 'HelloWorld'.",
+    requires_confirmation: true,
+    destructive: false,
+    permission: 'projects.write',
+    service: 'ProjectService',
+    module: 'app.services.project_service',
+    entrypoint: 'create',
+    payload_schema: 'ProjectCreate',
+    payload: { name: 'HelloWorld', description: null, priority: 'medium' },
+    target_id: null,
+    target_label: null,
+    arguments: [
+      {
+        field: 'title',
+        value: 'HelloWorld',
+        matched_text: 'add a project called HelloWorld',
+        rule: "the utterance with 'a project called' removed",
+      },
+    ],
+    notes: ['No start or target date was given, so NEXO did not guess one.'],
+  },
+  refusal: null,
+}
+
+const CREATED: ConfirmActionRead = {
+  kind: 'create_project',
+  entity: 'project',
+  entity_id: 'a9e9ce1c-0000-4000-8000-000000000000',
+  outcome: 'created',
+  applied: true,
+  message: "Created the project 'HelloWorld'.",
+}
+
+/** The routing answer for the sentence the create fixtures above belong to. */
+const PROJECTS: RoutingDecisionRead = {
+  intent: 'project_manage',
+  confidence: 0.98,
+  threshold: 0.9,
+  status: 'accepted',
+  destination: 'api/v1/projects',
+  destination_kind: 'router',
+  target: {
+    service: 'ProjectService',
+    module: 'app.services.project_service',
+    entrypoint: 'ProjectService.create',
+  },
+  reason: 'Project management is a validated NEXUS destination.',
+  alternatives: [],
+}
+
+/** The confirm request bodies this suite recorded, in order. */
+function bodiesFor(fetchMock: ReturnType<typeof vi.fn>, path: string): unknown[] {
+  return fetchMock.mock.calls
+    .filter((call) => String(call[0]).includes(path))
+    .map((call) => JSON.parse(String((call[1] as RequestInit).body)))
+}
+
 /**
  * A fresh client per test, with retries off.
  *
@@ -69,6 +157,10 @@ function jsonResponse(body: unknown): Response {
  * defaults below are the ones in `src/app/query-client.ts`, not a relaxation of
  * them: the retry policy is what decides whether a failure arrives immediately
  * or after a few seconds.
+ *
+ * The client is returned alongside the render result so a test can watch cache
+ * invalidation — which is the only way a new row appears without a refresh, and
+ * therefore the one part of the write half with no visible symptom of its own.
  */
 function renderAssistant() {
   const client = new QueryClient({
@@ -78,19 +170,45 @@ function renderAssistant() {
     },
   })
 
-  return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={['/assistant']}>
-        <VoiceAssistant />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
+  return {
+    ...render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/assistant']}>
+          <VoiceAssistant />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    ),
+    client,
+  }
 }
 
-function stubRoute(decision: RoutingDecisionRead) {
-  const fetchMock = vi.fn(async () => jsonResponse(decision))
+/**
+ * Answers each `/ml` endpoint with the body it actually gets in life.
+ *
+ * `propose` and `confirm` default to a refusal, which is the quiet path and the
+ * one every test below the routing block exercises by default.
+ */
+function stubEndpoints({
+  route = () => jsonResponse(ACCEPTED),
+  propose = () => jsonResponse(REFUSED),
+  confirm = () => jsonResponse(CREATED),
+}: {
+  route?: () => Response
+  propose?: () => Response
+  confirm?: () => Response
+} = {}) {
+  const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const url = String(input)
+    if (url.includes('/ml/action/confirm')) return confirm()
+    if (url.includes('/ml/action/propose')) return propose()
+    return route()
+  })
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
+}
+
+function stubRoute(decision: RoutingDecisionRead, propose: ProposeActionRead = REFUSED) {
+  return stubEndpoints({ route: () => jsonResponse(decision), propose: () => jsonResponse(propose) })
 }
 
 beforeEach(() => {
@@ -143,7 +261,13 @@ describe('VoiceAssistant', () => {
     // Two regions state the newest decision — the panel's headline and the
     // conversation log — so the claim is that it reached both.
     await waitFor(() => expect(screen.getAllByText('Show my tasks')).toHaveLength(2))
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    // Exactly one routing request for one turn. Scoped to the endpoint because
+    // the turn now also asks what could be created, and this test is about the
+    // typed path still working rather than about the total.
+    const routingCalls = fetchMock.mock.calls.filter((call) =>
+      String(call[0]).includes('/ml/route'),
+    )
+    expect(routingCalls).toHaveLength(1)
     expect(field).toHaveValue('')
   })
 
@@ -303,22 +427,6 @@ describe('the destination an accepted turn names', () => {
     )
   }
 
-  const PROJECTS: RoutingDecisionRead = {
-    intent: 'project_manage',
-    confidence: 0.98,
-    threshold: 0.9,
-    status: 'accepted',
-    destination: 'api/v1/projects',
-    destination_kind: 'router',
-    target: {
-      service: 'ProjectService',
-      module: 'app.services.project_service',
-      entrypoint: 'ProjectService.create',
-    },
-    reason: 'Project management is a validated NEXUS destination.',
-    alternatives: [],
-  }
-
   it('offers the route it just named, and the button takes you there', async () => {
     stubRoute(PROJECTS)
     const user = userEvent.setup()
@@ -348,5 +456,197 @@ describe('the destination an accepted turn names', () => {
     // The decision itself is one text node, so it is a reliable settle point.
     await screen.findByText('deactivate my account')
     expect(screen.queryByRole('button', { name: /^go to /i })).toBeNull()
+  })
+})
+
+/**
+ * The confirm step, as the reader meets it.
+ *
+ * These are rendered through the panel rather than around the dialog component
+ * on purpose: what matters is that a turn produces one, that it says the
+ * backend's sentence rather than a locally composed one, and that neither answer
+ * leaves the panel somewhere it cannot be operated from. A dialog tested on its
+ * own would pass while the hook never opened it.
+ */
+describe('the confirmation a creatable turn produces', () => {
+  /**
+   * Types one request and presses Classify, returning the same session so the
+   * rest of the case drives the panel through it. `setup()` is called once per
+   * test: a second one would mean a second document to type into.
+   */
+  async function ask(text: string) {
+    const user = userEvent.setup()
+    await user.type(screen.getByLabelText(/Or type your request/i), text)
+    await user.click(screen.getByRole('button', { name: 'Classify' }))
+    return user
+  }
+
+  it('offers the backend’s own sentence, with a Confirm and a Cancel', async () => {
+    stubEndpoints({
+      route: () => jsonResponse(PROJECTS),
+      propose: () => jsonResponse(CREATE_PROJECT),
+    })
+    renderAssistant()
+    await ask('add a project called HelloWorld')
+
+    const dialog = await screen.findByRole('dialog')
+
+    // The sentence is composed by the proposal layer from what the extractor
+    // actually read. A locally written equivalent would be a second description
+    // of the same write, free to disagree with the one being agreed to.
+    expect(dialog).toHaveAccessibleDescription("Create a project named 'HelloWorld'.")
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled()
+    // The reasoning travels with it: what was read, and from which span.
+    expect(screen.getByText('HelloWorld')).toBeInTheDocument()
+    expect(screen.getByText(/read from “add a project called HelloWorld”/)).toBeInTheDocument()
+    expect(
+      screen.getByText('No start or target date was given, so NEXO did not guess one.'),
+    ).toBeInTheDocument()
+  })
+
+  it('is keyboard-operable: Escape is a cancel, and it discards the proposal', async () => {
+    const fetchMock = stubEndpoints({
+      route: () => jsonResponse(PROJECTS),
+      propose: () => jsonResponse(CREATE_PROJECT),
+    })
+    renderAssistant()
+    const user = await ask('add a project called HelloWorld')
+    await screen.findByRole('dialog')
+
+    await user.keyboard('{Escape}')
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    // Escape cancelled; it did not confirm. Nothing was written.
+    expect(bodiesFor(fetchMock, '/action/confirm')).toHaveLength(0)
+    // And the panel is usable again rather than trapped behind a dead dialog.
+    // `Classify` is only ever enabled with a draft in the field, so the field is
+    // the thing that has to be live — and typing has to bring the button back.
+    const field = screen.getByLabelText(/Or type your request/i)
+    expect(field).toBeEnabled()
+    await user.type(field, 'show my open tasks')
+    expect(screen.getByRole('button', { name: 'Classify' })).toBeEnabled()
+  })
+
+  it('confirms with exactly what the proposal published, and shows what happened', async () => {
+    const fetchMock = stubEndpoints({
+      route: () => jsonResponse(PROJECTS),
+      propose: () => jsonResponse(CREATE_PROJECT),
+      confirm: () => jsonResponse(CREATED),
+    })
+    const { client } = renderAssistant()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const user = await ask('add a project called HelloWorld')
+    await screen.findByRole('dialog')
+
+    await user.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    // The dialog closes and the service's own sentence takes its place. It is
+    // written from what the service returned rather than from what the client
+    // hoped for, which is the only reason it can be trusted.
+    //
+    // Twice on purpose: once where the reader can see it, and once in the panel's
+    // polite live region, because the dialog closing is otherwise the only thing
+    // a screen-reader user is told about.
+    const shown = await screen.findAllByText("Created the project 'HelloWorld'.")
+    expect(shown).toHaveLength(2)
+    expect(shown.some((node) => node.closest('[aria-live="polite"]'))).toBe(true)
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+    expect(bodiesFor(fetchMock, '/action/confirm')).toEqual([
+      {
+        kind: 'create_project',
+        intent: 'project_manage',
+        payload: CREATE_PROJECT.proposal?.payload,
+      },
+    ])
+    // Without this the new project exists in the database and nowhere on screen
+    // until the reader reloads.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['work'] })
+    // Routing still answers its own question afterwards.
+    expect(screen.getByRole('button', { name: /go to projects/i })).toBeInTheDocument()
+  })
+
+  it('cancels without a request and leaves the routing decision standing', async () => {
+    const fetchMock = stubEndpoints({
+      route: () => jsonResponse(PROJECTS),
+      propose: () => jsonResponse(CREATE_PROJECT),
+    })
+    renderAssistant()
+    const user = await ask('add a project called HelloWorld')
+    await screen.findByRole('dialog')
+    const before = fetchMock.mock.calls.length
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(fetchMock.mock.calls).toHaveLength(before)
+    expect(bodiesFor(fetchMock, '/action/confirm')).toHaveLength(0)
+    // "Go to Projects" is a different question from "create a project", and it
+    // survives a proposal the reader declined.
+    expect(screen.getByRole('button', { name: /go to projects/i })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('treats a refusal as nothing to do — no dialog, no alert, nothing disabled', async () => {
+    const fetchMock = stubEndpoints({
+      route: () => jsonResponse(PROJECTS),
+      propose: () => jsonResponse(REFUSED),
+    })
+    renderAssistant()
+    const user = await ask('add a task called hello there')
+
+    // The routing decision is the settle point; the refusal lands after it, so
+    // the assertions below are made once the proposal request has been made.
+    await screen.findByText('add a task called hello there')
+    await waitFor(() => expect(bodiesFor(fetchMock, '/action/propose')).toHaveLength(1))
+
+    // `proposed: false` is a 200 and the ordinary answer. A panel that reddened
+    // itself here would be crying wolf on nearly every turn, because most things
+    // a person says to an assistant are not a row to create.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByText(/NEXUS could not/i)).not.toBeInTheDocument()
+    // The panel is not left mid-flight with its controls switched off. `Classify`
+    // is only ever enabled with a draft in the field, so the field is the thing
+    // that has to be live — and typing has to bring the button back.
+    const field = screen.getByLabelText(/Or type your request/i)
+    expect(field).toBeEnabled()
+    await user.type(field, 'show my open tasks')
+    expect(screen.getByRole('button', { name: 'Classify' })).toBeEnabled()
+    // And the routing answer is untouched.
+    expect(screen.getByRole('button', { name: /go to projects/i })).toBeInTheDocument()
+  })
+
+  it('explains a refused confirmation without closing the dialog or disabling it', async () => {
+    stubEndpoints({
+      route: () => jsonResponse(PROJECTS),
+      propose: () => jsonResponse(CREATE_PROJECT),
+      confirm: () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 'forbidden',
+              message: 'You do not have permission to perform this action.',
+              details: null,
+              request_id: 'r1',
+            },
+          }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } },
+        ),
+    })
+    renderAssistant()
+    const user = await ask('add a project called HelloWorld')
+    await screen.findByRole('dialog')
+
+    await user.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/nothing was written/i)
+    // Still the same proposal, still both answers. Closing here would take away
+    // the reader's only way to try again.
+    expect(screen.getByText("Create a project named 'HelloWorld'.")).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled()
   })
 })

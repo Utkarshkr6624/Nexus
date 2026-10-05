@@ -9,6 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import {
+  ActionConfirmation,
+  ActionFailure,
+  ActionOutcome,
+} from '@/features/assistant/components/action-confirmation'
 import { ConversationLog, RoutingOutcome } from '@/features/assistant/components/conversation-log'
 import { RecordButton } from '@/features/assistant/components/record-button'
 import { VoiceStatePill } from '@/features/assistant/components/voice-state-pill'
@@ -29,9 +34,17 @@ import type { VoiceState } from '@/features/assistant/types'
  * button that can answer a question, and copy implying otherwise would turn the
  * product's one real limitation into a lie.
  *
+ * **Routing is not the only thing a turn can produce, but it is still the
+ * answer.** The same utterance is also offered to `POST /ml/action/propose`,
+ * which may describe a row to create — and when it does, the panel says so, in
+ * the backend's own sentence, behind a Confirm. The destination and its "Go to
+ * X" button stay: "where does this go" and "what would this create" are
+ * different questions, and a reader who asked only the first still needs it.
+ *
  * **The history never leaves this page.** Every turn is rendered here so the
  * reader can see exactly what was classified, and the only text that crosses the
- * network is the utterance being classified right now. A classifier with no
+ * network is the utterance being classified right now — the same single string,
+ * whichever of the two `/ml` endpoints it is sent to. A classifier with no
  * dialogue state cannot use a transcript, so sending one would cost the user's
  * privacy and buy nothing.
  *
@@ -65,10 +78,20 @@ const STATE_ANNOUNCEMENT: Record<VoiceState, string> = {
  * at helps nobody — and `error` is silent here because the failure renders as an
  * `alert` next to the control that caused it. Announcing any of those twice is
  * noise, not redundancy.
+ *
+ * A confirmed action is the one thing appended, and it is appended because
+ * nothing on screen announces itself at the right moment: the dialog closes and
+ * a line appears in its place, and without the region a screen-reader user is
+ * told only that the dialog went away. Action *failures* are not appended, for
+ * the same reason `error` is not — they render as an `alert` already.
  */
-function announcementFor(state: VoiceState, errorMessage: string | null): string {
+function announcementFor(
+  state: VoiceState,
+  errorMessage: string | null,
+  actionMessage: string,
+): string {
   if (state === 'error') return errorMessage ?? ''
-  return STATE_ANNOUNCEMENT[state]
+  return [STATE_ANNOUNCEMENT[state], actionMessage].filter((part) => part !== '').join(' ')
 }
 
 /** The honest, terminal explanation for a browser that ships no recogniser. */
@@ -145,11 +168,19 @@ export function VoiceAssistant({ className }: VoiceAssistantProps) {
     suggestion,
     turns,
     lastAction,
+    proposal,
+    confirming,
+    actionOutcome,
+    actionError,
     startListening,
     stopListening,
     submitTranscript,
     retry,
     dismissError,
+    confirmProposal,
+    cancelProposal,
+    dismissActionOutcome,
+    dismissActionError,
     clearConversation,
   } = useVoiceAssistant()
 
@@ -157,7 +188,11 @@ export function VoiceAssistant({ className }: VoiceAssistantProps) {
 
   const unsupported = state === 'unsupported'
   const interim = state === 'listening' ? interimTranscript.trim() : ''
-  const announcement = announcementFor(state, error?.message ?? null)
+  const announcement = announcementFor(
+    state,
+    error?.message ?? null,
+    actionOutcome?.message ?? '',
+  )
   const newest = turns.length > 0 ? (turns[turns.length - 1] ?? null) : null
   const lastDecision = newest?.decision ?? null
 
@@ -206,8 +241,9 @@ export function VoiceAssistant({ className }: VoiceAssistantProps) {
             <VoiceStatePill state={state} />
           </div>
           <CardDescription>
-            NEXO listens to one request and names the part of the product you meant. It classifies
-            what you said; it does not write an answer.
+            NEXO listens to one request and names the part of the product you meant. When it can
+            also tell what you were asking to create, it says so in its own words and waits for you
+            to agree. It classifies what you said; it does not write an answer.
           </CardDescription>
         </CardHeader>
 
@@ -297,14 +333,55 @@ export function VoiceAssistant({ className }: VoiceAssistantProps) {
                  request and then given no way to act on it, which reads as the
                  assistant having done nothing at all. Routing is not execution —
                  the button is the honest next step, and it is labelled as
-                 navigation rather than as work NEXUS carried out. */
+                 navigation rather than as work NEXUS carried out. It is still
+                 offered after a confirmed write, because the row it would take
+                 the reader to is where they will now find it. */
               <Button type="button" variant="outline" size="sm" onClick={() => navigate(link.to)}>
                 Go to {link.label}
                 <ArrowRight aria-hidden="true" />
               </Button>
             )}
+
+            {/* What the confirmed action actually did, in the service's own
+                sentence. Rendered inside the decision card rather than in its
+                own card so it reads as the result of the turn above it. */}
+            {actionOutcome && (
+              <ActionOutcome
+                outcome={actionOutcome}
+                onDismiss={dismissActionOutcome}
+                className="mt-3"
+              />
+            )}
+
+            {/* The action layer failed on its own. Deliberately not the panel's
+                `ErrorNotice`: the turn itself did not fail, and replacing a good
+                decision with a red box about an optional second question would
+                retract an answer that was correct.
+
+                Suppressed while a proposal is on screen, because the dialog is
+                already showing the same sentence — two copies of one message in
+                one view, one of them behind a modal, is noise rather than
+                emphasis. */}
+            {actionError && proposal === null && (
+              <ActionFailure error={actionError} onDismiss={dismissActionError} className="mt-3" />
+            )}
           </CardContent>
         </Card>
+      )}
+
+      {/* The confirm step, mounted only while a proposal is pending and placed
+          directly beneath the decision that produced it, so the thing being
+          agreed to and the sentence describing it are adjacent in the source as
+          well as on screen. The dialog itself portals to `document.body`, so
+          where this sits in the tree does not move it on the page. */}
+      {proposal && (
+        <ActionConfirmation
+          proposal={proposal}
+          confirming={confirming}
+          error={actionError}
+          onConfirm={confirmProposal}
+          onCancel={cancelProposal}
+        />
       )}
 
       {/* A section heading, not a second masthead: the route renders the page's

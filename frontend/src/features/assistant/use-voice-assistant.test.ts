@@ -1275,6 +1275,45 @@ const COMPLETE_TASK_PROPOSAL: ProposeActionRead = {
 }
 
 /**
+ * The one proposal that removes a row rather than naming or creating one.
+ *
+ * `destructive: true` is published by the backend's spec table, not chosen here,
+ * and the payload is empty because a delete carries no fields — only the row.
+ */
+const DELETE_TASK_PROPOSAL: ProposeActionRead = {
+  proposed: true,
+  intent: 'task_manage',
+  confidence: 0.94,
+  proposal: {
+    kind: 'delete_task',
+    intent: 'task_manage',
+    confidence: 0.94,
+    summary:
+      "Delete the task 'draft the API contract'. Its 4 recorded activities stay, but the task itself is gone for good.",
+    requires_confirmation: true,
+    destructive: true,
+    permission: 'tasks.write',
+    service: 'TaskService',
+    module: 'app.services.task_service',
+    entrypoint: 'delete',
+    payload_schema: 'TaskDelete',
+    payload: {},
+    target_id: '7c1f0f2e-0000-4000-8000-000000000000',
+    target_label: 'draft the API contract',
+    arguments: [
+      {
+        field: 'task',
+        value: 'draft the API contract',
+        matched_text: 'the API contract task',
+        rule: 'matched against the caller’s open tasks',
+      },
+    ],
+    notes: [],
+  },
+  refusal: null,
+}
+
+/**
  * The write half of a turn.
  *
  * Every assertion here is about something the user can observe — a request that
@@ -1366,10 +1405,18 @@ describe('a turn that can become a row', () => {
       kind: 'create_project',
       intent: 'project_manage',
       payload: CREATE_PROJECT_PROPOSAL.proposal?.payload,
+      confirm_destructive: false,
     })
     // No `target_id: null` on a creation. The field is not part of the story and
-    // an explicit null would be a fourth key to have to keep correct.
-    expect(Object.keys(confirmed[0]?.body as object).sort()).toEqual(['intent', 'kind', 'payload'])
+    // an explicit null would be a fourth key to have to keep correct — but the
+    // acknowledgement is always sent, because a client that omitted it would be
+    // relying on a default the destructive kinds depend on.
+    expect(Object.keys(confirmed[0]?.body as object).sort()).toEqual([
+      'confirm_destructive',
+      'intent',
+      'kind',
+      'payload',
+    ])
   })
 
   it('carries the target on a completion, because the endpoint needs it', async () => {
@@ -1394,8 +1441,62 @@ describe('a turn that can become a row', () => {
       kind: 'complete_task',
       intent: 'task_manage',
       payload: { status: 'done', note: null },
+      confirm_destructive: false,
       target_id: '7c1f0f2e-0000-4000-8000-000000000000',
     })
+  })
+
+  it('acknowledges a destructive proposal with confirm_destructive: true', async () => {
+    // The guard, from the client's side. The confirm endpoint refuses a
+    // destructive kind unless this flag is present, so it is the thing that
+    // stops a delete being executed by a client that never warned anybody. It is
+    // copied from the proposal rather than derived from `kind`, because which
+    // kinds are destructive is the backend's spec table and not this file's
+    // business.
+    const { result } = renderAssistant()
+    await submitProposable(result, DELETE_TASK_PROPOSAL, 'delete the API contract task')
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await pressConfirm(result, () =>
+      json({
+        kind: 'delete_task',
+        entity: 'task',
+        entity_id: '7c1f0f2e-0000-4000-8000-000000000000',
+        outcome: 'deleted',
+        applied: true,
+        message: "Deleted the task 'draft the API contract'.",
+      }),
+    )
+
+    expect(callsTo(CONFIRM_PATH)[0]?.body).toEqual({
+      kind: 'delete_task',
+      intent: 'task_manage',
+      payload: {},
+      confirm_destructive: true,
+      target_id: '7c1f0f2e-0000-4000-8000-000000000000',
+    })
+  })
+
+  it('takes the acknowledgement from the published flag, never from the kind', async () => {
+    // The other half of the guard, and the one that keeps it from being a rubber
+    // stamp. `ActionKind` documents that which kinds are destructive is the
+    // backend's spec table and can change without a client release, so a client
+    // that hard-coded `kind.startsWith('delete_')` would answer the wrong
+    // question the day the table changed. A proposal whose flag is `false` is
+    // confirmed with `false` whatever its kind is.
+    const { result } = renderAssistant()
+    const undestructive: ProposeActionRead = {
+      ...DELETE_TASK_PROPOSAL,
+      proposal: { ...DELETE_TASK_PROPOSAL.proposal!, destructive: false },
+    }
+    await submitProposable(result, undestructive, 'delete the API contract task')
+    await waitFor(() => expect(result.current.proposal).not.toBeNull())
+
+    await pressConfirm(result, () => json(CREATED_PROJECT))
+
+    const body = callsTo(CONFIRM_PATH)[0]?.body as { kind: string; confirm_destructive: boolean }
+    expect(body.kind).toBe('delete_task')
+    expect(body.confirm_destructive).toBe(false)
   })
 
   it('invalidates the work tree so the new row appears without a refresh', async () => {

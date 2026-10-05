@@ -289,9 +289,15 @@ function cardFor(name: string): HTMLElement {
  * `MetricCard` prints its label as a small uppercase paragraph rather than a
  * heading — it is a figure with a caption, not a section — so the tile is located
  * the way a reader finds it rather than by heading role.
+ *
+ * The query is scoped to the summary card because the trend chart's legend
+ * publishes one of the same words as a series label: "Recorded minutes" is both a
+ * tile and a `<li>` in the legend, and a page-wide `getByText` finds both.
  */
 function tileFor(label: string): HTMLElement {
-  return screen.getByText(label).closest('div.rounded-lg') as HTMLElement
+  return within(cardFor('Learning summary'))
+    .getByText(label)
+    .closest('div.rounded-lg') as HTMLElement
 }
 
 /** The labelled sub-section of a card — `Current level`, `Evidence`, and so on. */

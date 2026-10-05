@@ -36,8 +36,13 @@ const DEFAULT_DURATION_MS = 5000
  * Timers live beside the store rather than in the components that render it, so
  * a toast dismissed by hand, by a caller holding its id, or by the stack cap
  * stops its own timer instead of firing against a record that is already gone.
+ *
+ * They are taken through `globalThis` rather than `window`: this module is
+ * reachable from non-DOM code, and a `window` reference throws `ReferenceError`
+ * in any environment that has no window — including one whose teardown happened
+ * while a toast timer was still pending.
  */
-const timers = new Map<string, number>()
+const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
 let sequence = 0
 
@@ -49,7 +54,7 @@ function nextId(): string {
 function cancelTimer(id: string): void {
   const timer = timers.get(id)
   if (timer === undefined) return
-  window.clearTimeout(timer)
+  globalThis.clearTimeout(timer)
   timers.delete(id)
 }
 
@@ -83,7 +88,7 @@ export const useToastStore = create<ToastState>()((set, get) => ({
     if (duration > 0) {
       timers.set(
         id,
-        window.setTimeout(() => {
+        globalThis.setTimeout(() => {
           get().dismiss(id)
         }, duration),
       )
@@ -98,7 +103,7 @@ export const useToastStore = create<ToastState>()((set, get) => ({
   },
 
   dismissAll() {
-    for (const timer of timers.values()) window.clearTimeout(timer)
+    for (const timer of timers.values()) globalThis.clearTimeout(timer)
     timers.clear()
     set({ toasts: [] })
   },

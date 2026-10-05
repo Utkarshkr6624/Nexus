@@ -90,7 +90,13 @@ from app.models.enums import (
     LearningGoalStatus,
     SkillLevelSource,
 )
-from app.models.learning import LearningActivity, LearningGoal, Skill
+from app.models.learning import (
+    DEFAULT_SKILL_CURRENT_LEVEL,
+    DEFAULT_SKILL_TARGET_LEVEL,
+    LearningActivity,
+    LearningGoal,
+    Skill,
+)
 from app.repositories.knowledge import NoteRepository
 from app.repositories.learning import LearningRepository
 from app.repositories.project import ProjectRepository
@@ -316,20 +322,24 @@ class LearningIntelligenceService:
         await self._require_project(owner=owner, project_id=project_id)
         await self._require_note(owner=owner, note_id=note_id)
 
-        goal = await self.repositories.create_goal(
-            owner.id,
-            title=title,
-            description=description,
-            target_skill_id=target_skill_id,
-            target_topic=target_topic,
-            target_date=target_date,
-            priority=priority,
-            status=status,
-            progress=progress,
-            estimated_effort_minutes=estimated_effort_minutes,
-            project_id=project_id,
-            note_id=note_id,
-        )
+        try:
+            goal = await self.repositories.create_goal(
+                owner.id,
+                title=title,
+                description=description,
+                target_skill_id=target_skill_id,
+                target_topic=target_topic,
+                target_date=target_date,
+                priority=priority,
+                status=status,
+                progress=progress,
+                estimated_effort_minutes=estimated_effort_minutes,
+                project_id=project_id,
+                note_id=note_id,
+            )
+        except ValueError as error:
+            raise ValidationError(str(error)) from error
+
         await self._record_event(
             ActivityEvent.LEARNING_GOAL_CREATED,
             owner=owner,
@@ -376,20 +386,31 @@ class LearningIntelligenceService:
 
         Returns:
             The page, the total the filters match, and the complete tally.
+
+        Raises:
+            ValidationError: If ``status`` is outside the
+                :class:`~app.models.enums.LearningGoalStatus` vocabulary. The
+                repository is where the check lives — the same check the write
+                path applies — and a ``ValueError`` escaping it would take the
+                read down as a 500 over a query parameter rather than answering
+                with the 422 the contract promises.
         """
-        rows = await self._paged(
-            lambda skip: self.repositories.list_goals(
-                owner.id,
-                status=status,
-                target_skill_id=target_skill_id,
-                project_id=project_id,
-                target_after=target_after,
-                target_before=target_before,
-                limit=_READ_PAGE_SIZE,
-                offset=skip,
-            ),
-            cap=self.settings.learning_max_goals,
-        )
+        try:
+            rows = await self._paged(
+                lambda skip: self.repositories.list_goals(
+                    owner.id,
+                    status=status,
+                    target_skill_id=target_skill_id,
+                    project_id=project_id,
+                    target_after=target_after,
+                    target_before=target_before,
+                    limit=_READ_PAGE_SIZE,
+                    offset=skip,
+                ),
+                cap=self.settings.learning_max_goals,
+            )
+        except ValueError as error:
+            raise ValidationError(str(error)) from error
         skip = max(0, offset)
         by_status = {
             member.value: sum(1 for row in rows if row.status == member.value)
@@ -589,15 +610,18 @@ class LearningIntelligenceService:
         if await self.repositories.get_skill_by_name(owner.id, name) is not None:
             raise ConflictError("That skill is already tracked for this account.")
 
-        skill = await self.repositories.create_skill(
-            owner.id,
-            name=name,
-            category=category,
-            description=description,
-            current_level=current_level,
-            target_level=target_level,
-            level_source=SkillLevelSource.USER_DEFINED,
-        )
+        try:
+            skill = await self.repositories.create_skill(
+                owner.id,
+                name=name,
+                category=category,
+                description=description,
+                current_level=current_level,
+                target_level=target_level,
+                level_source=SkillLevelSource.USER_DEFINED,
+            )
+        except ValueError as error:
+            raise ValidationError(str(error)) from error
         await self._record_event(
             ActivityEvent.SKILL_CREATED,
             owner=owner,
@@ -700,14 +724,38 @@ class LearningIntelligenceService:
 
         Raises:
             ValidationError: If ``values`` is empty, names a column the skill may
-                not write, or puts a level outside 1-5.
+                not write, nulls a column the schema forbids, or puts a level
+                outside 1-5.
+            ConflictError: If the edit renames the skill onto a name this account
+                already tracks. The same answer ``POST`` gives for the same
+                mistake, because it is the same mistake: without it the rename
+                reaches ``uq_skills_owner_name`` as an ``IntegrityError`` and the
+                user is shown a 500 for a typo.
             NotFoundError: If the skill is not this account's.
         """
         if not values:
             raise ValidationError("A skill edit must change at least one field.")
         writes = dict(values)
+        if "name" in writes and writes["name"] is None:
+            raise ValidationError(
+                "A skill cannot be left without a name; omit the field to leave the "
+                "name alone."
+            )
+        # An explicit null on a level *clears the claim* rather than storing SQL
+        # NULL: the column is NOT NULL, and "clear it" has to mean the one thing
+        # the schema can hold — the floor it had before anybody claimed anything.
+        for column, floor in (
+            ("current_level", DEFAULT_SKILL_CURRENT_LEVEL),
+            ("target_level", DEFAULT_SKILL_TARGET_LEVEL),
+        ):
+            if writes.get(column, "sentinel") is None:
+                writes[column] = floor
         if "current_level" in writes:
             writes["level_source"] = SkillLevelSource.USER_DEFINED.value
+
+        await self._require_free_skill_name(
+            owner=owner, skill_id=skill_id, name=writes.get("name")
+        )
 
         try:
             skill = await self.repositories.update_skill(owner.id, skill_id, writes)
@@ -723,13 +771,46 @@ class LearningIntelligenceService:
         )
         return SkillRead.model_validate(skill)
 
-    async def delete_skill(self, *, owner: User, skill_id: uuid.UUID) -> None:
-        """Remove one skill and everything recorded against it.
+    async def _require_free_skill_name(
+        self, *, owner: User, skill_id: uuid.UUID | None, name: str | None
+    ) -> None:
+        """Refuse a name this account already tracks, on create or on rename.
 
-        The activities cascade: one left pointing at a skill that no longer exists
-        would sit in no skill's evidence count and no page would ever show it. The
-        user's levels go with it, and any career evidence that named it survives
-        as the user's own claim with the pointer dropped.
+        The check :meth:`create_skill` makes before an insert, reused for the edit
+        so a rename to an occupied name answers with the same 409 the create does
+        rather than an ``IntegrityError`` the client cannot read. ``skill_id`` is
+        the row being renamed: a skill keeping its own name is not a conflict with
+        itself, which matters because the lookup matches without regard to case.
+
+        Args:
+            owner: The caller.
+            skill_id: The row being renamed, or ``None`` on a create.
+            name: The name being claimed, or ``None`` when the edit does not
+                touch the name at all.
+
+        Raises:
+            ConflictError: If another row already holds that name.
+        """
+        if name is None:
+            return
+        existing = await self.repositories.get_skill_by_name(owner.id, name)
+        if existing is not None and existing.id != skill_id:
+            raise ConflictError("That skill is already tracked for this account.")
+
+    async def delete_skill(self, *, owner: User, skill_id: uuid.UUID) -> None:
+        """Remove one skill. **Its recorded activities are kept, not cascaded.**
+
+        ``learning_activities.skill_id`` is ``ON DELETE SET NULL``, so the rows
+        survive as append-only facts with an unattributed subject — the same state
+        they are already in when the user never named a skill. Deleting one skill
+        row instead used to remove every activity recorded against it, and this
+        table has no ``updated_at``, so nothing recorded that the history had gone.
+
+        What the delete does take is the user's levels, and any career evidence
+        that named the skill survives as the user's own claim with the pointer
+        dropped. The cost is stated rather than hidden: an activity that outlives
+        its skill still counts towards every account-wide figure and stops counting
+        towards that skill's evidence count and gap.
 
         Args:
             owner: The caller.
@@ -887,21 +968,28 @@ class LearningIntelligenceService:
             The page, the total, and the complete type tally.
 
         Raises:
-            ValidationError: If ``activity_type`` is outside the vocabulary.
+            ValidationError: If ``activity_type`` is outside the vocabulary. The
+                repository is where that check lives, and a ``ValueError``
+                escaping it would take the read down as a 500 over a query
+                parameter rather than answering with the 422 the contract
+                promises.
         """
-        rows = await self._paged(
-            lambda skip: self.repositories.list_activities(
-                owner.id,
-                skill_id=skill_id,
-                goal_id=goal_id,
-                activity_type=activity_type,
-                since=since,
-                until=until,
-                limit=_READ_PAGE_SIZE,
-                offset=skip,
-            ),
-            cap=_MAX_ACTIVITY_ROWS,
-        )
+        try:
+            rows = await self._paged(
+                lambda skip: self.repositories.list_activities(
+                    owner.id,
+                    skill_id=skill_id,
+                    goal_id=goal_id,
+                    activity_type=activity_type,
+                    since=since,
+                    until=until,
+                    limit=_READ_PAGE_SIZE,
+                    offset=skip,
+                ),
+                cap=_MAX_ACTIVITY_ROWS,
+            )
+        except ValueError as error:
+            raise ValidationError(str(error)) from error
         skip = max(0, offset)
         by_type = {
             member.value: sum(1 for row in rows if row.activity_type == member.value)

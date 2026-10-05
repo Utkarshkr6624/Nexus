@@ -80,7 +80,7 @@ import uuid
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from sqlalchemy.exc import IntegrityError
 
@@ -128,6 +128,7 @@ from app.schemas.knowledge import (
     KnowledgeGraphNode,
     KnowledgeLinkCreate,
     KnowledgeLinkRead,
+    KnowledgeSearchKind,
     KnowledgeSearchResult,
     NoteCreate,
     NoteRead,
@@ -1854,6 +1855,40 @@ def _entity_or_none(value: KnowledgeEntityType | str | None) -> KnowledgeEntityT
         raise ValidationError(f"Unknown entity type: {value!r}.") from None
 
 
+def _search_kind_or_none(value: KnowledgeSearchKind | str | None) -> KnowledgeSearchKind | None:
+    """Coerce a search kind, or pass ``None`` through as "search everything".
+
+    **Wider than :func:`_entity_or_none` on purpose.** The entity type names the
+    kinds an *edge* may point at, and a document is deliberately not one of them —
+    a document cannot be a graph node. The kinds a *search* may look in are not the
+    same set: ``bookmark`` and ``document`` are both perfectly searchable and both
+    used to be unreachable as ``?type=``, so ``GET /knowledge/search?q=x&type=bookmark``
+    answered 422 for a kind the unfiltered call filled in — a filter that refused
+    the one value that would have been legal.
+
+    Args:
+        value: The requested kind, or ``None`` for no filter.
+
+    Returns:
+        The coerced kind, or ``None``.
+
+    Raises:
+        ValidationError: If the value is not one of :class:`KnowledgeSearchKind`,
+            carrying the permitted set so the client does not have to guess.
+    """
+    if value is None:
+        return None
+    if isinstance(value, KnowledgeSearchKind):
+        return value
+    try:
+        return KnowledgeSearchKind(str(value).strip().lower())
+    except ValueError:
+        raise ValidationError(
+            f"Unknown search type: {value!r}.",
+            details={"allowed": [member.value for member in KnowledgeSearchKind]},
+        ) from None
+
+
 def _entity_or_raise(value: KnowledgeEntityType | str, field: str) -> KnowledgeEntityType:
     """Coerce a required entity type or raise the 422 that answers it."""
     try:
@@ -1885,10 +1920,69 @@ def _resource_type_or_raise(value: ResourceType | str) -> ResourceType:
         raise ValidationError(f"Unknown resource type: {value!r}.") from None
 
 
-def _check_url(value: str | None, *, required: bool) -> str | None:
-    """An allowlist of two, not a denylist.
+def _canonical_url(url: str | None) -> str | None:
+    """Reduce a validated URL to the form that identifies the same page.
 
-    ``javascript:`` is the reason this
+    **Duplicate detection was a raw string compare, so the same page saved eight
+    times.** ``uq_bookmarks_owner_id_url`` can only refuse two rows that are equal
+    as strings, and a URL has more than one spelling: a fragment
+    (``/post#comments``), a host's case (``Example.com``), an explicit default
+    port (``:443``). Each of those is the same page, each is a different string,
+    and each therefore produced a new row that rendered identically — a list with
+    eight copies of one link, ``domain`` agreeing on all eight, and no way to tell
+    which to delete.
+
+    What is removed, and why it is exactly these three:
+
+    * **the fragment** — the client-side part of the URL. The page behind it is
+      the same page, and a bookmark list that offers "open the section" for a
+      target this discards would be promising something the stored URL no longer
+      carries. A caller who wants the section can keep it in the description.
+    * **host case and the scheme case** — a host is case-insensitive and the
+      scheme is too, so lower-casing both changes no page and makes two spellings
+      one.
+    * **a port that is the scheme's default** — ``https://example.com:443`` is
+      ``https://example.com``.
+
+    What is deliberately **not** touched: the path (a trailing slash can be a
+    different page and is not this function's business to decide), the query
+    string, and any credentials in the netloc, which are left exactly as they
+    arrived — a bookmark of a URL that carries a password is odd, but silently
+    rewriting the thing the user pasted is worse, and the host is already derived
+    correctly from it.
+
+    A URL this cannot parse without raising (``https://example.com:not-a-port``)
+    is returned as it arrived: the canonical form is a duplicate-detection aid,
+    and refusing a URL over it would turn a bookkeeping improvement into a 500.
+
+    Args:
+        url: A URL that has already been through :func:`_check_url`, or ``None``.
+
+    Returns:
+        The canonical spelling, or ``None``/the input unchanged when there is
+        nothing to canonicalise.
+    """
+    if url is None:
+        return None
+    candidate = url.strip()
+    parts = urlsplit(candidate)
+    if not parts.scheme or not parts.netloc:
+        return candidate
+    try:
+        host, port = parts.hostname, parts.port
+    except ValueError:  # a non-numeric port; nothing here is worth a 500 over
+        return candidate
+    netloc = parts.netloc
+    if host and not parts.username:
+        default = {"http": 80, "https": 443}.get(parts.scheme.lower())
+        netloc = host.lower() if port in (None, default) else f"{host.lower()}:{port}"
+    return urlunsplit((parts.scheme.lower(), netloc, parts.path, parts.query, ""))
+
+
+def _check_url(value: str | None, *, required: bool) -> str | None:
+    """Validate a URL's scheme and shape, or refuse it.
+
+    **An allowlist of two, not a denylist.** ``javascript:`` is the reason this
     check exists — a bookmark list renders links, so a stored ``javascript:`` URL
     is a stored script the next person to open the list runs. A denylist would
     have to be extended every time a new dangerous scheme is invented; ``http``

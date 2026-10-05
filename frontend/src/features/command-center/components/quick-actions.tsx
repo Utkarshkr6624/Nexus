@@ -58,9 +58,10 @@ function failureMessage(error: unknown): string {
   const api = toApiError(error)
   if (api.status === 422) {
     const [first] = Object.values(fieldErrorMessages(api))
-    return first
-      ? `${first}. Nothing was created.`
-      : 'The backend rejected that name. Nothing was created.'
+    if (!first) return 'The backend rejected that name. Nothing was created.'
+    // The backend's own sentence already ends in a full stop; adding a second
+    // one would be `…48 characters.. Nothing was created.`
+    return `${first.replace(/[.\s]+$/, '')}. Nothing was created.`
   }
   if (api.status === 409) return 'Something with that name already exists. Nothing was created.'
   if (api.status === 403) return 'That record belongs to another account. Nothing was created.'

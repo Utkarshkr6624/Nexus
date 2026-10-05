@@ -234,9 +234,15 @@ function paragraph(text: string): HTMLElement {
   })
 }
 
-/** The `dt`/`dd` pair a figure is rendered as, found through its label. */
+/**
+ * The `dt`/`dd` pair a figure is rendered as, found through its label.
+ *
+ * Scoped to the `dt` because the change chart's legend publishes the same words as
+ * series labels ("Lines added" is both a figure and an `<li>`), and a page-wide
+ * `getByText` finds both.
+ */
 function factRow(label: string): HTMLElement {
-  return screen.getByText(label).closest('div') as HTMLElement
+  return screen.getByText(label, { selector: 'dt' }).closest('div') as HTMLElement
 }
 
 /** An absolute instant, formatted the way the formatters under test do it. */

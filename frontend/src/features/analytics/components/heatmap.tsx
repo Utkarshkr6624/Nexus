@@ -3,7 +3,7 @@ import { useId, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartDataTable } from '@/features/analytics/components/chart-data-table'
 import { EmptyAnalytics } from '@/features/analytics/components/empty-analytics'
-import { describeSeries, formatChartValue } from '@/features/analytics/chart-theme'
+import { describeSeries, formatChartValue, chartNumber } from '@/features/analytics/chart-theme'
 import { formatNumber, formatShortDate } from '@/features/analytics/format'
 import { cn } from '@/lib/utils'
 import type { DateOnlyString } from '@/types/analytics'
@@ -45,6 +45,22 @@ function levelFor(value: number, max: number): number {
 }
 
 /**
+ * One square in the grid: what was recorded, or `null` when it could not be read.
+ *
+ * `null` is kept apart from `0` on purpose. A day with **no row** is inactive —
+ * the backend omits buckets it has nothing for, and that is a measurement. A
+ * day with a row whose value arrived in a shape this client cannot read is not
+ * an empty day; it is an unreadable one, and it must not be counted, sized or
+ * summarised as zero. `chartNumber` is the same coercion the charts on this
+ * surface use, and it is applied once here where the row object is still in
+ * hand, so every arithmetic use below reads a `number` and cannot throw.
+ */
+interface Cell {
+  date: DateOnlyString | null
+  value: number | null
+}
+
+/**
  * A calendar heatmap of active days.
  *
  * **Hand-rolled, because it needs no library.** It is a CSS grid of squares; a
@@ -77,8 +93,8 @@ export function Heatmap({
   className,
 }: HeatmapProps) {
   const byDate = useMemo(() => {
-    const map = new Map<DateOnlyString, number>()
-    for (const day of days) map.set(day.date, day.value)
+    const map = new Map<DateOnlyString, number | null>()
+    for (const day of days) map.set(day.date, chartNumber(day.value))
     return map
   }, [days])
 
@@ -89,21 +105,25 @@ export function Heatmap({
 
     // Leading blanks so the first column is a whole week starting on Monday.
     const leading = (startDate.getDay() + 6) % 7
-    const output: Array<{ date: DateOnlyString | null; value: number }> = []
-    for (let index = 0; index < leading; index += 1) output.push({ date: null, value: 0 })
+    const output: Cell[] = []
+    for (let index = 0; index < leading; index += 1) output.push({ date: null, value: null })
 
     const cursor = new Date(startDate)
     while (cursor <= endDate) {
       const date = toKey(cursor)
+      // A day with no row at all is `0`: that is a measurement the backend made.
       output.push({ date, value: byDate.get(date) ?? 0 })
       cursor.setDate(cursor.getDate() + 1)
     }
     return output
   }, [byDate, end, start])
 
-  const activeDays = cells.filter((cell) => cell.date !== null && cell.value > 0).length
+  // An unreadable day is not an inactive one, so it is left out of the count
+  // rather than folded into it: the sentence under the grid claims how many days
+  // *recorded* something, and an unreadable day neither did nor did not.
+  const activeDays = cells.filter((cell) => (cell.value ?? 0) > 0).length
   const totalDays = cells.filter((cell) => cell.date !== null).length
-  const max = cells.reduce((highest, cell) => Math.max(highest, cell.value), 0)
+  const max = cells.reduce((highest, cell) => Math.max(highest, cell.value ?? 0), 0)
   const empty = totalDays > 0 && activeDays === 0
 
   const baseId = useId().replace(/:/g, '')
@@ -114,7 +134,10 @@ export function Heatmap({
     `Recorded ${valueName}`,
     cells
       .filter((cell) => cell.date !== null)
-      .map((cell) => ({ label: formatShortDate(cell.date as DateOnlyString), value: cell.value })),
+      .map((cell) => ({
+        label: formatShortDate(cell.date as DateOnlyString),
+        value: cell.value,
+      })),
     { format: (value) => formatChartValue(value, 'count') },
   )} ${formatNumber(activeDays)} of ${formatNumber(totalDays)} days recorded any.`
 
@@ -161,7 +184,7 @@ export function Heatmap({
                         'size-3 rounded-[3px]',
                         cell.date === null
                           ? 'bg-transparent'
-                          : LEVELS[levelFor(cell.value, max)],
+                          : LEVELS[levelFor(cell.value ?? 0, max)],
                       )}
                     />
                   ))}

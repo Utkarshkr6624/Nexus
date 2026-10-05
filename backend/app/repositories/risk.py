@@ -50,15 +50,20 @@ true, so a plain equality would answer "no such risk" for a workload risk that
 exists, and the dedup lookup, the stale sweep and the recommendation lookup
 would each fail to find what they are looking for.
 
-**Severity is ordered by rank, not by string.** The words do not sort
-alphabetically into their own severity order — ``medium`` > ``low`` > ``high`` >
-``critical`` under a plain ``ORDER BY severity DESC``, which would put a medium
-risk above a critical one in the Risk Center's own list. Ordering therefore goes
-through a ``CASE`` rank built from :class:`~app.models.enums.RiskSeverity`
-itself, so the ordering cannot drift from the vocabulary if the words are ever
-re-spelled. The cost is that the list ordering can no longer be served straight
-off ``ix_risks_owner_status_severity``; that is accepted, because the alternative
-is a list that ranks the user's problems wrongly. The index keeps its value for a
+**Severity is ordered by rank, not by string, and the rank is only the first
+term.** The words do not sort alphabetically into their own severity order —
+``medium`` > ``low`` > ``high`` > ``critical`` under a plain ``ORDER BY severity
+DESC``, which would put a medium risk above a critical one in the Risk Center's
+own list. Ordering therefore goes through a ``CASE`` rank built from
+:class:`~app.models.enums.RiskSeverity` itself, so the ordering cannot drift from
+the vocabulary if the words are ever re-spelled. The band is a four-way split of
+a 0-100 number, so it cannot answer "worst first" on its own, and the score is
+the second term of :meth:`RiskRepository.list_risks`'s ordering: within one band
+the higher score comes first, because otherwise a ``high``/70 sits below a
+``high``/60 on the page whose stated job is to answer "what is worst?". The cost
+is that the list ordering can no longer be served straight off
+``ix_risks_owner_status_severity``; that is accepted, because the alternative is a
+list that ranks the user's problems wrongly. The index keeps its value for a
 different job: ``severity`` is its *third* column, so the Risk Center's band
 filter is an equality probe on ``(user_id, status, severity)`` rather than a scan
 — which is why adding a server-side severity filter needed no migration.
@@ -135,7 +140,11 @@ from app.models.risk import (
     RiskEvaluation,
 )
 
-__all__ = ["RiskRepository"]
+__all__ = [
+    "RiskRepository",
+    "allowed_recommendation_transitions",
+    "allowed_risk_transitions",
+]
 
 #: The two statuses a risk is *live* in, and therefore the states a detection
 #: run can re-detect into without creating a second row. Imported from the model
@@ -225,6 +234,32 @@ _ANSWERED_RECOMMENDATION_STATUSES = (
     RecommendationStatus.REJECTED.value,
     RecommendationStatus.COMPLETED.value,
 )
+
+
+def allowed_risk_transitions(status: str | RiskStatus) -> list[str]:
+    """The statuses a risk in ``status`` may be moved to, most urgent first.
+
+    Read off :data:`_RISK_TRANSITIONS` rather than restated, so the "you may
+    still do these" a 409 carries and the table the write is arbitrated against
+    cannot disagree. Exposed because :mod:`app.api.v1.risks` needs it to answer a
+    refusal with something the caller can act on rather than with a bare "no".
+    """
+    return [
+        target for target, targets in _RISK_TRANSITIONS.items() if status in targets
+    ]
+
+
+def allowed_recommendation_transitions(status: str | RecommendationStatus) -> list[str]:
+    """:func:`allowed_risk_transitions` for recommendations.
+
+    The same reasoning, and the same reason it is exposed: a 409 that names only
+    the current state tells the caller what happened but not what they can do
+    instead, which is the difference between a message they can act on and one
+    they have to go and look up.
+    """
+    return [
+        target for target, targets in _RECOMMENDATION_TRANSITIONS.items() if status in targets
+    ]
 
 
 def _severity_rank(column: Any) -> Case[Any]:
@@ -393,11 +428,23 @@ class RiskRepository:
     ) -> tuple[list[Risk], int]:
         """The Risk Center list: this owner's risks, worst first, and the total.
 
-        Ordered by severity rank then ``detected_at`` descending, with ``id`` as
-        a final tiebreaker. The tiebreaker is not decoration: ``detected_at`` is
-        second-resolution, so without a total order two rows written in the same
-        run could swap places between page requests and a caller paging through
-        would see one twice and miss another.
+        Ordered by **severity rank, then score, then ``detected_at``
+        descending**, with ``id`` as a final tiebreaker.
+
+        The score term is not cosmetic and was a reported defect. The band is a
+        four-way split of a 0-100 number, so "worst first" cannot be answered by
+        the band alone: inside one band — the two ``high`` risks at 60 and 70, the
+        two ``low`` ones at 11 and 15 — the band says nothing about which is
+        worse, and a list whose own summary is *"The caller's risks, worst
+        first"* was serving them with the *lower* score first. That happened
+        because ``detected_at`` is second-resolution and every risk in a run is
+        written in the same pass, so the tie fell through to ``id`` and landed on
+        an arbitrary one of the two.
+
+        ``id`` remains as the final tiebreaker, and is not decoration either: two
+        risks may share a band *and* a score, and without a total order two rows
+        written in the same run could swap places between page requests and a
+        caller paging through would see one twice and miss another.
 
         The unpaginated total comes from a window function over the same rows
         rather than a second ``COUNT``, so the page and the total are one
@@ -433,6 +480,7 @@ class RiskRepository:
             .where(*filters)
             .order_by(
                 _severity_rank(Risk.severity).desc(),
+                Risk.score.desc(),
                 Risk.detected_at.desc(),
                 Risk.id.desc(),
             )

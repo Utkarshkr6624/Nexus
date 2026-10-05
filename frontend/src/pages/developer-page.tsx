@@ -213,6 +213,46 @@ function pageFromParam(value: string | null): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1
 }
 
+/**
+ * Whether a wire value is a count this client can read at all.
+ *
+ * Distinct from "is it zero": `0` is a measured answer, and an absent, null or
+ * object-valued field is the absence of one. The two must not collapse, because
+ * the page has a cold-start state that *asserts* nothing is registered, and
+ * reaching it off a count that could not be read would be a claim the response
+ * never made.
+ */
+function isCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+/**
+ * A count off the wire, as a number this page can do arithmetic with.
+ *
+ * `total` and `window_days` are `number` on their response types, and a
+ * well-formed answer always sends one. A degraded, partially cached or
+ * shape-shifted answer is a different thing: the field can be absent, `null`, or
+ * a nested object where a figure was expected. The arithmetic uses of `total`
+ * are the ones that cannot absorb that — `Math.ceil(total / LIMIT)` calls
+ * `ToNumber` on its operand, and on an object with no usable `toString` or
+ * `valueOf` that throws `Cannot convert object to primitive value`, which takes
+ * the whole dashboard to the route error boundary over a *pagination count*.
+ *
+ * So the value is coerced once, here, at the point where the wire object is
+ * still in hand, instead of being trusted by every arithmetic use below.
+ *
+ * **`0` is a fallback for arithmetic only.** A count of 0 is one page, an arrow
+ * row with nowhere to go, an empty list — all of which are states the page
+ * already knows how to draw. Every *figure* the page prints still goes through
+ * `formatNumber`, which renders an unreadable value as `—` rather than as a
+ * zero, and a state that asserts an absence — the cold start below — checks
+ * {@link isCount} first, so nothing here turns "not measured" into "measured as
+ * none".
+ */
+function wireCount(value: unknown): number {
+  return isCount(value) ? value : 0
+}
+
 export default function DeveloperPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const window = useDeveloperWindow()
@@ -276,7 +316,7 @@ export default function DeveloperPage() {
   )
 
   const rows = repositories.data?.items ?? NO_REPOSITORIES
-  const total = repositories.data?.total ?? 0
+  const total = wireCount(repositories.data?.total)
   const totalPages = Math.max(1, Math.ceil(total / REPOSITORY_PAGE_LIMIT))
   const filtering = isActive !== undefined || projectId !== undefined
 
@@ -355,7 +395,7 @@ export default function DeveloperPage() {
     }
   }, [syncAll])
 
-  const commitTotal = commits.data?.total ?? 0
+  const commitTotal = wireCount(commits.data?.total)
   const commitPageCount = Math.max(1, Math.ceil(commitTotal / TIMELINE_LIMIT))
 
   /**
@@ -420,8 +460,15 @@ export default function DeveloperPage() {
    * list of registered repositories. A filter that hides everything is not a
    * cold start either, so it is excluded — that case is the grid's own
    * "nothing matches this filter" state.
+   *
+   * **`isCount` gates it, because this state asserts an absence.** `wireCount`
+   * answers `0` for a count this client cannot read, and an account whose
+   * registered repositories are sitting right there in `rows` must not be told
+   * it has none because its `total` arrived in a shape the page did not expect.
+   * A grid is the honest thing to draw from an unreadable count.
    */
-  const coldStart = repositories.data !== undefined && total === 0 && !filtering
+  const coldStart =
+    repositories.data !== undefined && isCount(repositories.data.total) && total === 0 && !filtering
 
   return (
     <div className="app-container space-y-6 py-6 lg:py-8">
@@ -437,7 +484,7 @@ export default function DeveloperPage() {
           summary.data ? (
             <span className="text-xs text-muted-foreground">
               {summary.data.has_data
-                ? `Figures cover the last ${summary.data.window_days} days`
+                ? `Figures cover the last ${formatNumber(summary.data.window_days)} days`
                 : coldStart
                   ? 'Nothing registered yet'
                   : 'Registered, but no scan has read one yet'}
@@ -663,7 +710,7 @@ export default function DeveloperPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <TimelinePanel
               commits={commits.data?.items ?? NO_COMMITS}
-              total={commits.data?.total ?? 0}
+              total={commitTotal}
               isLoading={commits.isPending && !commits.data}
               isStale={commits.isPlaceholderData}
               namesById={namesById}
@@ -1121,12 +1168,15 @@ function ChangeTotals({
     // `buckets` is required by the wire type, but a degraded or partially
     // cached response should blank one total rather than crash the dashboard
     // into the route error boundary. The zero-filled default keeps every
-    // consumer on the same "no measurement" path it already handles.
+    // consumer on the same "no measurement" path it already handles, and each
+    // bucket is read through `wireCount` for the same reason: `sum + value` is
+    // arithmetic, and arithmetic is what throws on a field that arrived as
+    // something other than a number.
     return (activity.buckets ?? []).reduce(
       (sum, bucket) => ({
-        additions: sum.additions + bucket.additions,
-        deletions: sum.deletions + bucket.deletions,
-        files: sum.files + bucket.files_changed,
+        additions: sum.additions + wireCount(bucket?.additions),
+        deletions: sum.deletions + wireCount(bucket?.deletions),
+        files: sum.files + wireCount(bucket?.files_changed),
       }),
       { additions: 0, deletions: 0, files: 0 },
     )
@@ -1166,12 +1216,21 @@ function ChangeTotals({
   )
 }
 
+/**
+ * One change figure, or the dash that means it was not measured.
+ *
+ * **`formatNumber`, not `value.toLocaleString()`.** The two agree exactly on
+ * every value a well-formed response can send, but `toLocaleString` is called on
+ * the value itself: a null that reached here as `undefined`, or a figure that
+ * arrived as an object, is a `TypeError` rather than a dash. `formatNumber` is
+ * the surface's own formatter and already returns `—` for all three.
+ */
 function ChangeFigure({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
       <dt className="text-sm text-muted-foreground">{label}</dt>
       <dd className="text-sm font-medium tabular-nums text-foreground">
-        {value === null ? '—' : value.toLocaleString()}
+        {formatNumber(value)}
       </dd>
     </div>
   )

@@ -243,6 +243,14 @@ def _reject_unknown_columns(
         raise ValueError(f"{what} may only write {', '.join(sorted(allowed))}; got {unknown}.")
 
 
+#: Columns whose value is a **name** rather than a free note, and which are
+#: therefore trimmed before anything else looks at them. ``"  FastAPI  "`` and
+#: ``FastAPI`` are one name typed twice; only the trimmed form collides with the
+#: row already in the table, so the trimming has to happen before the duplicate
+#: lookup rather than after the write.
+_TRIMMED_NAME_COLUMNS = frozenset({"name", "title"})
+
+
 def _validated_writes(
     values: Mapping[str, Any],
     allowed: frozenset[str],
@@ -275,8 +283,8 @@ def _validated_writes(
 
     Raises:
         ValueError: If the mapping is empty, names a column outside ``allowed``,
-            carries a value the vocabulary does not have, or puts a bounded
-            integer outside its range.
+            carries a value the vocabulary does not have, trims a name down to
+            nothing, or puts a bounded integer outside its range.
     """
     if not values:
         raise ValueError(f"{what} must change at least one field.")
@@ -289,6 +297,13 @@ def _validated_writes(
             value = validator(value).value
         if key in utc_columns:
             value = _as_utc(value)
+        if key in _TRIMMED_NAME_COLUMNS and isinstance(value, str):
+            value = value.strip()
+            if not value:
+                raise ValueError(
+                    f"{what} cannot set {key} to whitespace; a {key} that renders as "
+                    "nothing is not a name."
+                )
         writes[key] = value
 
     for name, value, low, high in (
@@ -812,6 +827,15 @@ class LearningRepository:
         act on, and an :class:`~sqlalchemy.exc.IntegrityError` carries a
         constraint name rather than a message.
 
+        **Matched without regard to case, and after trimming.** The constraint is
+        an exact-match btree, so ``rust`` and ``Rust`` are two legal rows — and
+        two rows holding two levels that can disagree is precisely what
+        ``uq_skills_owner_name`` exists to prevent, so the *service* refuses the
+        second one before it reaches storage. This method is that check, and it is
+        deliberately the looser of the two: it is the read that answers "has this
+        person already named this thing", and a person who writes ``FastAPI`` and
+        ``fastapi`` has named one thing twice.
+
         Scoped to the owner on purpose. Two accounts may each track "Python" —
         the constraint is per account — so a global lookup would report a
         conflict about a vocabulary they do not share.
@@ -819,7 +843,7 @@ class LearningRepository:
         result = await self.session.execute(
             select(Skill).where(
                 Skill.user_id == owner_id,
-                Skill.name == name,
+                func.lower(Skill.name) == name.strip().lower(),
             )
         )
         return result.scalar_one_or_none()

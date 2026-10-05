@@ -118,8 +118,8 @@ async def list_recommendations(
     risks: RiskRepositoryDep,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
     offset: Annotated[int, Query(ge=0)] = 0,
-    recommendation_status: Annotated[RecommendationStatus | None, Query(alias="status")] = None,
-    recommendation_type: Annotated[RecommendationType | None, Query()] = None,
+    recommendation_status: Annotated[list[RecommendationStatus] | None, Query(alias="status")] = None,
+    recommendation_type: Annotated[list[RecommendationType] | None, Query()] = None,
 ) -> RecommendationListRead:
     """One page of suggestions, ordered by priority and then by age.
 
@@ -128,10 +128,13 @@ async def list_recommendations(
     ``CASE`` built from the enum — so a client sorting the page itself would have
     to reimplement that ladder.
 
-    ``status`` and ``recommendation_type`` are single-valued and validated against
-    the enums, so an unknown word is a 422 rather than a filter that quietly
-    matches nothing. The screen most callers ask for passes ``status=new``: the
-    open set, because a suggestion the user has already answered is history and
+    ``status`` and ``recommendation_type`` may each be repeated and the values
+    are combined, for the reason the risk list gives: a scalar query parameter
+    keeps only the last value a URL repeats, so asking for two statuses returned
+    one of them with a ``total`` that counted the wrong set and said nothing.
+    An unknown word is still a 422 rather than a filter that quietly matches
+    nothing. The screen most callers ask for passes ``status=new``: the open
+    set, because a suggestion the user has already answered is history and
     listing it beside the unanswered ones is how a to-do list stops being a to-do
     list.
 
@@ -142,8 +145,8 @@ async def list_recommendations(
     ``total`` always describes the set the caller is looking at rather than a
     wider one.
     """
-    statuses = [recommendation_status.value] if recommendation_status is not None else None
-    types = [recommendation_type.value] if recommendation_type is not None else None
+    statuses = [value.value for value in recommendation_status] if recommendation_status else None
+    types = [value.value for value in recommendation_type] if recommendation_type else None
     rows, total = await risks.list_recommendations(
         current_user.id, statuses=statuses, types=types, limit=limit, offset=offset
     )

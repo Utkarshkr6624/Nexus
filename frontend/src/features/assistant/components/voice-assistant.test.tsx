@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -123,6 +123,55 @@ const CREATED: ConfirmActionRead = {
   outcome: 'created',
   applied: true,
   message: "Created the project 'HelloWorld'.",
+}
+
+/**
+ * A delete, shaped as the backend publishes one.
+ *
+ * `destructive` is the backend's own answer to "does this discard a row" and
+ * `target_id` names exactly one row — a bulk delete is refused upstream rather
+ * than proposed, so there is no shape here in which the scope could be wider.
+ */
+const DELETE_TASK: ProposeActionRead = {
+  proposed: true,
+  intent: 'task_manage',
+  confidence: 0.94,
+  proposal: {
+    kind: 'delete_task',
+    intent: 'task_manage',
+    confidence: 0.94,
+    summary:
+      "Delete the task 'draft the API contract'. Its recorded activities stay, but the task itself is gone for good.",
+    requires_confirmation: true,
+    destructive: true,
+    permission: 'tasks.write',
+    service: 'TaskService',
+    module: 'app.services.task_service',
+    entrypoint: 'delete',
+    payload_schema: 'TaskDelete',
+    payload: {},
+    target_id: '7c1f0f2e-0000-4000-8000-000000000000',
+    target_label: 'draft the API contract',
+    arguments: [
+      {
+        field: 'task',
+        value: 'draft the API contract',
+        matched_text: 'the task called API contract',
+        rule: 'matched against the caller’s open tasks',
+      },
+    ],
+    notes: [],
+  },
+  refusal: null,
+}
+
+const DELETED: ConfirmActionRead = {
+  kind: 'delete_task',
+  entity: 'task',
+  entity_id: '7c1f0f2e-0000-4000-8000-000000000000',
+  outcome: 'deleted',
+  applied: true,
+  message: "Deleted the task 'draft the API contract'.",
 }
 
 /** The routing answer for the sentence the create fixtures above belong to. */
@@ -558,6 +607,7 @@ describe('the confirmation a creatable turn produces', () => {
         kind: 'create_project',
         intent: 'project_manage',
         payload: CREATE_PROJECT.proposal?.payload,
+        confirm_destructive: false,
       },
     ])
     // Without this the new project exists in the database and nowhere on screen
@@ -616,6 +666,44 @@ describe('the confirmation a creatable turn produces', () => {
     expect(screen.getByRole('button', { name: 'Classify' })).toBeEnabled()
     // And the routing answer is untouched.
     expect(screen.getByRole('button', { name: /go to projects/i })).toBeInTheDocument()
+  })
+
+  it('warns before a destructive write, and acknowledges it on the wire', async () => {
+    const fetchMock = stubEndpoints({
+      route: () => jsonResponse(ACCEPTED),
+      propose: () => jsonResponse(DELETE_TASK),
+      confirm: () => jsonResponse(DELETED),
+    })
+    renderAssistant()
+    const user = await ask('delete the task called API contract')
+    const dialog = await screen.findByRole('dialog')
+
+    // The warning is in words, before the press, and the one irreversible button
+    // is the one styled as irreversible. A delete that merely looked like every
+    // other write would be confirmed without ever having been described as
+    // permanent.
+    expect(within(dialog).getByText('This will delete something')).toBeInTheDocument()
+    expect(within(dialog).getByText('This cannot be undone.')).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Delete it' })).toBeEnabled()
+    // And the way out stays open: warning someone is not the same as steering
+    // them.
+    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeEnabled()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Delete it' }))
+
+    // The barrier itself. The endpoint refuses a destructive kind without this
+    // flag, so it is copied from the proposal's published `destructive` flag and
+    // not inferred from the kind — otherwise the flag would be a constant that
+    // proves nothing.
+    expect(bodiesFor(fetchMock, '/action/confirm')).toEqual([
+      {
+        kind: 'delete_task',
+        intent: 'task_manage',
+        payload: {},
+        confirm_destructive: true,
+        target_id: '7c1f0f2e-0000-4000-8000-000000000000',
+      },
+    ])
   })
 
   it('explains a refused confirmation without closing the dialog or disabling it', async () => {

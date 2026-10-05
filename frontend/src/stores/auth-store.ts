@@ -95,7 +95,9 @@ interface AuthState {
   /**
    * Verifies a persisted session against `GET /auth/me`. Single-flight: the
    * boot effect and any later caller share one verification, so a StrictMode
-   * double-mount cannot race the single-use refresh token.
+   * double-mount cannot race the single-use refresh token. It is also the
+   * retry the outage screen calls: a `hydrate` that ends in `unreachable`
+   * leaves the stored pair alone, so running it again is a safe way back.
    */
   hydrate: () => Promise<void>
   /**

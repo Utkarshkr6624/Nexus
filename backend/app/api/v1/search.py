@@ -58,6 +58,15 @@ Nothing here is parameterised — there is no ``/search/{anything}`` — so no
 literal route can be shadowed by one, and the single declaration is ordered
 against the rest of the v1 aggregate for consistency with the load-bearing rule
 ``app/api/v1/risks.py`` spells out.
+
+What it covers, and what it does not
+------------------------------------
+**Everything a caller owns that carries text they might remember.** Thirteen
+kinds, listed in :class:`app.schemas.search.SearchEntityKind`. ``bookmarks``
+and ``documents`` are in it for the reason their own surfaces' ``?search=``
+made the alternative indefensible: each of them was findable from the screen
+that listed it and unfindable from the screen that exists to find things, and a
+saved link a user cannot search for is a link they have lost.
 """
 
 from __future__ import annotations
@@ -121,9 +130,9 @@ SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
     summary="Search every record the caller owns",
     description=(
         "One cross-entity substring search over projects, tasks, notes, resources, "
-        "concepts, repositories, learning goals, skills, calendar events, risks and "
-        "recommendations. Returns a flat ranked list and the same hits grouped by "
-        "kind. Results are always the caller's own."
+        "bookmarks, documents, concepts, repositories, learning goals, skills, "
+        "calendar events, risks and recommendations. Returns a flat ranked list and "
+        "the same hits grouped by kind. Results are always the caller's own."
     ),
     dependencies=[Depends(require_permission(Permission.ANALYTICS_READ))],
 )

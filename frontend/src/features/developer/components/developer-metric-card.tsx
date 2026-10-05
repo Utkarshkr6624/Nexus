@@ -9,6 +9,7 @@ import {
   METRIC_UNIT_META,
   NOT_ENOUGH_DATA_TITLE,
 } from '@/features/developer/components/developer-vocabulary'
+import { formatNumber } from '@/features/analytics/format'
 import { cn } from '@/lib/utils'
 import type { DeveloperMetricRead } from '@/types/developer'
 
@@ -113,7 +114,12 @@ export function DeveloperMetricCard({
           <span>{unit ? unit.label : metric.unit}</span>
           <span aria-hidden="true">·</span>
           <span className="uppercase tracking-[0.1em]">Window</span>
-          <span>{metric.window_days === null ? 'Whole history' : `${metric.window_days} days`}</span>
+          {/* `null` is a *semantic* whole-history answer and keeps its own words.
+              Anything else is a figure, so it is printed by `formatNumber` rather
+              than interpolated raw: a template literal calls `ToString` on its
+              operand, and a `window_days` that arrived as an object rather than a
+              number throws there — taking the dashboard down over a caption. */}
+          <span>{metric.window_days === null ? 'Whole history' : `${formatNumber(metric.window_days)} days`}</span>
           <span aria-hidden="true">·</span>
           <span className="truncate font-mono" title={`Read from ${metric.source}`}>
             {metric.source}

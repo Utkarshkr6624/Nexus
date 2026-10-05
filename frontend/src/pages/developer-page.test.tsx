@@ -518,6 +518,18 @@ const SCANNED_MIRROR: RepositoryRead = {
   last_scanned_at: '2019-01-29T14:06:00Z',
 }
 
+/**
+ * The same row with a snapshot young enough that the page leaves it alone.
+ *
+ * `useAutoRescan` re-reads any repository whose `last_scanned_at` is more than
+ * thirty seconds old, on arrival and then on a timer. A test that is about what
+ * a *press* does has to say which it is exercising, or it passes or hangs
+ * depending on how long the file happened to take.
+ */
+function freshlyScanned(row: RepositoryRead): RepositoryRead {
+  return { ...row, last_scanned_at: new Date().toISOString() }
+}
+
 const SCAN_RUN: ScanRunRead = {
   id: '66666666-6666-4666-8666-666666666666',
   repository_id: REPO_TWO_ID,
@@ -930,9 +942,16 @@ describe('developer dashboard', () => {
     expect(within(dialog).queryByRole('alert')).toBeNull()
     expect(screen.getByRole('heading', { name: 'Nexo' })).toBeInTheDocument()
 
-    const posts = calls.filter((call) => call.method === 'POST')
-    expect(posts).toHaveLength(1)
-    expect(posts[0]?.url).toContain('/developer/repositories')
+    // One registration, and one registration only. Scoped to the collection
+    // endpoint rather than to "any POST": the page also re-reads stale
+    // repositories in the background, and those are `POST
+    // /developer/repositories/{id}/scan` — background work the press did not
+    // ask for and must not be counted as the reader's submit.
+    const registrations = calls.filter(
+      (call) => call.method === 'POST' && call.url.endsWith('/developer/repositories'),
+    )
+    expect(registrations).toHaveLength(1)
+    expect(registrations[0]?.url).toContain('/developer/repositories')
   })
 
   it('never prints NaN, Infinity or an undefined figure', async () => {
@@ -1019,7 +1038,12 @@ describe('developer dashboard: acting on a repository from its card', () => {
         new Promise<Response>((resolve) => {
           gate.release = () => resolve(json(SCAN_RUN))
         }),
-      repositories: listOf(() => [NEXO, UNREAD_MIRROR]),
+      // Fresh snapshots on purpose. The page re-reads any row whose snapshot is
+      // older than thirty seconds on its own, and a background scan landing
+      // first would put these cards into the very pending state this test is
+      // trying to observe from the press — so `Scan now` would never appear and
+      // the query would wait for an element nothing will render.
+      repositories: listOf(() => [NEXO, UNREAD_MIRROR].map(freshlyScanned)),
     })
     renderDeveloperPage()
 
@@ -1100,7 +1124,13 @@ describe('developer dashboard: acting on a repository from its card', () => {
   })
 })
 
-/** The `dt`/`dd` pair a change figure is rendered as, found through its label. */
+/**
+ * The `dt`/`dd` pair a change figure is rendered as, found through its label.
+ *
+ * Scoped to the `dt` because the activity chart's legend publishes the same words
+ * as series labels ("Lines added" is both a figure and an `<li>`), and a page-wide
+ * `getByText` finds both.
+ */
 function changeRow(label: string): HTMLElement {
-  return screen.getByText(label).closest('div') as HTMLElement
+  return screen.getByText(label, { selector: 'dt' }).closest('div') as HTMLElement
 }

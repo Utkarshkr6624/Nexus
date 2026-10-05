@@ -40,6 +40,7 @@ still a valid response.
 from __future__ import annotations
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Any
 from urllib.parse import urlsplit
 from uuid import UUID
@@ -88,6 +89,7 @@ __all__ = [
     "KnowledgeLinkCreate",
     "KnowledgeLinkRead",
     "KnowledgeLinkType",
+    "KnowledgeSearchKind",
     "KnowledgeSearchResult",
     "NoteCreate",
     "NoteRead",
@@ -653,6 +655,30 @@ class BacklinksResponse(BaseModel):
 # --------------------------------------------------------------------------- #
 
 
+class KnowledgeSearchKind(StrEnum):
+    """What ``GET /knowledge/search`` may be asked to look in.
+
+    **This is deliberately a different set from**
+    :class:`~app.models.enums.KnowledgeEntityType`. The entity type names the
+    kinds an *edge* may point at, and a bookmark has no label and a document is
+    metadata for a file nothing has uploaded yet, so neither is a graph node. The
+    kinds a *search* may look in have nothing to do with either of those:
+    bookmarks and documents both hold text a person typed and both are worth
+    searching, and both used to be unfindable through ``?type=`` even though an
+    unfiltered search returned them — ``?type=bookmark`` answered **422** for the
+    very kind the same response was filling in.
+
+    ``category`` is absent for the reason it is absent everywhere else: a category
+    is a one-word label with no free text to match.
+    """
+
+    NOTE = "note"
+    CONCEPT = "concept"
+    RESOURCE = "resource"
+    BOOKMARK = "bookmark"
+    DOCUMENT = "document"
+
+
 class KnowledgeGraphNode(BaseModel):
     """One node.
 
@@ -702,6 +728,13 @@ class KnowledgeSearchResult(BaseModel):
     ``limit`` bounds **each** group — it is not a total — and every list is
     filled by its own bounded ``ILIKE`` query rather than by one unbounded read
     filtered in Python.
+
+    **``documents`` is here because ``GET /knowledge/documents?search=`` already
+    found them.** A caller that does not know which table a thing lives in asks
+    the search endpoint; a caller that does know asks the list. Documents were in
+    the second and not the first, so the same term answered differently depending
+    on which route the client happened to know about — and the global search is
+    the one that exists precisely to remove that question.
     """
 
     query: str
@@ -710,11 +743,18 @@ class KnowledgeSearchResult(BaseModel):
     concepts: list[ConceptRead] = Field(default_factory=list)
     resources: list[ResourceRead] = Field(default_factory=list)
     bookmarks: list[BookmarkRead] = Field(default_factory=list)
+    documents: list[DocumentRead] = Field(default_factory=list)
 
     @property
     def total(self) -> int:
-        """Rows returned across all four groups."""
-        return len(self.notes) + len(self.concepts) + len(self.resources) + len(self.bookmarks)
+        """Rows returned across all five groups."""
+        return (
+            len(self.notes)
+            + len(self.concepts)
+            + len(self.resources)
+            + len(self.bookmarks)
+            + len(self.documents)
+        )
 
 
 # The API surface names these ``KnowledgeGraph`` and ``KnowledgeSearchResult``.

@@ -11,6 +11,31 @@ a secret. Details are machine-only and carry structured validation info. For a
 5xx the originating exception's own text is logged and never echoed, because
 that text is attacker-influenced in some handlers and by definition outside our
 control.
+
+``details`` has exactly one documented shape
+--------------------------------------------
+Call sites raise errors with whatever structured context they have — a
+``{"field": ..., "accepted": [...]}`` for a refused enum, an
+``{"allowed": [...], "from": ..., "to": ...}`` for a state machine, a raw
+``{"max_depth": 1}`` for a nesting rule. Those keys are *extras*: they are what
+a client needs to recover, and they stay on the wire untouched.
+
+The one shape every renderer is entitled to rely on is ``errors``, a list of
+``{"field", "message"}`` entries. It used to be one of three competing
+conventions, so a renderer that understood ``errors[]`` — the documented one, and
+the one this module's own 422 handler emits — showed nothing at all for the two
+others, which is the worst outcome a validation message can have: a refusal the
+caller cannot see is a refusal they will retry identically. :func:`_details`
+therefore guarantees ``errors`` on every non-empty ``details``, synthesising the
+single entry from whatever the raise site supplied, and leaves every original
+key exactly where it was.
+
+The synthesis is deliberately conservative. It never invents a ``field`` — a
+details mapping that names no input produces an entry with a ``message`` alone,
+so a client that keys form errors by field name keeps treating it as a banner
+error rather than silently attaching the sentence to an input that does not
+exist. It also never reorders or rewrites a key, so the extras keep working for
+the clients that already read them.
 """
 
 from __future__ import annotations
@@ -29,6 +54,7 @@ from app.core.logging import request_id_var
 
 __all__ = [
     "ConflictError",
+    "DETAILS_ERRORS_KEY",
     "ErrorCode",
     "ForbiddenError",
     "NexusError",
@@ -149,6 +175,52 @@ def resolve_request_id(request: Request) -> str:
     return request_id_var.get() or getattr(request.state, "request_id", None) or ""
 
 
+#: The one key every ``details`` is guaranteed to carry. A list, because an error
+#: can be about several inputs at once — that is what the Pydantic handler's
+#: ``exc.errors()`` is — and a client should never have to ask which of a
+#: singular and a plural key it is looking at.
+DETAILS_ERRORS_KEY = "errors"
+
+
+def _details(details: Mapping[str, Any] | None, *, message: str) -> dict[str, Any] | None:
+    """Return ``details`` in the one documented shape, extras preserved.
+
+    ``errors`` is added when the raise site did not supply it. The entry is
+    built from the details themselves rather than from a guess about which raise
+    site this was: ``field`` when the details name an input, and a message taken
+    from ``reason`` when the details carry one (a framework ``HTTPException``
+    whose ``detail`` was not a string) and from the envelope's own sentence
+    otherwise.
+
+    A details mapping with no field yields an entry with no field, on purpose.
+    The frontend's ``fieldErrorMessages`` skips entries whose ``field`` is not a
+    string and ``bannerError`` therefore keeps showing the banner, which is what
+    a refusal with nothing to attach to an input should do; attaching it to a
+    made-up input name would hide the sentence instead.
+
+    Args:
+        details: Whatever the raise site supplied. ``None`` and ``{}`` both mean
+            "no structured context", and both produce ``None`` on the wire.
+        message: The envelope's own message, the fallback for a synthesised
+            entry's sentence.
+
+    Returns:
+        The details to serialise, or ``None`` when there were none.
+    """
+    if not details:
+        return None
+    body = dict(details)
+    if not isinstance(body.get(DETAILS_ERRORS_KEY), list):
+        entry: dict[str, Any] = {}
+        field = body.get("field")
+        if isinstance(field, str) and field:
+            entry["field"] = field
+        reason = body.get("reason")
+        entry["message"] = reason if isinstance(reason, str) and reason else message
+        body[DETAILS_ERRORS_KEY] = [entry]
+    return body
+
+
 def error_payload(
     *,
     code: str,
@@ -161,7 +233,7 @@ def error_payload(
         "error": {
             "code": code,
             "message": message,
-            "details": dict(details) if details else None,
+            "details": _details(details, message=message),
             "request_id": request_id or request_id_var.get() or "",
         }
     }
@@ -270,7 +342,7 @@ def install_exception_handlers(app: FastAPI) -> None:
             code=ErrorCode.VALIDATION_ERROR,
             message="The request body or query parameters failed validation.",
             status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-            details={"errors": details},
+            details={DETAILS_ERRORS_KEY: details},
             request_id=resolve_request_id(request),
         )
 

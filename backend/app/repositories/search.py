@@ -56,7 +56,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.sql.elements import ColumnClause
 
 from app.models.developer import GitRepository
-from app.models.knowledge import Concept, Note, Resource
+from app.models.knowledge import Bookmark, Concept, Document, Note, Resource
 from app.models.learning import LearningGoal, Skill
 from app.models.planner import CalendarEvent
 from app.models.project import Project
@@ -158,25 +158,40 @@ class SearchRow:
     recency: datetime
 
 
-#: The eleven kinds, in the order :class:`~app.schemas.search.SearchEntityKind`
+#: The thirteen kinds, in the order :class:`~app.schemas.search.SearchEntityKind`
 #: declares them. Frozen, and hand-maintained for the reason the enum is: a
 #: search that gained a table by accident would change what an existing query
 #: means.
 #:
-#: **What is deliberately not here.** Several other tables are per-user and do
-#: carry text: ``bookmarks`` (``url``/``title``/``description``), ``documents``
-#: (``filename``/``title``/``description``), ``categories`` (``name``) and
-#: ``work_sessions`` (no text column of its own). They are left out because the
-#: set above is the set the brief specified, and every kind added is another
-#: sequential scan paid on every search for a row type the caller did not ask
-#: for. ``bookmarks`` is the obvious next candidate — a saved link is exactly
-#: the row a user forgets they saved — and adding it means one entry here and one
-#: member in :class:`~app.schemas.search.SearchEntityKind`, nothing more. Tables
-#: that are not user-scoped search targets at all — ``audit_logs``,
-#: ``activity_events``, ``sessions``, the career tables — are excluded for a
-#: stronger reason: they are records *about* the account rather than records the
-#: account owns, and surfacing them in a search palette would answer a different
-#: question than the one the endpoint is for.
+#: **``bookmarks`` and ``documents`` were added because their own surfaces said
+#: they were findable and this one could not honour it.** Each is listed on the
+#: Knowledge page with its own ``?search=``, and each was therefore reachable from
+#: a screen a user can see — and unreachable from the single screen whose whole
+#: job is finding things. A saved link is exactly the row a user forgets they
+#: saved, so a bookmark that global search cannot return is a bookmark that is,
+#: in practice, gone. Both carry per-user text and an ``owner_id``, so they are
+#: the same shape of row as the eleven that were already here.
+#:
+#: The cost is one more sequential scan per request, which is the trade the
+#: per-kind cap already makes explicit. Two label columns are chosen over the
+#: nullable ones for the same reason as every other target: ``values[0]`` is what
+#: the hit's ``title`` is read from, and ``bookmarks.title`` and
+#: ``documents.title`` are both nullable — a row with no title would render as an
+#: empty heading, which is what a bookmark list shows it as today anyway, only
+#: there at least it sits next to its URL. An archived bookmark is *not*
+#: excluded: this endpoint answers "find the thing I am thinking of", the risk
+#: list already returns resolved rows unless a filter excludes them, and the
+#: archived row is still the row the user remembers.
+#:
+#: **What is deliberately still not here.** ``categories`` (``name``) is
+#: excluded because a category is a filing label rather than a record — it has no
+#: body, and searching it answers "which filing did I put this under", which the
+#: knowledge page's own filters already answer. ``work_sessions`` carries no text
+#: column of its own. Tables that are not user-scoped search targets at all —
+#: ``audit_logs``, ``activity_events``, ``sessions``, the career tables — are
+#: excluded for a stronger reason: they are records *about* the account rather
+#: than records the account owns, and surfacing them in a search palette would
+#: answer a different question than the one the endpoint is for.
 SEARCH_TARGETS: Mapping[str, SearchTarget] = MappingProxyType(
     {
         "project": SearchTarget(
@@ -224,6 +239,33 @@ SEARCH_TARGETS: Mapping[str, SearchTarget] = MappingProxyType(
             columns=(Resource.title, Resource.description, Resource.url),
             recency_column=Resource.updated_at,
             filter_date_column=Resource.updated_at,
+            filter_date_is_timestamp=True,
+            project_column=None,
+            status_column=None,
+            priority_column=None,
+        ),
+        "bookmark": SearchTarget(
+            kind="bookmark",
+            model=Bookmark,
+            owner_column=Bookmark.owner_id,
+            # `url` leads rather than `title`: the title is nullable, and the URL
+            # is the one column that always says what the row is.
+            columns=(Bookmark.url, Bookmark.title, Bookmark.description),
+            recency_column=Bookmark.updated_at,
+            filter_date_column=Bookmark.updated_at,
+            filter_date_is_timestamp=True,
+            project_column=None,
+            status_column=None,
+            priority_column=None,
+        ),
+        "document": SearchTarget(
+            kind="document",
+            model=Document,
+            owner_column=Document.owner_id,
+            # `filename` leads for the same reason `url` leads above.
+            columns=(Document.filename, Document.title, Document.description),
+            recency_column=Document.updated_at,
+            filter_date_column=Document.updated_at,
             filter_date_is_timestamp=True,
             project_column=None,
             status_column=None,

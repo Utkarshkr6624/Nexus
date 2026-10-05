@@ -320,7 +320,7 @@ class SearchService:
                 belonging to another account can enter the result set at any point
                 — not by an id the caller supplied, and not by a filter.
             term: Free text, trimmed here. Whitespace-only is rejected.
-            kinds: The entity kinds to read. ``None`` means all eleven.
+            kinds: The entity kinds to read. ``None`` means all thirteen.
             project_id: Scope filter — only rows filed under one project, and
                 kinds with no project column contribute nothing. Refused when no
                 searched kind has one.
@@ -454,11 +454,13 @@ class SearchService:
         """
         if limit < 1 or limit > max_page_size:
             raise ValidationError(
-                f"limit must be between 1 and {max_page_size}.",
+                f"The page size must be between 1 and {max_page_size}.",
                 details={"field": "limit", "max_limit": max_page_size},
             )
         if offset < 0:
-            raise ValidationError("offset must not be negative.", details={"field": "offset"})
+            raise ValidationError(
+                "The page offset must not be negative.", details={"field": "offset"}
+            )
 
     @staticmethod
     def _validate_range(*, date_from: date | None, date_to: date | None) -> None:

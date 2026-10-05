@@ -354,7 +354,20 @@ class UserRead(BaseModel):
 
 
 class UserCreate(_EmailNormaliser, _NameNormaliser, BaseModel):
-    """Registration payload."""
+    """Registration payload.
+
+    ``extra="forbid"`` is what turns a field this schema does not own from a
+    silent drop into an answer. Pydantic's default is ``"ignore"``, under which
+    ``POST /auth/register {"full_name": "Ada Lovelace"}`` is a **201** for an
+    account with no name on it at all — the caller reads a successful signup and
+    believes the name it sent was recorded. The sibling
+    :class:`UserUpdate` forbids extras for exactly that reason; registration is
+    the same case, and it is worse here because the response is a new account
+    rather than an edited one. A 422 naming the field is the honest answer: the
+    name field on this API is ``display_name``.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     username: Username
     email: EmailAddress

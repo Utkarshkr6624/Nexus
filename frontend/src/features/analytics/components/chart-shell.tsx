@@ -2,7 +2,7 @@ import { useId, type ReactNode } from 'react'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatChartValue, type ChartValueUnit } from '@/features/analytics/chart-theme'
+import { chartNumber, formatChartValue, type ChartValueUnit } from '@/features/analytics/chart-theme'
 import { cn } from '@/lib/utils'
 
 /**
@@ -161,8 +161,14 @@ export function ChartTooltip({
         {payload.map((entry, index) => {
           const key = String(entry.dataKey ?? entry.name ?? index)
           const unit = units?.[key] ?? 'count'
-          const numeric =
-            typeof entry.value === 'number' ? entry.value : Number(entry.value ?? Number.NaN)
+          // The tooltip reads the payload recharts built from the same rows the
+          // chart drew, so `entry.value` is whatever the response sent for that
+          // key. `Number(entry.value)` here was the same throw `chartNumber`
+          // exists to stop, one frame away from the axis: a bucket that arrived
+          // as an object took the tooltip down the moment a reader hovered it.
+          // An unreadable value renders as `—`, which is what the missing-value
+          // case already looked like.
+          const numeric = chartNumber(entry.value)
           return (
             <li key={key} className="flex items-center gap-2 text-popover-foreground/90">
               <span

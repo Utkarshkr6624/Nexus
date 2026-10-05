@@ -1,12 +1,13 @@
 """The propose → confirm endpoints over HTTP: the surface that turns a sentence into a write.
 
-``tests/test_ml_actions.py`` proves the proposal layer is safe *as a type* — no
-destructive member, no callable on a proposal, an ambiguous date yields no date.
-None of that proves anything about the two routes that sit on top of it, and the
-two routes are where the risk actually lives: ``confirm`` takes a body from a
-browser, re-derives a service call from it, and writes a row. This file is the
-only place that path is exercised **through HTTP**, and it is written so that
-every test could still fail if the code were reverted.
+``tests/test_ml_actions.py`` proves the proposal layer is safe *as a type* — a
+delete names one row, a bulk request is refused, no callable on a proposal, an
+ambiguous date yields no date. None of that proves anything about the two routes
+that sit on top of it, and the two routes are where the risk actually lives:
+``confirm`` takes a body from a browser, re-derives a service call from it, and
+writes a row. This file is the only place that path is exercised **through
+HTTP**, and it is written so that every test could still fail if the code were
+reverted.
 
 What is pinned here, and why each one is load-bearing
 -----------------------------------------------------
@@ -18,18 +19,21 @@ attacker-controlled. They are re-resolved through the owner-scoped service
 methods, which 404 rather than load the row, and the tests assert the row's state
 *after* the refused request as well as the status code.
 
-**A kind outside the closed set is a 422, and there is no delete.** ``ActionKind``
-has five members and none of them is destructive. The tests pin both halves:
-that a bogus kind is refused at the edge, and that a spec claiming to be
-destructive is refused by the handler rather than executed — the second is
-reached by installing a stub into the router's own table, because a spec that
-claims ``destructive=True`` is not representable and therefore cannot be built
-for real.
+**A delete is a normal write here, and it takes two presses.** ``ActionKind`` has
+thirty-eight members and eleven of them drop a row. None of that is reachable
+from a bare utterance: ``requires_confirmation`` is a property returning ``True``,
+and the confirm route refuses a destructive kind unless the body carries
+``confirm_destructive`` — which the client sets only when the user pressed Confirm
+on a proposal whose dialog was flagged destructive. Both halves are tested here:
+the refusal *without* the flag (and that the row survives it) and the deletion
+*with* it, through the same two routes every other kind uses.
 
 **Nothing reaches a service until the payload has been re-derived.** The empty,
 malformed and unknown-key payloads are tested with ``TaskService.create``
 replaced by a callable that raises if called, so a regression in the guard is a
-loud error rather than a quietly-created row.
+loud error rather than a quietly-created row. The same holds for the destructive
+gate, which is proved by installing a spec that claims to be destructive into the
+router's own table.
 
 **The activity trail is written by the service and is observable.** A task
 created here must leave the same ``TASK_CREATED`` row a hand-typed
@@ -42,9 +46,10 @@ desired state; the second therefore reports ``no_op`` with the existing row's id
 rather than a second row or a 409 the user would read as a failure.
 
 **A refusal is a 200.** ``proposed: false`` with a reason code is the ordinary
-answer to "could not understand", including for a destructive request. The
-degraded-classifier case is the one that is *not* a 200, because a caller about
-to act on a fabricated intent is exactly the failure this phase exists to prevent.
+answer to "could not understand" — including for a bulk delete, which is refused
+with ``destructive_request``. The degraded-classifier case is the one that is
+*not* a 200, because a caller about to act on a fabricated intent is exactly the
+failure this phase exists to prevent.
 
 The seam this file uses
 -----------------------
@@ -314,21 +319,23 @@ def _install_spec(monkeypatch: pytest.MonkeyPatch, **overrides: Any) -> None:
 
     ``ActionSpec`` is a frozen, slotted dataclass, so the stand-in is built from
     the real spec's declared fields rather than copied. Two guards in the handler
-    are unreachable through the shipped table — ``destructive`` is a property that
-    cannot be set, and every role holds every write permission — and this is how
-    a test reaches the half of each guard that would still be there if the type
-    stopped defending it.
+    cannot be reached by picking a different *kind* — every role holds every write
+    permission, and the eleven destructive kinds are already refused without
+    ``confirm_destructive`` — so this is how a test reaches the half of each guard
+    that would still be there if the table's contents changed underneath the
+    handler.
+
+    ``destructive`` is applied through the overrides rather than as a second
+    constructor keyword, precisely because it is a real field now: passing it
+    twice is a duplicate keyword, which is the sort of thing that makes a test
+    about a *handler* guard fail for an unrelated reason.
     """
     from app.ml.actions import ActionKind
 
     real = actions_module.ACTION_SPECS[ActionKind.CREATE_TASK]
-    hostile = SimpleNamespace(
-        **{name: getattr(real, name) for name in real.__dataclass_fields__},
-        destructive=overrides.get("destructive", False),
-    )
-    for name, value in overrides.items():
-        if name != "destructive":
-            setattr(hostile, name, value)
+    declared = {name: getattr(real, name) for name in real.__dataclass_fields__}
+    declared.update(overrides)
+    hostile = SimpleNamespace(**declared)
     monkeypatch.setattr(
         actions_module,
         "ACTION_SPECS",
@@ -375,21 +382,51 @@ def test_both_routes_land_under_the_existing_ml_prefix_in_the_served_schema(app)
         assert sorted(paths[path]) == ["post"], path
 
 
-def test_no_route_in_this_module_deletes_anything() -> None:
-    """Not one handler in this file reaches ``delete``, ``cancel`` or ``remove``.
+def test_no_route_in_this_module_reaches_a_delete_without_resolving_one_row_first() -> None:
+    """There is exactly one deletion call per destructive kind, and each is preceded.
 
     A source-level scan rather than a behavioural one, because the guarantee is
-    structural: there is no code path here that could be made to drop a row even
-    if a future edit tried. The positive control is what stops the scan from
-    passing for the wrong reason.
+    structural: **every** ``delete`` in this file has to be preceded, in the same
+    function, by an owner-scoped resolution of ``_target(body, ...)``. A delete
+    that took its id from anywhere else — a payload field, a guess, a second
+    argument — would be a row the caller never confirmed.
+
+    The positive control is what stops the scan from passing for the wrong reason:
+    without the "at least one delete, and at least one resolution" assertion, a
+    file with the word deleted out of it would pass too.
     """
     from app.api.v1 import actions as module
 
-    source = inspect.getsource(module)
-    code = "\n".join(line for line in source.splitlines() if not line.lstrip().startswith("#"))
-    for forbidden in (".delete(", ".remove(", "TaskService.delete", "ProjectService.delete"):
-        assert forbidden not in code, forbidden
-    assert "await tasks.create(" in code, "the scanner is not matching the text it should match"
+    functions = {
+        name: inspect.getsource(function)
+        for name, function in vars(module).items()
+        if inspect.isfunction(function) and function.__module__ == module.__name__
+    }
+    deletions = {name for name, body in functions.items() if ".delete" in body}
+    resolved = {
+        name for name, body in functions.items() if "_target(body," in body and ".delete" in body
+    }
+    assert deletions, "the scanner is not matching the text it should match"
+    assert deletions == resolved, deletions - resolved
+
+    from app.ml.actions.proposals import ACTION_SPECS
+
+    assert len(deletions) == len({kind for kind, spec in ACTION_SPECS.items() if spec.destructive})
+
+
+def test_the_dispatch_table_covers_every_kind_and_nothing_else() -> None:
+    """A kind with no dispatcher is a 422, and a dispatcher with no kind is dead code.
+
+    Eleven of these handlers discard a row. If one were dropped from the table the
+    endpoint would answer "this action cannot be carried out" for a proposal it had
+    itself published a second press for — and a handler left behind for a kind that
+    no longer exists is code that can only be reached by nothing. The same holds for
+    the entity map, whose noun is rendered into every confirm response.
+    """
+    from app.ml.actions.proposals import ACTION_SPECS
+
+    assert set(actions_module._HANDLERS) == set(ACTION_SPECS)
+    assert set(actions_module._ENTITY_BY_KIND) == set(ACTION_SPECS)
 
 
 # --------------------------------------------------------------------------- #
@@ -464,17 +501,53 @@ async def test_an_out_of_scope_utterance_is_a_refusal_and_still_a_200(client, ad
 
 
 async def test_a_destructive_request_is_refused_with_a_reason(client, ada, serving) -> None:
-    """The classifier cannot see the verb, so "delete everything" must not act.
+    """``task_manage`` cannot tell "delete everything" from "add a task".
 
-    ``task_manage`` covers create, complete, block, cancel, reorder **and**
-    delete — one class, one confidence. A surface that turned that sentence into a
-    write would delete a board on the strength of a prompt nobody read.
+    One class, one confidence — create, complete, block, cancel, reorder **and**
+    delete are all ``task_manage`` — so the two have to be told apart before
+    anything is written.
+
+    The refusal is because the request names a *collection*, not because it says
+    "delete": an unbounded delete needs a count and a preview, and neither travels
+    inside an utterance. Naming one row instead is an ordinary proposal, and the
+    two tests below pin that from opposite ends.
     """
     with serving(TASK_INTENT):
         body = await _propose(client, ada, text="delete all my tasks")
 
     assert body["proposed"] is False
     assert body["refusal"]["reason_code"] == "destructive_request"
+    assert body["refusal"]["kind"] is None
+    assert body["refusal"]["reason"]
+
+
+async def test_a_delete_that_names_one_row_is_a_proposal_the_dialog_can_warn_about(
+    client, ada, db_session, serving
+) -> None:
+    """The other end: a single named row is an ordinary proposal, flagged destructive.
+
+    ``destructive`` is published rather than hidden so the client can render the
+    confirm button as a warning and send ``confirm_destructive`` when the user
+    presses *that* button. A proposal without the flag would make the second
+    press unreachable and force the client to guess which kinds are deletes.
+    """
+    project = await _project(client, ada)
+    task = await _task(client, ada, project["id"], CONTRACT_TASK_TITLE)
+    with serving(TASK_INTENT):
+        body = await _propose(
+            client, ada, text=f"delete the {CONTRACT_TASK_TITLE} task", project_id=project["id"]
+        )
+
+    assert body["proposed"] is True, body
+    proposal = body["proposal"]
+    assert proposal["kind"] == "delete_task"
+    assert proposal["destructive"] is True
+    assert proposal["requires_confirmation"] is True
+    assert proposal["target_id"] == task["id"]
+    assert CONTRACT_TASK_TITLE in proposal["summary"]
+    assert "cannot be undone" in proposal["summary"]
+    # Nothing is written by propose, whatever the flag says.
+    assert await _task_count(db_session, ada["user"].id) == 1
 
 
 async def test_a_task_creation_with_no_project_is_refused_not_guessed(client, ada, serving) -> None:
@@ -530,7 +603,7 @@ async def test_a_finished_task_is_not_offered_as_a_completion_candidate(
         body = await _propose(client, ada, text=COMPLETE_TASK_TEXT, project_id=project["id"])
 
     assert body["proposed"] is False
-    assert body["refusal"]["reason_code"] == "task_reference_not_found"
+    assert body["refusal"]["reason_code"] == "target_not_found"
 
 
 async def test_the_candidate_list_is_read_only_for_the_intent_that_uses_it(
@@ -904,6 +977,157 @@ async def test_a_forged_project_id_never_creates_a_task_on_another_board(
     )
     assert response.status_code == 404, response.text
     assert await _task_count(db_session, grace["user"].id) == 0
+    assert await _task_count(db_session, ada["user"].id) == 0
+
+
+# --------------------------------------------------------------------------- #
+# Confirm: a delete takes two presses
+# --------------------------------------------------------------------------- #
+
+
+async def test_a_delete_without_the_second_press_is_refused_and_the_row_survives(
+    client, ada, db_session
+) -> None:
+    """The destructive gate, from the client's side.
+
+    ``confirm_destructive`` defaults to ``False`` on the request model, so an
+    ordinary confirm — a replay, a double-click, a client that never rendered the
+    warning — cannot carry a delete by omission. The check is against the spec
+    table rather than against anything the client says the kind is, and it runs
+    before the payload is validated and long before a service is reached, so a
+    refused delete has written nothing at all.
+    """
+    project = await _project(client, ada)
+    task = await _task(client, ada, project["id"], CONTRACT_TASK_TITLE)
+
+    response = await client.post(
+        CONFIRM,
+        json=_confirm_body(
+            kind="delete_task",
+            payload={},
+            target_id=task["id"],
+        ),
+        headers=ada["headers"],
+    )
+    assert response.status_code == 422, response.text
+    assert response.json()["error"]["details"]["destructive"] is True
+
+    stored = await client.get(f"/api/v1/tasks/{task['id']}", headers=ada["headers"])
+    assert stored.status_code == 200, stored.text
+    assert stored.json()["title"] == CONTRACT_TASK_TITLE
+    assert await _task_count(db_session, ada["user"].id) == 1
+
+
+async def test_a_delete_with_the_second_press_removes_exactly_that_row(
+    client, ada, db_session
+) -> None:
+    """The same body with the flag set, and it works — through the ordinary service.
+
+    The double press is the whole of the difference, which is why this test exists
+    beside the one above: an implementation that refused both would satisfy the
+    safety test and quietly make a third of the surface unusable. The row goes
+    through ``TaskService.delete``, so the cascade and the ``TASK_DELETED``
+    activity row are the typed route's and not this router's.
+    """
+    project = await _project(client, ada)
+    task = await _task(client, ada, project["id"], CONTRACT_TASK_TITLE)
+    keeper = await _task(client, ada, project["id"], "Write the migration runbook")
+
+    response = await client.post(
+        CONFIRM,
+        json=_confirm_body(
+            kind="delete_task",
+            payload={},
+            target_id=task["id"],
+            confirm_destructive=True,
+        ),
+        headers=ada["headers"],
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["outcome"] == "deleted"
+    assert body["applied"] is True
+    assert body["entity_id"] == task["id"]
+    assert CONTRACT_TASK_TITLE in body["message"]
+
+    assert (
+        await client.get(f"/api/v1/tasks/{task['id']}", headers=ada["headers"])
+    ).status_code == (404)
+    assert (
+        await client.get(f"/api/v1/tasks/{keeper['id']}", headers=ada["headers"])
+    ).status_code == 200
+    assert await _task_count(db_session, ada["user"].id) == 1
+    assert ActivityEvent.TASK_DELETED.value in await _event_types(db_session, ada["user"].id)
+
+
+async def test_the_destructive_flag_on_an_ordinary_kind_changes_nothing(
+    client, ada, db_session
+) -> None:
+    """The gate is one-directional: only a destructive kind is refused without it.
+
+    Otherwise the flag would be a nuisance rather than a signal — a client forced
+    to send ``confirm_destructive`` on every request would send it by reflex, and
+    it would stop meaning "the dialog warned about this".
+    """
+    project = await _project(client, ada)
+    result = await _confirm(
+        client,
+        ada,
+        payload={"title": "draft the migration plan", "project_id": project["id"]},
+        confirm_destructive=True,
+    )
+    assert result["outcome"] == "created", result
+    assert await _task_count(db_session, ada["user"].id) == 1
+
+
+async def test_a_forged_target_id_on_a_delete_is_a_404_and_the_row_survives(
+    client, ada, grace, db_session
+) -> None:
+    """The security test again, on the kind where it matters most.
+
+    ``confirm_destructive`` is *not* an authorisation signal — it is the proof
+    that the user was warned. Sending it correctly must not make a foreign id
+    work, or the second press would become a licence to name any row in the
+    deployment. The row is resolved through ``TaskService.get``, whose query is
+    scoped by ``owner_id``, so Grace's card is never loaded.
+    """
+    grace_project = await _project(client, grace)
+    grace_task = await _task(client, grace, grace_project["id"], CONTRACT_TASK_TITLE)
+
+    response = await client.post(
+        CONFIRM,
+        json=_confirm_body(
+            kind="delete_task",
+            payload={},
+            target_id=grace_task["id"],
+            confirm_destructive=True,
+        ),
+        headers=ada["headers"],
+    )
+    assert response.status_code == 404, response.text
+    assert response.json()["error"]["code"] == "not_found"
+
+    stored = await client.get(f"/api/v1/tasks/{grace_task['id']}", headers=grace["headers"])
+    assert stored.json()["status"] == TaskStatus.TODO.value
+    assert ActivityEvent.TASK_DELETED.value not in await _event_types(db_session, grace["user"].id)
+    assert await _task_count(db_session, grace["user"].id) == 1
+
+
+async def test_a_delete_with_no_target_id_is_a_422(client, ada, db_session) -> None:
+    """One row, always: a delete that names no id has nothing to remove.
+
+    ``ActionAck`` is empty by design — the no-argument kinds legitimately send
+    ``{}`` — so the id is the *only* thing in the body that says which row. There
+    is no default and no re-derivation from the kind, because matching a phrase
+    on the write path is exactly the guess the proposal layer refuses to make.
+    """
+    response = await client.post(
+        CONFIRM,
+        json=_confirm_body(kind="delete_task", payload={}, confirm_destructive=True),
+        headers=ada["headers"],
+    )
+    assert response.status_code == 422, response.text
+    assert response.json()["error"]["details"]["field"] == "target_id"
     assert await _task_count(db_session, ada["user"].id) == 0
 
 

@@ -36,11 +36,32 @@ export function formatChartValue(value: number | null | undefined, unit: ChartVa
  * Series read `string | number | null | undefined`, and `Number('')` and
  * `Number(null)` are both `0` — which would turn "this day was not measured"
  * into a counted zero in a summary sentence and in the table below a chart.
+ *
+ * **`unknown`, not the wire type, because the wire type is a promise the
+ * response does not keep.** Every caller here indexes a row object with a key
+ * the caller chose, so `ChartRow`'s four-value union is a claim about a
+ * response nobody has parsed. A degraded, partially cached or shape-shifted
+ * answer puts a nested object where a figure was expected, and `Number(obj)`
+ * calls `ToPrimitive` on it — which throws `TypeError: Cannot convert object to
+ * primitive value` for any object with no usable `valueOf`/`toString`. That
+ * took the whole chart, and the Developer page with it, over one unreadable
+ * bucket.
+ *
+ * So the value is coerced once, here, by kind: a number is kept or rejected,
+ * a string is parsed, and **everything else is `null` without being coerced at
+ * all**. Nothing here can throw, and nothing here invents a figure — an
+ * unreadable bucket returns `null`, which `formatChartValue` prints as `—` and
+ * `describeSeries` leaves out of the total, rather than `0`, which would claim
+ * the day was measured and found empty.
  */
-export function chartNumber(value: string | number | null | undefined): number | null {
-  if (value === null || value === undefined || value === '') return null
-  const numeric = typeof value === 'number' ? value : Number(value)
-  return Number.isFinite(numeric) ? numeric : null
+export function chartNumber(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  if (typeof value === 'string') {
+    if (value === '') return null
+    const numeric = Number(value)
+    return Number.isFinite(numeric) ? numeric : null
+  }
+  return null
 }
 
 export interface SeriesSummaryOptions {

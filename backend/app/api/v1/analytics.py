@@ -50,7 +50,6 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Response, status
-from sqlalchemy import func, select
 
 from app.api.deps import (
     AnalyticsServiceDep,
@@ -78,6 +77,7 @@ from app.schemas.analytics import (
     TrendPoint,
     WorkloadRead,
 )
+from app.repositories.analytics import AnalyticsRepository
 from app.schemas.common import Page
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -109,9 +109,15 @@ async def get_today(session: DbSession) -> date:
     ``date.today()`` for the reason the planner gives: the application's host and
     the database server can disagree, and whichever one is wrong would decide
     which day the user is looking at.
+
+    Read through :meth:`AnalyticsRepository.today` so this dependency and
+    :meth:`AnalyticsService._today` — which resolves ``still_overdue``, the top
+    overdue list and the workload's overdue figure — cannot answer differently.
+    They used to: this one took the server's date and that one normalised to UTC,
+    so for five and a half hours of every day the window a request resolved to was
+    not the day the same request then reported on.
     """
-    value = await session.scalar(select(func.now()))
-    return value.date() if value is not None else date.today()
+    return await AnalyticsRepository(session).today()
 
 
 _Today = Annotated[date, Depends(get_today)]

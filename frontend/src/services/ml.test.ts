@@ -207,6 +207,7 @@ describe('ml action confirmation', () => {
       kind: 'create_project',
       intent: 'project_manage',
       payload: { name: 'ShapeProbeXyz', priority: 'medium' },
+      confirm_destructive: false,
     }
     await confirmAction(body)
 
@@ -225,6 +226,7 @@ describe('ml action confirmation', () => {
       kind: 'complete_task',
       intent: 'task_manage',
       payload: { status: 'done' },
+      confirm_destructive: false,
       target_id: 'b9e9ce1c-0000-4000-8000-000000000000',
     })
 
@@ -232,6 +234,37 @@ describe('ml action confirmation', () => {
       kind: 'complete_task',
       intent: 'task_manage',
       payload: { status: 'done' },
+      confirm_destructive: false,
+      target_id: 'b9e9ce1c-0000-4000-8000-000000000000',
+    })
+  })
+
+  it('carries the destructive acknowledgement through untouched', async () => {
+    // The endpoint refuses a destructive kind without this flag, so a client that
+    // dropped or renamed it would 422 on every delete. The service is a pass-through
+    // and that is the property worth pinning: whatever it is given is what is sent.
+    const { calls } = stubBackend({
+      ...CONFIRMED,
+      kind: 'delete_task',
+      entity: 'task',
+      outcome: 'deleted',
+      applied: true,
+      message: "Deleted the task 'draft the API contract'.",
+    })
+
+    await confirmAction({
+      kind: 'delete_task',
+      intent: 'task_manage',
+      payload: {},
+      confirm_destructive: true,
+      target_id: 'b9e9ce1c-0000-4000-8000-000000000000',
+    })
+
+    expect(onlyCall(calls).body).toEqual({
+      kind: 'delete_task',
+      intent: 'task_manage',
+      payload: {},
+      confirm_destructive: true,
       target_id: 'b9e9ce1c-0000-4000-8000-000000000000',
     })
   })
@@ -243,6 +276,7 @@ describe('ml action confirmation', () => {
         kind: 'create_project',
         intent: 'project_manage',
         payload: { name: 'ShapeProbeXyz' },
+        confirm_destructive: false,
       }),
     ).resolves.toMatchObject({ outcome: 'created', applied: true })
 
@@ -256,6 +290,7 @@ describe('ml action confirmation', () => {
       kind: 'create_project',
       intent: 'project_manage',
       payload: { name: 'ShapeProbeXyz' },
+      confirm_destructive: false,
     })
 
     // A replayed confirm is a success-shaped answer, not a failure: the desired

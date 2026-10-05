@@ -1276,6 +1276,25 @@ _ACTION_ACK_CONTEXT_KEYS: frozenset[str] = frozenset(
     {"due_date", "start_date", "target_date", "priority", "status", "note", "reason"}
 )
 
+#: The same idea for every other schema, and the narrowest form of it: a grade and
+#: a day are read off almost any sentence, and the **schema** — not the kind — is
+#: the authority on which columns exist. ``NoteCreate`` has neither a ``priority``
+#: nor a ``due_date`` and forbids extras, so "save a high priority note about the
+#: retro tomorrow" reached the check below as two unstorable values and was
+#: refused for words the user never asked to be stored. Refusing it was also
+#: useless: the confirm sentence is composed from the payload, not the utterance,
+#: so the urgency and the deadline it could not carry would not have appeared in
+#: it either way.
+#:
+#: Only these four keys qualify, and only where the schema genuinely lacks the
+#: column — ``update_task`` still carries a ``due_date``, so nothing changes for
+#: it. Everything else the schema cannot hold stays a
+#: :data:`ProposalReason.FIELD_NOT_RECOVERABLE` refusal, which is what the check is
+#: for: a *change* nobody can write is a question worth asking back.
+_SCHEMA_LESS_CONTEXT_KEYS: frozenset[str] = frozenset(
+    {"priority", "due_date", "start_date", "target_date"}
+)
+
 
 def _format_due(due_date: date, today: date, wording: str = "due") -> str:
     """Render a date the way a person would say it, relative when it is near.
@@ -1345,8 +1364,16 @@ def _changed_fields(payload: BaseModel) -> tuple[str, ...]:
     ``model_fields_set`` is a set, and a sentence listing a user's changes in a
     different order each time reads as a different sentence. Iterating the schema
     fixes the order without having to sort anything.
+
+    The schema is read off the **class**: ``model_fields`` is a class attribute in
+    Pydantic 2.11, and reading it off an instance is deprecated there and removed
+    in 3.0 — so the instance spelling turns every update proposal into a warning,
+    which this package's own test configuration promotes to an error. It was
+    unreachable while the only kinds that reached this function were creations and
+    completions; the moment an update could be proposed at all, every one of the
+    six update kinds raised here instead of rendering a sentence.
     """
-    return tuple(name for name in payload.model_fields if name in payload.model_fields_set)
+    return tuple(name for name in type(payload).model_fields if name in payload.model_fields_set)
 
 
 def _update_sentence(subject: str, label: str | None, payload: BaseModel) -> str:
@@ -1953,6 +1980,9 @@ def _build_payload(
     consumed |= _EXTRA_VALUE_KEYS.get(spec.kind, frozenset())
     if spec.schema is ActionAck:
         consumed |= _ACTION_ACK_CONTEXT_KEYS
+    # A grade or a day the payload has no column for is context the schema
+    # declined, not a change being dropped: see :data:`_SCHEMA_LESS_CONTEXT_KEYS`.
+    consumed |= _SCHEMA_LESS_CONTEXT_KEYS - fields
 
     unstorable = sorted(name for name in values if name not in fields and name not in consumed)
     if unstorable:

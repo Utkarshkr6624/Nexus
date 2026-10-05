@@ -90,7 +90,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Mapping
 from datetime import date, datetime
-from typing import Self
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -151,6 +151,37 @@ _ACTIVITY_LIST_SUBJECT = "learning activities"
 #: client can recognise the cold-start message without string-matching each
 #: metric's own wording, and so it is written once.
 NOT_ENOUGH_DATA = "Not enough data to assess this yet."
+
+#: The largest number of minutes any one row may carry, on a goal's estimate or
+#: on a single recorded activity. One year of every minute of the day: past it,
+#: the figure is not a figure anybody estimated or measured but a value typed to
+#: see what would happen. The ceiling is declared here rather than left to the
+#: column because ``estimated_effort_minutes`` is a 32-bit ``Integer``, so an
+#: unbounded value reaches storage as a ``DataError`` and leaves the client with
+#: a 500 and no field to fix — and because ``minutes_in_window`` is a *sum* over
+#: whatever was accepted, one absurd row poisons every window it lands in.
+MAX_LEARNING_MINUTES = 365 * 24 * 60
+
+#: The band :attr:`SkillListRead.by_category` counts the user's uncategorised
+#: skills under. The category vocabulary is deliberately open, so this is the
+#: **only** key NEXUS invents here, and it exists for one reason: the tally has
+#: to add up to ``total``. A breakdown that silently drops the skills nobody
+#: grouped sums to less than the number printed beside it, and a client summing
+#: the bands gets a number that is not the total with nothing saying why.
+UNCATEGORISED_CATEGORY = "uncategorised"
+
+
+def _trimmed(value: Any) -> Any:
+    """Strip the whitespace around a caller-supplied name before it is checked.
+
+    ``"  FastAPI  "`` and ``FastAPI`` are the same name written twice, and only
+    the trimmed form collides with the row already in the table — so the
+    trimming has to happen before ``min_length`` and before the duplicate
+    lookup, not after the row is written. A name that is *only* whitespace then
+    fails ``min_length`` as the empty string it is, rather than being accepted as
+    a row whose name renders as nothing.
+    """
+    return value.strip() if isinstance(value, str) else value
 
 
 def _complete_bands(provided: Mapping[str, int], order: tuple[str, ...]) -> dict[str, int]:
@@ -371,8 +402,10 @@ class LearningGoalWriteBase(BaseModel):
     estimated_effort_minutes: int | None = Field(
         default=None,
         ge=0,
+        le=MAX_LEARNING_MINUTES,
         description="The user's own estimate of the work, in minutes. Null is not "
-        "estimated; it is not zero.",
+        "estimated; it is not zero. Capped at "
+        f"{MAX_LEARNING_MINUTES:,} — a year of every minute of the day.",
     )
     project_id: uuid.UUID | None = Field(
         default=None,
@@ -402,8 +435,20 @@ class LearningGoalWrite(LearningGoalWriteBase):
     title: str = Field(
         min_length=1,
         max_length=200,
-        description="The user's name for it. Required, and never rewritten by NEXUS.",
+        description="The user's name for it. Required, and never rewritten by NEXUS. "
+        "Surrounding whitespace is trimmed, so a title typed with a stray space is "
+        "the goal the user meant rather than a second row beside it.",
     )
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def _trim_title(cls, value: Any) -> Any:
+        """Trim a title before its length is checked.
+
+        ``min_length=1`` is the whole defence against a whitespace-only title, and
+        it can only see the empty string — so the trimming has to happen first.
+        """
+        return _trimmed(value)
 
 
 class LearningGoalUpdate(LearningGoalWriteBase):
@@ -427,8 +472,21 @@ class LearningGoalUpdate(LearningGoalWriteBase):
         default=None,
         min_length=1,
         max_length=200,
-        description="A new name. Omit to leave it alone.",
+        description="A new name. Omit to leave it alone. Surrounding whitespace is "
+        "trimmed; a title cannot be nulled, because a goal without a name is not a "
+        "goal the user can recognise on the page.",
     )
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def _trim_title(cls, value: Any) -> Any:
+        """Trim a renamed goal's title before its length is checked.
+
+        ``None`` passes through untouched so the field's ``exclude_unset`` rule
+        still decides between "not sent" and "sent as null"; the service refuses
+        the null outright, since ``learning_goals.title`` is ``NOT NULL``.
+        """
+        return _trimmed(value)
 
 
 # ---------------------------------------------------------------------------
@@ -571,7 +629,9 @@ class SkillListRead(BaseModel):
     by_category: dict[str, int] = Field(
         description="Counts by the user's own grouping word, across every matching "
         "skill. Only keys the account has actually used appear — the vocabulary is "
-        "open by design."
+        "open by design — and the skills the user never grouped are counted under "
+        f"`{UNCATEGORISED_CATEGORY}`, so the bands always add up to `total`. The "
+        f"`{UNCATEGORISED_CATEGORY}` band itself is omitted when it is zero."
     )
     skills_with_evidence: int = Field(
         ge=0,
@@ -616,8 +676,10 @@ class SkillWrite(BaseModel):
         min_length=1,
         max_length=120,
         description="The user's own name for the skill. A single technology or "
-        "discipline; a paragraph about it belongs in `description`. Unique within "
-        "this account, and a duplicate is a 409 rather than a silently merged row.",
+        "discipline; a paragraph about it belongs in `description`. Trimmed, so "
+        "`\"  FastAPI  \"` is the skill `FastAPI` rather than a second row beside "
+        "it. Unique within this account, and a duplicate is a 409 rather than a "
+        "silently merged row.",
     )
     category: str | None = Field(
         default=None,
@@ -645,6 +707,17 @@ class SkillWrite(BaseModel):
         description="The 1-5 level the user is aiming at. Defaults to 3; NEXUS never raises it.",
     )
 
+    @field_validator("name", mode="before")
+    @classmethod
+    def _trim_name(cls, value: Any) -> Any:
+        """Trim the name before its length is checked.
+
+        A name that is only whitespace becomes the empty string it is, and
+        ``min_length=1`` refuses it — where before it was accepted and stored as a
+        row whose name renders as nothing anywhere on the page.
+        """
+        return _trimmed(value)
+
 
 class SkillUpdate(BaseModel):
     """Patch a skill.
@@ -661,8 +734,21 @@ class SkillUpdate(BaseModel):
         default=None,
         min_length=1,
         max_length=120,
-        description="A new name. Omit to leave it alone.",
+        description="A new name. Omit to leave it alone. Trimmed; a name cannot be "
+        "nulled, because `skills.name` is NOT NULL and the identity of the row "
+        "rests on it.",
     )
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _trim_name(cls, value: Any) -> Any:
+        """Trim a renamed skill's name before its length is checked.
+
+        ``None`` passes through so ``exclude_unset`` still decides between "not
+        sent" and "sent as null"; the service refuses the null, because the
+        column is ``NOT NULL`` and the duplicate lookup keys on it.
+        """
+        return _trimmed(value)
     category: str | None = Field(
         default=None,
         max_length=64,
@@ -870,9 +956,13 @@ class LearningActivityRead(BaseModel):
     id: uuid.UUID = Field(description="Identifier of the recorded activity.")
     skill_id: uuid.UUID | None = Field(
         description="The skill this is evidence for, or null when the user named "
-        "none. A study session legitimately precedes having a skill row. The foreign "
-        "key cascades, because an activity outliving its skill would sit in no "
-        "skill's evidence count and no page would ever show it."
+        "none. A study session legitimately precedes having a skill row, and it also "
+        "outlives a deleted one: the foreign key is `ON DELETE SET NULL`, so the row "
+        "survives as an append-only fact with an unattributed subject — the same "
+        "state it is in when the user never named a skill at all. It still counts "
+        "towards every account-wide figure on this surface; only the per-skill "
+        "evidence count and gap lose it, which is the cost of not destroying a "
+        "record the user typed."
     )
     goal_id: uuid.UUID | None = Field(
         description="The goal this was recorded towards, or null for a standalone "
@@ -973,8 +1063,11 @@ class LearningActivityWrite(BaseModel):
     duration_minutes: int | None = Field(
         default=None,
         ge=0,
+        le=MAX_LEARNING_MINUTES,
         description="How long it took. Omit for an event that has no length; a "
-        "spanned session and an instantaneous event are different facts.",
+        "spanned session and an instantaneous event are different facts. Capped at "
+        f"{MAX_LEARNING_MINUTES:,} minutes — a year of every minute of the day — "
+        "because a duration is summed into every window figure on this surface.",
     )
     source_type: str | None = Field(
         default=None,

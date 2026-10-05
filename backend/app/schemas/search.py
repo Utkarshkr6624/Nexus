@@ -68,6 +68,8 @@ class SearchEntityKind(StrEnum):
     TASK = "task"
     NOTE = "note"
     RESOURCE = "resource"
+    BOOKMARK = "bookmark"
+    DOCUMENT = "document"
     CONCEPT = "concept"
     REPOSITORY = "repository"
     GOAL = "goal"
@@ -97,7 +99,7 @@ MAX_QUERY_CHARS: int = 200
 #: answer "you asked for more entity kinds than exist" as a 422 naming the
 #: parameter, instead of accepting a list that happens to be longer than the
 #: vocabulary and silently narrowing it.
-MAX_TYPE_FILTERS: int = 11
+MAX_TYPE_FILTERS: int = 13
 
 
 class SearchHitRead(BaseModel):
@@ -132,8 +134,10 @@ class SearchHitRead(BaseModel):
         description=(
             "The column that produced the snippet and the ranking, by its model "
             "attribute name — `name`, `title`, `content`, `description`, `url`, "
-            "`local_path`, `category`, `reason` or `target_topic`. This is the "
-            "column *order* a hit was found in, not an arbitrary pick."
+            "`filename`, `local_path`, `category`, `reason` or `target_topic`. "
+            "This is the column *order* a hit was found in, not an arbitrary "
+            "pick. A `bookmark` leads with `url` and a `document` with `filename` "
+            "because both titles are nullable and the label must not be."
         )
     )
     project_id: UUID | None = Field(

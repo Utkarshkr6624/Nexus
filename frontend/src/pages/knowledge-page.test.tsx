@@ -13,8 +13,8 @@ import type {
   Concept,
   Note,
   Resource,
-  WorkTagRead,
 } from '@/types/knowledge'
+import type { WorkTag } from '@/types/work'
 
 /**
  * The Knowledge page, asserted at the network boundary.
@@ -111,13 +111,23 @@ const CONCEPTS: Concept[] = [
   },
 ]
 
-const TAGS: WorkTagRead[] = [
+/**
+ * The shared `/tags` vocabulary.
+ *
+ * Typed `WorkTag` from `@/types/work`, which is what the page actually reads:
+ * tags live outside the knowledge base and reach this page through `useTags()`
+ * in `@/features/work/hooks`. There is no `WorkTagRead` in the tree — the type
+ * the knowledge types once imported belonged to a tag model that no longer
+ * exists here — and the fields are `task_count`/`project_count` rather than an
+ * `updated_at`, because a tag has no `updated_at` to report.
+ */
+const TAGS: WorkTag[] = [
   {
     id: '77777777-7777-4777-8777-777777777777',
     name: 'runbook',
     created_at: '2026-01-08T08:00:00Z',
-    updated_at: '2026-01-08T08:00:00Z',
     task_count: 0,
+    project_count: 0,
   },
 ]
 
@@ -125,6 +135,9 @@ interface Page<T> {
   items: T[]
   meta: { total: number; limit: number; offset: number }
 }
+
+/** The window the page fetches a list in, and so the one a list request carries. */
+const LIST_LIMIT = 25
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -141,7 +154,7 @@ function envelope(code: string, message: string, status: number): Response {
 }
 
 function page<T>(items: T[]): Page<T> {
-  return { items, meta: { total: items.length, limit: 25, offset: 0 } }
+  return { items, meta: { total: items.length, limit: LIST_LIMIT, offset: 0 } }
 }
 
 /**
@@ -149,12 +162,23 @@ function page<T>(items: T[]): Page<T> {
  * (`app/services/knowledge_service.py::_SORT_KEYS`). The stub 422s anything else
  * with the real envelope, so a page that sends a foreign key fails here exactly
  * as it does against the API rather than quietly getting a 200.
+ *
+ * **Keyed by the collection the stub resolves a URL to, not by the service's own
+ * entity name.** `_SORT_KEYS` is keyed `note`/`concept`/`resource`/`bookmark`;
+ * {@link COLLECTION} is keyed by the URL segment, which is the plural. Reading
+ * one with the other's key silently produced `undefined` here, and since every
+ * list request carries a `sort`, `SORT_ALLOWLIST[collection]!.includes(sort)`
+ * threw `TypeError` inside the stub — which the page could not tell from a
+ * transport failure, so the shipped `queryRetryPolicy` backed off and retried
+ * while the panel sat on its skeleton. The `limit=1` count queries send no
+ * `sort` and short-circuit past this line, which is why the stat tiles rendered
+ * and made a dead list look like a live page.
  */
 const SORT_ALLOWLIST: Record<string, readonly string[]> = {
-  note: ['created_at', 'status', 'title', 'updated_at'],
-  concept: ['created_at', 'name', 'updated_at'],
-  resource: ['created_at', 'resource_type', 'title', 'updated_at'],
-  bookmark: ['archived_at', 'created_at', 'domain', 'updated_at'],
+  notes: ['created_at', 'status', 'title', 'updated_at'],
+  concepts: ['created_at', 'name', 'updated_at'],
+  resources: ['created_at', 'resource_type', 'title', 'updated_at'],
+  bookmarks: ['archived_at', 'created_at', 'domain', 'updated_at'],
 }
 
 const COLLECTION: Record<string, Page<unknown>> = {
@@ -240,6 +264,31 @@ async function settle(): Promise<void> {
   })
 }
 
+/**
+ * The open tab's list, and nothing else.
+ *
+ * Radix keeps every `TabsContent` mounted and hides the inactive ones, so
+ * `getByRole('tabpanel')` resolves to exactly the panel on screen — and the
+ * dashboard above it has panels of its own, which a page-wide `getByText` cannot
+ * tell apart from the list. A note is on this page twice by design: once as its
+ * row in the Notes list and once in "Recently updated", which reads the same
+ * window. `findByText('Keyboard runbook')` therefore matched two nodes and
+ * `waitFor` kept retrying the ambiguity instead of giving up, which is how a test
+ * with nothing wrong on it timed out at 20s.
+ */
+function openTab(): HTMLElement {
+  return screen.getByRole('tabpanel')
+}
+
+/**
+ * Asserts no failure panel, once the page has finished reacting to the request.
+ *
+ * A bare `queryByRole('alert')` samples one instant, so on a list that answers in
+ * two ticks it passes against a page that is about to paint its error — which is
+ * the failure these tests exist to catch. Waiting for the same assertion lets
+ * React Query retry once and settle first, so "never 422s" is checked against a
+ * finished render rather than the first one.
+ */
 async function waitForNoAlert(): Promise<void> {
   await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
 }
@@ -251,17 +300,23 @@ describe('knowledge page — sort the endpoint will accept', () => {
 
     renderKnowledge('/knowledge?tab=bookmarks&sort=name')
     await settle()
-    await screen.findByText('Atlas')
+    await within(openTab()).findByText('Atlas')
 
+    // `limit=1` is the dashboard's count tile, not the list: it asks for a
+    // number, never for an ordering, so a `sort` assertion over every bookmarks
+    // URL would be asserting something about a request that never had one.
     const bookmarkLists = calls.filter(
-      (call) => call.method === 'GET' && call.url.includes('/knowledge/bookmarks?'),
+      (call) =>
+        call.method === 'GET' &&
+        call.url.includes('/knowledge/bookmarks?') &&
+        call.url.includes(`limit=${LIST_LIMIT}`),
     )
     expect(bookmarkLists.length).toBeGreaterThan(0)
     for (const call of bookmarkLists) {
       expect(call.url).toContain('sort=created_at')
     }
     // No red panel, and no Retry that could only fail the same way again.
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    await waitForNoAlert()
   })
 
   it('drops the sort with the tab so the next list asks for its own ordering', async () => {
@@ -271,21 +326,24 @@ describe('knowledge page — sort the endpoint will accept', () => {
 
     renderKnowledge('/knowledge')
     await settle()
-    await screen.findByText('Keyboard runbook')
+    await within(openTab()).findByText('Keyboard runbook')
 
     // `Title` is valid for notes; on the Concepts tab it is a 422.
     await user.selectOptions(screen.getByLabelText('Sort'), 'title')
     await settle()
     await user.click(screen.getByRole('tab', { name: 'Concepts' }))
     await settle()
-    await screen.findByText('async')
+    await within(openTab()).findByText('async')
 
     const conceptLists = calls.filter(
-      (call) => call.method === 'GET' && call.url.includes('/knowledge/concepts?'),
+      (call) =>
+        call.method === 'GET' &&
+        call.url.includes('/knowledge/concepts?') &&
+        call.url.includes(`limit=${LIST_LIMIT}`),
     )
     expect(conceptLists.length).toBeGreaterThan(0)
     for (const call of conceptLists) expect(call.url).toContain('sort=name')
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    await waitForNoAlert()
   })
 })
 
@@ -297,21 +355,23 @@ describe('knowledge page — the Resources Type filter', () => {
 
     renderKnowledge('/knowledge?tab=resources')
     await settle()
-    await screen.findByText('MDN keyboard events')
+    await within(openTab()).findByText('MDN keyboard events')
 
-    expect(screen.getByText('No URL resource')).toBeInTheDocument()
+    expect(within(openTab()).getByText('No URL resource')).toBeInTheDocument()
 
     await user.selectOptions(screen.getByLabelText('Type'), 'documentation')
     await settle()
 
     // The one documentation resource, and not the `other` one.
-    expect(screen.getByText('MDN keyboard events')).toBeInTheDocument()
-    expect(screen.queryByText('No URL resource')).not.toBeInTheDocument()
+    expect(within(openTab()).getByText('MDN keyboard events')).toBeInTheDocument()
+    expect(within(openTab()).queryByText('No URL resource')).not.toBeInTheDocument()
     expect(screen.getByText(/1 of 2 shown/)).toBeInTheDocument()
 
     // `GET /knowledge/resources` declares no `resource_type`, so a page that
     // filtered server-side would be sending a parameter the service drops.
-    for (const call of calls.filter((row) => row.url.includes('/knowledge/resources'))) {
+    for (const call of calls.filter(
+      (row) => row.url.includes('/knowledge/resources') && row.url.includes(`limit=${LIST_LIMIT}`),
+    )) {
       expect(call.url).not.toContain('resource_type')
     }
   })
@@ -323,14 +383,14 @@ describe('knowledge page — the Resources Type filter', () => {
 
     renderKnowledge('/knowledge?tab=resources&type=other')
     await settle()
-    await screen.findByText('No URL resource')
-    expect(screen.queryByText('MDN keyboard events')).not.toBeInTheDocument()
+    await within(openTab()).findByText('No URL resource')
+    expect(within(openTab()).queryByText('MDN keyboard events')).not.toBeInTheDocument()
 
     await user.selectOptions(screen.getByLabelText('Type'), '')
     await settle()
 
-    expect(screen.getByText('MDN keyboard events')).toBeInTheDocument()
-    expect(screen.getByText('No URL resource')).toBeInTheDocument()
+    expect(within(openTab()).getByText('MDN keyboard events')).toBeInTheDocument()
+    expect(within(openTab()).getByText('No URL resource')).toBeInTheDocument()
   })
 })
 
@@ -341,12 +401,13 @@ describe('knowledge page — every delete names its record', () => {
 
     renderKnowledge('/knowledge?tab=resources')
     await settle()
-    await screen.findByText('MDN keyboard events')
+    await within(openTab()).findByText('MDN keyboard events')
 
-    const rows = screen.getAllByRole('listitem').filter((row) => within(row).queryByRole('button'))
+    const panel = within(openTab())
+    const rows = panel.getAllByRole('listitem').filter((row) => within(row).queryByRole('button'))
     expect(rows.length).toBeGreaterThan(0)
 
-    const labels = screen
+    const labels = panel
       .getAllByRole('button')
       .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '')
       .filter((label) => label.startsWith('Delete'))

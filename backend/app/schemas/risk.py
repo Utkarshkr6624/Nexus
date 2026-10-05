@@ -77,6 +77,7 @@ __all__ = [
     "RiskListRead",
     "RiskRead",
     "RiskSummaryRead",
+    "SeverityBandRead",
     "count_sentence",
 ]
 
@@ -311,14 +312,45 @@ class RiskListRead(BaseModel):
         return self
 
 
+class SeverityBandRead(BaseModel):
+    """One severity band, with the scores that fall into it.
+
+    The four words ``critical`` / ``high`` / ``medium`` / ``low`` are a four-way
+    split of a 0-100 number, and a number whose bands the reader cannot see is a
+    number they cannot place. This model is the definition travelling with the
+    counts, so a client states the ladder from the deployment that produced it
+    rather than from a second copy of 75/50/25 it hardcoded itself.
+    """
+
+    severity: str = Field(description="The band this entry defines, most severe first.")
+    minimum_score: int = Field(ge=0, le=100, description="Lowest score in this band, inclusive.")
+    maximum_score: int | None = Field(
+        default=None,
+        ge=0,
+        le=100,
+        description="Highest score in this band, inclusive. Null for the top band, "
+        "which has no ceiling.",
+    )
+    description: str = Field(
+        description="One sentence saying what the band is worth, in words rather "
+        "than as a number to be interpreted."
+    )
+
+
 class RiskSummaryRead(BaseModel):
-    """The compact tallies the dashboard shows, and nothing else.
+    """The compact tallies the dashboard shows, the bands they are counted in,
+    and nothing else.
 
     A whole page of risks behind five numbers is the wrong shape for a dashboard
     tile, and it is the wrong shape for a screen reader announcement too. The
     counts are of *live* risks — ``active`` and ``acknowledged`` — because a
     resolved one is history, and a dashboard that kept counting it would never
     let a user see that clearing a backlog changed anything.
+
+    :attr:`severity_bands` is what the counts are counted *in*, and it is here
+    rather than left to each client to hardcode: the four band names carry no
+    meaning on their own, so a screen that wants to say why a risk is critical
+    has nothing to say until somebody states the ladder.
     """
 
     critical: int = Field(default=0, ge=0, description="Live risks in the critical band.")
@@ -338,6 +370,12 @@ class RiskSummaryRead(BaseModel):
         "Medium and low are reported but do not raise the flag: a dashboard that "
         "raises an alarm over an amber band teaches users to ignore it, which is "
         "the behaviour the brief's neutral register rules out.",
+    )
+    severity_bands: list[SeverityBandRead] = Field(
+        default_factory=list,
+        description="What each severity band means, most severe first: the score "
+        "range it covers and one sentence defining it. Always all four, in a "
+        "fixed order, so the response shape does not depend on the data.",
     )
 
     @model_validator(mode="after")

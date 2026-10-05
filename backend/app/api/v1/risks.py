@@ -98,7 +98,7 @@ from app.core.permissions import Permission
 from app.models.enums import ActivityEvent, RiskSeverity, RiskStatus, RiskType
 from app.models.risk import LIVE_RISK_STATUSES, Recommendation, Risk
 from app.models.user import User
-from app.repositories.risk import RiskRepository
+from app.repositories.risk import RiskRepository, allowed_risk_transitions
 from app.schemas.risk import RiskListRead, RiskRead, RiskSummaryRead
 from app.services.activity_service import ActivityService
 from app.services.risk.detection import ENTITY_PROJECT, ENTITY_TASK
@@ -134,7 +134,8 @@ _RISK_NOT_FOUND = "That risk does not exist."
 #: Deliberately distinct from the 404 message *because it is answered from a row
 #: the caller owns*: the difference between "that is not yours" and "that is
 #: already closed" is one the caller is entitled to, and it is only safe to give
-#: because the 404 case was settled first.
+#: because the 404 case was settled first. Always raised with ``details.status``
+#: carrying the state the row is actually in.
 _RISK_NOT_TRANSITIONABLE = (
     "That risk is not in a state this action can apply to. A risk that has already "
     "been resolved or dismissed cannot be acknowledged, dismissed or resolved again."
@@ -281,13 +282,26 @@ async def _transition(
     # that is already dismissed should be told so, not handed a cheerful 200
     # and a second dismissal event. Answered here rather than in the repository
     # because the two callers genuinely want different answers.
+    #
+    # Both refusals carry `details.status`, because that is the one fact that
+    # settles which of the three buttons the screen should still be offering. The
+    # work-session endpoints already answer this way, and a 409 that names no
+    # state leaves the caller guessing between one it can recover from and one it
+    # cannot. `row` is the pre-transition instance; the update has not run on
+    # this path, so its status is still the current one.
     if row.status == target.value and row.status in _TERMINAL_RISK_STATUSES:
-        raise ConflictError(_RISK_NOT_TRANSITIONABLE)
+        raise ConflictError(
+            _RISK_NOT_TRANSITIONABLE,
+            details={"status": row.status, "allowed": allowed_risk_transitions(row.status)},
+        )
     updated = await risks.transition_risk(
         current_user.id, risk_id, status=target.value, responded=True
     )
     if updated is None:
-        raise ConflictError(_RISK_NOT_TRANSITIONABLE)
+        raise ConflictError(
+            _RISK_NOT_TRANSITIONABLE,
+            details={"status": row.status, "allowed": allowed_risk_transitions(row.status)},
+        )
     await activity.record(
         event,
         user_id=current_user.id,
@@ -317,26 +331,33 @@ async def list_risks(
     session: DbSession,
     limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_PAGE_SIZE,
     offset: Annotated[int, Query(ge=0)] = 0,
-    risk_status: Annotated[RiskStatus | None, Query(alias="status")] = None,
-    risk_type: Annotated[RiskType | None, Query()] = None,
-    severity: Annotated[RiskSeverity | None, Query()] = None,
+    risk_status: Annotated[list[RiskStatus] | None, Query(alias="status")] = None,
+    risk_type: Annotated[list[RiskType] | None, Query()] = None,
+    severity: Annotated[list[RiskSeverity] | None, Query()] = None,
 ) -> RiskListRead:
-    """One page of risks, ordered by severity then by how recently each was seen.
+    """One page of risks, worst first.
 
     **Ordering is the repository's, not the client's.** Severity words do not sort
     alphabetically into their own severity order — ``medium`` sorts above ``low``
     and both above ``high`` — so the ranking goes through a ``CASE`` built from
-    the enum. A client that sorted the page itself would have to reimplement that
-    and would eventually get it wrong.
+    the enum, and the *score* is the second term of it: inside one band the
+    higher score comes first. A client that sorted the page itself would have to
+    reimplement both and would eventually get it wrong.
 
-    ``status``, ``risk_type`` and ``severity`` are single-valued and are checked
-    against the enums by FastAPI, so ``?status=nonsense`` is a 422 rather than a
-    filter that quietly matches nothing. The band filter is the server's for a
-    reason a client cannot fix: narrowing a page in the browser can only count
-    the rows that page happened to carry, so the tiles would understate a band
-    that continued onto page two and the pager would have to be withdrawn for
-    want of a total. Here the same word narrows ``items``, ``total`` and the
-    tally together, and paging keeps working.
+    ``status``, ``risk_type`` and ``severity`` may each be repeated, and the
+    values are combined rather than overwritten. That is not a nicety: a URL
+    serialiser asked for two severities produces ``?severity=critical&severity=
+    high``, and a scalar parameter silently keeps only the last one — so a caller
+    asking for critical *and* high was handed the high risks only, with a
+    ``total`` that confidently counted the wrong set and no warning. A repeat is
+    now "one of these", which is what the caller meant; the comma-joined form is
+    still refused, and an unknown word is still a 422 rather than a filter that
+    quietly matches nothing. The band filter is the server's for a reason a
+    client cannot fix: narrowing a page in the browser can only count the rows
+    that page happened to carry, so the tiles would understate a band that
+    continued onto page two and the pager would have to be withdrawn for want of
+    a total. Here the same words narrow ``items``, ``total`` and the tally
+    together, and paging keeps working.
 
     ``by_severity`` counts **the same set the items come from** — all three
     filters, applied by the repository's one filter builder, so the header tiles
@@ -350,9 +371,9 @@ async def list_risks(
     yet" — a rule had nothing to propose, which is not the same as not having
     looked.
     """
-    statuses = [risk_status.value] if risk_status is not None else None
-    types = [risk_type.value] if risk_type is not None else None
-    bands = [severity.value] if severity is not None else None
+    statuses = [value.value for value in risk_status] if risk_status else None
+    types = [value.value for value in risk_type] if risk_type else None
+    bands = [value.value for value in severity] if severity else None
     rows, total = await risks.list_risks(
         current_user.id,
         statuses=statuses,

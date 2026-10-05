@@ -67,6 +67,7 @@ function task(id: string, title: string, status: TaskStatus): Task {
 
 const TODO = task('11111111-1111-4111-8111-111111111111', 'Write the migration plan', 'todo')
 const RUNNING = task('22222222-2222-4222-8222-222222222222', 'Migrate the users table', 'in_progress')
+const BLOCKED = task('33333333-3333-4333-8333-333333333333', 'Rotate the signing key', 'blocked')
 
 const STATS: ActivityStats = {
   tasks: { total: 2, todo: 1, in_progress: 1, blocked: 0, completed: 0, cancelled: 0, overdue: 0 },
@@ -175,8 +176,9 @@ function toasts(): { title: string; description: string }[] {
   }))
 }
 
-async function selectAll(): Promise<void> {
-  for (const name of ['Select Write the migration plan', 'Select Migrate the users table']) {
+/** Ticks the named rows, in the order given. */
+async function select(names: readonly string[]): Promise<void> {
+  for (const name of names) {
     await userEvent.click(await screen.findByRole('checkbox', { name }))
   }
 }
@@ -217,9 +219,12 @@ describe('the tasks page', () => {
   })
 
   it('completes only the tasks the lifecycle allows, and says which it skipped', async () => {
-    const calls = installBackend([TODO, RUNNING])
+    // The `todo` row is walked `start` → `complete`, so it completes. The
+    // `blocked` row is the one the lifecycle genuinely refuses, and it is the one
+    // that must be named and left selected.
+    const calls = installBackend([TODO, BLOCKED])
     renderTasks()
-    await selectAll()
+    await select(['Select Write the migration plan', 'Select Rotate the signing key'])
 
     await userEvent.click(await screen.findByRole('button', { name: /Complete selected/ }))
 
@@ -228,18 +233,47 @@ describe('the tasks page', () => {
     )
     const toast = toasts().at(-1)!
     // The refusal is legible: which task, and why.
-    expect(toast.description).toContain('Write the migration plan')
-    expect(toast.description).toContain('to do')
-    expect(toast.description).toContain('started')
+    expect(toast.description).toContain('Rotate the signing key')
+    expect(toast.description).toContain('blocked')
+    expect(toast.description).toContain('completed')
+    // The start the `todo` row needed is stated, not hidden: the feed recorded
+    // two events for it and the count has to agree with them.
+    expect(toast.description).toContain('1 was started first')
     // The skipped task is not silently dropped — it stays selected.
     expect(toast.description).toContain('still selected')
-    expect(screen.getByRole('checkbox', { name: 'Select Write the migration plan' })).toBeChecked()
-    expect(screen.getByRole('checkbox', { name: 'Select Migrate the users table' })).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Select Rotate the signing key' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Select Write the migration plan' })).not.toBeChecked()
 
-    // Exactly one completion was attempted, and it was the legal one.
+    // Exactly one completion was attempted, and it was the legal one: the
+    // `blocked` row never reached the network, because the lifecycle answered it
+    // without a request being wasted.
     const completions = callsTo(calls, '/complete')
     expect(completions).toHaveLength(1)
-    expect(calls.some((url) => url.includes('11111111-1111-4111-8111-111111111111/complete'))).toBe(false)
+    expect(completions[0]).toContain(TODO.id)
+    expect(calls.some((url) => url.includes(`${BLOCKED.id}/complete`))).toBe(false)
+    expect(calls.some((url) => url.includes(`${BLOCKED.id}/start`))).toBe(false)
+  })
+
+  it('walks a todo row as start then complete, rather than refusing it', async () => {
+    // The edge the server does not have is the edge the client takes. Two real
+    // round trips, not one optimistic status write: the feed records a
+    // `task_started` event and then a `task_completed` one, and a row the person
+    // ticked because they had, in fact, done the work is not told it may not
+    // claim it was finished.
+    const calls = installBackend([TODO])
+    renderTasks()
+    await select(['Select Write the migration plan'])
+
+    await userEvent.click(await screen.findByRole('button', { name: /Complete selected/ }))
+
+    await waitFor(() => expect(toasts().at(-1)?.title).toBe('1 task completed'))
+    expect(toasts().at(-1)?.description).toContain('1 was started first')
+    // The start comes before the complete, on the same row.
+    expect(callsTo(calls, '/start')).toEqual([expect.stringContaining(TODO.id)])
+    expect(callsTo(calls, '/complete')).toEqual([expect.stringContaining(TODO.id)])
+    expect(calls.indexOf(callsTo(calls, '/start')[0]!)).toBeLessThan(
+      calls.indexOf(callsTo(calls, '/complete')[0]!),
+    )
   })
 
   it('reports a refusal the client could not have predicted in full', async () => {

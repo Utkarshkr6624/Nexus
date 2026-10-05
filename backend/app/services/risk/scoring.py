@@ -64,6 +64,7 @@ __all__ = [
     "project_risk",
     "risk_severity_for",
     "scheduling_risk",
+    "severity_band_descriptions",
     "task_risk",
     "workload_risk",
 ]
@@ -88,6 +89,62 @@ DEFAULT_SEVERITY_THRESHOLDS: tuple[tuple[int, str], ...] = (
 #: pattern, thirty is enough to lean on it.
 EVIDENCE_MEDIUM_SAMPLES = 10
 EVIDENCE_HIGH_SAMPLES = 30
+
+
+def severity_band_descriptions(
+    thresholds: Sequence[tuple[int, str]] = DEFAULT_SEVERITY_THRESHOLDS,
+) -> list[dict[str, Any]]:
+    """State what each band means, in words, with the numbers behind it.
+
+    **A score the caller cannot place is a score the caller cannot act on.** The
+    ladder above maps 91 to ``critical``, but nothing in the API said what
+    ``critical`` was worth — a client that wanted to explain the number to a
+    person had to hardcode 75/50/25 itself and hope it still matched. That is a
+    number duplicated into a second implementation, which is how the two drift.
+
+    So the bands travel with the API, derived from the same ladder
+    :func:`risk_severity_for` reads. The copy states the inclusive range, because
+    the boundaries are what a reader checking a score against a band actually
+    wants, and it names the score as a score rather than as a probability —
+    which is the whole caveat of this module, repeated where it is read.
+
+    Args:
+        thresholds: ``(floor, severity)`` pairs, highest floor first. Defaults to
+            the deployment's own ladder.
+
+    Returns:
+        One mapping per band, most severe first, each carrying ``severity``,
+        ``minimum_score``, ``maximum_score`` (``None`` for the open-ended top
+        band) and a one-sentence ``description``.
+    """
+    ordered = sorted(thresholds, key=lambda pair: pair[0], reverse=True)
+    bands: list[dict[str, Any]] = []
+    for index, (floor, severity) in enumerate(ordered):
+        # The floor below is the *next* band's floor minus one, because the
+        # floors are inclusive: a score of exactly 50 is `high`, not `medium`.
+        ceiling = (ordered[index + 1][0] - 1) if index + 1 < len(ordered) else None
+        bands.append(
+            {
+                "severity": severity,
+                "minimum_score": floor,
+                "maximum_score": ceiling,
+                "description": _band_sentence(severity, floor, ceiling),
+            }
+        )
+    return bands
+
+
+def _band_sentence(severity: str, floor: int, ceiling: int | None) -> str:
+    """One sentence defining one band, in the register the rest of this module uses."""
+    if ceiling is None:
+        return (
+            f"A risk score of {floor} or more out of 100 is {severity}. "
+            "The score is derived from your own recorded work; it is not a probability "
+            "that anything will happen."
+        )
+    if floor == ceiling:
+        return f"A risk score of exactly {floor} out of 100 is {severity}."
+    return f"A risk score from {floor} to {ceiling} out of 100 is {severity}."
 
 
 def risk_severity_for(

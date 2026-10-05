@@ -1217,43 +1217,20 @@ class AnalyticsService:
         describe the whole requested window rather than whatever fraction of it
         some earlier request happened to compute.
 
-        ``stale`` reports whether that fill was necessary: ``true`` means the
-        figures below were rebuilt on this request rather than served from an
-        existing aggregate, and ``false`` means they were already current. A
-        never-aggregated window is therefore ``stale: true`` with complete,
-        correct numbers — fresh because they were just computed.
+        ``stale`` reports whether the stored aggregates still describe the window:
+        ``true`` means a day of the window has never been aggregated, or something
+        inside it was recorded after the aggregates were computed. The second half
+        is the one that was missing — a fully covered window whose tasks have been
+        completed since reported ``stale: false`` beside totals that were one edit
+        out of date, which is worse than no flag at all because a client trusts it.
 
         ``aggregates_through`` says how far the stored aggregates reach, which is
-        what a client renders as "updated N minutes ago". Note that a window
-        whose days are all covered but whose underlying rows have since changed
-        reads as ``stale: false`` while its figures are one edit out of date;
-        the answer to that is ``POST /analytics/rebuild``, not a flag that would
-        be wrong more often than right.
+        what a client renders as "updated N minutes ago". ``POST /analytics/rebuild``
+        is the answer to a ``true`` flag; this read never recomputes anything.
         """
         self._check_range(start, end)
         previous_start, previous_end = _previous_window(start, end)
-        # Coverage is sampled *before* the gap is filled, and that ordering is the
-        # whole point of the flag. Read after, `covered` would always be the full
-        # set — the fill happens either way — so `stale` would be a field that
-        # could only ever say `false`, which is worse than not having it: a client
-        # would reasonably trust it.
-        #
-        # Sampled before, it answers the question a client actually has: "were
-        # these figures already computed, or did the server just compute them for
-        # me?" A `true` means the numbers below are fresh because they were
-        # rebuilt on this request, which pairs with `aggregates_through` to let a
-        # UI say "updated just now".
-        covered_before = await self.metrics.covered_dates(owner.id, start=start, end=end)
-        # Fill, then read. The fill below lives in `_totals`, which `productivity`
-        # calls — so reading `list_range` before it meant the first `/overview`
-        # over a window nobody had ever aggregated returned `totals` of all zeros
-        # and `daily: []`, having just written the rows that would have answered
-        # it. The window it reported was a window it had not measured, which is
-        # the precise failure the brief's "do not silently show stale numbers"
-        # rule exists to prevent. One explicit call up front makes the ordering a
-        # property of this method rather than an accident of where the sub-scores
-        # happen to sit.
-        await self._totals(owner, start=start, end=end)
+        covered = await self.metrics.covered_dates(owner.id, start=start, end=end)
         rows = await self.metrics.list_range(owner.id, start=start, end=end)
         previous_rows = await self.metrics.list_range(
             owner.id, start=previous_start, end=previous_end
@@ -1270,12 +1247,13 @@ class AnalyticsService:
             )
             for column in TRENDABLE_METRICS
         ]
-        covered = covered_before
         # A window with no aggregate row at all is the case this flag exists for:
         # it is maximally incomplete, so `stale` is true, not false. The old
         # `bool(covered) and covered != ...` guard read "nothing computed yet" as
         # "nothing to be stale about", which is exactly backwards.
         stale = covered != set(_days(start, end))
+        if not stale:
+            stale = await self._outpaced_by_source(owner.id, start, end)
         active = any(point.current for point in totals)
         return OverviewRead(
             range=self._metric_range(start, end),
@@ -1684,26 +1662,46 @@ class AnalyticsService:
             )
 
     async def _today(self) -> date:
-        """Today's date, from the database clock, normalised to UTC.
+        """Today's date, from the database clock, in the database's own zone.
 
         Never ``date.today()``: a host whose clock drifts from the server's would
         file a deadline in the wrong day, and "still overdue" is exactly the figure
         that has to agree with the rest of the system.
 
-        Normalised to UTC, because ``now()`` is a ``timestamptz`` *labelled with
-        the connection's* ``TimeZone``. On a server running anything other than UTC
-        — the development box runs at +05:30 — ``.date()`` on it would yield the
-        server-local day, and analytics would disagree with
-        :meth:`app.services.task_service.TaskService._today` about what "today"
-        means for five and a half hours a day, in the same request, about the same
-        instant. Same normalisation, same seam.
+        Delegated to :meth:`AnalyticsRepository.today` rather than re-derived here,
+        because this method used to normalise ``now()`` to **UTC** while the
+        router's window resolution read ``now()``.date() in the server's zone and
+        the SQL bucketed days in UTC. Three readings of "a day" inside one module:
+        on a host at +05:30 they disagreed for five and a half hours a day, and a
+        user opening the dashboard after midnight saw an empty *today* beside
+        yesterday's eight completed tasks. Now there is one method, and the day
+        buckets are cut in the same zone it returns.
         """
-        value = await self.metrics.session.scalar(select(func.now()))
-        if not isinstance(value, datetime):  # pragma: no cover - ``now()`` is never null
-            return datetime.now(UTC).date()
-        if value.tzinfo is None:  # pragma: no cover - asyncpg returns aware UTC
-            return value.date()
-        return value.astimezone(UTC).date()
+        return await self.metrics.today()
+
+    async def _outpaced_by_source(self, owner_id: uuid.UUID, start: date, end: date) -> bool:
+        """Whether anything recorded inside the window is newer than its aggregates.
+
+        Coverage alone answers "was this window measured?"; it does not answer "do
+        the stored rows still describe it?". A task completed after the last
+        rebuild leaves a fully covered window whose totals exclude it, and the flag
+        said the figures were current.
+
+        ``None`` on either side means the comparison cannot be made — no aggregates
+        at all, or nothing recorded in the window — and that is not staleness. The
+        coverage check owns the "never measured" case; this only refines the "was
+        measured" one.
+        """
+        oldest_row, newest_source = await self.metrics.aggregate_watermarks(
+            owner_id, start=start, end=end
+        )
+        if oldest_row is None or newest_source is None:
+            return False
+        if newest_source.tzinfo is None:  # pragma: no cover - asyncpg returns aware
+            newest_source = newest_source.replace(tzinfo=UTC)
+        if oldest_row.tzinfo is None:  # pragma: no cover - asyncpg returns aware
+            oldest_row = oldest_row.replace(tzinfo=UTC)
+        return newest_source > oldest_row
 
     async def _owned_project(self, project_id: uuid.UUID | None, owner: User) -> uuid.UUID | None:
         """Resolve ``project_id`` through the *scoped* lookup, or 404.
@@ -1737,23 +1735,25 @@ class AnalyticsService:
     async def _totals(self, owner: User, start: date, end: date) -> dict[str, Any]:
         """Summed counters over the window, from the stored daily aggregates.
 
-        **Filling a gap is what makes the aggregate tier safe to read from.**
-        A day with no row is a day that has never been aggregated, and summing
-        the rows that happen to exist would silently answer a shorter question
-        than the caller asked — a completion rate over three days presented as
-        one over a week. So a window that is not fully covered is recomputed
-        first, through the same idempotent upsert :meth:`rebuild_range` uses.
+        **A read never writes.** This used to fill a gap: a day with no row was
+        recomputed through :meth:`rebuild_range` before the totals were summed.
+        That made every ``GET`` a writer — ``GET /analytics/tasks`` over a December
+        window materialised five aggregate rows nobody asked for and pushed
+        ``aggregates_through`` to the end of that window, so a later
+        ``/overview`` reported the account as measured through 2030 when it had
+        never been rebuilt once. It also made the read paths quietly *capable of a
+        different window from their siblings*: the fill is bounded by
+        ``analytics_rebuild_max_days`` (180) while every read is bounded by
+        ``analytics_max_range_days`` (366), so ``/productivity`` and ``/overview``
+        refused a 200-day window with "A range may span at most 180 days." while
+        ``/deadlines``, ``/consistency`` and ``/learning`` answered it, each over
+        the same dates.
 
-        This is the hook the brief asks for ("if background jobs are not yet
-        available, implement a service that can generate/recalculate aggregates
-        safely"): it is bounded by the same range ceiling as every other read,
-        it costs one extra statement when the aggregates are already current,
-        and re-running it changes nothing. When a worker exists it takes over
-        this call and the reads keep their shape.
+        A window nobody has aggregated now sums to nothing and says so:
+        ``OverviewRead.stale`` is ``true``, ``reason_if_empty`` names the reason,
+        and ``POST /analytics/rebuild`` is the documented way to measure it. That
+        is the same contract :meth:`daily_series` has always had.
         """
-        covered = await self.metrics.covered_dates(owner.id, start=start, end=end)
-        if covered != set(_days(start, end)):
-            await self.rebuild_range(owner=owner, start=start, end=end)
         rows = await self.metrics.list_range(owner.id, start=start, end=end)
         return _totals_from(rows, window_days=(end - start).days + 1)
 

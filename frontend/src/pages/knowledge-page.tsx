@@ -484,35 +484,58 @@ export default function KnowledgePage() {
   const debouncedQ = useDebouncedValue(view.q, 300)
 
   const offset = (view.page - 1) * PAGE_SIZE
-  const notesQuery = useNotes({
-    limit: PAGE_SIZE,
-    offset,
-    status: view.status,
-    search: debouncedQ || undefined,
-    sort,
-    order,
-  })
-  const conceptsQuery = useConcepts({
-    limit: PAGE_SIZE,
-    offset,
-    search: debouncedQ || undefined,
-    sort,
-    order,
-  })
-  const resourcesQuery = useResources({
-    limit: PAGE_SIZE,
-    offset,
-    search: debouncedQ || undefined,
-    sort,
-    order,
-  })
-  const bookmarksQuery = useBookmarks({
-    limit: PAGE_SIZE,
-    offset,
-    search: debouncedQ || undefined,
-    sort,
-    order,
-  })
+  /*
+   * Each list resolves `sort` against **its own** allowlist, not the open tab's.
+   * `sort` is one URL value over four lists that each accept a different set, so
+   * reading the tab's key into all four asked the other three for an ordering
+   * they do not have: on the Concepts tab that was three 422s on every load, and
+   * three red panels whose Retry could only produce three more.
+   *
+   * They are also disabled until their tab is open. Nothing outside the active
+   * `TabsContent` reads these results, so the other three were three requests per
+   * render spent on rows nobody can see.
+   */
+  const notesQuery = useNotes(
+    {
+      limit: PAGE_SIZE,
+      offset,
+      status: view.status,
+      search: debouncedQ || undefined,
+      sort: resolveSort('notes', view.sort),
+      order,
+    },
+    { enabled: view.tab === 'notes' },
+  )
+  const conceptsQuery = useConcepts(
+    {
+      limit: PAGE_SIZE,
+      offset,
+      search: debouncedQ || undefined,
+      sort: resolveSort('concepts', view.sort),
+      order,
+    },
+    { enabled: view.tab === 'concepts' },
+  )
+  const resourcesQuery = useResources(
+    {
+      limit: PAGE_SIZE,
+      offset,
+      search: debouncedQ || undefined,
+      sort: resolveSort('resources', view.sort),
+      order,
+    },
+    { enabled: view.tab === 'resources' },
+  )
+  const bookmarksQuery = useBookmarks(
+    {
+      limit: PAGE_SIZE,
+      offset,
+      search: debouncedQ || undefined,
+      sort: resolveSort('bookmarks', view.sort),
+      order,
+    },
+    { enabled: view.tab === 'bookmarks' },
+  )
 
   // Counts for the dashboard. One row each: `meta.total` is the size of the
   // filtered set, which with no filter is the size of the whole collection.
@@ -891,11 +914,14 @@ export default function KnowledgePage() {
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground" aria-live="polite">
-            {activeList.isPending
-              ? 'Loading…'
-              : clientFilterActive
-                ? `${visible.length} of ${total} shown — type, tag and date filters run over the ${PAGE_SIZE} rows on this page`
-                : `${total} ${tab.replace(/s$/, '')}${total === 1 ? '' : 's'}`}
+            {/* The graph tab owns no list, so there is no count to report there. */}
+            {view.tab === 'graph'
+              ? 'The graph is drawn from the links between your knowledge objects.'
+              : activeList.isPending
+                ? 'Loading…'
+                : clientFilterActive
+                  ? `${visible.length} of ${total} shown — type, tag and date filters run over the ${PAGE_SIZE} rows on this page`
+                  : `${total} ${tab.replace(/s$/, '')}${total === 1 ? '' : 's'}`}
           </p>
           {filtering ? (
             <Button

@@ -103,15 +103,16 @@ is a 422, never a 500.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 
 from app.api.deps import AuthenticatedUser, KnowledgeServiceDep
 from app.core.deps import require_permission
+from app.core.exceptions import ValidationError
 from app.core.permissions import Permission
-from app.models.enums import KnowledgeEntityType, KnowledgeLinkType, NoteStatus
+from app.models.enums import KnowledgeEntityType, KnowledgeLinkType, NoteStatus, ResourceType
 from app.models.knowledge import (
     Bookmark,
     Category,
@@ -138,6 +139,7 @@ from app.schemas.knowledge import (
     KnowledgeGraph,
     KnowledgeLinkCreate,
     KnowledgeLinkRead,
+    KnowledgeSearchKind,
     KnowledgeSearchResult,
     NoteCreate,
     NoteRead,
@@ -190,6 +192,53 @@ MAX_GRAPH_LIMIT = 500
 _SORT_DESCRIPTION = "Sort key; one of the names the service allowlists."
 
 
+def _only(*allowed: str) -> Any:
+    """Build a dependency refusing any query parameter this route does not have.
+
+    **A filter that does nothing is worse than no filter, and FastAPI answers an
+    unknown query parameter with a cheerful 200.** Every ``list_*`` route below
+    declares its parameters explicitly, so ``GET /knowledge/bookmarks?archived=true``
+    used to come back 200 with the ordinary unarchived page and ``meta.total: 4``:
+    the caller had asked for a view that does not exist, been given the default
+    one, and had no way to tell that the request they made and the answer they got
+    were about different things. On the Resources tab the same shape produced a
+    "Clear filters" chip over an unfiltered list, which is a filter that reports
+    itself as active while doing nothing.
+
+    So an unrecognised parameter is a **422 naming it**, the same way a body field
+    this router does not accept is a 422 naming that. The refusal is the shared
+    domain error the exception handlers already translate, so the envelope, the
+    error code and the request id are the ones every other 422 on this surface
+    carries — this is the one place the router raises rather than translating, and
+    it is listed in :func:`_only` rather than added to the module's "raises no
+    domain error" list because the alternative was an HTTPException with a second,
+    drifting error body.
+
+    The allowlist is written out per route because a route's parameters are its
+    own; a derived list would have to be introspected out of the signature at
+    runtime, which is cleverer than a list that a reader can check in one glance.
+
+    Args:
+        *allowed: The query parameter names the route advertises.
+
+    Returns:
+        A dependency callable for a route's ``dependencies=[...]``.
+    """
+
+    permitted = frozenset(allowed)
+
+    async def _guard(request: Request) -> None:
+        unknown = sorted(set(request.query_params) - permitted)
+        if unknown:
+            raise ValidationError(
+                f"Unknown query parameter{'s' if len(unknown) > 1 else ''}: "
+                f"{', '.join(unknown)}.",
+                details={"fields": unknown, "allowed": sorted(permitted)},
+            )
+
+    return _guard
+
+
 # --------------------------------------------------------------------------- #
 # Notes
 # --------------------------------------------------------------------------- #
@@ -199,7 +248,10 @@ _SORT_DESCRIPTION = "Sort key; one of the names the service allowlists."
     "/notes",
     response_model=Page[NoteRead],
     summary="List the caller's notes",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("limit", "offset", "status", "search", "sort", "order")),
+    ],
 )
 async def list_notes(
     current_user: AuthenticatedUser,
@@ -444,7 +496,10 @@ async def restore_note(
     "/notes/{note_id}/revisions",
     response_model=Page[NoteRevisionRead],
     summary="A note's revision history",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("limit", "offset")),
+    ],
 )
 async def list_note_revisions(
     note_id: UUID,
@@ -539,7 +594,10 @@ async def restore_note_revision(
     "/concepts",
     response_model=Page[ConceptRead],
     summary="List the caller's concepts",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("limit", "offset", "search", "sort", "order")),
+    ],
 )
 async def list_concepts(
     current_user: AuthenticatedUser,
@@ -603,6 +661,34 @@ async def create_concept(
     return await knowledge.create_concept(owner=current_user, data=payload)
 
 
+@router.get(
+    "/concepts/{concept_id}",
+    response_model=ConceptRead,
+    summary="Fetch one concept",
+    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+)
+async def get_concept(
+    concept_id: UUID,
+    current_user: AuthenticatedUser,
+    knowledge: KnowledgeServiceDep,
+) -> Concept:
+    """Return one of the caller's concepts.
+
+    **This route did not exist and its absence was a 405.** Notes, resources,
+    bookmarks and documents could each be read by id; a concept could not, so a
+    client holding a concept id — from a link, from a search result, from a note
+    that points at one — had no way to ask for it and ``GET /concepts/{id}``
+    answered *Method Not Allowed* rather than 404. Every other entity on this
+    surface has the read, and a list is not a substitute for it: a client that has
+    an id should not have to page the whole set to resolve it.
+
+    **404 for another account's concept, never 403** — see :func:`get_note`.
+
+    Errors: 404 when the caller owns no concept with this id.
+    """
+    return await knowledge.get_concept(concept_id=concept_id, owner=current_user)
+
+
 @router.patch(
     "/concepts/{concept_id}",
     response_model=ConceptRead,
@@ -624,8 +710,16 @@ async def update_concept(
     Renaming to a name this user already holds is a 409; renaming to the name it
     already has is a no-op, so a retried rename is not a conflict with itself.
 
+    ``tag_ids`` replaces the concept's tag set and every id in it must be a tag the
+    caller owns; ``tag_ids: []`` clears them. It used to be a **500** — the key was
+    handed to a column update that does not own it, and the concept rename dialog
+    submits the field every time, so renaming a concept was impossible and the
+    name just typed went with the dialog.
+
     Errors: 404 for a concept that is not the caller's; 409 for a name this user
-    already has on a different concept; 422 for a blank or over-long name.
+    already has on a different concept; 422 for a blank or over-long name, a
+    ``tag_ids`` entry the caller does not own, or a field the payload does not
+    accept.
     """
     concept = await knowledge.get_concept(concept_id=concept_id, owner=current_user)
     return await knowledge.update_concept(concept=concept, data=payload, owner=current_user)
@@ -666,7 +760,10 @@ async def delete_concept(
     "/resources",
     response_model=Page[ResourceRead],
     summary="List the caller's resources",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("limit", "offset", "search", "sort", "order", "resource_type")),
+    ],
 )
 async def list_resources(
     current_user: AuthenticatedUser,
@@ -675,7 +772,11 @@ async def list_resources(
     offset: Annotated[int, Query(ge=0)] = 0,
     search: Annotated[
         str | None,
-        Query(description="Case-insensitive substring of the title or description."),
+        Query(description="Case-insensitive substring of the title, description or url."),
+    ] = None,
+    resource_type: Annotated[
+        ResourceType | None,
+        Query(description="Restrict to one kind of external thing."),
     ] = None,
     sort: Annotated[str, Query(description=_SORT_DESCRIPTION)] = "updated_at",
     order: Annotated[str, Query(description="'asc' or 'desc'.")] = "desc",
@@ -686,14 +787,23 @@ async def list_resources(
     at something outside NEXUS, but the pointer itself is per-user and carries
     the owner's notes on it, so it is scoped exactly like a note.
 
-    Errors: 422 for an unknown sort key or sort direction, or a ``limit``
-    outside 1-100.
+    ``resource_type`` is a real filter and it is the one the Resources tab's Type
+    control has always been asking for: the parameter was not on the route, so the
+    control changed the URL and fired no request, and a request that did arrive
+    with it (``?resource_type=documentation``) was answered with the whole
+    unfiltered page — including the rows typed ``other`` — under a filter chip
+    saying otherwise. An unknown value is a 422 naming the vocabulary, like the
+    unknown ``sort`` above it.
+
+    Errors: 422 for an unknown sort key, sort direction or ``resource_type``, or a
+    ``limit`` outside 1-100.
     """
     return await knowledge.list_resources(
         owner=current_user,
         limit=limit,
         offset=offset,
         search=search,
+        resource_type=resource_type,
         sort=sort,
         order=order,
     )
@@ -793,7 +903,10 @@ async def delete_resource(
     "/bookmarks",
     response_model=Page[BookmarkRead],
     summary="List the caller's bookmarks",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("limit", "offset", "search", "sort", "order", "include_archived")),
+    ],
 )
 async def list_bookmarks(
     current_user: AuthenticatedUser,
@@ -954,7 +1067,10 @@ async def archive_bookmark(
     "/documents",
     response_model=Page[DocumentRead],
     summary="List the caller's documents",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("limit", "offset", "search", "sort", "order")),
+    ],
 )
 async def list_documents(
     current_user: AuthenticatedUser,
@@ -1080,7 +1196,10 @@ async def delete_document(
     "/categories",
     response_model=Page[CategoryRead],
     summary="List the caller's categories",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("limit", "offset", "parent_id", "sort", "order")),
+    ],
 )
 async def list_categories(
     current_user: AuthenticatedUser,
@@ -1228,7 +1347,20 @@ async def delete_category(
     "/links",
     response_model=Page[KnowledgeLinkRead],
     summary="Edges leaving a node, or edges arriving at it",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(
+            _only(
+                "source_type",
+                "source_id",
+                "target_type",
+                "target_id",
+                "link_type",
+                "limit",
+                "offset",
+            )
+        ),
+    ],
 )
 async def list_links(
     current_user: AuthenticatedUser,
@@ -1370,7 +1502,10 @@ async def delete_link(
     "/graph",
     response_model=KnowledgeGraph,
     summary="The caller's knowledge graph, bounded",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("limit", "entity_type")),
+    ],
 )
 async def get_graph(
     current_user: AuthenticatedUser,
@@ -1428,7 +1563,10 @@ async def get_graph(
     "/search",
     response_model=KnowledgeSearchResult,
     summary="Search the caller's knowledge",
-    dependencies=[Depends(require_permission(Permission.KNOWLEDGE_READ))],
+    dependencies=[
+        Depends(require_permission(Permission.KNOWLEDGE_READ)),
+        Depends(_only("q", "type", "limit", "include_archived")),
+    ],
 )
 async def search_knowledge(
     current_user: AuthenticatedUser,

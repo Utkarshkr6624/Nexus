@@ -60,8 +60,19 @@ logger = logging.getLogger("app.services.auth_service")
 #: distinguish "unknown email" from "wrong password".
 _INVALID_CREDENTIALS = "Incorrect email or password."
 _REVOKED = "This token has been revoked."
-_EMAIL_TAKEN = "An account with this email already exists."
-_USERNAME_TAKEN = "That username is already taken."
+#: One message for both uniqueness rules, on purpose.
+#:
+#: Registration is the last place in this service that can confirm an account
+#: exists, and it was confirming two different things in two different words: an
+#: address answered "An account with this email already exists." and a handle
+#: answered "That username is already taken.", so a caller could tell *which*
+#: identifier was taken, and a script could walk a list of addresses through it.
+#: The status code is still 409 — a registration that did not create an account
+#: has to say so, and the frontend shows the message rather than guessing — but
+#: the sentence names neither field, so the two cases are the same answer.
+#: Forgot-password goes further and hides even the 409; see
+#: :meth:`AuthService.request_password_reset` for why that one can.
+_IDENTIFIER_TAKEN = "An account with this email or username already exists."
 _INVALID_RESET = "This password reset link is invalid or has expired."
 _WRONG_CURRENT_PASSWORD = "The current password is incorrect."
 _SAME_PASSWORD = "The new password must be different from the current one."
@@ -195,6 +206,15 @@ class AuthService:
         guarded as well so that losing the race against a concurrent
         registration produces the same 409 instead of escaping as a driver error.
 
+        **One message covers both**, see :data:`_IDENTIFIER_TAKEN`: this is the
+        only route in the service that confirms an account exists at all, and it
+        used to confirm it twice over by naming whichever identifier was taken.
+
+        **The password is hashed before the uniqueness checks, not after.** A
+        duplicate address therefore costs the same ~250 ms as a new one, so the
+        response time cannot be read as "that address exists" — the same
+        constant-work property :meth:`authenticate` gets from its decoy hash.
+
         Args:
             data: The registration payload.
 
@@ -204,24 +224,25 @@ class AuthService:
         Raises:
             ConflictError: If the email or the username is already registered.
         """
+        # bcrypt is a ~200 ms solid compute. Run it on a worker thread so a
+        # registration cannot stall the loop for every other request in the
+        # process — the same rule the ML router applies to inference — and before
+        # the uniqueness checks, so both answers take the same time.
+        hashed_password = await asyncio.to_thread(hash_password, data.password)
         if await self.repository.exists_by_email(str(data.email)):
-            raise ConflictError(_EMAIL_TAKEN)
+            raise ConflictError(_IDENTIFIER_TAKEN)
         username = _clean_username(data.username)
         if await self.repository.exists_by_username(username):
-            raise ConflictError(_USERNAME_TAKEN)
+            raise ConflictError(_IDENTIFIER_TAKEN)
         try:
             user = await self.repository.create(
                 email=str(data.email),
-                # bcrypt is a ~200 ms solid compute. Run it on a worker thread so
-                # a registration cannot stall the loop for every other request
-                # in the process — the same rule the ML router applies to
-                # inference.
-                hashed_password=await asyncio.to_thread(hash_password, data.password),
+                hashed_password=hashed_password,
                 username=username,
                 display_name=data.display_name,
             )
         except IntegrityError as exc:
-            raise ConflictError(_conflict_message(exc, _EMAIL_TAKEN, _USERNAME_TAKEN)) from exc
+            raise ConflictError(_IDENTIFIER_TAKEN) from exc
         # Metadata stays minimal on purpose: the username is the public handle
         # this event is *about*, and the address is not recorded here because
         # nothing downstream of this row needs it — every other event that wants
@@ -699,22 +720,6 @@ def _purpose_of(claims: dict[str, object]) -> str | None:
     """Return a token's ``purpose`` claim, or ``None`` when it has none."""
     value = claims.get("purpose")
     return value if isinstance(value, str) else None
-
-
-def _conflict_message(exc: IntegrityError, email_message: str, username_message: str) -> str:
-    """Report which unique constraint lost the race, when the driver says so.
-
-    The driver names the index that rejected the row, so a concurrent duplicate
-    username can be answered with the username message rather than a misleading
-    one about the email. Anything that does not name a constraint — a different
-    driver, a proxy, a future constraint — falls back to the primary message
-    rather than to a guess.
-    """
-    constraint = getattr(getattr(exc, "orig", None), "diag", None)
-    name = getattr(constraint, "constraint_name", None) or ""
-    if "username" in name:
-        return username_message
-    return email_message
 
 
 def _subject_or_none(token_data: TokenData) -> uuid.UUID | None:

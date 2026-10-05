@@ -11,15 +11,31 @@ subject of it.
 
 What is protected, and what breaks if it moves:
 
-* **A destructive request produces no proposal at all.** This is the security
-  test of the file. :data:`ml.datasets.taxonomy.Intent.TASK_MANAGE` covers
+* **The assistant may do every write, and one sentence still cannot do it.**
+  This is the security test of the file, and it is now four properties rather
+  than one refusal. :data:`ml.datasets.taxonomy.Intent.TASK_MANAGE` covers
   create, complete, block, cancel, reorder **and delete**, so "delete every task"
-  arrives as the same class, with the same confidence, as "add a task". A layer
-  that turned that into a write would delete a board on the strength of a
-  sentence nobody read. The protection is structural — no :class:`ActionKind`
-  member is destructive and :attr:`ActionProposal.destructive` is a property that
-  returns ``False`` — and it is pinned from three directions: the utterances, the
-  kind set, and the fact that the attribute cannot be set.
+  arrives as the same class, with the same confidence, as "add a task" — and a
+  delete of **one** named row is an ordinary proposal, because that is the
+  correction a person actually makes. What is pinned here, each from the
+  direction that would break it:
+
+  - a *collection* never becomes a proposal at all (``destructive_request``),
+    because an unbounded delete needs a count and a preview and neither travels
+    inside an utterance;
+  - a reference matching zero rows or several is a refusal
+    (``target_not_found`` / ``target_ambiguous``) and **never a best guess**,
+    because every kind in the table is now a write to somebody's own data;
+  - :attr:`ActionProposal.destructive` is a real field copied from
+    :data:`~app.ml.actions.proposals.ACTION_SPECS`, so the confirm route can
+    demand a second, deliberate press on exactly the kinds that drop a row, and
+    the flag the dialog renders is the flag the route refuses on;
+  - :attr:`ActionProposal.requires_confirmation` is a property returning
+    ``True``, so no caller can construct a proposal that skips the user.
+
+  The first of those four is the only one that is a *refusal* in this module.
+  The other three are enforced further up, in ``app/api/v1/actions.py``, and this
+  file's job is to prove the thing it hands up says so.
 * **Confirmation is not configurable.** ``requires_confirmation`` is a property
   returning ``True``, so no caller can construct a proposal that skips it. The
   value a caller would pass is the one that would make the layer safe to delete.
@@ -48,8 +64,10 @@ caller, which owns the session and the user's decision, makes the call.
 from __future__ import annotations
 
 import inspect
+from dataclasses import FrozenInstanceError, fields
 from datetime import UTC, date, datetime
 from pathlib import Path
+from types import FunctionType
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -60,9 +78,11 @@ from app.core.permissions import Permission
 from app.ml.actions import extraction as extraction_module
 from app.ml.actions import proposals as proposals_module
 from app.ml.actions.extraction import (
-    DESTRUCTIVE_VERBS,
     ExtractedVerb,
     Extraction,
+    RowCandidate,
+    RowMatch,
+    RowMatchFailure,
     TaskCandidate,
     TaskMatch,
     TaskMatchFailure,
@@ -71,6 +91,7 @@ from app.ml.actions.extraction import (
     extract_title,
     extract_verb,
     local_day,
+    match_reference,
     match_task_reference,
     resolve_weekday,
     strip_command_prefix,
@@ -111,6 +132,20 @@ CONTRACT_TASK_ID = UUID("22222222-2222-4222-8222-222222222222")
 RETRO_TASK_ID = UUID("33333333-3333-4333-8333-333333333333")
 THIRD_TASK_ID = UUID("44444444-4444-4444-8444-444444444444")
 
+#: One row id per table the routing table can name, so a reference that resolved
+#: against the wrong list would be visibly wrong rather than accidentally right.
+#: Counted up from the task ids so a mixed-up list is obvious in a failure.
+ATLAS_PROJECT_ID = UUID("55555555-5555-4555-8555-555555555555")
+PRUNE_NOTE_ID = UUID("66666666-6666-4666-8666-666666666666")
+RUST_BOOKMARK_ID = UUID("77777777-7777-4777-8777-777777777777")
+ASYNC_CONCEPT_ID = UUID("88888888-8888-4888-8888-888888888888")
+PRUNE_LINK_ID = UUID("99999999-9999-4999-8999-999999999999")
+RUST_GOAL_ID = UUID("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+RUST_SKILL_ID = UUID("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+REVIEW_EVENT_ID = UUID("cccccccc-cccc-4ccc-8ccc-cccccccccccc")
+MORNING_SESSION_ID = UUID("dddddddd-dddd-4ddd-8ddd-dddddddddddd")
+NEXO_REPOSITORY_ID = UUID("eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee")
+
 
 def prediction(intent: str = str(Intent.TASK_MANAGE)) -> IntentPrediction:
     """A hand-built prediction.
@@ -138,6 +173,38 @@ def context(**overrides) -> ProposalContext:
     return ProposalContext(**base)
 
 
+#: One candidate per row type, so a single utterance per action kind has
+#: something to resolve its reference against.
+#:
+#: ``ProposalContext`` keeps one list per entity *on purpose* — giving a note's
+#: title to the task matcher would produce matches that are correct against the
+#: wrong table — so reaching a kind on another surface means filling in that
+#: surface's list, not broadening the task one.
+_CANDIDATE_ROWS = {
+    "task_candidates": (RowCandidate(CONTRACT_TASK_ID, "Draft the API contract"),),
+    "project_candidates": (RowCandidate(ATLAS_PROJECT_ID, "Atlas rewrite"),),
+    "note_candidates": (RowCandidate(PRUNE_NOTE_ID, "Prune suffix"),),
+    "bookmark_candidates": (RowCandidate(RUST_BOOKMARK_ID, "Rust book"),),
+    "concept_candidates": (RowCandidate(ASYNC_CONCEPT_ID, "Async"),),
+    "link_candidates": (RowCandidate(PRUNE_LINK_ID, "Prune suffix link"),),
+    "goal_candidates": (RowCandidate(RUST_GOAL_ID, "Rust"),),
+    "skill_candidates": (RowCandidate(RUST_SKILL_ID, "Rust ownership"),),
+    "event_candidates": (RowCandidate(REVIEW_EVENT_ID, "Design review"),),
+    "session_candidates": (RowCandidate(MORNING_SESSION_ID, "12 March 09:00 session"),),
+    "repository_candidates": (RowCandidate(NEXO_REPOSITORY_ID, "nexo-web"),),
+}
+
+
+def full_context(**overrides) -> ProposalContext:
+    """:func:`context`, plus a candidate row for every table the routes can name.
+
+    The label of each row is the phrase its utterance uses, so a proposal that
+    resolved against the wrong list fails on the kind rather than on a match the
+    reader has to reverse-engineer.
+    """
+    return context(**{**_CANDIDATE_ROWS, **overrides})
+
+
 def extract(text: str, intent: str = str(Intent.TASK_MANAGE)) -> Extraction:
     """Run the extractor with a fixed clock and zone."""
     return extract_arguments(text, prediction(intent), tz=LISBON, now=NOW)
@@ -159,6 +226,111 @@ def refuse(text: str, intent: str = str(Intent.TASK_MANAGE), ctx=None) -> Propos
         f"expected a refusal for {text!r}, got a proposal: {outcome.summary}"
     )
     return outcome
+
+
+#: One plain utterance per action kind the routing table can reach, with the
+#: intent it has to be classified as.
+#:
+#: This is the positive control for the routing table: a table describing a
+#: surface that does not exist, or a kind whose only spelling is a request the
+#: extractor cannot read, would both pass a test that only checked the kinds
+#: exist. Read it as a claim about the *user's* vocabulary — every entry is a
+#: sentence somebody could plausibly type — not as a restatement of the table.
+#:
+#: ``create_link`` is deliberately absent and has a test of its own below. A link
+#: is written from two spoken references, and no extraction rule in
+#: :mod:`app.ml.actions.extraction` populates the ``source`` and ``target`` keys
+#: the payload builder reads, so no sentence reaches it. Asserting the other 37
+#: kinds plus that one gap keeps the set honest in both directions: a kind added
+#: tomorrow has to be added here or this test fails.
+REACHABLE_KINDS: tuple[tuple[str, str, str], ...] = (
+    (str(Intent.TASK_MANAGE), "Add a task to finish DSA", "create_task"),
+    (
+        str(Intent.TASK_MANAGE),
+        "Rename the Draft the API contract task to Auth contract",
+        "update_task",
+    ),
+    (str(Intent.TASK_MANAGE), "delete the Draft the API contract task", "delete_task"),
+    (str(Intent.TASK_MANAGE), "Mark the Draft the API contract task as done", "complete_task"),
+    (str(Intent.TASK_MANAGE), "Block the Draft the API contract task", "set_task_status"),
+    (
+        str(Intent.TASK_MANAGE),
+        "Schedule the Draft the API contract task from friday",
+        "schedule_task",
+    ),
+    (str(Intent.TASK_MANAGE), "Unschedule the Draft the API contract task", "unschedule_task"),
+    (str(Intent.TASK_MANAGE), "Tag the Draft the API contract task as urgent", "tag_task"),
+    (
+        str(Intent.TASK_MANAGE),
+        "Remove the tag urgent from the Draft the API contract task",
+        "untag_task",
+    ),
+    (str(Intent.PROJECT_MANAGE), "Create a project called the atlas rewrite", "create_project"),
+    (str(Intent.PROJECT_MANAGE), "Rename the Atlas rewrite project to Atlas v2", "update_project"),
+    (str(Intent.PROJECT_MANAGE), "delete the Atlas rewrite project", "delete_project"),
+    (str(Intent.PROJECT_MANAGE), "Mark the Atlas rewrite project as active", "set_project_status"),
+    (
+        str(Intent.KNOWLEDGE_CAPTURE),
+        "Save a note called why the prune keeps a suffix",
+        "create_note",
+    ),
+    (
+        str(Intent.KNOWLEDGE_CAPTURE),
+        "Rename the Prune suffix note to Prune suffix v2",
+        "update_note",
+    ),
+    (str(Intent.KNOWLEDGE_CAPTURE), "delete the Prune suffix note", "delete_note"),
+    (str(Intent.KNOWLEDGE_CAPTURE), "archive the Prune suffix note", "archive_note"),
+    (str(Intent.KNOWLEDGE_CAPTURE), "publish the Prune suffix note", "publish_note"),
+    (
+        str(Intent.KNOWLEDGE_CAPTURE),
+        "Add a bookmark called https://example.com/rust",
+        "create_bookmark",
+    ),
+    (str(Intent.KNOWLEDGE_CAPTURE), "delete the Rust book bookmark", "delete_bookmark"),
+    (str(Intent.KNOWLEDGE_CAPTURE), "Add a concept called Async", "create_concept"),
+    (str(Intent.KNOWLEDGE_CAPTURE), "delete the Async concept", "delete_concept"),
+    (str(Intent.KNOWLEDGE_CAPTURE), "delete the Prune suffix link", "delete_link"),
+    (
+        str(Intent.LEARNING_TRACK),
+        "Add a learning goal for distributed systems",
+        "create_learning_goal",
+    ),
+    (
+        str(Intent.LEARNING_TRACK),
+        "Rename the Rust learning goal to Rust 2026",
+        "update_learning_goal",
+    ),
+    (str(Intent.LEARNING_TRACK), "Complete the Rust learning goal", "complete_learning_goal"),
+    (str(Intent.LEARNING_TRACK), "delete the Rust learning goal", "delete_learning_goal"),
+    (str(Intent.LEARNING_TRACK), "Add a skill called Rust ownership", "create_skill"),
+    (str(Intent.LEARNING_TRACK), "delete the Rust ownership skill", "delete_skill"),
+    (
+        str(Intent.SCHEDULE_PLAN),
+        "Add a calendar event called Design review tomorrow at 10:00",
+        "create_event",
+    ),
+    (
+        str(Intent.SCHEDULE_PLAN),
+        "Rename the Design review event to Design review v2",
+        "update_event",
+    ),
+    (str(Intent.SCHEDULE_PLAN), "delete the Design review event", "delete_event"),
+    (
+        str(Intent.SCHEDULE_PLAN),
+        "Log a work session tomorrow from 09:00 for 2 hours",
+        "create_session",
+    ),
+    (str(Intent.SCHEDULE_PLAN), "delete the 12 March 09:00 session", "delete_session"),
+    (str(Intent.DEVELOPER_INTEL), "Add repo nexo-web from path E:/op", "create_repository"),
+    (str(Intent.DEVELOPER_INTEL), "delete the nexo-web repository", "delete_repository"),
+    (str(Intent.ACCOUNT_ADMIN), "Update my display name to Ada", "update_profile"),
+    # The same sentence classified as the *read* half of the knowledge router.
+    # "archive the note where I wrote down the migration plan" is identical either
+    # way — only the verb tells them apart — so refusing the lookup class would
+    # refuse half the phrasings of every knowledge write this table supports.
+    (str(Intent.KNOWLEDGE_LOOKUP), "archive the Prune suffix note", "archive_note"),
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -249,12 +421,42 @@ def test_an_intent_with_no_verb_is_refused_rather_than_guessed() -> None:
 
 
 def test_an_unsupported_intent_is_refused_with_its_own_reason() -> None:
-    """A read-only class never becomes a write, and says why."""
+    """A class with no action behind it never becomes a write, and says why.
+
+    ``out_of_scope`` is the honest subject of the test now that the write
+    vocabulary is thirty-eight kinds wide: it is a trained class that lands on no
+    surface this layer can act on, so the refusal is "there is nothing here to
+    write" rather than "I did not understand the verb".
+    """
     refusal = refuse(
-        "What did we decide about the risk scoring thresholds?", str(Intent.KNOWLEDGE_LOOKUP)
+        "What did we decide about the risk scoring thresholds?", str(Intent.OUT_OF_SCOPE)
     )
     assert refusal.reason_code == ProposalReason.UNSUPPORTED_INTENT
     assert refusal.kind is None
+    assert refusal.destructive is False
+
+
+def test_the_lookup_intent_is_not_treated_as_a_read_only_surface() -> None:
+    """``knowledge_lookup`` is in the supported set *because* it names writes too.
+
+    The taxonomy splits the knowledge router in half, but the user says the same
+    sentence either way: "find the note where I wrote down the migration plan" and
+    "archive the note where I wrote down the migration plan" are one noun phrase
+    and differ only in the verb. Refusing the lookup class outright would refuse
+    half the phrasings of every knowledge write, so it is answered by the routing
+    table like any other intent — and this sentence, which names nothing to
+    archive, is refused for the reason it actually failed.
+    """
+    refusal = refuse(
+        "What did we decide about the risk scoring thresholds?", str(Intent.KNOWLEDGE_LOOKUP)
+    )
+    assert refusal.reason_code != ProposalReason.UNSUPPORTED_INTENT
+    assert (
+        propose(
+            "archive the Prune suffix note", str(Intent.KNOWLEDGE_LOOKUP), ctx=full_context()
+        ).kind
+        is ActionKind.ARCHIVE_NOTE
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -698,12 +900,17 @@ def test_completion_requires_naming_one_task(utterance: str, expected_title: str
 
 
 def test_a_completion_naming_nothing_produces_no_proposal() -> None:
-    """The phrase "mark it as done" names no task, so there is nothing safe to write."""
+    """The phrase "mark it as done" names no task, so there is nothing safe to write.
+
+    The reference survives as a weak one — "it" is kept rather than thrown away,
+    because the verb and the state are both understood and only the row is
+    missing — so the refusal is ``target_not_found`` rather than
+    ``title_not_recoverable``: NEXUS is not saying "I could not read that", it is
+    saying "tell me which row".
+    """
     refusal = refuse("Mark it as done")
-    assert refusal.reason_code in (
-        ProposalReason.TITLE_NOT_RECOVERABLE,
-        ProposalReason.TASK_REFERENCE_NOT_FOUND,
-    )
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
+    assert refusal.kind is ActionKind.COMPLETE_TASK
 
 
 def test_a_completion_matching_several_tasks_is_refused() -> None:
@@ -715,19 +922,19 @@ def test_a_completion_matching_several_tasks_is_refused() -> None:
         )
     )
     refusal = refuse("mark the API contract task as done", ctx=ctx)
-    assert refusal.reason_code == ProposalReason.TASK_REFERENCE_AMBIGUOUS
+    assert refusal.reason_code == ProposalReason.TARGET_AMBIGUOUS
     assert "will not guess" in refusal.reason
 
 
 def test_a_completion_matching_nothing_is_refused() -> None:
     refusal = refuse("mark the quarterly retrospective task as done")
-    assert refusal.reason_code == ProposalReason.TASK_REFERENCE_NOT_FOUND
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
 
 
 def test_completion_without_candidates_is_refused_rather_than_matched() -> None:
     """An empty candidate set is "not found", never "the only one is right"."""
     refusal = refuse("mark the API contract task as done", ctx=context(task_candidates=()))
-    assert refusal.reason_code == ProposalReason.TASK_REFERENCE_NOT_FOUND
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
 
 
 def test_matching_prefers_an_exact_title_over_a_containment_match() -> None:
@@ -776,7 +983,7 @@ def test_a_title_of_nothing_but_punctuation_does_not_match_everything() -> None:
 
     ctx = context(task_candidates=(noise,))
     refusal = refuse("mark the quarterly retrospective task as done", ctx=ctx)
-    assert refusal.reason_code is ProposalReason.TASK_REFERENCE_NOT_FOUND
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
     assert refusal.kind is ActionKind.COMPLETE_TASK
 
     real = TaskCandidate(CONTRACT_TASK_ID, "Draft the API contract")
@@ -786,12 +993,62 @@ def test_a_title_of_nothing_but_punctuation_does_not_match_everything() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# The safety rule
+# Deletion: what it may name, and what it may not
 # --------------------------------------------------------------------------- #
 
-DESTRUCTIVE_UTTERANCES: tuple[tuple[str, str], ...] = (
-    ("Delete that duplicate reminder I created", str(Intent.TASK_MANAGE)),
+#: Requests for a **collection**, across every surface that can carry a delete.
+#:
+#: This is the sharpest of the four safety properties, because it is the one a
+#: bulk delete would otherwise pass by asking nicely: an unbounded delete needs a
+#: count the user has checked and a preview of what it would remove, and neither
+#: travels inside an utterance. ``destructive_request`` now means *exactly* this
+#: and nothing else — a single-row delete is an ordinary proposal with an ordinary
+#: sentence, so the code cannot be reused to mean "NEXUS will not delete".
+BULK_UTTERANCES: tuple[tuple[str, str], ...] = (
+    ("delete all my tasks", str(Intent.TASK_MANAGE)),
     ("delete every task on the board", str(Intent.TASK_MANAGE)),
+    ("delete everything", str(Intent.TASK_MANAGE)),
+    ("clear all my tasks", str(Intent.TASK_MANAGE)),
+    ("delete the whole board", str(Intent.TASK_MANAGE)),
+    ("delete all my notes", str(Intent.KNOWLEDGE_CAPTURE)),
+    ("delete the entire project", str(Intent.PROJECT_MANAGE)),
+    ("delete both goals", str(Intent.LEARNING_TRACK)),
+)
+
+
+@pytest.mark.parametrize(
+    ("utterance", "intent"),
+    BULK_UTTERANCES,
+    ids=[utterance for utterance, _ in BULK_UTTERANCES],
+)
+def test_a_bulk_delete_is_refused_and_names_no_kind(utterance: str, intent: str) -> None:
+    """The security test of this slice, pinned from the utterance side.
+
+    Every one of these is classified ``task_manage``, ``project_manage``,
+    ``knowledge_capture`` or ``learning_track`` — the same classes a creation
+    arrives on, at the same confidence — and every one is refused **before** the
+    routing table is consulted, so there is no kind for a client to render a
+    confirm button for. The reason text names the rule rather than the classifier,
+    because the rule is the one that still applies now that single-row deletes
+    are allowed: name the row and it will propose exactly that one.
+    """
+    refusal = refuse(utterance, intent, ctx=full_context())
+    assert refusal.reason_code == ProposalReason.DESTRUCTIVE_REQUEST
+    assert refusal.kind is None
+    assert refusal.destructive is False
+    assert not is_proposal(refusal)
+    assert "whole collection" in refusal.reason
+    assert any("collection" in note for note in refusal.notes)
+
+
+#: Deletion phrased every way a person phrases it. Each names **one** row, which
+#: is what separates these from :data:`BULK_UTTERANCES` — the point the old
+#: "no destructive kind exists" test could no longer make. Some name a row this
+#: context owns and some do not, so the assertion is about the *verb*: it routes
+#: to a delete kind, and where the reference resolves to nothing the reason says
+#: so.
+DELETE_UTTERANCES: tuple[tuple[str, str], ...] = (
+    ("Delete that duplicate reminder I created", str(Intent.TASK_MANAGE)),
     ("please delete the migration plan task", str(Intent.TASK_MANAGE)),
     ("Delete the old marketing site project", str(Intent.PROJECT_MANAGE)),
     ("delete that note about the token rotation policy", str(Intent.KNOWLEDGE_CAPTURE)),
@@ -807,79 +1064,188 @@ DESTRUCTIVE_UTTERANCES: tuple[tuple[str, str], ...] = (
 
 @pytest.mark.parametrize(
     ("utterance", "intent"),
-    DESTRUCTIVE_UTTERANCES,
-    ids=[utterance for utterance, _ in DESTRUCTIVE_UTTERANCES],
+    DELETE_UTTERANCES,
+    ids=[utterance for utterance, _ in DELETE_UTTERANCES],
 )
-def test_a_destructive_request_produces_no_proposal_at_all(utterance: str, intent: str) -> None:
-    """The security test of this slice, pinned from the utterance side.
+def test_every_synonym_for_delete_routes_to_a_delete_rather_than_a_refusal(
+    utterance: str, intent: str
+) -> None:
+    """The vocabulary is gone as a *refusal* marker; it is what the verb table is.
 
-    Every one of these is classified ``task_manage``, ``project_manage``,
-    ``knowledge_capture`` or ``learning_track`` — the same classes a creation
-    arrives on, at the same confidence. If the verb were read off the intent and
-    then used to choose create-or-delete, every line here would be a live delete
-    on somebody's board. There is no delete, so every line here is a refusal with
-    a reason instead, and the user is told why.
+    ``delete``/``remove``/``erase``/``get rid of`` and the rest all yield
+    :data:`ExtractedVerb.DELETE`, which is a routable verb. Several of these name
+    a row this context owns, so they are ordinary proposals; the rest name none
+    and are refused — but with the reason that is actually true (*which* row), and
+    never with "NEXUS will not delete". Both branches are asserted, because the
+    property is "a delete verb routes to a delete kind", not "a delete verb is
+    always a proposal".
     """
-    refusal = refuse(utterance, intent)
-    assert refusal.reason_code == ProposalReason.DESTRUCTIVE_REQUEST
-    assert refusal.kind is None
-    assert refusal.destructive is False
-    assert not is_proposal(refusal)
-    assert "classifier" in refusal.reason
+    assert extract_verb(utterance) == ExtractedVerb.DELETE
+
+    outcome = propose_action(utterance, prediction(intent), context=full_context())
+    if isinstance(outcome, ActionProposal):
+        assert str(outcome.kind).startswith("delete_"), (utterance, outcome.kind)
+        assert outcome.destructive is True, utterance
+    else:
+        assert outcome.reason_code in (
+            ProposalReason.TARGET_NOT_FOUND,
+            ProposalReason.TARGET_AMBIGUOUS,
+            ProposalReason.TITLE_NOT_RECOVERABLE,
+        ), (utterance, outcome.reason)
+        assert outcome.destructive is False, utterance
+        assert str(outcome.kind or "").startswith("delete_")
 
 
-def test_the_destructive_check_wins_over_the_command_prefix() -> None:
+def test_a_delete_naming_no_row_is_refused() -> None:
+    """The phrase "get rid of that task" names a type, not a row.
+
+    So there is nothing to remove, and the honest answer is "tell me which one" —
+    never "the most recent task", because a best guess here deletes a row the
+    user did not look at, which is the one outcome this whole redesign exists to
+    prevent.
+    """
+    refusal = refuse("get rid of that task", ctx=full_context())
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
+    assert refusal.kind is ActionKind.DELETE_TASK
+
+
+def test_a_delete_matching_several_rows_is_refused() -> None:
+    """A reference matching two cards picks neither of them."""
+    ctx = full_context(
+        task_candidates=(
+            RowCandidate(CONTRACT_TASK_ID, "Draft the API contract"),
+            RowCandidate(THIRD_TASK_ID, "Review the API contract"),
+        )
+    )
+    refusal = refuse("delete the API contract task", ctx=ctx)
+    assert refusal.reason_code == ProposalReason.TARGET_AMBIGUOUS
+    assert "will not guess" in refusal.reason
+
+
+def test_a_delete_of_one_named_row_is_a_proposal_that_says_it_cannot_be_undone() -> None:
+    """The new normal: one row, a second press downstream, and a sentence that admits it.
+
+    ``destructive`` is a **field** copied from the spec table, so the flag the
+    confirm dialog renders and the flag ``POST /ml/action/confirm`` refuses on are
+    read from the same row. The payload itself is empty — a delete carries its
+    whole instruction in the target and the sentence, so nothing is invented into
+    a body that has no field to hold it.
+    """
+    proposal = propose("delete the Draft the API contract task", ctx=full_context())
+
+    assert proposal.kind is ActionKind.DELETE_TASK
+    assert proposal.spec.destructive is True
+    assert proposal.destructive is True
+    assert proposal.to_dict()["destructive"] is True
+    assert proposal.target_id == CONTRACT_TASK_ID
+    assert proposal.target_label == "Draft the API contract"
+    assert proposal.summary == ("Delete the task 'Draft the API contract'. This cannot be undone.")
+    assert not proposal.payload.model_fields_set, proposal.payload
+
+
+def test_the_widest_cascade_names_what_the_press_will_take_with_it() -> None:
+    """Deleting a repository drops its commits, branches and scan runs.
+
+    "This cannot be undone" would be *true* and still understate the press, and
+    the only place the user is told is the sentence they are about to agree to.
+    """
+    proposal = propose(
+        "delete the nexo-web repository", str(Intent.DEVELOPER_INTEL), full_context()
+    )
+    assert proposal.kind is ActionKind.DELETE_REPOSITORY
+    assert proposal.destructive is True
+    assert "commits, branches and scan runs" in proposal.summary
+    assert "cannot be undone" in proposal.summary
+
+
+def test_a_request_that_mentions_a_creation_and_a_delete_is_proposed_as_the_delete() -> None:
     """An "add … then delete" request must not be answered by creating anything.
 
-    The refusal is unconditional: once a destruction verb is present the layer
-    stops, rather than extracting from a sentence that also asks for a write.
+    The destruction verb wins wherever it appears, and the subject becomes the
+    *second* clause — "the old ones" — rather than the whole sentence. Routing it
+    as a creation would file a new task called "clean up the board and delete the
+    old ones"; routing it as a delete of the first clause's task would remove a
+    card the sentence only asked to make.
     """
     result = extract("add a task to clean up the board and delete the old ones")
-    assert result.verb == ExtractedVerb.DESTRUCTIVE
-    assert result.title is None
-    assert result.arguments == ()
+    assert result.verb == ExtractedVerb.DELETE
+    assert result.title == "old ones"
+
+    refusal = refuse("add a task to clean up the board and delete the old ones")
+    assert refusal.kind is ActionKind.DELETE_TASK
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
 
 
-def test_no_proposal_kind_is_destructive() -> None:
-    """The kind set itself. A ``delete`` member here would be a live delete path."""
-    names = {str(kind) for kind in ActionKind}
-    for forbidden in ("delete", "remove", "destroy", "cancel", "archive", "block", "purge"):
-        assert forbidden not in names, f"a destructive kind slipped into {names}"
+def test_the_destructive_set_is_exactly_the_kinds_whose_names_say_delete() -> None:
+    """The flag is read from the table, and the table agrees with the enum.
+
+    Asserted as a bijection rather than as a literal so a new kind cannot join the
+    set silently: a spec marked destructive under a name that does not say
+    ``delete_`` — or a ``delete_`` kind left unmarked — both fail here.
+    """
+    destructive = {kind for kind, spec in ACTION_SPECS.items() if spec.destructive}
+    assert destructive == {kind for kind in ActionKind if str(kind).startswith("delete_")}
+    assert len(destructive) > 1, "the whole delete half of the surface is one kind?"
 
 
-def test_every_spec_reports_non_destructive() -> None:
+def test_every_spec_reports_the_flag_its_own_row_carries() -> None:
+    """``destructive`` is a declared field defaulting to ``False``, not a hardcoded value.
+
+    Every spec names itself, so a table entry filed under the wrong key is caught
+    here rather than at confirm time — and the flag is a plain boolean, which is
+    what lets the client render a warning and the route refuse on the same value.
+    """
     assert ACTION_SPECS
     for kind, spec in ACTION_SPECS.items():
         assert spec.kind is kind
-        assert spec.destructive is False, kind
+        assert isinstance(spec.destructive, bool), kind
+    # Declared on both dataclasses rather than computed by a property, because the
+    # client has to render the warning and the confirm route has to refuse on the
+    # same value — which is only one value if there is one place it lives.
+    assert "destructive" in {declared.name for declared in fields(ActionSpec)}
+    assert "destructive" in {declared.name for declared in fields(ActionProposal)}
+    assert not isinstance(
+        inspect.getattr_static(ActionProposal, "destructive"), (property, FunctionType)
+    )
 
 
-def test_destructive_is_a_property_so_it_cannot_be_set_true() -> None:
-    """The protection is structural, not a value someone chose.
+def test_a_proposal_cannot_be_re_flagged_as_its_opposite() -> None:
+    """The flag travels on a frozen dataclass, so no caller can soften a delete.
 
-    ``destructive`` and ``requires_confirmation`` are properties returning
-    ``False`` and ``True``. A field would have been a value a future table entry
-    could carry; a property is not.
+    ``requires_confirmation`` stayed a property precisely because a field would
+    be a value a future caller could pass. ``destructive`` became a field — the
+    client has to be able to warn — so the guarantee moved to the dataclass being
+    frozen: assigning to either attribute raises rather than quietly rewriting
+    what the confirm route is about to read.
     """
-    assert not isinstance(ActionSpec.__dict__.get("destructive"), object.__class__)
-    assert isinstance(inspect.getattr_static(ActionSpec, "destructive"), property)
-    assert isinstance(inspect.getattr_static(ActionProposal, "destructive"), property)
-    assert isinstance(inspect.getattr_static(ActionProposal, "requires_confirmation"), property)
+    proposal = propose("delete the Draft the API contract task", ctx=full_context())
+    with pytest.raises((FrozenInstanceError, AttributeError)):
+        proposal.destructive = False  # type: ignore[misc]
+    with pytest.raises((FrozenInstanceError, AttributeError)):
+        proposal.requires_confirmation = False  # type: ignore[misc]
 
-    proposal = propose("Add a task to finish DSA")
-    with pytest.raises((AttributeError, TypeError)):
-        proposal.destructive = True  # type: ignore[misc]
+    with pytest.raises((FrozenInstanceError, AttributeError)):
+        ACTION_SPECS[ActionKind.DELETE_TASK].destructive = False
 
 
 def test_requires_confirmation_cannot_be_switched_off() -> None:
     """No caller may construct a proposal that skips the user.
 
     ``requires_confirmation`` is a property, not a constructor argument, so
-    passing it is a ``TypeError`` rather than a silently ignored keyword.
+    passing it is a ``TypeError`` rather than a silently ignored keyword. Asserted
+    over **every** kind as well as the one above, because "every kind requires
+    confirmation" is the property and a single sample would only prove it for the
+    kind somebody thought to sample.
     """
+    assert "requires_confirmation" not in ActionProposal.__dataclass_fields__
+    assert "requires_confirmation" not in ProposalRefusal.__dataclass_fields__
+    assert isinstance(inspect.getattr_static(ActionProposal, "requires_confirmation"), property)
+
+    for intent, utterance, _kind in REACHABLE_KINDS:
+        assert propose(utterance, intent, ctx=full_context()).requires_confirmation is True
+
     proposal = propose("Add a task to finish DSA")
     assert proposal.requires_confirmation is True
-    assert "requires_confirmation" not in ActionProposal.__dataclass_fields__
 
     with pytest.raises(TypeError):
         ActionProposal(
@@ -895,54 +1261,138 @@ def test_requires_confirmation_cannot_be_switched_off() -> None:
         )
 
 
-def test_every_proposal_and_refusal_is_non_destructive_and_confirmed() -> None:
-    """The blanket assertion over both outcome types.
+def test_every_outcome_is_confirmed_and_a_refusal_is_never_destructive() -> None:
+    """The blanket assertion over both outcome types, with the flag read per kind.
 
-    Whatever comes back, it is not destructive and it is not something to act on
-    without the user. A refusal that reported ``destructive=False`` would still be
-    misleading, which is why the refusal type carries the same two properties.
+    Whatever comes back, it is not something to act on without the user. A refusal
+    reporting ``destructive=True`` would be actively misleading — nothing was
+    proposed, so nothing can be destructive — which is why the refusal type
+    carries the answer as a property rather than as a value.
     """
-    outcomes = [
+    proposals = [
         propose("Add a task to finish DSA"),
         propose("Mark the API contract task as done"),
-        propose("Save a note about the prune suffix"),
-        refuse("Delete that task"),
+        propose(
+            "Save a note about the prune suffix", str(Intent.KNOWLEDGE_CAPTURE), full_context()
+        ),
+        propose(
+            "delete the Draft the API contract task",
+            str(Intent.TASK_MANAGE),
+            full_context(),
+        ),
+    ]
+    refusals = [
+        refuse("delete all my tasks"),
         refuse("Show me my tasks"),
         refuse("Add a task"),
+        refuse("get rid of that task", ctx=full_context()),
     ]
-    for outcome in outcomes:
-        assert outcome.destructive is False, outcome
+    for outcome in proposals + refusals:
         assert outcome.requires_confirmation is True, outcome
-        assert outcome.to_dict()["destructive"] is False, outcome
         assert outcome.to_dict()["requires_confirmation"] is True, outcome
 
+    for refusal in refusals:
+        assert refusal.destructive is False, refusal
+        assert refusal.to_dict()["destructive"] is False, refusal
 
-def test_cancel_is_not_treated_as_delete() -> None:
-    """``cancel`` is absent from the destructive vocabulary on purpose.
+    for proposal in proposals:
+        assert proposal.destructive is proposal.spec.destructive, proposal
+        assert proposal.to_dict()["destructive"] is proposal.spec.destructive, proposal
 
-    It is refused too — no ``cancel`` kind exists either — but for the honest
-    reason: the verb is not one NEXUS can resolve from the text with confidence.
-    Conflating "NEXUS declined to delete" with "NEXUS cannot tell what cancel
-    means" would be a lie in the user's face about why they got nothing.
+
+def test_cancel_is_a_transition_rather_than_a_delete() -> None:
+    """``cancel`` moves a row between states; it does not remove it.
+
+    It is the clearest case of why the refusal moved out of the vocabulary: a
+    vocabulary that called "cancel" destructive would have been refusing an
+    ordinary transition, and the sentence NEXUS showed the user would have named
+    a worse effect than the one they asked for.
     """
-    assert "cancel" not in DESTRUCTIVE_VERBS
+    assert extract_verb("cancel the migration plan task") == ExtractedVerb.STATUS
+
     refusal = refuse("cancel the migration plan task")
     assert refusal.reason_code != ProposalReason.DESTRUCTIVE_REQUEST
-    assert not is_proposal(refusal)
+    assert refusal.kind is ActionKind.SET_TASK_STATUS
+    assert refusal.reason_code == ProposalReason.TARGET_NOT_FOUND
 
 
-def test_remove_and_clear_are_not_destructive_markers() -> None:
-    """The phrases "remove the priority" and "clear the due date" are ordinary edits.
+def test_removing_a_field_is_an_edit_and_never_a_delete() -> None:
+    """Removing a *field* is an edit, and clearing one is too.
 
-    A marker list that refused those would refuse correct requests in order to
-    guard against a word it cannot disambiguate — which is the guessing this
-    layer exists to avoid, pointed the other way.
+    A rule that read "remove the priority" or "clear the due date" as deletions
+    would destroy rows in order to act on a word it could not disambiguate —
+    which is the guessing this layer exists to avoid, pointed the other way.
+    Neither reaches a delete kind however the sentence is phrased.
     """
-    for verb in ("remove", "clear"):
-        assert verb not in DESTRUCTIVE_VERBS
-        assert extract_verb(f"{verb} the priority from the migration task") != (
-            ExtractedVerb.DESTRUCTIVE
-        )
+    assert extract_verb("remove the priority from the migration task") != ExtractedVerb.DELETE
+    assert extract_verb("clear the due date from the migration task") == ExtractedVerb.UPDATE
+    assert extract_verb("delete the migration task") == ExtractedVerb.DELETE
+
+    # The narrower readings of the same two verbs: a removed *label* is an untag,
+    # which is a write to the row's metadata and a no-op on the row itself.
+    assert (
+        extract_verb("Remove the tag urgent from the Draft the API contract task")
+        == ExtractedVerb.UNTAG
+    )
+    assert extract_verb("Remove the priority from the migration task") not in (
+        ExtractedVerb.DELETE,
+        ExtractedVerb.TAG,
+        ExtractedVerb.UNTAG,
+    )
+
+
+def test_the_task_scoped_reason_codes_are_kept_because_clients_branch_on_them() -> None:
+    """The generic codes replaced them; the originals did not disappear.
+
+    ``target_not_found`` and ``target_ambiguous`` are what every kind reports
+    now, on every table — that is the point of the generalisation. But nothing
+    about the two task-shaped codes became *untrue*, and a client compiled
+    against them would start treating a known refusal as an unknown one, so they
+    stay in the closed vocabulary.
+    """
+    assert ProposalReason.TASK_REFERENCE_NOT_FOUND == "task_reference_not_found"
+    assert ProposalReason.TASK_REFERENCE_AMBIGUOUS == "task_reference_ambiguous"
+    assert ProposalReason.TARGET_NOT_FOUND == "target_not_found"
+    assert ProposalReason.TARGET_AMBIGUOUS == "target_ambiguous"
+    assert ProposalReason.DESTRUCTIVE_REQUEST == "destructive_request"
+
+    # And what a refusal reports is the generic pair, never the task-shaped one.
+    refusal = refuse("mark the quarterly retrospective task as done")
+    assert refusal.reason_code not in (
+        ProposalReason.TASK_REFERENCE_NOT_FOUND,
+        ProposalReason.TASK_REFERENCE_AMBIGUOUS,
+    )
+
+
+def test_a_reference_is_matched_per_entity_type_rather_than_against_one_list() -> None:
+    """Row matching is general, and a reference only ever sees its own table.
+
+    The caller keeps one candidate list per entity precisely so a note's title
+    cannot satisfy a task reference. The matcher itself is the same three passes
+    for every table, and both spellings answer the same question — asserted here
+    so the generalisation cannot quietly become a looser one.
+    """
+    rows = (RowCandidate(PRUNE_NOTE_ID, "Prune suffix"),)
+
+    generic = match_reference("Prune suffix", rows)
+    assert isinstance(generic, RowMatch)
+    assert generic.candidate.id == PRUNE_NOTE_ID
+    assert generic.candidate.label == "Prune suffix"
+    assert generic.rule
+
+    failure = match_reference("nothing like it", rows)
+    assert isinstance(failure, RowMatchFailure)
+    assert failure.reason_code == "not_found"
+
+    ambiguous = match_reference("suffix", (rows[0], RowCandidate(ASYNC_CONCEPT_ID, "Async suffix")))
+    assert isinstance(ambiguous, RowMatchFailure)
+    assert ambiguous.reason_code == "ambiguous"
+
+    # The task-shaped spelling still accepts a row-shaped candidate, so a caller
+    # that migrated its candidate list did not have to migrate its call sites.
+    cross = match_task_reference("Prune suffix", (RowCandidate(PRUNE_NOTE_ID, "Prune suffix"),))
+    assert isinstance(cross, TaskMatch)
+    assert cross.candidate.label == "Prune suffix"
 
 
 # --------------------------------------------------------------------------- #
@@ -1087,7 +1537,9 @@ def test_a_payload_that_does_not_validate_is_a_refusal_not_an_exception() -> Non
 
     ``_build_payload`` is reached directly here because the extraction cannot
     produce an invalid value through the public API — which is the point. If a
-    future rule ever can, the contract under test is what happens next.
+    future rule ever can, the contract under test is what happens next: a
+    ``_Refused`` carrying ``payload_invalid``, not an exception and not a payload
+    nobody can send back.
     """
     broken = Extraction(
         intent=str(Intent.TASK_MANAGE),
@@ -1098,10 +1550,32 @@ def test_a_payload_that_does_not_validate_is_a_refusal_not_an_exception() -> Non
         confidence=0.9,
     )
     payload = proposals_module._build_payload(
-        ACTION_SPECS[ActionKind.CREATE_TASK], extraction=broken, project_id=PROJECT_ID
+        ACTION_SPECS[ActionKind.CREATE_TASK],
+        extraction=broken,
+        context=context(),
     )
-    assert payload is None
+    assert isinstance(payload, proposals_module._Refused)
+    assert payload.reason_code == ProposalReason.PAYLOAD_INVALID
     assert not isinstance(payload, BaseModel)
+
+
+def test_every_published_payload_survives_the_round_trip_confirm_re_runs() -> None:
+    """What is published is what the confirm route will take back.
+
+    ``proposals.to_dict`` and :meth:`ActionProposalRead.from_proposal` both hand
+    the client ``model_dump(mode="json")``, and ``POST /ml/action/confirm``
+    re-validates exactly that rendering against exactly the kind's schema. A
+    payload that is legal as an object but not as its own JSON form is a dialog
+    the backend itself made unconfirmable — the user reads a sentence, presses
+    Confirm and gets a 422 for a field they never typed. Asserted over every kind
+    a plain utterance can reach, because the failure is per-schema and would only
+    show up on the table row that happened to have the odd validator.
+    """
+    for intent, utterance, _kind in REACHABLE_KINDS:
+        proposal = propose(utterance, intent, ctx=full_context())
+        published = proposal.to_dict()["payload"]
+        revalidated = proposal.spec.schema.model_validate(published)
+        assert revalidated == proposal.payload, (proposal.kind, published)
 
 
 # --------------------------------------------------------------------------- #
@@ -1150,10 +1624,17 @@ def test_the_proposal_serialises_the_provenance_for_the_dialog() -> None:
 
 
 def test_the_refusal_carries_the_extraction_it_refused_on() -> None:
-    """A user told "ask again" should at least see what NEXUS did understand."""
-    refusal = refuse("add a task to finish DSA and then delete the rest")
-    assert refusal.notes == () or all(isinstance(note, str) for note in refusal.notes)
+    """A user told "ask again" should at least see what NEXUS did understand.
+
+    The refusal here is the one that carries the most: ``destructive_request`` is
+    only reached *after* the whole sentence was read, so the notes are where the
+    user learns that NEXUS saw the scope problem and why it is not guessing past
+    it.
+    """
+    refusal = refuse("delete all my tasks on the board", ctx=full_context())
     assert refusal.to_dict()["reason_code"] == ProposalReason.DESTRUCTIVE_REQUEST
+    assert refusal.notes and all(isinstance(note, str) for note in refusal.notes)
+    assert any("collection" in note for note in refusal.notes)
 
 
 # --------------------------------------------------------------------------- #
@@ -1243,16 +1724,20 @@ def test_the_sentence_names_the_priority_for_every_kind_that_carries_one() -> No
     assert "priority" not in note.summary
     assert note.summary == "Save a note titled 'retro'."
 
-    # The rule is stated over the schema, so it is checked over every creation
-    # spec rather than over the two kinds named above: a note is the only creation
-    # kind whose payload has nowhere to put an urgency, and a new kind added
-    # tomorrow must not have to be added to a list here to get its sentence right.
-    without_priority = {
+    # The rule is stated over the schema, so it is checked over every *creation*
+    # spec rather than over the two kinds named above: a sentence may only be
+    # described as carrying an urgency if that kind's payload has somewhere to put
+    # one, and a kind added tomorrow is judged by its schema rather than by
+    # membership of a list somebody has to remember to extend.
+    creation_with_priority = {
         kind
         for kind, spec in ACTION_SPECS.items()
-        if kind is not ActionKind.COMPLETE_TASK and "priority" not in spec.schema.model_fields
+        if kind in proposals_module._CREATE_KINDS and "priority" in spec.schema.model_fields
     }
-    assert without_priority == {ActionKind.CREATE_NOTE}
+    assert ActionKind.CREATE_TASK in creation_with_priority
+    assert ActionKind.CREATE_PROJECT in creation_with_priority
+    assert ActionKind.CREATE_LEARNING_GOAL in creation_with_priority
+    assert ActionKind.CREATE_NOTE not in creation_with_priority
 
 
 def test_a_kind_with_no_date_field_is_never_described_as_having_one() -> None:
@@ -1393,29 +1878,180 @@ def test_the_supported_intent_set_matches_the_specs_that_have_kinds() -> None:
 
     An intent with a proposal kind but no extraction rules would produce a
     ``TITLE_NOT_RECOVERABLE`` for every utterance, which reads like a bug and is
-    really a missing entry.
+    really a missing entry; an intent with extraction rules and no kind would
+    refuse every sentence written for it. The comparison is over a spec's primary
+    intent **and** its ``also_intents``, because those are the same promise from
+    the other side — ``knowledge_lookup`` has no kind of its own and is still a
+    supported intent, precisely because half of its phrasings are knowledge
+    writes.
     """
-    intents_with_kinds = {str(spec.intent) for spec in ACTION_SPECS.values()}
+    intents_with_kinds = {
+        str(intent)
+        for spec in ACTION_SPECS.values()
+        for intent in (spec.intent, *spec.also_intents)
+    }
     assert intents_with_kinds == extraction_module.SUPPORTED_INTENTS
+    assert ACTION_SPECS
 
 
-def test_every_intent_with_a_kind_reaches_it_from_a_plain_utterance() -> None:
+def test_every_also_intent_is_one_the_extractor_can_parse() -> None:
+    """The second readings are real, not a loophole into an unsupported class.
+
+    ``confirm`` accepts a kind under its primary intent or any ``also_intents``
+    member, so an ``also_intent`` the extractor cannot handle would be a way to
+    confirm a payload the propose route could never have produced.
+    """
+    for kind, spec in ACTION_SPECS.items():
+        assert str(spec.intent) in extraction_module.SUPPORTED_INTENTS, kind
+        for other in spec.also_intents:
+            assert str(other) in extraction_module.SUPPORTED_INTENTS, (kind, other)
+
+
+def test_every_intent_with_a_kind_reaches_one_from_a_plain_utterance() -> None:
     """A positive control for the test above, at the behaviour level.
 
-    Every spec must be reachable, or the table is describing a surface that does
-    not exist.
+    Every intent that has a kind must be reachable from an ordinary sentence, or
+    the table is describing a surface that does not exist. The intent set is
+    compared against the extraction table's rather than against the specs' primary
+    intents, because ``knowledge_lookup`` is carried by another spec's
+    ``also_intents`` and its own entry in this table is the lookup-class half of
+    an archive.
     """
     reached = {
-        str(propose(utterance, intent).kind)
-        for utterance, intent in (
-            ("Add a task to finish DSA", str(Intent.TASK_MANAGE)),
-            ("Mark the API contract task as done", str(Intent.TASK_MANAGE)),
-            ("Create a project for the mobile redesign", str(Intent.PROJECT_MANAGE)),
-            ("Save a note about the prune suffix", str(Intent.KNOWLEDGE_CAPTURE)),
-            ("Add a learning goal for Rust", str(Intent.LEARNING_TRACK)),
-        )
+        str(propose(utterance, intent, ctx=full_context()).kind)
+        for intent, utterance, _kind in REACHABLE_KINDS
     }
-    assert reached == {str(kind) for kind in ActionKind}
+    assert {intent for intent, _utterance, _kind in REACHABLE_KINDS} == (
+        extraction_module.SUPPORTED_INTENTS
+    )
+    assert len(reached) == len({kind for _i, _u, kind in REACHABLE_KINDS})
+    assert len(reached) > 1
+
+
+@pytest.mark.parametrize(
+    ("intent", "utterance", "kind"),
+    REACHABLE_KINDS,
+    ids=[kind for _intent, _utterance, kind in REACHABLE_KINDS],
+)
+def test_each_reachable_kind_is_reached_by_the_sentence_that_names_it(
+    intent: str, utterance: str, kind: str
+) -> None:
+    """One test per row of :data:`REACHABLE_KINDS`, so a failure names the kind.
+
+    The table above is the claim; this is the check, one case at a time. Split out
+    so that a routing regression reports *"delete_session stopped routing"* rather
+    than collapsing thirty-eight utterances into one assertion.
+    """
+    proposal = propose(utterance, intent, ctx=full_context())
+    assert str(proposal.kind) == kind
+    assert proposal.requires_confirmation is True
+
+
+def test_the_table_covers_every_kind_but_the_one_no_sentence_can_reach() -> None:
+    """Adding a kind means adding a sentence here, and the one gap stays a gap.
+
+    Written as a union rather than an equality because ``create_link`` is
+    genuinely unreachable from an utterance — see the next test — and pretending
+    otherwise would mean either an assertion that could not pass or a table with
+    a fudged row. Everything *else* must be here, so a new kind cannot join the
+    table without somebody deciding how a user asks for it.
+    """
+    listed = {kind for _intent, _utterance, kind in REACHABLE_KINDS}
+    assert listed | {ActionKind.CREATE_LINK} == set(ActionKind)
+
+
+def test_a_link_cannot_be_proposed_from_one_sentence_because_nothing_parses_its_ends() -> None:
+    """``create_link`` needs two spoken references and no rule recovers either.
+
+    A knowledge link is written as four typed ids resolved from two references,
+    so the payload builder reads ``source`` and ``target`` out of
+    :attr:`Extraction.values`. No rule in :mod:`app.ml.actions.extraction`
+    populates either key, so every attempt is ``field_not_recoverable`` — a
+    refusal — rather than an edge with a guessed endpoint. A dangling edge is a
+    row nobody will ever see again, which is exactly what "NEXUS will not pick
+    between them" exists to prevent.
+
+    The kind itself is not dead: ``POST /ml/action/confirm`` implements it in
+    full for a caller that supplies the endpoints itself, which is what
+    ``app/api/v1/actions.py`` documents.
+    """
+    extraction = extract("Add a link from Prune suffix to Async", str(Intent.KNOWLEDGE_CAPTURE))
+    assert extraction.verb == ExtractedVerb.CREATE
+    assert extraction.entity == "link"
+    assert "source" not in extraction.values
+    assert "target" not in extraction.values
+
+    refusal = refuse(
+        "Add a link from Prune suffix to Async", str(Intent.KNOWLEDGE_CAPTURE), ctx=full_context()
+    )
+    assert refusal.reason_code == ProposalReason.FIELD_NOT_RECOVERABLE
+    assert "both ends" in refusal.reason
+
+
+def test_the_routing_table_and_the_spec_table_describe_the_same_kinds() -> None:
+    """One table, one set of kinds, one verb and one entity each.
+
+    ``_ROUTES`` is the ``(verb, entity) → kind`` half and :data:`ACTION_SPECS` is
+    everything else about a kind, and they are separate lists on purpose: a kind
+    with no route would be a proposal nothing can ever produce, and a route with
+    no spec would be a sentence that crashes on lookup.
+    """
+    routes = proposals_module._ROUTES
+    assert {kind for kind, _verb, _entity in routes} == set(ACTION_SPECS)
+    assert len(routes) == len({kind for kind, _verb, _entity in routes}), (
+        "a kind is routed under more than one (verb, entity)"
+    )
+
+
+def test_every_routed_verb_and_entity_is_one_the_extraction_layer_can_produce() -> None:
+    """The routing table may not name a verb or an entity the front end cannot emit.
+
+    A route keyed on a verb that :func:`extract_verb` never returns, or on an
+    entity :func:`extract_entity` never produces, is a permanent ``Verb``
+    ``_NOT_RECOVERED`` for one shape of sentence — silently, because the lookup
+    misses and the refusal text reads like the user's phrasing was wrong.
+    """
+    verbs = {
+        getattr(ExtractedVerb, name)
+        for name in dir(ExtractedVerb)
+        if not name.startswith("_") and isinstance(getattr(ExtractedVerb, name), str)
+    }
+    routed_verbs = {verb for _kind, verb, _entity in proposals_module._ROUTES}
+    assert routed_verbs <= verbs, routed_verbs - verbs
+    assert ExtractedVerb.UNKNOWN not in routed_verbs
+
+    routed_entities = {entity for _kind, _verb, entity in proposals_module._ROUTES}
+    assert routed_entities == set(extraction_module._ENTITY_WORD_VALUES)
+
+
+def test_the_routing_table_resolves_for_every_intent_a_kind_may_be_confirmed_under() -> None:
+    """A kind's ``also_intents`` are real routes, not just a confirm-time allow-list.
+
+    ``confirm`` accepts the primary intent *or* any ``also_intent``, so if the
+    router had no key for the secondary reading, a proposal could be shown under
+    ``knowledge_lookup`` and then refused by the very endpoint that produced it.
+    """
+    for kind, spec in ACTION_SPECS.items():
+        for intent in (spec.intent, *spec.also_intents):
+            for route_kind, verb, entity in proposals_module._ROUTES:
+                if route_kind is not kind:
+                    continue
+                key = (str(intent), verb, entity)
+                assert key in proposals_module._SPEC_BY_INTENT_VERB_ENTITY, (kind, key)
+
+
+def test_the_default_entity_for_each_intent_is_one_that_intent_can_route() -> None:
+    """A sentence naming no noun still lands on a real row type, or it is refused.
+
+    ``extract_entity`` falls back to the intent's default and the proposal layer
+    reads a copy of the same idea; if the two ever disagreed — or if a default
+    named a row type no kind under that intent can act on — the fallback would be
+    an entity the routing table has no key for, and the user would be told to
+    "say which kind of row you meant" about a sentence that named none.
+    """
+    table = proposals_module._SPEC_BY_INTENT_VERB_ENTITY
+    for intent, entity in extraction_module._DEFAULT_ENTITY.items():
+        assert any(key[0] == intent and key[2] == entity for key in table), (intent, entity)
 
 
 def test_the_priority_vocabulary_only_produces_persisted_grades() -> None:

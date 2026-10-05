@@ -112,11 +112,21 @@ async def logout(
     so it is revoked once: calling through twice would write a second
     ``user_logout`` row for a single sign-out, and the audit trail would
     over-count every logout the frontend performs this way.
+
+    **A body token that names a different session wins, and the bearer is left
+    alone.** Revoking an unusable body token used to fall through to the bearer
+    branch as well, so ``POST /auth/logout {"refresh_token": "<stale>"}`` ended
+    the caller's own live session and answered 204 — a client retrying a logout
+    with a token it had already spent silently signed itself out of the session
+    it meant to keep, and was told it had succeeded. :meth:`AuthService.revoke`
+    ignores what it cannot decode, so the body token now revokes the session it
+    names — if it names one that still exists — and nothing else happens.
     """
     body_token = payload.refresh_token if payload is not None else None
     bearer_token = credentials.credentials if credentials is not None else None
     if body_token is not None and body_token != bearer_token:
         await auth.revoke(body_token)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     if bearer_token is not None:
         await auth.revoke(bearer_token)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -179,12 +189,14 @@ async def sessions(
     status_code=status.HTTP_204_NO_CONTENT,
     response_class=Response,
     summary="Revoke one of the caller's sessions",
+    responses={204: {"headers": {"Warning": {"description": "Present when the revoked session is the caller's own — see below."}}}},
 )
 async def revoke_session(
     session_id: UUID,
     current_user: AuthenticatedUser,
     session_service: SessionServiceDep,
     client: ClientContext,
+    session_id_of_request: CurrentSessionId,
 ) -> Response:
     """Revoke one of the caller's own sessions.
 
@@ -193,6 +205,16 @@ async def revoke_session(
     a cosmetic choice: a 403 would confirm the id exists, turning this endpoint
     into a probe for which session ids are real, whereas a 404 is what an id
     that never existed also returns.
+
+    **Revoking the session you are calling from is allowed, and says so.** It is
+    the same row the ``Revoke`` button on the Sessions screen removes when the
+    dialog names "this is the device you are using right now", and the caller is
+    entitled to end it — but a bare 204 is indistinguishable from revoking a
+    phone, and the very next request with that token is a 401. A ``Warning``
+    header on that one answer closes the gap without changing the status code a
+    client that legitimately wants to sign itself out is already handling.
+    ``POST /auth/logout`` is the route whose *only* job is that, and it is
+    unchanged.
 
     Errors: 404 when the caller does not own a session with this id.
     """
@@ -203,7 +225,13 @@ async def revoke_session(
         ip_address=ip,
         user_agent=agent,
     )
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    headers = (
+        {"Warning": '199 - "This request revoked the session it was made with; '
+        "further requests on this credential will be refused.\""}
+        if session_id_of_request is not None and session_id == session_id_of_request
+        else None
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT, headers=headers)
 
 
 @router.patch(

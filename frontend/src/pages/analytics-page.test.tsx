@@ -82,6 +82,18 @@ const WINDOW_START = '2026-01-05'
 const WINDOW_END = '2026-01-11'
 const WINDOW_QUERY = `/analytics?range=custom&start=${WINDOW_START}&end=${WINDOW_END}`
 
+/**
+ * How many days the staleness banner says the window has, counted the way
+ * `useAnalyticsStaleness` counts it — inclusive of both ends. Derived from the
+ * two dates rather than written out, so widening the fixture moves the
+ * expectation with it instead of quietly making it wrong.
+ */
+const WINDOW_DAYS =
+  Math.round(
+    (Date.parse(`${WINDOW_END}T00:00:00Z`) - Date.parse(`${WINDOW_START}T00:00:00Z`)) /
+      86_400_000,
+  ) + 1
+
 /** The window a second test applies, so a range change is visible by hand. */
 const NEXT_START = '2026-02-02'
 const NEXT_END = '2026-02-08'
@@ -908,7 +920,13 @@ const TABS = [
   {
     label: 'Knowledge',
     value: 'knowledge',
-    h2: ['Most used tags', 'Most active concepts'],
+    // `most_active_concepts` is declared on `KnowledgeRead` and the service never
+    // fills it, so the panel the page used to draw over it could only ever print
+    // "no concept has been touched in this window" directly under a card counting
+    // the concepts that were created. The page leaves it out rather than make that
+    // claim, and this list is what it renders instead — one panel, and the
+    // equality below is what keeps it that way.
+    h2: ['Most used tags'],
     h3: [],
   },
 ] as const
@@ -1021,12 +1039,19 @@ describe('analytics page', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Analytics' })).toBeInTheDocument()
     expect(screen.getAllByText(WINDOW_LABEL).length).toBeGreaterThan(0)
 
-    // Every day in the window has an aggregate and they run to its last day, so
-    // the freshness badge is a real claim rather than a default.
+    // A row exists for every day in the window and they run to its last day, so
+    // the freshness badge is a real claim rather than a default. The sentence
+    // says *that*, and no more: it does not claim the rows were calculated, and
+    // it says a rebuild can still move the figures, because a row for a day is
+    // written whether or not anything was ever computed into it.
     expect(screen.getByText('Up to date')).toBeInTheDocument()
     expect(screen.getByText('Updated just now')).toBeInTheDocument()
     expect(
-      screen.getByText(`Every day in this window is calculated, through ${WINDOW_END}.`),
+      screen.getByText(
+        `A daily aggregate exists for each of the ${WINDOW_DAYS} days in this window, ` +
+          `through ${WINDOW_END}. Recalculating rebuilds them from your recorded activity, ` +
+          'so these figures can still change.',
+      ),
     ).toBeInTheDocument()
 
     const score = screen.getByText('78')

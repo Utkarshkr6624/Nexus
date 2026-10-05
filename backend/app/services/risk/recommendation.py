@@ -164,7 +164,7 @@ from app.models.learning import MAX_SKILL_LEVEL
 from app.models.risk import LIVE_RISK_STATUSES, Recommendation, Risk
 from app.models.user import User
 from app.repositories.project import ProjectRepository
-from app.repositories.risk import RiskRepository
+from app.repositories.risk import RiskRepository, allowed_recommendation_transitions
 from app.repositories.task import TaskRepository
 from app.services.activity_service import ActivityService
 from app.services.learning.gaps import LEVEL_SOURCE_PHRASES
@@ -336,6 +336,34 @@ _Rule = Callable[..., Awaitable["RecommendationDraft | Sequence[RecommendationDr
 #: sentences. Neither wording leaks which case it was; both simply read
 #: better than a generic 404 body.
 _RECOMMENDATION_NOT_FOUND = "That recommendation does not exist."
+
+#: How each lifecycle state reads in a sentence a person can act on, and what
+#: the status itself is called when the caller has to name it.
+#:
+#: A 409 that says "This recommendation is rejected and cannot be moved to
+#: accepted" tells the reader two machine words and no sentence — and those two
+#: words are the only thing standing between them and the question the message
+#: exists to answer. The words stay on the wire in ``details``; the sentence
+#: carries the meaning.
+_RECOMMENDATION_STATE_PHRASES: dict[RecommendationStatus, str] = {
+    RecommendationStatus.NEW: "has not been answered yet",
+    RecommendationStatus.VIEWED: "has been read but not answered",
+    RecommendationStatus.ACCEPTED: "was accepted",
+    RecommendationStatus.REJECTED: "was declined",
+    RecommendationStatus.COMPLETED: "was completed",
+    RecommendationStatus.EXPIRED: "expired when the risk behind it went away",
+}
+
+#: The same, for the state being asked for. Every value is reachable through at
+#: least one lifecycle route, and the four verbs below are the four answers a
+#: user can give, so this is complete by construction; a missing member falls
+#: back to the enum's own word rather than raising on a request path.
+_RECOMMENDATION_TARGET_PHRASES: dict[RecommendationStatus, str] = {
+    RecommendationStatus.VIEWED: "as read",
+    RecommendationStatus.ACCEPTED: "as accepted",
+    RecommendationStatus.REJECTED: "as declined",
+    RecommendationStatus.COMPLETED: "as completed",
+}
 
 #: The row type a page-producing read returns. One name for the two learning
 #: sweeps so :meth:`RecommendationService._scan` is typed rather than ``Any``.
@@ -1684,8 +1712,16 @@ class RecommendationService:
         current = await self.risks.get_recommendation(owner.id, recommendation_id)
         if current is None:
             raise NotFoundError(_RECOMMENDATION_NOT_FOUND)
+        state = RecommendationStatus(current.status)
+        state_phrase = _RECOMMENDATION_STATE_PHRASES.get(state, f"is in the {state.value} state")
+        target_phrase = _RECOMMENDATION_TARGET_PHRASES.get(target, f"as {target.value}")
         raise ConflictError(
-            f"This recommendation is {current.status} and cannot be moved to {target.value}."
+            f"This recommendation {state_phrase}, so it cannot be marked {target_phrase}.",
+            details={
+                "status": current.status,
+                "target": target.value,
+                "allowed": allowed_recommendation_transitions(current.status),
+            },
         )
 
     async def expire_for_resolved(self, *, owner: User, risk_ids: Sequence[uuid.UUID]) -> int:

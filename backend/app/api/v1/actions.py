@@ -352,6 +352,7 @@ _ENTITY_BY_KIND: Mapping[ActionKind, str] = MappingProxyType(
         ActionKind.DELETE_SESSION: "work_session",
         ActionKind.UPDATE_PROFILE: "user",
         ActionKind.CREATE_REPOSITORY: "repository",
+        ActionKind.DELETE_REPOSITORY: "repository",
     }
 )
 
@@ -380,6 +381,7 @@ _CANDIDATE_FIELD_BY_INTENT: Mapping[str, tuple[str, ...]] = MappingProxyType(
             "link_candidates",
         ),
         str(Intent.LEARNING_TRACK): ("goal_candidates", "skill_candidates"),
+        str(Intent.DEVELOPER_INTEL): ("repository_candidates",),
         str(Intent.ACCOUNT_ADMIN): (),
     }
 )
@@ -630,6 +632,8 @@ async def _candidate_rows(
         rows["goal_candidates"] = await _goal_candidates(services.learning, owner)
     if "skill_candidates" in wanted:
         rows["skill_candidates"] = await _skill_candidates(services.learning, owner)
+    if "repository_candidates" in wanted:
+        rows["repository_candidates"] = await _repository_candidates(services.developer, owner)
     return rows
 
 
@@ -762,6 +766,45 @@ async def _skill_candidates(
         if row.name.strip().casefold() not in taken
     )
     return (*goal_rows, *skill_rows)
+
+
+async def _repository_candidates(
+    developer: DeveloperIntelligenceService, owner: User
+) -> tuple[RowCandidate, ...]:
+    """The caller's repositories, as reference targets.
+
+    Fetched for every ``developer_intel`` utterance, which is one page read more
+    than that surface used to cost — a registration is the only other kind on it,
+    and it matches nothing by name. The read is what makes "remove Swift pdf from
+    repo" act rather than route: without a candidate list the proposal layer has
+    nothing to resolve the phrase against and the honest answer is
+    ``target_not_found``, which is a refusal rather than a delete of whatever the
+    folder nearest the phrase happened to be.
+
+    The label is the repository's own name rather than its path, because the name
+    is what a person says and what the confirm dialog quotes. The path is what
+    the *registration* is keyed on, and reading it here would make every sentence
+    carry a string nobody types out loud.
+    """
+    page = await developer.list_repositories(owner=owner, limit=_CANDIDATE_LIMIT)
+    return tuple(
+        RowCandidate(id=row.id, label=(row.name or _folder_name(row.local_path)))
+        for row in page.items
+    )
+
+
+def _folder_name(local_path: str) -> str:
+    """The last segment of a stored repository path, for a row named nothing.
+
+    ``register_repository`` falls back to the folder's own name when the caller
+    supplied no label, so a row without one is a row this endpoint wrote for a
+    path the user gave. A candidate with an empty label matches nothing at all —
+    :func:`~app.ml.actions.extraction.match_reference` drops it rather than
+    letting it match everything — so the folder's own name stands in, and it is
+    the same name that row already carries in the developer surface's own list.
+    """
+    segments = [segment for segment in local_path.replace("\\", "/").split("/") if segment]
+    return segments[-1] if segments else local_path
 
 
 async def _event_candidates(planner: PlannerService, owner: User) -> tuple[RowCandidate, ...]:

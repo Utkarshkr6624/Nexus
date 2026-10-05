@@ -42,9 +42,15 @@ import {
   useDeveloperSummary,
   useDeveloperWindow,
   useRepositories,
+  useScanAllRepositories,
   useScanRepository,
 } from '@/features/developer/hooks'
-import type { DeveloperWindow, DeveloperWindowPresetId } from '@/features/developer/hooks'
+import type {
+  DeveloperWindow,
+  DeveloperWindowPresetId,
+  ScanAllRepositoriesResult,
+} from '@/features/developer/hooks'
+import { useAutoRescan } from '@/features/developer/use-auto-rescan'
 import { ConfirmDialog } from '@/features/work/components/confirm-dialog'
 import { useProjects } from '@/features/work/hooks'
 import { formatNumber } from '@/features/analytics/format'
@@ -114,17 +120,38 @@ import {
  *
  * A card registered but never scanned reports no branch, no commits and “Never
  * scanned”, and every one of those is an honest sentence about a folder NEXUS has
- * never opened. **The only thing that changes them is a scan, and nothing runs one
- * on its own** — so a reader who has to find the scan button on a second page to
- * learn anything about the directory they just registered has been sent somewhere
- * pointless. Scan and remove therefore sit on the card itself, and the detail page
- * keeps both because a reader who opened a repository directly should not have to
- * go back to find them.
+ * never opened. **The only thing that changes them is a scan** — and a reader who
+ * has to find the scan button on a second page to learn anything about the
+ * directory they just registered has been sent somewhere pointless. Scan and
+ * remove therefore sit on the card itself, and the detail page keeps both because
+ * a reader who opened a repository directly should not have to go back to find
+ * them.
  *
  * The card owns no state of its own, so {@link RepositoryCardActions} holds the
  * two mutations **per card** rather than per page: one `useScanRepository` on the
  * page would put every card's button into the same pending state, and a scan of
  * one repository would grey out the other eleven.
+ *
+ * ## A scan runs on its own now, and the copy says so
+ *
+ * `useAutoRescan` re-reads the repositories on screen on its own — on arrival, on
+ * a thirty-second poll, and the moment the tab comes back to the front — for as
+ * long as this page is open. That is the answer to "I committed and it did not
+ * update": the figures were a snapshot, the snapshot had gone stale, and the only
+ * thing standing between the reader and a fresh number was a button they had to
+ * know to press.
+ *
+ * So two sentences on this page changed with it. The card no longer claims that
+ * nothing re-reads the folder on its own, and “Scan now” is still “Scan now”
+ * because it acts on **that one repository immediately** — the automatic pass is
+ * a background sweep of what is on screen, bounded to one incremental `git log`
+ * per repository per period, and a press is the un-waited-for version of it.
+ *
+ * **“Sync all” is not the automatic pass.** The poll covers the twelve the grid
+ * is holding, because that is all this page has read; the button in the header
+ * reads the whole active set in one request and sweeps every one of them, in
+ * series, because "sync all project commitments at once" cannot mean "the page I
+ * happen to be looking at”.
  */
 const REPOSITORY_PAGE_LIMIT = 12
 /**
@@ -141,6 +168,17 @@ const PROJECT_LIMIT = 100
 /** Stable empty array, so a memo below is not re-created on every render. */
 const NO_REPOSITORIES: RepositoryRead[] = []
 const NO_COMMITS: CommitRead[] = []
+
+/**
+ * How many unreadable repositories a sweep toast will name.
+ *
+ * A sweep of thirty folders on a machine with a failing network share can fail
+ * thirty times, and a toast carrying thirty sentences is a wall of text that
+ * pushes the buttons out of sight and buries every other message. The first few
+ * are named, the rest are counted, and the card for each still carries the
+ * sentence in full — so the toast is a pointer, not the record.
+ */
+const SYNC_FAILURE_NAMES_SHOWN = 3
 
 /**
  * `?status=` values.
@@ -242,6 +280,81 @@ export default function DeveloperPage() {
   const totalPages = Math.max(1, Math.ceil(total / REPOSITORY_PAGE_LIMIT))
   const filtering = isActive !== undefined || projectId !== undefined
 
+  /**
+   * Keep what is on screen current, without the reader pressing anything.
+   *
+   * Handed the grid's rows and nothing else: this hook refreshes repositories it
+   * has been *given*, so it costs one incremental `git log` per repository on the
+   * page and knows nothing about the ones on page two. “Sync all” below is the
+   * control that covers the account rather than the page.
+   */
+  useAutoRescan(rows)
+
+  const syncAll = useScanAllRepositories()
+
+  /**
+   * How many repositories a sweep would have work to do, from the summary.
+   *
+   * `active_repository_count` is the count the summary already carries, and it
+   * counts active repositories across the whole account rather than the page or
+   * the filters — the same set the sweep reads. Null until the summary answers,
+   * and null is not zero: an unknown count must leave the button working, because
+   * a button disabled on a figure that has not arrived is a control that cannot do
+   * anything and offers no reason why.
+   */
+  const syncableCount = summary.data?.active_repository_count ?? null
+  const nothingToSync = syncableCount === 0
+
+  /**
+   * One press, every active repository, reported honestly.
+   *
+   * The result is read from the sweep rather than assumed: a repository git could
+   * not open is a 200 carrying a sentence, so the sweep resolves and the toast
+   * has to name what went wrong instead of claiming a clean run. Rejection is
+   * only reachable if the list read itself failed, and then there is no sweep to
+   * describe at all.
+   */
+  const runSyncAll = useCallback(async () => {
+    if (syncAll.isPending) return
+    try {
+      const result = await syncAll.mutateAsync()
+      if (result.read === 0) {
+        toast.info(
+          'Nothing to sync',
+          'No active repository is registered, so there is no folder for NEXUS to read.',
+        )
+        return
+      }
+
+      const headline =
+        `Synced ${formatNumber(result.synced)} ${result.synced === 1 ? 'repository' : 'repositories'}` +
+        ` · ${formatNumber(result.commitsAdded)} new ${result.commitsAdded === 1 ? 'commit' : 'commits'}.`
+
+      // A sweep that read less than the account owns has not finished the job,
+      // and saying "Synced 6 repositories" beside a hundred untouched folders is
+      // the kind of true-sounding sentence that is still a lie.
+      const clipped =
+        result.total > result.read
+          ? ` Only the first ${formatNumber(result.read)} of ${formatNumber(result.total)} came back — the API answers at most one page at a time — so the rest were left as they are.`
+          : ''
+
+      if (result.synced === 0) {
+        toast.error('No repository could be synced', clipped + describeSyncFailures(result.failures))
+        return
+      }
+      if (result.failures.length > 0 || clipped !== '') {
+        toast.warning(
+          headline + clipped,
+          result.failures.length > 0 ? describeSyncFailures(result.failures) : undefined,
+        )
+        return
+      }
+      toast.success(headline, 'Every active repository was read.')
+    } catch (cause) {
+      toast.error('The sync did not run', toApiError(cause).message)
+    }
+  }, [syncAll])
+
   const commitTotal = commits.data?.total ?? 0
   const commitPageCount = Math.max(1, Math.ceil(commitTotal / TIMELINE_LIMIT))
 
@@ -332,10 +445,31 @@ export default function DeveloperPage() {
           ) : null
         }
         actions={
-          <Button type="button" onClick={() => setFormOpen(true)}>
-            <Plus aria-hidden="true" />
-            Register repository
-          </Button>
+          <>
+            {/* Same row and same variant as the primary action beside it, so the
+                two read as one toolbar rather than a button and an afterthought.
+                The sweep is on the left because "register a new folder" is the
+                action a first-time reader came here for.
+
+                `nothingToSync` disables rather than hides: the reader who lands
+                on an account with nothing registered is told the control is
+                there and that it has nothing to do, which is different from a
+                button that was never there. */}
+            <Button
+              type="button"
+              disabled={syncAll.isPending || nothingToSync}
+              aria-busy={syncAll.isPending}
+              onClick={() => void runSyncAll()}
+            >
+              {syncAll.isPending ? <Spinner size="sm" /> : <RefreshCw aria-hidden="true" />}
+              {syncAll.isPending ? 'Syncing…' : nothingToSync ? 'Nothing to sync' : 'Sync all'}
+            </Button>
+
+            <Button type="button" onClick={() => setFormOpen(true)}>
+              <Plus aria-hidden="true" />
+              Register repository
+            </Button>
+          </>
         }
         description="Everything below is read from local git history with the git CLI, on the machine NEXUS runs on. It reports the commits your repositories recorded — never how long you worked, how focused you were, or how productive the period was, because a commit timestamp cannot prove any of those."
       />
@@ -413,7 +547,9 @@ export default function DeveloperPage() {
                   repository's last scan — a card showing no branch, no commits and “Never scanned”
                   is a directory NEXUS has not read yet, not an empty one. Each card can be scanned
                   again or removed from here; opening one shows its branches, its own commit
-                  history and its scan record.
+                  history and its scan record. This grid is one page of the repositories you own,
+                  not all of them: “Sync all” at the top of the page re-reads every active one,
+                  including the pages below this one.
                 </p>
               </div>
             </div>
@@ -594,6 +730,25 @@ export default function DeveloperPage() {
   )
 }
 
+/* ------------------------------------------------------------------ sync copy */
+
+/**
+ * The names a sweep could not read, with the sentence each one gave.
+ *
+ * **Named and counted, never all of them.** A toast is a fixed window with four
+ * entries in it, and a sweep that fails thirty times must not produce a sentence
+ * nobody can finish reading before it closes — the surplus is counted instead.
+ * The card for every repository carries its own failure verbatim, so the toast is
+ * the pointer to the record rather than the record itself.
+ */
+function describeSyncFailures(failures: ScanAllRepositoriesResult['failures']): string {
+  const named = failures
+    .slice(0, SYNC_FAILURE_NAMES_SHOWN)
+    .map((failure) => `${failure.name} — ${failure.reason}`)
+  const rest = failures.length - named.length
+  return [...named, ...(rest > 0 ? [`and ${formatNumber(rest)} more.`] : [])].join(' ')
+}
+
 /* ------------------------------------------------------- card actions (mutations) */
 
 /**
@@ -622,13 +777,15 @@ export default function DeveloperPage() {
  * on the grid into the same busy state: scanning one repository would disable all
  * twelve buttons and the reader could not scan a second until the first finished.
  *
- * ## The button says "Scan now" because it *is* the scan
+ * ## The button says "Scan now" because it acts on *this* one, now
  *
- * There is no background scheduler, so a control labelled "Refresh" would imply a
- * re-read that NEXUS performs on its own, and there is none. The label matches the
- * detail page's `ScanStatusPanel` word for word — including the pending state it
- * spells out as "Scanning", because a scan shells out to git and can take seconds,
- * and a control that silently stops responding reads as a broken page.
+ * The page does re-read on its own — `useAutoRescan` — so the label has to say
+ * what the press does rather than whether any re-read happens at all: it is this
+ * repository, immediately, without waiting for the next poll tick or for the tab
+ * to come back to the front. The label matches the detail page's `ScanStatusPanel`
+ * word for word — including the pending state it spells out as "Scanning", because
+ * a scan shells out to git and can take seconds, and a control that silently stops
+ * responding reads as a broken page.
  */
 function RepositoryCardActions({ repository }: { repository: RepositoryRead }) {
   const scan = useScanRepository()
@@ -715,12 +872,13 @@ function RepositoryCardActions({ repository }: { repository: RepositoryRead }) {
       </div>
 
       {/* The controls change what has been *recorded*, never what the folder
-          currently contains — the button reads a snapshot at the moment it is
-          pressed, and says so, because "Scan now" beside a permanently stale
-          branch count could otherwise be read as a live view. */}
+          contains at the instant you are looking at it — a scan is a reading of
+          a snapshot, and the sentence below now says who takes that reading and
+          when, because the page does take it on its own while it is open. */}
       <p className="w-full text-xs text-muted-foreground">
-        A scan reads this folder once, on the machine NEXUS runs on, when you press it — nothing
-        here re-reads it on its own.
+        A scan reads this folder on the machine NEXUS runs on. Pressing this scans it now; while this
+        page is open NEXUS also re-reads it on its own, at most once every 30 seconds, so a commit
+        you have just made shows up here without a press.
       </p>
 
       <ConfirmDialog

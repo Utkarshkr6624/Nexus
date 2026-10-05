@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 
@@ -12,12 +12,126 @@ import { PriorityBadge } from '@/features/work/components/priority-badge'
 import { ProjectFormDialog } from '@/features/work/components/project-form-dialog'
 import { StatusBadge } from '@/features/work/components/status-badge'
 import { WorkProgress } from '@/features/work/components/work-progress'
-import { useDeleteProject, useProjectSummary, useProjects } from '@/features/work/hooks'
+import {
+  projectRestorePayload,
+  taskRestorePayload,
+  useCreateProject,
+  useCreateTask,
+  useDeleteProject,
+  useProjectSummary,
+  useProjectTasks,
+  useProjects,
+  useSetTaskTags,
+} from '@/features/work/hooks'
 import { toApiError } from '@/services/errors'
-import { toast } from '@/stores/toast-store'
-import type { Project } from '@/types/work'
+import { toast, useToastStore } from '@/stores/toast-store'
+import { MAX_PAGE_SIZE, PROJECT_STATUS_META } from '@/types/work'
+import type { Paginated, Project, Task } from '@/types/work'
 
 const PAGE_LIMIT = 25
+
+/**
+ * How long a delete's undo stays on the toast. The store's own default is five
+ * seconds, which is long enough to read a message and not long enough to notice
+ * one; ten is the shortest window in which a person who has just hit the wrong
+ * button can still catch it. It is a window and not a promise — the button only
+ * exists while the toast does, and the toast disappears on its own after this.
+ */
+const UNDO_WINDOW_MS = 10_000
+
+/**
+ * How many of a project's tasks undo is prepared to hold and re-create.
+ *
+ * `MAX_PAGE_SIZE` is the largest page `GET /projects/{id}/tasks` will answer,
+ * and it is also the point past which "Undo" stops being a correction and
+ * becomes a bulk import nobody asked for: twenty seconds of requests fired from
+ * a toast button. Above it the toast restores the project alone and says the
+ * tasks are gone, rather than quietly bringing back the first hundred and
+ * leaving the reader to assume that was all of them.
+ */
+const PROJECT_UNDO_TASK_LIMIT = MAX_PAGE_SIZE
+
+/** A restored project is always `planned`: `ProjectCreate` carries no status. */
+const RESTORED_PROJECT_STATUS = PROJECT_STATUS_META.planned.label.toLowerCase()
+
+/**
+ * What undo knows about the tasks inside the project about to be deleted.
+ *
+ * Four cases rather than a boolean, because the honest sentence differs in every
+ * one of them: "it had none", "here they all are", "there were too many to
+ * bring back" and "I never found out" are four different claims, and collapsing
+ * the last three into "restores the project" is how an undo ends up quietly
+ * deleting work it said it would restore.
+ */
+type UndoableTasks =
+  | { kind: 'unknown' }
+  | { kind: 'empty' }
+  | { kind: 'too_many'; total: number }
+  | { kind: 'all'; tasks: Task[] }
+
+function pluralTasks(count: number): string {
+  return `${count} task${count === 1 ? '' : 's'}`
+}
+
+/**
+ * Reads the project's tasks once, at the moment the confirm dialog opens, and
+ * turns them into the promise undo will keep.
+ *
+ * `useProjectTasks` carries `placeholderData`, so for the frame after the dialog
+ * changes project the observer can still be holding the *previous* project's
+ * rows. Re-creating those under a newly created project would file one set of
+ * tasks inside a different project, so a page that does not agree with itself
+ * about which project it is describing counts as not read.
+ */
+function readUndoableTasks(
+  page: Paginated<Task> | undefined,
+  isError: boolean,
+  projectId: string | undefined,
+): UndoableTasks {
+  if (projectId === undefined || isError || page === undefined) return { kind: 'unknown' }
+  if (!page.items.every((task) => task.project_id === projectId)) return { kind: 'unknown' }
+  if (page.meta.total > PROJECT_UNDO_TASK_LIMIT) {
+    return { kind: 'too_many', total: page.meta.total }
+  }
+  if (page.items.length === 0) return { kind: 'empty' }
+  return { kind: 'all', tasks: page.items }
+}
+
+/**
+ * What the confirm dialog promises, read off the same union the undo keeps — so
+ * the button and the offer cannot tell the user two different stories.
+ *
+ * This is still a confirm dialog. The copy says what Undo will do; it does not
+ * ask the reader to choose between losing the project and losing its tasks.
+ */
+function undoPromise(project: Project, kind: UndoableTasks): string {
+  const name = `“${project.name}”`
+  switch (kind.kind) {
+    case 'all':
+      return `${name} and its ${pluralTasks(kind.tasks.length)} will be removed. Undo re-creates the project and the ${kind.tasks.length} tasks it has just read — as new rows, with new ids.`
+    case 'empty':
+      return `${name} will be removed. Undo re-creates it as a new project, back at ${RESTORED_PROJECT_STATUS}. It has no tasks, so nothing else comes back.`
+    case 'too_many':
+      return `${name} and its ${pluralTasks(kind.total)} will be removed. Undo re-creates the project alone — there are too many tasks to bring back — and the toast will say so.`
+    case 'unknown':
+      return `${name} and the tasks inside it will be removed. Undo re-creates the project as a new row, back at ${RESTORED_PROJECT_STATUS}. Its tasks are gone; they were not read before the delete.`
+  }
+}
+
+/** The same union again, in the past tense, for the toast that offers the undo. */
+function undoOffer(project: Project, kind: UndoableTasks): string {
+  const name = `“${project.name}” is gone.`
+  switch (kind.kind) {
+    case 'all':
+      return `${name} Undo re-creates it and its ${pluralTasks(kind.tasks.length)} — as new rows, with new ids.`
+    case 'empty':
+      return `${name} Undo re-creates it as a new project, back at ${RESTORED_PROJECT_STATUS}. It had no tasks, so nothing else comes back.`
+    case 'too_many':
+      return `${name} Undo re-creates it as a new project, back at ${RESTORED_PROJECT_STATUS}. Its ${pluralTasks(kind.total)} are gone and will not come back — too many to restore.`
+    case 'unknown':
+      return `${name} Undo re-creates it as a new project, back at ${RESTORED_PROJECT_STATUS}. Its tasks are gone; they were not read before the delete.`
+  }
+}
 
 /** Date-only strings are parsed as UTC by `Date`, which shifts the day west of Greenwich. */
 function formatDay(value: string | null): string {
@@ -140,6 +254,22 @@ export default function ProjectsPage() {
   const [pendingDelete, setPendingDelete] = useState<Project | null>(null)
 
   const remove = useDeleteProject()
+  const recreateProject = useCreateProject()
+  const recreateTask = useCreateTask()
+  const setTags = useSetTaskTags()
+
+  /**
+   * Read the doomed project's tasks while the dialog is up, not after the delete
+   * has landed — afterwards the endpoint is a 404 and the tasks are gone for
+   * good. Owner-scoped and bounded by the same page the project detail uses.
+   */
+  const pendingTasks = useProjectTasks(pendingDelete?.id ?? null, {
+    limit: PROJECT_UNDO_TASK_LIMIT,
+  })
+  const undoableTasks = useMemo(
+    () => readUndoableTasks(pendingTasks.data, pendingTasks.isError, pendingDelete?.id),
+    [pendingTasks.data, pendingTasks.isError, pendingDelete?.id],
+  )
 
   const items = projects.data?.items ?? []
   const total = projects.data?.meta.total ?? items.length
@@ -152,6 +282,108 @@ export default function ProjectsPage() {
   function openEdit(project: Project) {
     setEditing(project)
     setFormOpen(true)
+  }
+
+  /**
+   * Announce the delete with an undo attached.
+   *
+   * `DELETE /projects/{id}` cascades to the tasks inside it, so undo cannot be a
+   * rollback — it is a create, of the project *and* of the tasks read a moment
+   * earlier, every one of them a new row with a new id. The toast states which
+   * of the two it is about to do, because a button that silently brings back
+   * half a project is worse than no button at all.
+   *
+   * Undo is offered only after the delete has actually landed: on a failed
+   * delete there is nothing to undo, and offering it would be a create on top of
+   * a project that is still sitting there.
+   */
+  function announceDeletedProject(project: Project, kind: UndoableTasks) {
+    // A second click re-creating rows is a person who did not read the toast,
+    // not a request for two projects. The flag closes the window; it does not
+    // raise an error about the first one having worked.
+    let spent = false
+
+    const id = toast.custom({
+      title: 'Project deleted',
+      variant: 'success',
+      description: undoOffer(project, kind),
+      durationMs: UNDO_WINDOW_MS,
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          if (spent) return
+          spent = true
+          useToastStore.getState().dismiss(id)
+
+          void restoreDeletedProject(project, kind).then(
+            (restored) => {
+              if (kind.kind !== 'all') {
+                toast.success(
+                  'Project restored',
+                  `“${project.name}” is back as a new project with a new id, at ${RESTORED_PROJECT_STATUS}.${restored.tasksGone}`,
+                )
+                return
+              }
+              const missing = kind.tasks.length - restored.tasks
+              toast.success(
+                'Project restored',
+                [
+                  `“${project.name}” is back as a new project with a new id, at ${RESTORED_PROJECT_STATUS}, with ${restored.tasks} of ${kind.tasks.length} ${kind.tasks.length === 1 ? 'task' : 'tasks'} re-created.`,
+                  missing > 0 ? `${missing} could not be.` : '',
+                ]
+                  .filter(Boolean)
+                  .join(' '),
+              )
+            },
+            (cause: unknown) => {
+              toast.error('Could not restore the project', toApiError(cause).message)
+            },
+          )
+        },
+      },
+    })
+  }
+
+  /**
+   * Put the project back, and with it every task undo read in time.
+   *
+   * Sequentially, because this runs from a toast button with no progress UI and
+   * a burst of concurrent writes would turn one accidental delete into a burst
+   * of retries the server has no reason to enjoy.
+   */
+  async function restoreDeletedProject(
+    project: Project,
+    kind: UndoableTasks,
+  ): Promise<{ tasks: number; tasksGone: string }> {
+    const created = await recreateProject.mutateAsync(projectRestorePayload(project))
+    if (kind.kind !== 'all') {
+      return {
+        tasks: 0,
+        tasksGone:
+          kind.kind === 'empty'
+            ? ' It had no tasks, so there was nothing else to bring back.'
+            : ` Its ${kind.kind === 'too_many' ? pluralTasks(kind.total) : 'tasks'} did not come back.`,
+      }
+    }
+
+    let tasks = 0
+    for (const task of kind.tasks) {
+      try {
+        const row = await recreateTask.mutateAsync(taskRestorePayload(task, created.id))
+        // `TaskCreate` has no field for tag links; they are a second route, and
+        // applied against the new id because the old one is gone.
+        if (task.tag_ids.length > 0) {
+          await setTags.mutateAsync({ id: row.id, tagIds: task.tag_ids })
+        }
+        tasks += 1
+      } catch {
+        // One task that will not come back — a title the server now rejects, a
+        // set of tags that has since changed — must not abandon the rest. The
+        // project and the other tasks are still worth having, and the toast
+        // counts what actually arrived rather than what was asked for.
+      }
+    }
+    return { tasks, tasksGone: '' }
   }
 
   return (
@@ -229,21 +461,18 @@ export default function ProjectsPage() {
           if (!open && !remove.isPending) setPendingDelete(null)
         }}
         title="Delete this project?"
-        description={
-          pendingDelete
-            ? `“${pendingDelete.name}” and the tasks inside it will be removed. This cannot be undone.`
-            : ''
-        }
+        description={pendingDelete ? undoPromise(pendingDelete, undoableTasks) : ''}
         confirmLabel="Delete project"
         destructive
         pending={remove.isPending}
         onConfirm={() => {
           if (!pendingDelete) return
-          const name = pendingDelete.name
-          remove.mutate(pendingDelete.id, {
+          const project = pendingDelete
+          const kind = undoableTasks
+          remove.mutate(project.id, {
             onSuccess: () => {
               setPendingDelete(null)
-              toast.success('Project deleted', `“${name}” is gone.`)
+              announceDeletedProject(project, kind)
             },
             onError: (cause) => {
               toast.error('Could not delete that project', toApiError(cause).message)

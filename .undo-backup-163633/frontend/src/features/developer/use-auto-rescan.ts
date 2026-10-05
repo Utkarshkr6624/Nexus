@@ -18,15 +18,15 @@
  * the rows is necessary but not sufficient, and the reason is
  * `app/query-client.ts`: `refetchOnWindowFocus` is `false` and `staleTime` is
  * thirty seconds, so a query does not re-read itself while the reader sits and
- * looks at it. An effect that ran when the rows changed would therefore fire on
+ * looks at it. An effect that runs when the rows change would therefore fire on
  * mount, on a filter change and after an invalidation — and in the one case the
  * complaint is actually about, a commit made in a terminal while this tab stays
  * open, not at all. The reader would be left watching a number that is known to
  * be stale and watching it stay stale, which is the report this module exists to
  * answer.
  *
- * So the same effect runs on a timer as well, and the timer is bounded by the
- * three limits below rather than being a free-running refresh:
+ * So the same effect runs on a timer as well, and the timer is bounded by three
+ * limits rather than being a free-running refresh:
  *
  * - Only a stale snapshot is re-read. :data:`RESCAN_AFTER_MS` is the age below
  *   which the stored row is trusted as current.

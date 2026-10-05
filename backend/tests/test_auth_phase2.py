@@ -63,6 +63,11 @@ GRACE = {
     "email": "grace@nexus.dev",
     "password": "Another-Strong-Pass-9",
 }
+
+#: The one message both uniqueness refusals answer with, restated here rather
+#: than imported so a change to the wording is a visible edit to these tests
+#: rather than a silent one that follows the implementation.
+_TAKEN_MESSAGE = "An account with this email or username already exists."
 NEW_PASSWORD = "Rotated-Horse-42"
 
 #: Passwords carried by the redemption attempts that must all be refused, so
@@ -184,22 +189,54 @@ async def test_register_normalises_the_email(client):
 
 
 async def test_register_rejects_a_duplicate_email(client, assert_error_envelope):
+    """A taken address is a 409, and the message names neither field.
+
+    The message used to be "An account with this email already exists.", which
+    made this route an enumeration oracle with a field attached: a caller could
+    walk a list of addresses through it and learn which were registered. The
+    sentence below is shared with the username case, so the two are the same
+    answer — see ``_IDENTIFIER_TAKEN``.
+    """
     await _register(client)
 
     response = await client.post("/api/v1/auth/register", json={**ADA, "username": "someone-else"})
 
     error = assert_error_envelope(response, status_code=409, code="conflict")
-    assert "email" in error["message"]
+    assert error["message"] == _TAKEN_MESSAGE
     assert ADA["password"] not in error["message"]
 
 
 async def test_register_rejects_a_duplicate_username(client, assert_error_envelope):
+    """A taken handle answers exactly what a taken address answers.
+
+    Pinned as an equality with the email case rather than as a substring: the two
+    were once two different sentences, and the difference between them was the
+    whole of what this pair of tests used to protect.
+    """
     await _register(client)
 
     response = await client.post("/api/v1/auth/register", json={**ADA, "email": "other@nexus.dev"})
 
     error = assert_error_envelope(response, status_code=409, code="conflict")
-    assert "username" in error["message"]
+    assert error["message"] == _TAKEN_MESSAGE
+
+
+async def test_register_refuses_a_field_it_does_not_own(client, assert_error_envelope):
+    """``full_name`` is a 422 naming the field, not a 201 that drops it.
+
+    Pydantic's default is ``extra="ignore"``, under which this request created an
+    account with no name on it and answered 201: the caller read a successful
+    signup and believed the name it sent had been recorded. The name field on this
+    API is ``display_name``.
+    """
+    response = await client.post(
+        "/api/v1/auth/register", json={**ADA, "full_name": "Ada Lovelace"}
+    )
+
+    error = assert_error_envelope(response, status_code=422, code="validation_error")
+    assert any(
+        entry["field"] == "full_name" for entry in error["details"]["errors"]
+    ), error
 
 
 @pytest.mark.parametrize(
@@ -306,6 +343,70 @@ async def test_me_without_a_bearer_token_is_an_enveloped_401(client, assert_erro
     error = assert_error_envelope(response, status_code=401, code="unauthorized")
     assert error["request_id"]
     assert response.headers["X-Request-ID"] == error["request_id"]
+
+
+# -- Logout ------------------------------------------------------------------
+
+
+async def test_a_logout_naming_another_token_leaves_the_callers_session_alone(
+    client, assert_error_envelope
+):
+    """A body token that names a different session wins, and the bearer survives.
+
+    Revoking an unusable body token used to fall through to the bearer branch as
+    well, so a client retrying a logout with a refresh token it had already spent
+    silently ended its own live session and was answered 204. A second session is
+    asserted live afterwards so the refusal is not just "the first one died".
+    """
+    await _register(client)
+    mine = await _login(client)
+    theirs = await _login(client)
+
+    response = await client.post(
+        "/api/v1/auth/logout",
+        json={"refresh_token": "not-a-token"},
+        headers=_bearer(mine["access_token"]),
+    )
+    assert response.status_code == 204, response.text
+
+    survived = await client.get("/api/v1/auth/me", headers=_bearer(mine["access_token"]))
+    assert survived.status_code == 200, survived.text
+    untouched = await client.get("/api/v1/auth/me", headers=_bearer(theirs["access_token"]))
+    assert untouched.status_code == 200, untouched.text
+
+
+async def test_revoking_the_callers_own_session_says_so(client, assert_error_envelope):
+    """The self-revoke carries a ``Warning``; every other revoke does not.
+
+    Ending the session you are calling from is allowed — it is what the Sessions
+    screen's "this is the device you are using right now" button does — but a bare
+    204 is indistinguishable from revoking somebody's phone, and the very next
+    request with that token is a 401. A header closes the gap without changing
+    the status code a client legitimately signing itself out already handles.
+    """
+    await _register(client)
+    mine = await _login(client)
+    other = await _login(client)
+    sessions = await client.get("/api/v1/auth/sessions", headers=_bearer(mine["access_token"]))
+    assert sessions.status_code == 200, sessions.text
+    other_id = next(
+        row["id"]
+        for row in sessions.json()["sessions"]
+        if not row["is_current"] and row["id"] != other["session_id"]
+    )
+
+    someone_else = await client.delete(
+        f"/api/v1/auth/sessions/{other_id}", headers=_bearer(mine["access_token"])
+    )
+    assert someone_else.status_code == 204, someone_else.text
+    assert "Warning" not in someone_else.headers
+
+    mine_id = sessions.json()["current_id"]
+    revoked = await client.delete(
+        f"/api/v1/auth/sessions/{mine_id}", headers=_bearer(mine["access_token"])
+    )
+    assert revoked.status_code == 204, revoked.text
+    assert "revoked the session it was made with" in revoked.headers.get("Warning", "")
 
 
 # -- Password change ---------------------------------------------------------

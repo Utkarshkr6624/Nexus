@@ -1067,8 +1067,13 @@ _TITLE_BOUNDS: Mapping[str, tuple[int, int]] = MappingProxyType(
 )
 
 _LEADING_ARTICLE_RE = re.compile(r"\A(?:an?|the|my|our)\s+", re.IGNORECASE)
+#: A trailing preposition or connector. ``from`` is here for the one shape that
+#: needs it: a request written as *reference, then its type* — "remove Swift pdf
+#: **from** repo", "archive the retro **from** the calendar". The type noun is
+#: cut off first, which leaves the connector exposed at the end, and a name does
+#: not end in a preposition.
 _TRAILING_FILLER_RE = re.compile(
-    r"(?:\s+(?:to|for|about|on|of|by|that|saying|with|and|in|please|"
+    r"(?:\s+(?:to|for|about|on|of|by|from|that|saying|with|and|in|please|"
     r"targeting|due|starting|beginning|ending|scheduled))+$",
     re.IGNORECASE,
 )
@@ -2907,7 +2912,21 @@ def extract_arguments(
                 remaining = "profile"
 
     framing: list[str] = []
-    if intent == str(Intent.DEVELOPER_INTEL):
+    # Only a **creation** is phrased with the repository noun in front of the
+    # label — "add repo name xyz", "register the repo E:/op" — and that is the
+    # shape :func:`_strip_repository_subject` was written for. A request that acts
+    # on a row the caller already owns is phrased the other way round, noun last:
+    # "remove Swift pdf from repo", "delete the swift repository". Running the
+    # subject stripper on one of those cut the text *up to* the noun and left
+    # nothing behind, so the reference became an empty string and the request was
+    # refused as unreadable for a sentence that named its row perfectly clearly.
+    #
+    # The ordinary reference path already knows the noun: it strips a trailing
+    # entity noun with :data:`_REFERENCE_TRAILING_ENTITY_RE`, which is built from
+    # :data:`_ENTITY_NOUNS` and so already covers ``repo``. "Swift pdf from repo"
+    # therefore comes out of :func:`extract_title` as ``Swift pdf``, which is the
+    # fragment the matcher is meant to resolve.
+    if intent == str(Intent.DEVELOPER_INTEL) and verb is ExtractedVerb.CREATE:
         remaining, framing = _strip_repository_subject(remaining)
         if not remaining.strip() and path is not None:
             # "register the repo E:/op" names no label at all, and the folder's

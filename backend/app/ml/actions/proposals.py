@@ -203,6 +203,7 @@ class ActionKind(StrEnum):
 
     # Developer intelligence
     CREATE_REPOSITORY = "create_repository"
+    DELETE_REPOSITORY = "delete_repository"
 
     # Account
     UPDATE_PROFILE = "update_profile"
@@ -745,6 +746,26 @@ ACTION_SPECS: Mapping[ActionKind, ActionSpec] = MappingProxyType(
             title_field="name",
             date_field=None,
         ),
+        # The counterpart, and the widest cascade on the developer surface:
+        # ``delete_repository`` drops the row **and** its commits, branches and
+        # scan runs through the schema's ``ON DELETE CASCADE``, so the row it
+        # leaves behind is not a quieter record of the same repository — it is no
+        # record at all. The same ``Permission.ANALYTICS_READ`` is used because
+        # this is the capability ``DELETE /developer/repositories/{id}`` is already
+        # gated on; the destructive flag and the second press, not a wider one, are
+        # what this kind adds.
+        ActionKind.DELETE_REPOSITORY: ActionSpec(
+            kind=ActionKind.DELETE_REPOSITORY,
+            intent=Intent.DEVELOPER_INTEL,
+            schema=ActionAck,
+            permission=Permission.ANALYTICS_READ,
+            service="DeveloperIntelligenceService",
+            module="app.services.developer",
+            entrypoint="delete_repository",
+            title_field=None,
+            date_field=None,
+            destructive=True,
+        ),
         # --- account ---------------------------------------------------- #
         ActionKind.UPDATE_PROFILE: ActionSpec(
             kind=ActionKind.UPDATE_PROFILE,
@@ -813,6 +834,7 @@ _ROUTES: tuple[tuple[ActionKind, str, str], ...] = (
     (ActionKind.CREATE_SESSION, ExtractedVerb.LOG, "session"),
     (ActionKind.DELETE_SESSION, ExtractedVerb.DELETE, "session"),
     (ActionKind.CREATE_REPOSITORY, ExtractedVerb.CREATE, "repository"),
+    (ActionKind.DELETE_REPOSITORY, ExtractedVerb.DELETE, "repository"),
     (ActionKind.UPDATE_PROFILE, ExtractedVerb.UPDATE, "profile"),
 )
 
@@ -987,6 +1009,7 @@ class ProposalContext:
     skill_candidates: tuple[RowCandidate, ...] = ()
     event_candidates: tuple[RowCandidate, ...] = ()
     session_candidates: tuple[RowCandidate, ...] = ()
+    repository_candidates: tuple[RowCandidate, ...] = ()
 
 
 #: Which candidate list belongs to which entity. The value is the attribute name
@@ -1004,6 +1027,7 @@ _CANDIDATE_FIELD_BY_ENTITY: Mapping[str, str] = MappingProxyType(
         "skill": "skill_candidates",
         "event": "event_candidates",
         "session": "session_candidates",
+        "repository": "repository_candidates",
     }
 )
 
@@ -1372,6 +1396,20 @@ def _summarise(
     # Every delete says the one thing the payload cannot: it is final. The clause
     # is identical for all of them on purpose — "this cannot be undone" is a
     # property of the table, not of which table it was.
+    #
+    # A repository is the one exception, and it is an exception of *scope* rather
+    # than of kind. Deleting a task loses a card and deleting a project loses a
+    # board, but this row owns its commits, its branches and every scan run ever
+    # taken of it: the schema cascades, and there is no archive of the history
+    # because there is no row left to hang it on. A sentence that said only
+    # "this cannot be undone" would be true and would still understate what the
+    # press does, so the cascade is named here rather than discovered afterwards
+    # from a dashboard that no longer has the numbers.
+    if kind is ActionKind.DELETE_REPOSITORY:
+        return (
+            f"Delete {subject}, along with its commits, branches and scan runs."
+            f"{_IRREVERSIBLE_CLAUSE}"
+        )
     if kind in _DESTRUCTIVE_KINDS:
         return f"Delete {subject}.{_IRREVERSIBLE_CLAUSE}"
 
@@ -1866,7 +1904,9 @@ def _build_payload(
         schema's own error is not propagated: a validation failure here means the
         extraction produced something the route would reject, and the right answer
         to that is a refusal with a reason, not a 422 to a caller who asked a
-        question rather than submitted a payload.
+        question rather than submitted a payload. A payload that *does* validate
+        here is then put through :func:`_publishable` before it leaves, so what
+        this returns is always something the confirm route will accept back.
     """
     fields = set(spec.schema.model_fields)
     values = extraction.values
@@ -1954,13 +1994,71 @@ def _build_payload(
     raw.update(special)
 
     try:
-        return spec.schema(**raw)
+        payload = spec.schema(**raw)
     except ValidationError:
         return _Refused(
             ProposalReason.PAYLOAD_INVALID,
             "What NEXUS extracted did not satisfy the payload schema, so it is "
             "asking rather than writing something malformed.",
         )
+    return _publishable(spec, payload)
+
+
+def _publishable(spec: ActionSpec, payload: BaseModel) -> BaseModel | _Refused:
+    """The payload, but only once it is proven the confirm route will take it back.
+
+    **This is the round-trip contract, enforced at the end that publishes.**
+    :meth:`ActionProposal.to_dict` and
+    :meth:`app.schemas.actions.ActionProposalRead.from_proposal` both hand the
+    client ``payload.model_dump(mode="json")``, and the confirm endpoint
+    re-validates exactly that rendering against exactly this schema before it
+    calls anything. A payload that is legal as an object but not as its own JSON
+    rendering is therefore a proposal the backend itself made unconfirmable: the
+    user reads a sentence, presses Confirm, and gets a 422 for a field they never
+    typed. That is a defect on this side of the wire, not a mistake on theirs, and
+    the only place it can be caught without shipping it is here.
+
+    The two ways it happens are both silent at construction time:
+
+    * Pydantic does not validate a field's **default** unless the field says
+      ``validate_default=True``. A member declared ``x: str = Field(default=None)``
+      constructs happily, dumps as ``null``, and is then refused by
+      :meth:`BaseModel.model_validate` — which is the failure in one sentence.
+    * An ``AfterValidator`` that only accepts a *native* type — a naive datetime
+      raised to an aware one by the constructor, say — is handed a JSON string by
+      the confirm route rather than the object it was written against.
+
+    So this re-runs the two rejections the confirm route runs first — unknown
+    keys, then the schema itself — against the published rendering. Both are
+    unreachable for a payload that came out of this function, and that is the
+    point: they are checked here so that a future schema edit cannot quietly turn
+    one of them back into a 422 the user is asked to explain.
+
+    Refusing rather than publishing is the right answer on the rare occasion it
+    fires. A ``payload_invalid`` refusal is an honest 200 the caller can render
+    and the user can rephrase; an unconfirmable proposal is a dialog that lies
+    about being able to do something.
+    """
+    published = payload.model_dump(mode="json")
+    unknown = sorted(set(published) - set(spec.schema.model_fields))
+    if unknown:  # pragma: no cover — model_dump emits exactly the declared fields
+        return _Refused(
+            ProposalReason.PAYLOAD_INVALID,
+            f"NEXUS read that request, but the details it would have to send carry a "
+            f"field this action has nowhere to put ('{unknown[0]}'), so it is asking "
+            "rather than offering an action it could not carry out.",
+        )
+    try:
+        spec.schema.model_validate(published)
+    except ValidationError:
+        return _Refused(
+            ProposalReason.PAYLOAD_INVALID,
+            "NEXUS read that request, but the details it would have to send cannot be "
+            "written back in the form NEXUS publishes them, so it is asking rather "
+            "than offering an action that could not be carried out. Rephrase it and "
+            "NEXUS will read it again.",
+        )
+    return payload
 
 
 def _specialise(

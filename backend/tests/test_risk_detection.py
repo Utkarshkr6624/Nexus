@@ -211,9 +211,22 @@ async def _seed(session: AsyncSession, username: str = "ada") -> AnalyticsSeed:
 
 
 async def _db_today(session: AsyncSession) -> date:
-    """The database's date, read the same way ``evaluate`` reads its instant."""
+    """The database's date, read the same way ``evaluate`` reads its instant.
+
+    Including the normalisation. ``func.now()`` is a ``timestamptz`` returned
+    labelled with the *connection's* ``TimeZone`` — ``Asia/Calcutta`` on this
+    server — so a bare ``.date()`` is the server-local day, while the detector
+    converts to UTC before deriving the deadline distances it reports. Every
+    fixture here is positioned relative to this date, so a fixture anchored on one
+    calendar and asserted against the other is a whole day of drift for the five
+    and a half hours a day the two disagree.
+    """
     value = await session.scalar(select(func.now()))
-    return value.date() if isinstance(value, datetime) else datetime.now(UTC).date()
+    if not isinstance(value, datetime):
+        return datetime.now(UTC).date()
+    if value.tzinfo is None:  # pragma: no cover - psycopg returns aware values
+        return value.date()
+    return value.astimezone(UTC).date()
 
 
 async def _availability(

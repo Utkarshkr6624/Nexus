@@ -18,6 +18,7 @@ import type {
   LearningActivitySeriesRead,
   LearningGoalRead,
   LearningSummaryRead,
+  SkillGapListRead,
   SkillGapRead,
   SkillRead,
 } from '@/types/learning'
@@ -440,27 +441,36 @@ function gap(overrides: Partial<SkillGapRead> = {}): SkillGapRead {
   }
 }
 
-const GAPS: SkillGapRead[] = [
-  gap(),
-  gap({
-    skill_id: null,
-    skill_name: 'Rust',
-    available: false,
-    gap: 0,
-    evidence_count: 0,
-    evidence_last_30d: 0,
-    days_since_last_activity: null,
-    reason_if_unavailable: UNMEASURED_REASON,
-    explanation:
-      'No gap could be computed for Rust because no level has ever been recorded against it.',
-  }),
-]
+const GAPS: SkillGapListRead = {
+  items: [
+    gap(),
+    gap({
+      skill_id: null,
+      skill_name: 'Rust',
+      available: false,
+      gap: 0,
+      evidence_count: 0,
+      evidence_last_30d: 0,
+      days_since_last_activity: null,
+      reason_if_unavailable: UNMEASURED_REASON,
+      explanation:
+        'No gap could be computed for Rust because no level has ever been recorded against it.',
+    }),
+  ],
+  total: 2,
+  limit: 50,
+  offset: 0,
+  available_count: 1,
+  unavailable_count: 1,
+  by_level_source: { user_defined: 1, system_estimate: 0 },
+}
 
 const SUMMARY: LearningSummaryRead = {
   goal_count: 2,
   active_goal_count: 1,
   completed_goal_count: 1,
   skill_count: 2,
+  skills_with_evidence: 1,
   activity_count: 11,
   activities_in_window: 3,
   minutes_in_window: 135,

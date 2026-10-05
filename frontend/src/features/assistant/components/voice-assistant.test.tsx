@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { VoiceAssistant } from '@/features/assistant/components/voice-assistant'
@@ -277,5 +277,76 @@ describe('VoiceAssistant', () => {
     // the document two mastheads.
     expect(container.querySelectorAll('h1')).toHaveLength(0)
     expect(container.querySelectorAll('h2').length).toBeGreaterThan(0)
+  })
+})
+
+describe('the destination an accepted turn names', () => {
+  /**
+   * Rendered with real routes so navigation is observable. The shared
+   * `renderAssistant` mounts a bare router, where `navigate` would move the
+   * location without anything rendering — which is precisely the "nothing
+   * happened" failure this block exists to rule out.
+   */
+  function renderWithRoutes() {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    })
+    return render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={['/assistant']}>
+          <Routes>
+            <Route path="/assistant" element={<VoiceAssistant />} />
+            <Route path="/projects" element={<p>Projects page</p>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+  }
+
+  const PROJECTS: RoutingDecisionRead = {
+    intent: 'project_manage',
+    confidence: 0.98,
+    threshold: 0.9,
+    status: 'accepted',
+    destination: 'api/v1/projects',
+    destination_kind: 'router',
+    target: {
+      service: 'ProjectService',
+      module: 'app.services.project_service',
+      entrypoint: 'ProjectService.create',
+    },
+    reason: 'Project management is a validated NEXUS destination.',
+    alternatives: [],
+  }
+
+  it('offers the route it just named, and the button takes you there', async () => {
+    stubRoute(PROJECTS)
+    const user = userEvent.setup()
+    renderWithRoutes()
+
+    await user.type(screen.getByLabelText(/Or type your request/i), 'add a project called hello')
+    await user.click(screen.getByRole('button', { name: 'Classify' }))
+
+    // Without this the turn names a destination and leaves the reader with no
+    // way to reach it, which reads as the assistant having done nothing.
+    const goTo = await screen.findByRole('button', { name: /go to projects/i })
+    await user.click(goTo)
+
+    await waitFor(() => expect(screen.getByText('Projects page')).toBeInTheDocument())
+  })
+
+  it('withholds the button when the destination names no page', async () => {
+    // `api/v1/users` is a real destination with no page behind it, so the
+    // honest outcome is no button rather than a link to a guess.
+    stubRoute({ ...PROJECTS, destination: 'api/v1/users', intent: 'account_admin' })
+    const user = userEvent.setup()
+    renderWithRoutes()
+
+    await user.type(screen.getByLabelText(/Or type your request/i), 'deactivate my account')
+    await user.click(screen.getByRole('button', { name: 'Classify' }))
+
+    // The decision itself is one text node, so it is a reliable settle point.
+    await screen.findByText('deactivate my account')
+    expect(screen.queryByRole('button', { name: /^go to /i })).toBeNull()
   })
 })

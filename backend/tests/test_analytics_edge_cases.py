@@ -241,7 +241,12 @@ async def _snapshot(
     this is the one place that says what the wrapper must contain. It also pins
     ``generated_at`` to the **database** clock, since this host is not on UTC and
     a wrapper stamped from ``date.today()`` would be a day ahead of the clock
-    every feature in it was derived from.
+    every feature in it was derived from. Normalised to UTC for the same reason
+    the service normalises: ``now()`` comes back labelled with the *connection's*
+    ``TimeZone``, and on this server that is ``Asia/Calcutta``, so a bare
+    ``.date()`` on it would be the server-local day rather than the one every
+    feature beside it was derived from. The two would then disagree for five and
+    a half hours out of every twenty-four.
 
     Args:
         session: The test's session, used to read the database's ``now()``.
@@ -261,7 +266,7 @@ async def _snapshot(
     assert set(body) == {"schema_version", "generated_at", "task_id", "features"}
     assert body["schema_version"] == "analytics_features.v1"
     assert body["task_id"] == str(task_id)
-    today = (await session.scalar(select(func.now()))).date()
+    today = (await session.scalar(select(func.now()))).astimezone(UTC).date()
     assert body["generated_at"] == today.isoformat()
     return body["features"]
 
@@ -1950,7 +1955,12 @@ async def test_a_rebuild_advances_the_freshness_stamp_it_stores(client, db_sessi
     first = await _stored_stamps(db_session, seed.owner.id, start=DAY, end=DAY)
     assert len(first) == 1
     assert first[0][0] == DAY
-    assert first[0][1].replace(tzinfo=UTC) > datetime(2020, 1, 1, tzinfo=UTC)
+    # ``astimezone``, not ``replace(tzinfo=UTC)``: the stamp comes back aware and
+    # labelled with the connection's ``TimeZone`` (Asia/Calcutta on this server),
+    # so ``replace`` would re-read the local wall clock as if it were UTC and shift
+    # the instant by the offset. ``replace`` and ``astimezone`` agree on any server
+    # running UTC, which is why this only ever failed here.
+    assert first[0][1].astimezone(UTC) > datetime(2020, 1, 1, tzinfo=UTC)
 
     aged = datetime(2020, 1, 1, tzinfo=UTC)
     await db_session.execute(
@@ -1958,14 +1968,14 @@ async def test_a_rebuild_advances_the_freshness_stamp_it_stores(client, db_sessi
         {"stamp": aged, "user_id": seed.owner.id},
     )
     await db_session.commit()
-    assert (await _stored_stamps(db_session, seed.owner.id, start=DAY, end=DAY))[0][1].replace(
-        tzinfo=UTC
+    assert (await _stored_stamps(db_session, seed.owner.id, start=DAY, end=DAY))[0][1].astimezone(
+        UTC
     ) == aged
 
     await _rebuild(client, auth, start=DAY, end=DAY)
 
     refreshed = await _stored_stamps(db_session, seed.owner.id, start=DAY, end=DAY)
-    assert refreshed[0][1].replace(tzinfo=UTC) > aged
+    assert refreshed[0][1].astimezone(UTC) > aged
 
 
 async def test_a_partially_rebuilt_window_reports_itself_as_stale(client, db_session):

@@ -55,7 +55,7 @@ import type {
   CareerExperienceRead,
   CareerProfileRead,
   CareerRecordKind,
-  CareerSummaryRead,
+  SkillGapRead,
   SkillRead,
   UUIDString,
 } from '@/types/learning'
@@ -161,6 +161,7 @@ function lastPageOffset(total: number, limit: number): number {
 const NO_EVIDENCE: CareerEvidenceRead[] = []
 const NO_RECORDS: CareerExperienceRead[] = []
 const NO_SKILLS: SkillRead[] = []
+const NO_GAPS: SkillGapRead[] = []
 
 export default function CareerPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -267,6 +268,16 @@ export default function CareerPage() {
   const recordRows = records.data?.items ?? NO_RECORDS
 
   /**
+   * The gap rows behind the development-areas panel.
+   *
+   * `GET /learning/gaps` answers `SkillGapListRead` — rows plus `total` and the
+   * available/unavailable split — so the rows are taken off `items` here and the
+   * denominator stays the envelope's `total`, which counts every matching gap
+   * rather than the page in hand.
+   */
+  const gapRows = gaps.data?.items ?? NO_GAPS
+
+  /**
    * An offset past the end of a list lands on a page with no rows, and the
    * walk-back above only corrects the URL *after* this render has already
    * happened. Rendering an empty state in that frame would claim "no evidence
@@ -339,6 +350,11 @@ export default function CareerPage() {
    * Ownership is the server's alone: another account's profile is a 404 too, and
    * this page never sends a user id, so there is nothing here to distinguish the
    * two and nothing it would be right to distinguish.
+   *
+   * The endpoint in fact answers `200` with a `null` body when no profile
+   * exists, and that is the path a new account takes: `profile.data` is `null`
+   * and `profile.error` is never set, so both spellings of "no profile" land on
+   * the same empty state.
    */
   const profileError = profile.error ? toApiError(profile.error) : null
   const profileMissing = profileError?.isNotFound === true
@@ -457,7 +473,8 @@ export default function CareerPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <DevelopmentAreasPanel
-          gaps={gaps.data ?? []}
+          gaps={gapRows}
+          total={gaps.data?.total ?? null}
           windowDays={DEVELOPMENT_WINDOW_DAYS}
           isLoading={gaps.isPending && !gaps.data}
           isStale={isStale(gaps)}
@@ -468,7 +485,7 @@ export default function CareerPage() {
           subtitle="A distance between a level and a target you chose, with the recorded activity behind it. It is not a ranking, a verdict or a gap in what you can do — it is arithmetic on two numbers you set."
         />
 
-        <EvidenceCounts summary={summary.data ?? null} />
+        <EvidenceCounts byType={evidence.data?.by_type ?? null} />
       </div>
 
       <section aria-labelledby="career-evidence" className="space-y-3">
@@ -701,32 +718,30 @@ function Pager({
 }
 
 /**
- * Two evidence figures, read from the summary's own counts.
+ * The evidence breakdown, grouped by kind.
  *
- * `countFromRecord` returns null for a key the response does not carry, and
- * null renders as a dash with the reason — not as a zero. A sparse
- * `by_type` record is the backend declining to state a count, and reading the
- * missing key as `0` would claim it counted something it never sent.
+ * **Read from the evidence list response, not from the summary.**
+ * `CareerEvidenceListRead.by_type` is the only place the route set carries a
+ * per-kind breakdown: `GET /career/summary` has never sent one, so reading it
+ * from there gave every row an `undefined` count and printed seven dashes — a
+ * panel titled "how this evidence is made up" that could not say how anything
+ * was made up. Sourcing it from `evidence.data` also makes the scope sentence
+ * below literally true: these are the counts of the response the list is drawn
+ * from, so they narrow with the kind filter exactly as the rows do.
+ *
+ * `countFromRecord` returns null for a key the response does not carry, and null
+ * renders as a dash with the reason — not as a zero. A sparse `by_type` record
+ * is the backend declining to state a count, and reading the missing key as `0`
+ * would claim it counted something it never sent. (In practice the backend
+ * zero-fills every member of {@link CAREER_EVIDENCE_TYPES}, so a dash here is a
+ * client handed a partial body, not a normal state — the rule is kept because
+ * the alternative is silently reading an absent key as a measured zero.)
+ *
+ * The per-kind descriptions are **not** repeated here: the timeline directly
+ * below already prints each kind's own sentence next to the rows of that kind,
+ * and two copies of it on one screen would eventually disagree.
  */
-function EvidenceCounts({ summary }: { summary: CareerSummaryRead | null }) {
-  const rows: { label: string; key: string; hint: string }[] = [
-    {
-      label: 'Linked to a skill',
-      key: 'skill_activity',
-      hint: 'Evidence rows that point at one of your tracked skills. The skill carries the level and where it came from.',
-    },
-    {
-      label: 'Linked to a repository',
-      key: 'repository_activity',
-      hint: 'Evidence rows a repository scan recorded — commits, branches, changed lines. Code events, not delivered projects.',
-    },
-    {
-      label: 'Manually added',
-      key: 'achievement',
-      hint: 'Achievements you wrote into your profile. Stored verbatim and never expanded.',
-    },
-  ]
-
+function EvidenceCounts({ byType }: { byType: Record<string, number> | null }) {
   return (
     <Card className="min-w-0">
       <CardHeader className="pb-4">
@@ -737,24 +752,26 @@ function EvidenceCounts({ summary }: { summary: CareerSummaryRead | null }) {
           </span>
         </CardTitle>
         <CardDescription>
-          Counts across every evidence row on this account, read from the career summary. A kind the
-          response does not carry shows a dash rather than a zero, because a missing key is the
-          server declining to state a count.
+          Counts across the evidence rows the list below is showing, read from that list’s own
+          response — so the kind filter above narrows them too. Each kind is described next to the
+          rows it groups. A kind the response does not carry shows a dash rather than a zero,
+          because a missing key is the server declining to state a count.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <dl className="space-y-3">
-          {rows.map((row) => {
-            const value = countFromRecord(summary?.by_type, row.key)
+          {CAREER_EVIDENCE_TYPE_ORDER.map((type) => {
+            const value = countFromRecord(byType, type)
             return (
-              <div key={row.key} className="min-w-0 space-y-0.5">
+              <div key={type} className="min-w-0 space-y-0.5">
                 <div className="flex items-baseline justify-between gap-3">
-                  <dt className="text-sm text-muted-foreground">{row.label}</dt>
+                  <dt className="text-sm text-muted-foreground">
+                    {CAREER_EVIDENCE_TYPE_META[type].label}
+                  </dt>
                   <dd className="text-sm font-medium tabular-nums text-foreground">
                     {value === null ? '—' : value.toLocaleString()}
                   </dd>
                 </div>
-                <p className="text-xs leading-relaxed text-muted-foreground">{row.hint}</p>
               </div>
             )
           })}

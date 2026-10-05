@@ -20,6 +20,7 @@ import type {
   CareerProfileRead,
   CareerRecordKind,
   CareerSummaryRead,
+  SkillGapListRead,
   SkillGapRead,
   SkillListRead,
   SkillRead,
@@ -489,16 +490,24 @@ const RECORD_POOL: CareerExperienceRead[] = Array.from({ length: 120 }, (_, inde
   }),
 )
 
+/** `GET /career/summary`, field for field as the route sends it. */
 const SUMMARY: CareerSummaryRead = {
   has_profile: true,
   target_role: 'Machine Learning Engineer',
-  target_domain: 'Machine Learning',
-  experience_count: 2,
-  education_count: 1,
-  certification_count: 1,
+  link_count: 1,
+  record_count: 4,
   evidence_count: 4,
-  by_type: { achievement: 1 },
-  linked_evidence_count: 2,
+  evidence_in_window: 1,
+  manual_evidence_count: 3,
+  linked_project_count: 2,
+  project_count: 5,
+  completed_project_count: 2,
+  repository_count: 3,
+  skills_with_evidence: 1,
+  learning_activity_count: 12,
+  window_days: 30,
+  window_start: '2018-12-30T09:00:00Z',
+  window_end: '2019-01-29T09:00:00Z',
   latest_evidence_on: '2019-01-20',
   has_data: true,
   summary: '4 pieces of evidence are on this profile, 2 of them linked to a project, skill or repository.',
@@ -523,10 +532,22 @@ const SKILLS: SkillListRead = {
   total: 2,
   limit: 50,
   offset: 0,
+  by_level_source: { user_defined: 1, system_estimate: 1 },
+  by_category: {},
+  skills_with_evidence: 1,
+  skills_without_evidence: 1,
 }
 
-/** `GET /learning/gaps` answers a bare array, never a wrapped envelope. */
-const GAPS: SkillGapRead[] = [gap()]
+/** `GET /learning/gaps` answers the envelope: rows and their tallies together. */
+const GAPS: SkillGapListRead = {
+  items: [gap()],
+  total: 1,
+  limit: 50,
+  offset: 0,
+  available_count: 1,
+  unavailable_count: 0,
+  by_level_source: { user_defined: 1, system_estimate: 0 },
+}
 
 /** Three rows against a `total` of three: one page, so no pager renders. */
 const EVIDENCE: CareerEvidenceListRead = {
@@ -549,6 +570,9 @@ const EVIDENCE: CareerEvidenceListRead = {
   limit: EVIDENCE_FETCH_LIMIT,
   offset: 0,
   by_type: { achievement: 1, repository_activity: 1, certification: 1 },
+  by_source: { manual: 2, repository: 1 },
+  manual_count: 2,
+  summary: '3 career evidence records, newest first.',
 }
 
 const RECORDS: CareerExperienceListRead = {
@@ -576,6 +600,9 @@ const RECORDS: CareerExperienceListRead = {
   total: 3,
   limit: RECORD_FETCH_LIMIT,
   offset: 0,
+  by_kind: { experience: 1, education: 1, certification: 1 },
+  current_count: 1,
+  summary: '3 career records are recorded on this profile.',
 }
 
 const PROJECT: Project = {
@@ -639,8 +666,22 @@ function pagedEvidence(url: string, extra: readonly CareerEvidenceRead[] = []): 
   const offset = readInt(url, 'offset')
   const items = all.slice(offset, offset + limit)
   const byType: Record<string, number> = {}
-  for (const row of all) byType[row.evidence_type] = (byType[row.evidence_type] ?? 0) + 1
-  return json({ items, total: all.length, limit, offset, by_type: byType } satisfies CareerEvidenceListRead)
+  const bySource: Record<string, number> = {}
+  for (const row of all) {
+    byType[row.evidence_type] = (byType[row.evidence_type] ?? 0) + 1
+    bySource[row.source] = (bySource[row.source] ?? 0) + 1
+  }
+  const manual = all.filter((row) => row.source === 'manual').length
+  return json({
+    items,
+    total: all.length,
+    limit,
+    offset,
+    by_type: byType,
+    by_source: bySource,
+    manual_count: manual,
+    summary: `${all.length} career evidence record${all.length === 1 ? '' : 's'}, newest first.`,
+  } satisfies CareerEvidenceListRead)
 }
 
 /** The record list, served from the pool with the same filtering and paging. */
@@ -652,11 +693,17 @@ function pagedRecords(url: string, extra: readonly CareerExperienceRead[] = []):
       : [...RECORD_POOL, ...extra].filter((row) => row.kind === kind)
   const limit = readInt(url, 'limit') || RECORD_FETCH_LIMIT
   const offset = readInt(url, 'offset')
+  const byKind: Record<string, number> = {}
+  for (const row of all) byKind[row.kind] = (byKind[row.kind] ?? 0) + 1
+  const current = all.filter((row) => row.ended_on === null).length
   return json({
     items: all.slice(offset, offset + limit),
     total: all.length,
     limit,
     offset,
+    by_kind: byKind,
+    current_count: current,
+    summary: `${all.length} career record${all.length === 1 ? '' : 's'}.`,
   } satisfies CareerExperienceListRead)
 }
 
@@ -664,24 +711,36 @@ function pagedRecords(url: string, extra: readonly CareerExperienceRead[] = []):
 function evidenceList(extra: readonly CareerEvidenceRead[] = []): Response {
   const items = [...EVIDENCE.items, ...extra]
   const byType: Record<string, number> = {}
-  for (const row of items) byType[row.evidence_type] = (byType[row.evidence_type] ?? 0) + 1
+  const bySource: Record<string, number> = {}
+  for (const row of items) {
+    byType[row.evidence_type] = (byType[row.evidence_type] ?? 0) + 1
+    bySource[row.source] = (bySource[row.source] ?? 0) + 1
+  }
   return json({
     items,
     total: items.length,
     limit: EVIDENCE_FETCH_LIMIT,
     offset: 0,
     by_type: byType,
+    by_source: bySource,
+    manual_count: items.filter((row) => row.source === 'manual').length,
+    summary: `${items.length} career evidence record${items.length === 1 ? '' : 's'}.`,
   } satisfies CareerEvidenceListRead)
 }
 
 /** The small three-row record list, plus whatever a create returned. */
 function recordList(extra: readonly CareerExperienceRead[] = []): Response {
   const items = [...RECORDS.items, ...extra]
+  const byKind: Record<string, number> = {}
+  for (const row of items) byKind[row.kind] = (byKind[row.kind] ?? 0) + 1
   return json({
     items,
     total: items.length,
     limit: RECORD_FETCH_LIMIT,
     offset: 0,
+    by_kind: byKind,
+    current_count: items.filter((row) => row.ended_on === null).length,
+    summary: `${items.length} career record${items.length === 1 ? '' : 's'}.`,
   } satisfies CareerExperienceListRead)
 }
 

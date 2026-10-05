@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
 import {
-  Award,
   Briefcase,
-  GraduationCap,
+  CalendarClock,
+  FolderCheck,
   Images,
-  Link2,
+  PenLine,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -33,20 +33,35 @@ import type { CareerSummaryRead } from '@/types/learning'
  * about a person, which is the failure this phase exists to prevent. A reader who
  * wants a judgement is not given one by NEXUS wearing a number's clothes.
  *
- * ## The cold-start row refuses to render at all
+ * ## Five tiles, five counters the route actually sends
  *
- * `has_data: false` means there is nothing to summarise, and four zeroes across
- * the top of an empty profile reads as a measurement rather than as the absence of
- * one. On that flag the tiles are replaced by the shared empty state, which
- * explains what has to be added first. `has_profile` is checked separately, so
- * "no profile yet" and "a profile with nothing on it yet" stay two states.
+ * The labels here are not decoration over a count: each one names the field it
+ * reads, because this row once carried `Experience`, `Education`, `Certifications`
+ * and `Linked evidence` over four fields `GET /career/summary` does not send. A
+ * tile rendered `—` for a figure the backend *had* counted, and the dash is this
+ * project's sentence for *not measured* — so a misnamed field borrowed a meaning
+ * it did not have. The set below is drawn from `record_count`,
+ * `evidence_count`, `evidence_in_window`, `manual_evidence_count` and
+ * `completed_project_count`: what is on the CV, what is in the portfolio, how
+ * recent it is, how much of it the person wrote, and what finished.
  *
- * ## The summary sentence is the backend's own
+ * `record_count` is a **merged** figure — education, experience and certifications
+ * share one table on the server — so its label says "dated records" rather than
+ * promising the three-way split the route stopped sending. `completed_project_count`
+ * is read from the project's own status column, never inferred from the evidence
+ * table, and its hint says so.
  *
- * `CareerSummaryRead.summary` is rendered **verbatim**, so the wording has one
- * owner rather than one per screen — eight headers paraphrasing the same counts
- * would eventually paraphrase them differently, and one of them would add an
- * adjective the backend never wrote.
+ * The cold-start row refuses to render at all: `has_data: false` means there is
+ * nothing to summarise, and four zeroes across the top of an empty profile reads
+ * as a measurement rather than as the absence of one. On that flag the tiles are
+ * replaced by the shared empty state, which explains what has to be added first.
+ * `has_profile` is checked separately, so "no profile yet" and "a profile with
+ * nothing on it yet" stay two states.
+ *
+ * The summary sentence is the backend's own. `CareerSummaryRead.summary` is
+ * rendered **verbatim**, so the wording has one owner rather than one per screen —
+ * eight headers paraphrasing the same counts would eventually paraphrase them
+ * differently, and one of them would add an adjective the backend never wrote.
  */
 export interface CareerSummaryTilesProps {
   summary: CareerSummaryRead | null
@@ -92,25 +107,11 @@ export function CareerSummaryTiles({
 
   const tiles: { key: string; label: string; value: string; hint: string; icon: LucideIcon }[] = [
     {
-      key: 'experience_count',
-      label: 'Experience',
-      value: formatNumber(summary.experience_count),
-      hint: 'Roles you listed, with the dates you gave',
+      key: 'record_count',
+      label: 'Dated records',
+      value: formatNumber(summary.record_count),
+      hint: 'Education, roles and certifications you listed. The summary counts them as one figure rather than three, so the per-kind split is the dated-records list’s job',
       icon: Briefcase,
-    },
-    {
-      key: 'education_count',
-      label: 'Education',
-      value: formatNumber(summary.education_count),
-      hint: 'Courses, programmes and qualifications you listed',
-      icon: GraduationCap,
-    },
-    {
-      key: 'certification_count',
-      label: 'Certifications',
-      value: formatNumber(summary.certification_count),
-      hint: 'Certifications you hold, as you entered them. NEXUS issues none',
-      icon: Award,
     },
     {
       key: 'evidence_count',
@@ -120,11 +121,28 @@ export function CareerSummaryTiles({
       icon: Images,
     },
     {
-      key: 'linked_evidence_count',
-      label: 'Linked evidence',
-      value: formatNumber(summary.linked_evidence_count),
-      hint: 'Evidence rows attached to a project, a skill or a repository',
-      icon: Link2,
+      // The window is named in the label rather than left to the hint: a figure
+      // that is date-bounded cannot be quoted without its range, and this label
+      // is the only thing that travels when a tile is copied out of context.
+      key: 'evidence_in_window',
+      label: `Evidence, last ${formatNumber(summary.window_days)} days`,
+      value: formatNumber(summary.evidence_in_window),
+      hint: 'Evidence dated inside that window, over the whole history before it',
+      icon: CalendarClock,
+    },
+    {
+      key: 'manual_evidence_count',
+      label: 'Entered by you',
+      value: formatNumber(summary.manual_evidence_count),
+      hint: 'Of the evidence above, how much you typed in rather than a subsystem recording',
+      icon: PenLine,
+    },
+    {
+      key: 'completed_project_count',
+      label: 'Projects completed',
+      value: formatNumber(summary.completed_project_count),
+      hint: 'Projects that reached completed, read from the project’s own status. It says what finished, not what it achieved',
+      icon: FolderCheck,
     },
   ]
 

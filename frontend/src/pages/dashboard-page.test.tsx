@@ -379,6 +379,26 @@ const ACTIVITY: ActivityEvent[] = [
 
 const EMPTY_ACTIVITY: ActivityEvent[] = []
 
+/**
+ * One event whose `event_type` is not in `WorkEventType`, beside one that is.
+ *
+ * The cast is the point, not a shortcut: `activity_events.event_type` is a plain
+ * `String` column with no CHECK constraint, so this is a response the server is
+ * free to send today — a value added by a later release, or written by one — and
+ * the client cannot assume its union is exhaustive at runtime.
+ */
+const UNMAPPED_ACTIVITY: ActivityEvent[] = [
+  {
+    id: 'e-9',
+    user_id: USER.id,
+    project_id: null,
+    task_id: null,
+    event_type: 'constellation_aligned' as ActivityEvent['event_type'],
+    metadata: {},
+    created_at: new Date(Date.now() - 5 * 60_000).toISOString(),
+  },
+]
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -417,6 +437,13 @@ function page<T>(items: T[], limit: number) {
 }
 
 /**
+ * The page size `GET /analytics/projects` applies when the client sends none —
+ * the `meta.limit` a live call comes back with. The stub carries it so a test
+ * that inspects the envelope reads the number the server would send.
+ */
+const PROJECTS_PAGE_LIMIT = 20
+
+/**
  * Stubs `fetch` with the routing table below, letting a single test replace one
  * endpoint (the failing overview, the one that never settles) without restating
  * the other six. Every fragment is distinct, so first match is the only match.
@@ -427,7 +454,7 @@ function installBackend(overrides: Backend = {}): Calls {
     ['/health', () => json(HEALTH)],
     ['/analytics/overview', overrides.overview ?? (() => json(OVERVIEW))],
     ['/analytics/time', overrides.time ?? (() => json(TIME))],
-    ['/analytics/projects', overrides.projects ?? (() => json(PROJECTS))],
+    ['/analytics/projects', overrides.projects ?? (() => page(PROJECTS, PROJECTS_PAGE_LIMIT))],
     ['/activity', overrides.activity ?? (() => page(ACTIVITY, 6))],
     ['/tasks', overrides.tasks ?? (() => page(TASKS, 8))],
   ]
@@ -630,7 +657,7 @@ describe('dashboard intelligence surface', () => {
     installBackend({
       overview: () => json(EMPTY_OVERVIEW),
       time: () => json(EMPTY_TIME),
-      projects: () => json(EMPTY_PROJECTS),
+      projects: () => page(EMPTY_PROJECTS, PROJECTS_PAGE_LIMIT),
       activity: () => page(EMPTY_ACTIVITY, 6),
       tasks: () => page(EMPTY_TASKS, 8),
     })
@@ -755,6 +782,31 @@ async function alertForRequest(requestId: string): Promise<HTMLElement> {
     ).not.toBeInTheDocument()
   })
 
+  it('renders an event type the vocabulary does not know instead of taking the page down', async () => {
+    installBackend({ activity: () => page(UNMAPPED_ACTIVITY, 6) })
+    renderDashboard()
+
+    await waitForPanels()
+
+    // The row is still reported — an event this build cannot interpret is a
+    // record that exists, and hiding it would be a quieter lie than showing it.
+    // Its spelling is turned into a sentence, never printed as `event_type`.
+    const activityCard = screen
+      .getByRole('heading', { name: 'Recent activity' })
+      .closest('div.rounded-lg') as HTMLElement
+    const row = within(activityCard).getByText('Constellation aligned').closest('li') as HTMLElement
+    expect(row).toBeInTheDocument()
+    expect(activityCard.textContent).not.toContain('constellation_aligned')
+
+    // The label is the only claim made about it, and it is marked as such.
+    expect(within(row).getByText(/not by a version this build knows/)).toBeInTheDocument()
+
+    // The rest of the page is untouched: the panel beside it still rendered, so
+    // one unreadable event cost a row's wording and nothing else.
+    expect(screen.getByRole('heading', { name: 'Backend health' })).toBeInTheDocument()
+    expect(screen.getByText('Project performance')).toBeInTheDocument()
+  })
+
   it('renders a relative timestamp for a recorded event', async () => {
     installBackend()
     renderDashboard()
@@ -793,7 +845,7 @@ async function alertForRequest(requestId: string): Promise<HTMLElement> {
     installBackend({
       overview: () => json(EMPTY_OVERVIEW),
       time: () => json(EMPTY_TIME),
-      projects: () => json(EMPTY_PROJECTS),
+      projects: () => page(EMPTY_PROJECTS, PROJECTS_PAGE_LIMIT),
     })
     renderDashboard()
 

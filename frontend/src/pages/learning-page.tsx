@@ -64,6 +64,7 @@ import type {
   LearningActivitySeriesRead,
   LearningActivityType,
   LearningGoalRead,
+  SkillGapRead,
   SkillRead,
   UUIDString,
 } from '@/types/learning'
@@ -175,6 +176,7 @@ const GRAIN_LABEL_ID = 'learning-grain-label'
 const NO_GOALS: LearningGoalRead[] = []
 const NO_SKILLS: SkillRead[] = []
 const NO_ACTIVITIES: LearningActivityRead[] = []
+const NO_GAPS: SkillGapRead[] = []
 
 const GOAL_PRIORITIES: readonly ProjectPriority[] = ['low', 'medium', 'high', 'critical']
 
@@ -316,6 +318,17 @@ export default function LearningPage() {
   const activityRows = activities.data?.items ?? NO_ACTIVITIES
   const everyGoalRows = everyGoal.data?.items ?? NO_GOALS
   const everySkillRows = everySkill.data?.items ?? NO_SKILLS
+
+  /**
+   * The gap rows, kept apart from the envelope's tallies.
+   *
+   * `GET /learning/gaps` answers `SkillGapListRead`: `items` plus `total`,
+   * `available_count`, `unavailable_count` and `by_level_source`. The list below
+   * renders the rows and quotes `total`, which counts every matching gap rather
+   * than the page in hand — so a reader is never told a page of fifty is all of
+   * them.
+   */
+  const gapRows = gaps.data?.items ?? NO_GAPS
 
   const skillNames = useMemo(() => {
     const map: Record<UUIDString, string> = {}
@@ -578,7 +591,8 @@ export default function LearningPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <SkillGapList
-          gaps={gaps.data ?? []}
+          gaps={gapRows}
+          total={gaps.data?.total ?? null}
           windowDays={windowDays}
           isLoading={gaps.isPending && !gaps.data}
           isStale={isStale(gaps)}

@@ -432,6 +432,7 @@ const SUMMARY: LearningSummaryRead = {
   active_goal_count: 2,
   completed_goal_count: 1,
   skill_count: 3,
+  skills_with_evidence: 2,
   activity_count: 11,
   activities_in_window: 3,
   minutes_in_window: 135,
@@ -1284,20 +1285,46 @@ describe('the learning component library', () => {
     // The shapes below are what the pages actually pass: a list, a windowed
     // series, a sparse by_type record. Rendering them must still produce a level
     // with its source and no fabricated figure.
-    const GAPS: SkillGapListRead = { items: [gap()], total: 1, window_days: 30, has_data: true }
-    const SKILLS: SkillListRead = { items: [skill()], total: 1, limit: 50, offset: 0 }
-    const GOALS: LearningGoalListRead = { items: [goal()], total: 1, limit: 50, offset: 0 }
+    const GAPS: SkillGapListRead = {
+      items: [gap()],
+      total: 1,
+      limit: 50,
+      offset: 0,
+      available_count: 1,
+      unavailable_count: 0,
+      by_level_source: { user_defined: 1 },
+    }
+    const SKILLS: SkillListRead = {
+      items: [skill()],
+      total: 1,
+      limit: 50,
+      offset: 0,
+      by_level_source: { user_defined: 1 },
+      by_category: {},
+      skills_with_evidence: 1,
+      skills_without_evidence: 0,
+    }
+    const GOALS: LearningGoalListRead = {
+      items: [goal()],
+      total: 1,
+      limit: 50,
+      offset: 0,
+      by_status: { in_progress: 1 },
+      summary: '1 learning goal is recorded on this account.',
+    }
     const TRAIL: LearningActivityListRead = {
       items: [activity()],
       total: 1,
       limit: 12,
       offset: 0,
+      by_type: { study_session: 1 },
+      summary: '1 learning activity was recorded.',
     }
 
     const { container } = renderComponent(
       <div>
         <SkillCardGrid skills={SKILLS.items} />
-        <SkillGapList gaps={GAPS.items} windowDays={GAPS.window_days} />
+        <SkillGapList gaps={GAPS.items} windowDays={30} />
         <LearningGoalCardGrid goals={GOALS.items} />
         <LearningActivityTimeline activities={TRAIL.items} total={TRAIL.total} />
       </div>,

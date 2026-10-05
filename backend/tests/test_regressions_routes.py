@@ -231,12 +231,12 @@ async def test_a_date_range_search_succeeds_for_a_kind_whose_date_column_is_a_ti
         title=f"{TERM} also inside the window",
         updated_at=at(DAY + timedelta(days=1), 6),
     )
+    earlier = DAY - timedelta(days=5)
+    later = DAY + timedelta(days=9)
     before = await seed.note(
-        day=DAY - timedelta(days=5), title=f"{TERM} before the window", updated_at=at(DAY - 5, 12)
+        day=earlier, title=f"{TERM} before the window", updated_at=at(earlier, 12)
     )
-    after = await seed.note(
-        day=DAY + timedelta(days=9), title=f"{TERM} after the window", updated_at=at(DAY + 9, 12)
-    )
+    after = await seed.note(day=later, title=f"{TERM} after the window", updated_at=at(later, 12))
 
     response = await non_raising_client.get(
         "/api/v1/search",
@@ -332,9 +332,12 @@ def test_a_day_bound_widens_to_instants_for_every_timestamp_column():
     assert _date_bound(DAY, is_timestamp=False, end_of_day=True) == DAY
     assert _date_bound(None, is_timestamp=True, end_of_day=True) is None
 
-    # A timezone-aware bound keeps its zone rather than being flattened to naive.
+    # A timezone-aware bound keeps its zone rather than being flattened to naive,
+    # and is normalised to the midnight the bound names.
     aware = datetime(2026, 1, 5, 6, 0, tzinfo=UTC)
-    assert _date_bound(aware, is_timestamp=True, end_of_day=False) == aware
+    widened = _date_bound(aware, is_timestamp=True, end_of_day=False)
+    assert widened == datetime(2026, 1, 5, tzinfo=UTC)
+    assert widened.tzinfo is not None
     assert _date_bound(DAY, is_timestamp=True, end_of_day=False).tzinfo is None
 
 
@@ -430,6 +433,7 @@ async def test_a_password_changed_on_another_device_ends_the_bearer_there_too(
     owner had already locked down.
     """
     kept, dropped = await _two_devices(client)
+    await _promote(db_session, _subject(kept), "admin")
 
     changed = await client.patch(
         "/api/v1/auth/password",
@@ -600,23 +604,27 @@ async def test_planner_conflicts_refuses_a_reversed_span(client, db_session, ass
 async def test_planner_conflicts_still_scans_a_span_that_is_the_right_way_round(client, db_session):
     """The refusal is the reversal, not the route.
 
-    A guard that rejected every span would satisfy the test above. One day is
-    scanned and comes back 200 with the window it was asked about, and the very
+    A guard that rejected every span would satisfy the test above. A two-day span
+    is scanned and comes back 200 with the window it was asked about, and the
     same two days with their order swapped are refused, so the boundary is
-    exactly ``end == start``.
+    exactly ``end == start`` — a one-day span cannot show that, because
+    swapping it changes nothing.
     """
     _, auth = await seeded_client(client, db_session)
-    one_day = {"start": DAY.isoformat(), "end": DAY.isoformat()}
+    span = {
+        "start": DAY.isoformat(),
+        "end": (DAY + timedelta(days=2)).isoformat(),
+    }
 
-    response = await client.get("/api/v1/planner/conflicts", params=one_day, headers=auth)
+    response = await client.get("/api/v1/planner/conflicts", params=span, headers=auth)
 
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["conflicts"] == []
     assert body["window"]["start_date"] == DAY.isoformat()
-    assert body["window"]["end_date"] == DAY.isoformat()
+    assert body["window"]["end_date"] == (DAY + timedelta(days=2)).isoformat()
 
-    swapped = {"start": one_day["end"], "end": one_day["start"]}
+    swapped = {"start": span["end"], "end": span["start"]}
     assert (
         await client.get("/api/v1/planner/conflicts", params=swapped, headers=auth)
     ).status_code == 422
@@ -712,9 +720,9 @@ async def test_one_tag_still_matches_every_task_that_carries_it(client, db_sessi
 
 
 async def test_the_row_count_ignores_a_crlf_inside_an_exported_field(client, db_session):
-    """``X-Nexus-Row-Count`` equals the number of data rows, newline or not.
+    r"""``X-Nexus-Row-Count`` equals the number of data rows, newline or not.
 
-    The count was ``body.count("\\r\\n") - 1``. RFC 4180 quoting means a field
+    The count was ``body.count("\r\n") - 1``. RFC 4180 quoting means a field
     containing CRLF keeps its newline inside the quotes rather than escaping it,
     so a task title pasted out of a Windows editor put an extra CRLF into the
     document and the header reported a row the file does not contain — from the

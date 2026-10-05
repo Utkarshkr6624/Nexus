@@ -2,7 +2,7 @@ import { History } from 'lucide-react'
 
 import { EmptyState } from '@/components/feedback/empty-state'
 import { cn } from '@/lib/utils'
-import { WORK_EVENT_META } from '@/types/work'
+import { workEventMeta } from '@/types/work'
 import type { ActivityEvent, StatusMeta, WorkEventType } from '@/types/work'
 
 const TONE_DOT: Record<StatusMeta['tone'], string> = {
@@ -108,18 +108,21 @@ export function ActivityFeed({ items, emptyMessage, className }: ActivityFeedPro
   return (
     <ol className={cn('space-y-3', className)}>
       {items.map((event) => {
-        const meta: StatusMeta | undefined = WORK_EVENT_META[event.event_type]
-        const Icon = meta?.icon
+        // `workEventMeta` answers for an event type this build does not know:
+        // `event_type` is an unconstrained column, and a miss must cost a dot
+        // with a fallback icon rather than the feed.
+        const meta = workEventMeta(event.event_type)
+        const Icon = meta.icon
         return (
           <li key={event.id} className="flex items-start gap-3">
             <span
               aria-hidden="true"
               className={cn(
                 'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground',
-                TONE_DOT[meta?.tone ?? 'neutral'],
+                TONE_DOT[meta.tone],
               )}
             >
-              {Icon ? <Icon className="size-3.5" /> : null}
+              <Icon className="size-3.5" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm text-foreground">{describe(event)}</p>

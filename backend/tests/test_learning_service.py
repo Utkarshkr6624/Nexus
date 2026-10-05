@@ -1086,7 +1086,13 @@ async def test_a_goal_with_a_deadline_reports_the_days_the_user_has_left(
     """
     owner = await _owner(db_session)
     service = _service(db_session)
-    today = (await _db_now(db_session)).date()
+    # Normalised to UTC to match the service's own clock. ``func.now()`` returns a
+    # ``timestamptz`` labelled with the *connection's* ``TimeZone`` — Asia/Calcutta on
+    # this server — so a bare ``.date()`` on it is the server-local day, while
+    # ``LearningIntelligenceService`` converts to UTC first. The metric is a count of
+    # days from the service's today to ``target_date``, so a fixture seeded from the
+    # other calendar lands one day out and the distance reads 11 rather than 10.
+    today = (await _db_now(db_session)).astimezone(UTC).date()
     goal = await service.create_goal(
         owner=owner,
         title="Finish the course",

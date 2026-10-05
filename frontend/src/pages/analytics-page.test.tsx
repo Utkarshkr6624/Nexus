@@ -735,6 +735,19 @@ function json(body: unknown, status = 200): Response {
   })
 }
 
+/**
+ * `Page[T]`, the envelope `GET /analytics/projects` speaks.
+ *
+ * The route returns the rows under `items` with the counters under `meta`
+ * rather than a bare array; `PROJECTS_PAGE_LIMIT` is the `meta.limit` a live
+ * call comes back with when the client sends none.
+ */
+const PROJECTS_PAGE_LIMIT = 20
+
+function projectsPage(items: ProjectAnalyticsRead[]): Response {
+  return json({ items, meta: { total: items.length, limit: PROJECTS_PAGE_LIMIT, offset: 0 } })
+}
+
 function envelope(code: string, message: string, status: number, requestId: string): Response {
   const body: ApiErrorEnvelope = {
     error: { code, message, details: null, request_id: requestId },
@@ -762,7 +775,7 @@ function fullBackend(): Record<string, Route> {
     '/analytics/estimation': () => json(ESTIMATION),
     '/analytics/time': () => json(TIME),
     '/analytics/series': () => json(DAILY),
-    '/analytics/projects': () => json(PROJECTS),
+    '/analytics/projects': () => projectsPage(PROJECTS),
     '/analytics/tasks': () => json(TASK_ANALYTICS),
     '/analytics/deadlines': () => json(DEADLINES),
     '/analytics/learning': () => json(LEARNING),
@@ -782,7 +795,7 @@ function emptyBackend(): Record<string, Route> {
     '/analytics/estimation': () => json(EMPTY_ESTIMATION),
     '/analytics/time': () => json(EMPTY_TIME),
     '/analytics/series': () => json([]),
-    '/analytics/projects': () => json([]),
+    '/analytics/projects': () => projectsPage([]),
     '/analytics/tasks': () => json(EMPTY_TASK_ANALYTICS),
     '/analytics/deadlines': () => json(EMPTY_DEADLINES),
     '/analytics/learning': () => json(EMPTY_LEARNING),

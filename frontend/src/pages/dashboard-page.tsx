@@ -60,7 +60,7 @@ import { selectDisplayName, useAuthStore } from '@/stores/auth-store'
 import { toApiError } from '@/services/errors'
 import { cn } from '@/lib/utils'
 import { formatRangeLabel } from '@/types/analytics'
-import { WORK_EVENT_META } from '@/types/work'
+import { workEventMeta } from '@/types/work'
 import type { ComparisonTotal, DailyMetricRead } from '@/types/analytics'
 import type { RiskSummaryRead } from '@/types/risk'
 
@@ -670,7 +670,13 @@ function RecentActivity({ query, className }: { query: ReturnType<typeof useActi
             ) : (
               <ul className="divide-y divide-border">
                 {events.map((event) => {
-                  const meta = WORK_EVENT_META[event.event_type]
+                  // Resolved through the vocabulary's own accessor rather than
+                  // by indexing the map: `event_type` is an unconstrained
+                  // column, and a lookup miss here used to be `undefined`, whose
+                  // `.icon` below threw out of the render that owns every panel
+                  // on this page. The whole dashboard went to the error boundary
+                  // over one event it could not name.
+                  const meta = workEventMeta(event.event_type)
                   return (
                     <li key={event.id} className="flex items-start gap-3 py-2 first:pt-0 last:pb-0">
                       <span

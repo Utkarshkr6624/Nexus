@@ -136,6 +136,15 @@ export function DevelopmentAreasSkeleton({
 
 export interface DevelopmentAreasPanelProps {
   gaps: readonly SkillGapRead[]
+  /**
+   * Tracked skills matching the query, from the envelope's `total`.
+   *
+   * Used as the denominator of the "N of M" line. Preferred over
+   * `gaps.length`, which is only the page in hand: the endpoint pages, and
+   * dividing by a page slice would report a rate the server did not send.
+   * `null` falls back to the rows in hand.
+   */
+  total?: number | null
   /** The window `evidence_last_30d` was counted over. */
   windowDays?: number | null
   /** Related activities below which a skill is listed. `null` disables the cut. */
@@ -164,6 +173,7 @@ export interface DevelopmentAreasPanelProps {
  */
 export function DevelopmentAreasPanel({
   gaps,
+  total = null,
   windowDays = null,
   threshold = DEFAULT_DEVELOPMENT_EVIDENCE_THRESHOLD,
   isLoading = false,
@@ -180,6 +190,7 @@ export function DevelopmentAreasPanel({
   className,
 }: DevelopmentAreasPanelProps) {
   const areas = developmentAreasFromGaps(gaps, threshold)
+  const trackedCount = total ?? gaps.length
 
   return (
     <Card className={cn('min-w-0', className)}>
@@ -205,13 +216,13 @@ export function DevelopmentAreasPanel({
         ) : (
           <>
             <p className="text-xs text-muted-foreground">
-              {formatNumber(areas.length)} of {formatNumber(gaps.length)}{' '}
-              tracked {gaps.length === 1 ? 'skill' : 'skills'} listed
+              {formatNumber(areas.length)} of {formatNumber(trackedCount)}{' '}
+              tracked {trackedCount === 1 ? 'skill' : 'skills'} listed
               {threshold === null
-                ? gaps.length === 1
+                ? trackedCount === 1
                   ? ' has a target above the level recorded.'
                   : ' have a target above the level recorded.'
-                : ` ${gaps.length === 1 ? 'has' : 'have'} a target above the level recorded and fewer than ${formatNumber(threshold)} related ${
+                : ` ${trackedCount === 1 ? 'has' : 'have'} a target above the level recorded and fewer than ${formatNumber(threshold)} related ${
                     threshold === 1 ? 'activity' : 'activities'
                   } in ${windowDays === null ? 'the window' : `the last ${formatNumber(windowDays)} days`}.`}
             </p>

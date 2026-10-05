@@ -47,10 +47,17 @@ def _settings(**overrides) -> Settings:
 def _production_kwargs() -> dict:
     """Production refuses the placeholder secret and refuses debug, so both are set.
 
-    ``dev_expose_reset_token`` is deliberately absent: production never returns
-    the token, whether or not the flag is set, so the token must be ``None``.
+    ``dev_expose_reset_token`` is explicitly False, and it has to be explicit:
+    ``_settings`` turns it on so a test that needs a raw token asks for one, and
+    an unset override here would inherit that. Production is the one environment
+    where the flag cannot buy the token back — there is nowhere for it to go.
     """
-    return {"environment": "production", "secret_key": STRONG_SECRET, "debug": False}
+    return {
+        "environment": "production",
+        "secret_key": STRONG_SECRET,
+        "debug": False,
+        "dev_expose_reset_token": False,
+    }
 
 
 def _user(*, active: bool = True) -> User:

@@ -98,8 +98,8 @@ import type {
   LearningSummaryRead,
   LearningWindowParams,
   SkillCreatePayload,
+  SkillGapListRead,
   SkillGapParams,
-  SkillGapRead,
   SkillListParams,
   SkillListRead,
   SkillRead,
@@ -500,13 +500,19 @@ export function useLearningSummary(
  * answer on a cold account and the page must be able to say it instead of
  * drawing an empty chart.
  *
+ * **The whole envelope comes back**, `items` plus `total`,
+ * `available_count`, `unavailable_count` and `by_level_source`. A consumer that
+ * wants rows destructures `data?.items`; one that also wants the tally reads it
+ * off the same object rather than counting the page in hand, which would be a
+ * different and wrong number.
+ *
  * `skill_id` is part of the key because "every skill" and "this skill" are
  * different answers and must never share a cache entry.
  */
 export function useSkillGaps(
   params: SkillGapParams = {},
   options: Enabled = {},
-): UseQueryResult<SkillGapRead[]> {
+): UseQueryResult<SkillGapListRead> {
   return useQuery({
     queryKey: learningKeys.gaps(params),
     queryFn: ({ signal }) => fetchSkillGaps(params, signal),
@@ -606,14 +612,17 @@ export function useCareerSummary(options: Enabled = {}): UseQueryResult<CareerSu
 }
 
 /**
- * The caller's career profile.
+ * The caller's career profile, or `null` when there is not one yet.
  *
- * **A 404 is an empty state, not a failure** — no profile has ever been created
- * for this account — and `enabled` is left on so the page can distinguish that
- * from a profile that exists. `error` is the place to look for the 404; the
+ * **A missing profile is a `null` payload, not a failure**: the endpoint answers
+ * `CareerProfileRead | null`, so `data` is `null` on an account that has never
+ * had a profile and `error` stays null. `enabled` is left on so the page can
+ * distinguish "not loaded yet" from "loaded, and there is nothing there"; the
  * upsert below is what creates the row.
  */
-export function useCareerProfile(options: Enabled = {}): UseQueryResult<CareerProfileRead> {
+export function useCareerProfile(
+  options: Enabled = {},
+): UseQueryResult<CareerProfileRead | null> {
   return useQuery({
     queryKey: careerKeys.profile(),
     queryFn: ({ signal }) => fetchCareerProfile(signal),

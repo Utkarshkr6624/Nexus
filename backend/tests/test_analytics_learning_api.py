@@ -36,7 +36,7 @@ reason that has nothing to do with the code under test.
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, timedelta
 from typing import Any
 
 import pytest
@@ -113,14 +113,20 @@ async def tag_note(seed: AnalyticsSeed, *, note_id: uuid.UUID, name: str) -> Tag
 
 
 async def db_today(session: AsyncSession) -> date:
-    """The current date on the database clock.
+    """The current date on the database clock, normalised to UTC.
 
     ``feature-snapshot`` has no window parameter and reads "now" from
     ``SELECT now()``, so the exact expected values for ``task_age_days``,
     ``deadline_distance_days`` and ``overdue_count`` have to be derived from the
     same clock rather than from ``date.today()`` on the test host.
+
+    Normalised to UTC because ``now()`` is a ``timestamptz`` returned **labelled
+    with the connection's** ``TimeZone`` — ``Asia/Calcutta`` on this server — so a
+    bare ``.date()`` on it is the server-local day, while the service converts to
+    UTC first. The two disagree for five and a half hours a day, and each of those
+    figures is a whole-day difference when they do.
     """
-    return (await session.scalar(select(func.now()))).date()
+    return (await session.scalar(select(func.now()))).astimezone(UTC).date()
 
 
 async def snapshot_for(

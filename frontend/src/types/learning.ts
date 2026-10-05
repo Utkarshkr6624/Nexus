@@ -161,7 +161,9 @@ export type CareerEvidenceType = (typeof CAREER_EVIDENCE_TYPES)[number]
  * Education, work experience and certification are dated entries — the CV
  * section, not the achievements section. Splitting them means "I worked here
  * until March" can never be rendered with the same weight as "I shipped X", and
- * `CareerSummaryRead` can count them separately.
+ * `CareerExperienceListRead.by_kind` can count them separately. The summary's
+ * `record_count` deliberately does not: they share one table, and the per-kind
+ * split is one request away.
  */
 export const CAREER_RECORD_KINDS = ['education', 'experience', 'certification'] as const
 export type CareerRecordKind = (typeof CAREER_RECORD_KINDS)[number]
@@ -411,6 +413,11 @@ export interface LearningGoalRead {
  * envelope, matching the Phase 7 and Phase 8 list shapes: these totals are read
  * next to the rows on screen, and burying them under `meta` invites a header to
  * be written against a page slice and then quoted as the whole.
+ *
+ * The two breakdowns count **every goal matching the filters, not just this
+ * page**, so a card cannot quote a status tally the pager contradicts. Every
+ * member of {@link LEARNING_GOAL_STATUSES} is a key of `by_status`, including
+ * the ones at zero.
  */
 export interface LearningGoalListRead {
   items: LearningGoalRead[]
@@ -418,6 +425,10 @@ export interface LearningGoalListRead {
   total: number
   limit: number
   offset: number
+  /** Goals per {@link LearningGoalStatus} across every matching goal. */
+  by_status: Record<string, number>
+  /** One factual sentence describing the counts, composed server-side. */
+  summary: string
 }
 
 /**
@@ -459,12 +470,29 @@ export interface SkillRead {
   updated_at: ISODateTimeString
 }
 
-/** One page of skills. */
+/**
+ * One page of skills.
+ *
+ * The three tallies below count **every skill matching the filters, not just this
+ * page**, so a header cannot quote a figure the pager contradicts.
+ * `skills_with_evidence` and `skills_without_evidence` are a real zero-pair: they
+ * say how many tracked skills have recorded activity behind them, which is not
+ * the same claim as "this account has no skills" (`total: 0`).
+ */
 export interface SkillListRead {
   items: SkillRead[]
   total: number
   limit: number
   offset: number
+  /** Skills per {@link SkillLevelSource}, so no level is counted without its
+   *  origin. */
+  by_level_source: Record<string, number>
+  /** Skills per category, across every matching skill. */
+  by_category: Record<string, number>
+  /** Skills with at least one recorded activity. A real zero. */
+  skills_with_evidence: number
+  /** Skills with none. A real zero, and not a measurement of ability. */
+  skills_without_evidence: number
 }
 
 /**
@@ -525,14 +553,27 @@ export interface SkillGapRead {
  * Carries `available: false` rows as well as measurable ones, because
  * "nothing has been recorded for this skill" is the answer on a cold account and
  * the page has to be able to say so rather than render an empty chart.
+ *
+ * The four figures after the page bounds count **every gap matching the
+ * filters, not just this page**, and they are the tally the panel is built
+ * around: `total` is how many gaps exist, and `available_count` /
+ * `unavailable_count` split them into the rows that could be compared and the
+ * rows that could not. `by_level_source` is a gap count per
+ * {@link SkillLevelSource}, so no level appears in a total without saying where
+ * it came from. Collapsing this envelope to `items` would drop all four.
  */
 export interface SkillGapListRead {
   items: SkillGapRead[]
+  /** Gaps matching the filters, not the length of this page. */
   total: number
-  /** The window `evidence_last_30d` was counted over. Carried so no sentence
-   *  about that count can omit the range it covers. */
-  window_days: number
-  has_data: boolean
+  limit: number
+  offset: number
+  /** Gaps whose two levels could be compared. */
+  available_count: number
+  /** Gaps whose levels could not be compared, each carrying its own reason. */
+  unavailable_count: number
+  /** Gaps per {@link SkillLevelSource}, across every matching gap. */
+  by_level_source: Record<string, number>
 }
 
 /**
@@ -577,12 +618,23 @@ export interface LearningActivityRead {
   created_at: ISODateTimeString
 }
 
-/** One page of learning activities, newest first. */
+/**
+ * One page of learning activities, newest first.
+ *
+ * `by_type` counts **every activity matching the filters, not just this page**,
+ * and is what stops a chart presenting `resource_viewed` — a page was opened —
+ * as equivalent to `concept_learned`. Every member of
+ * {@link LEARNING_ACTIVITY_TYPES} is a key, including the ones at zero.
+ */
 export interface LearningActivityListRead {
   items: LearningActivityRead[]
   total: number
   limit: number
   offset: number
+  /** Activities per {@link LearningActivityType}, across every match. */
+  by_type: Record<string, number>
+  /** One factual sentence describing the counts, composed server-side. */
+  summary: string
 }
 
 /**
@@ -654,12 +706,16 @@ export interface LearningSummaryRead {
   /** Goals in `completed`. A count of goals, never a completion *rate*. */
   completed_goal_count: number
   skill_count: number
+  /** Tracked skills with at least one recorded activity behind them. A real
+   *  zero, and not a measurement of how good the skills are. */
+  skills_with_evidence: number
   activity_count: number
   /** Activities recorded inside the window below. A real zero when none were. */
   activities_in_window: number
-  /** Recorded minutes inside the window. Zero when the activities in it were
-   *  events rather than spans. */
-  minutes_in_window: number
+  /** Recorded minutes inside the window. Null when no activity in it carried a
+   *  duration: a sum over activities that recorded no time is a measurement of
+   *  nothing, and `0` would assert a measured absence of minutes. */
+  minutes_in_window: number | null
   window_days: number
   window_start: ISODateTimeString
   window_end: ISODateTimeString
@@ -806,12 +862,25 @@ export interface CareerExperienceRead {
   updated_at: ISODateTimeString
 }
 
-/** One page of career records. */
+/**
+ * One page of career records.
+ *
+ * `by_kind` counts records per {@link CareerRecordKind} across **every matching
+ * record, not just this page**, which is what keeps a CV section from being read
+ * as an achievements section. `current_count` is the subset whose `ended_on` is
+ * null — a role in progress, not a record of unknown length.
+ */
 export interface CareerExperienceListRead {
   items: CareerExperienceRead[]
   total: number
   limit: number
   offset: number
+  /** Records per {@link CareerRecordKind}, across every matching record. */
+  by_kind: Record<string, number>
+  /** Records whose `ended_on` is null: something current, not something unknown. */
+  current_count: number
+  /** One factual sentence describing the counts, composed server-side. */
+  summary: string
 }
 
 /**
@@ -854,10 +923,17 @@ export interface CareerEvidenceListRead {
   /** Counts keyed by evidence type across every matching row, not just this
    *  page, so a header cannot quote a total the pager contradicts. */
   by_type: Record<string, number>
+  /** Counts keyed by `CareerEvidenceRead.source`, so a derived row is never
+   *  counted as something the person asserted. */
+  by_source: Record<string, number>
+  /** Rows whose `source` is `manual`: what the user typed. A real zero. */
+  manual_count: number
+  /** One factual sentence describing the counts, composed server-side. */
+  summary: string
 }
 
 /**
- * The career dashboard's headline figures.
+ * The career dashboard's headline figures — `GET /career/summary`.
  *
  * Counts only. There is no readiness score, no employer match and no "you are a
  * good fit for X" anywhere in this type — a score would be a verdict about a
@@ -868,24 +944,84 @@ export interface CareerEvidenceListRead {
  * profile yet, here is the empty state" from "a profile with nothing on it yet".
  * `latest_evidence_on` is null when no evidence has been recorded, and
  * `has_data` is false in that case too — the cold-start flag.
+ *
+ * ## Why this type once declared six fields the route does not send
+ *
+ * It used to carry `experience_count`, `education_count`, `certification_count`,
+ * `linked_evidence_count`, `by_type` and `target_domain`. **`GET /career/summary`
+ * sends none of them.** A client reading them got `undefined` for a figure the
+ * backend had counted, and rendered this project's own "not measured" dash —
+ * the one word on the surface reserved for a number the server declined to
+ * produce — over a field it had simply misnamed. The audit is recorded here
+ * rather than only in a commit, because the next field added to this interface
+ * has to be read off a real body:
+ *
+ * - **There is no per-kind record count on the summary.** `record_count` counts
+ *   education, work experience and certifications together, because they share
+ *   one table. The per-kind split is `by_kind` on {@link CareerExperienceListRead},
+ *   and a screen that needs it has to read that response.
+ * - **There is no `by_type` on the summary either.** The per-kind evidence
+ *   breakdown lives on {@link CareerEvidenceListRead}, where it is keyed by
+ *   {@link CareerEvidenceType} and narrowed by whatever filter the request
+ *   carried. Reading it from the summary yielded a permanent dash for every row.
+ * - **`target_domain` is on the profile, not here.** The summary echoes
+ *   `target_role` so a header need not join two requests, and echoes nothing
+ *   else; the domain is read off {@link CareerProfileRead}.
+ * - **`linked_evidence_count` was never a count of rows.** What the route sends is
+ *   `linked_project_count`, and it counts *distinct projects* the evidence points
+ *   at, not evidence rows. Reading one as the other would have put a project's
+ *   count under a row's label.
+ *
+ * Every remaining count is a plain `number`, and every one of them is a real
+ * measurement: `0` here means "the account holds none", which is always knowable,
+ * and the cold-start case is carried by `has_data` instead of by a null.
  */
 export interface CareerSummaryRead {
   /** False when `PUT /career/profile` has never been called for this account. */
   has_profile: boolean
-  /** Echoes the profile's own fields so the header need not join two requests. */
+  /** Echoed from the profile so a header need not join two requests. Null when
+   *  the user has not said what they are aiming at. */
   target_role: string | null
-  target_domain: string | null
-  /** Records of each kind, counted separately: a CV section is not an
-   *  achievements section. */
-  experience_count: number
-  education_count: number
-  certification_count: number
-  /** Evidence rows, all types. A real zero when none have been added. */
+  /** Portfolio URLs on the profile. Zero means none were supplied, which is an
+   *  answer rather than a missing measurement. */
+  link_count: number
+  /** Education, work experience and certifications **together** — they share one
+   *  table. Per-kind counts are `by_kind` on {@link CareerExperienceListRead}. */
+  record_count: number
+  /** Evidence rows across the whole history. A real zero on a new account. */
   evidence_count: number
-  /** Counts keyed by evidence type across every row, not just this page. */
-  by_type: Record<string, number>
-  /** How many evidence rows link to a project, a skill or a repository. */
-  linked_evidence_count: number
+  /** Of those, how many were dated inside the window below. */
+  evidence_in_window: number
+  /** Of those, how many the user entered by hand. The one provenance figure the
+   *  summary states: it separates what the person wrote from what a subsystem
+   *  observed about a record they created. */
+  manual_evidence_count: number
+  /** **Distinct projects** this account's evidence points at, not a count of
+   *  evidence rows. A btree-unique join would otherwise let one popular project
+   *  be counted once per row that names it. */
+  linked_project_count: number
+  /** Projects on this account, completed ones included. Carried beside
+   *  `completed_project_count` so the completed figure has its denominator. */
+  project_count: number
+  /** Of those, the ones that reached `completed`. Read from the project's own
+   *  status column, never inferred from the evidence table. */
+  completed_project_count: number
+  /** Repositories registered, whether or not any has been scanned. Zero means
+   *  none were registered, which is a different fact from "registered but never
+   *  read" — a scan state this surface deliberately does not assert. */
+  repository_count: number
+  /** Tracked skills carrying at least one career evidence row. A count of the
+   *  user's own claims about their skills, not a measurement of ability. */
+  skills_with_evidence: number
+  /** Learning activities recorded across the account, whole history. Read from
+   *  the learning tables, so the career page and the learning page cannot quote
+   *  different totals for the same rows. */
+  learning_activity_count: number
+  /** Carried because `evidence_in_window` is date-bounded, and a sentence printed
+   *  above it that omitted the range would not be true. */
+  window_days: number
+  window_start: ISODateTimeString
+  window_end: ISODateTimeString
   /** `YYYY-MM-DD` of the most recent evidence. Null when there is none. */
   latest_evidence_on: DateOnlyString | null
   /** False when there is nothing to summarise, so zeros read as absence. */

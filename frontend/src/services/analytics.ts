@@ -15,12 +15,21 @@
  * - **`POST /rebuild` answers 202 with `{rows_written}`**, not 200 with a
  *   resource, so it is typed as a mutation rather than a query.
  *
+ * - **Not every list here is a bare array.** `docs/api-conventions.md`
+ *   documents two envelope shapes and leaves the client to check which one the
+ *   route speaks: `/analytics/projects` returns `Page[ProjectAnalyticsRead]`
+ *   (`{items, meta}`), while `/analytics/trends` and `/analytics/series` return
+ *   bare arrays. The three reads that only ever render rows unwrap here at the
+ *   service boundary — see {@link toRows} — rather than handing a hook a shape
+ *   its page must remember to unwrap.
+ *
  * The CSV route is a *download*, not a JSON read. `exportCsvUrl` builds the
  * shareable href; `downloadCsvExport` is the authenticated fetch a browser
  * actually needs, because NEXUS authenticates with a bearer header and a bare
  * `<a href>` would arrive unauthenticated.
  */
 import { apiClient, type QueryParams, queryFrom } from '@/lib/api-client'
+import type { Paginated } from '@/types/pagination'
 import type {
   AnalyticsCsvDataset,
   AnalyticsListParams,
@@ -72,6 +81,28 @@ function windowQuery(params: AnalyticsListParams = {}): QueryParams {
     granularity: params.granularity,
     project_id: params.project_id,
   })
+}
+
+/**
+ * Narrows a list body to the rows it carries.
+ *
+ * The two list envelopes NEXUS serves name their rows differently — `Page[T]`
+ * nests them under `items`, the Phases 7–9 flat responses put them at the top
+ * level — and the client has to check which one the route speaks rather than
+ * assume. Assuming wrong is what produced `rows.slice is not a function`: the
+ * page received an object where it expected an array and the whole surface went
+ * down with a `TypeError` instead of an empty state.
+ *
+ * So a payload that is neither is an empty list, not a throw. An analytics panel
+ * with nothing to draw is a normal screen; a panel that cannot render its own
+ * fetch result is not.
+ */
+function toRows<T>(payload: Paginated<T> | T[] | unknown): T[] {
+  if (Array.isArray(payload)) return payload as T[]
+  if (payload && typeof payload === 'object' && Array.isArray((payload as Paginated<T>).items)) {
+    return (payload as Paginated<T>).items
+  }
+  return []
 }
 
 export function fetchOverview(
@@ -138,14 +169,25 @@ export function fetchTimeDistribution(
   })
 }
 
-export function fetchProjects(
+/**
+ * Per-project rows for the window.
+ *
+ * `/analytics/projects` is one of the fifteen operations that answer
+ * `Page[ProjectAnalyticsRead]`, so the rows arrive under `items` with the
+ * counters under `meta`. The counters describe a page this surface never asks
+ * for — it sends no `limit`/`offset` and draws no pager — so they are dropped
+ * here and the rows are what the panel consumes. Nothing the page renders
+ * reads `meta`.
+ */
+export async function fetchProjects(
   params: AnalyticsListParams = {},
   signal?: AbortSignal,
 ): Promise<ProjectAnalyticsRead[]> {
-  return apiClient.get<ProjectAnalyticsRead[]>(ANALYTICS_ENDPOINTS.projects, {
+  const page = await apiClient.get<Paginated<ProjectAnalyticsRead>>(ANALYTICS_ENDPOINTS.projects, {
     query: windowQuery(params),
     signal,
   })
+  return toRows(page)
 }
 
 export function fetchTasks(
@@ -185,27 +227,29 @@ export function fetchKnowledge(
  * zero-filled, so a chart of this data has genuine gaps. That is deliberate: a
  * line drawn through a day nothing happened is a claim about that day.
  */
-export function fetchTrends(
+export async function fetchTrends(
   params: AnalyticsListParams & { metric?: TrendMetric; granularity?: Granularity },
   signal?: AbortSignal,
 ): Promise<TrendPoint[]> {
-  return apiClient.get<TrendPoint[]>(ANALYTICS_ENDPOINTS.trends, {
+  const points = await apiClient.get<TrendPoint[]>(ANALYTICS_ENDPOINTS.trends, {
     query: {
       ...windowQuery(params),
       ...queryFrom({ metric: params.metric ?? 'tasks_completed' }),
     },
     signal,
   })
+  return toRows(points)
 }
 
-export function fetchSeries(
+export async function fetchSeries(
   params: AnalyticsListParams = {},
   signal?: AbortSignal,
 ): Promise<DailyMetricRead[]> {
-  return apiClient.get<DailyMetricRead[]>(ANALYTICS_ENDPOINTS.series, {
+  const rows = await apiClient.get<DailyMetricRead[]>(ANALYTICS_ENDPOINTS.series, {
     query: windowQuery(params),
     signal,
   })
+  return toRows(rows)
 }
 
 /** 202 + `{rows_written}`. Idempotent server-side: the same window upserts. */

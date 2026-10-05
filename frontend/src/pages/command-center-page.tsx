@@ -67,10 +67,12 @@ import type { Task, TaskStats } from '@/types/work'
  *
  * ## Layout
  *
- * Two rails from `xl`, one stacked column below it. The DOM order *is* the
- * priority order — the queue, then the counts behind it, then the things that are
- * true regardless of priority — so a phone reads top to bottom in the same order
- * a desktop does. The page reflows rather than merely shrinking.
+ * Four full-width rows from `xl`, one stacked column below it, each row a
+ * `grid-cols-12` holding one wide panel beside one narrow one — the pairing
+ * the dashboard and the analytics page already use. The rows are laid down in
+ * the order the panels answer their question, so a phone reads top to bottom
+ * in the same order a desktop does. The page reflows rather than merely
+ * shrinking.
  */
 
 /** Page size for each of the queue's sources. Small on purpose: this is a briefing. */
@@ -172,11 +174,30 @@ export default function CommandCenterPage() {
         actions={<SearchEntry modKey={modKey} />}
       />
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-        <div className="space-y-6 xl:col-span-7">
+      {/*
+        Rows, not two rails. Each row is its own `grid-cols-12` carrying one
+        wide panel and one narrow one, which is how the dashboard and the
+        analytics page pair theirs. Two fixed rails were not the same thing: a
+        rail is only ever as tall as its own content, so the shorter of the two
+        left the taller one running on beside an empty column — with three
+        panels against five, the wide side ran out of content roughly a thousand
+        pixels before the narrow side did, and the page read as half-finished.
+        A row is as tall as its tallest panel and the pair shares it, so a row
+        that is not level is short inside the shorter card rather than blank
+        down a whole column.
+
+        The pairing is chosen so the two panels in a row answer roughly the same
+        amount at once, which is what keeps that difference small. The queue
+        sits beside the classifier because they are the two panels that argue
+        about the model — one says the order is arithmetic, the other is the
+        model — and a reader meets both before moving on.
+      */}
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           <CommandCenterPanel
             title="Next up"
             provenance="calculated"
+            className="xl:col-span-7"
             description="Everything waiting on a decision, ranked by a rule stated in full under the list. Open any row to see the arithmetic behind its score."
             state={{
               ...feed,
@@ -196,8 +217,25 @@ export default function CommandCenterPage() {
           </CommandCenterPanel>
 
           <CommandCenterPanel
+            title="The classifier"
+            provenance="model-derived"
+            className="xl:col-span-5"
+            description="NEXUS's only model. It classifies one sentence; it scores nothing on this page."
+            state={{
+              ...panelState(ml),
+              empty: ml.data !== undefined && ml.data.enabled === false,
+              emptyState: <ClassifierOffEmpty />,
+            }}
+          >
+            {ml.data && <MlInsightPanel status={ml.data} />}
+          </CommandCenterPanel>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+          <CommandCenterPanel
             title="Findings"
             provenance="measured"
+            className="xl:col-span-7"
             description="Live conditions the detection engine raised, counted by band."
             state={{
               ...panelState(riskSummary),
@@ -209,23 +247,9 @@ export default function CommandCenterPage() {
           </CommandCenterPanel>
 
           <CommandCenterPanel
-            title="Deadlines and blockers"
-            provenance="measured"
-            description="Counts across every open task bucket, from the activity statistics the work module already maintains."
-            state={{
-              ...panelState(workStats),
-              empty: workStats.data !== undefined && workStats.data.tasks.total === 0,
-              emptyState: <NoTasksEmpty />,
-            }}
-          >
-            {workStats.data && <WorkStatsBody stats={workStats.data.tasks} />}
-          </CommandCenterPanel>
-        </div>
-
-        <div className="space-y-6 xl:col-span-5">
-          <CommandCenterPanel
             title="Momentum"
             provenance="measured"
+            className="xl:col-span-5"
             description="Totals the analytics module aggregated from your own records."
             state={{
               ...panelState(overview),
@@ -235,23 +259,27 @@ export default function CommandCenterPage() {
           >
             {overview.data && <MomentumPanelBody overview={overview.data} />}
           </CommandCenterPanel>
+        </div>
 
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           <CommandCenterPanel
-            title="The classifier"
-            provenance="model-derived"
-            description="NEXUS's only model. It classifies one sentence; it scores nothing on this page."
+            title="Deadlines and blockers"
+            provenance="measured"
+            className="xl:col-span-7"
+            description="Counts across every open task bucket, from the activity statistics the work module already maintains."
             state={{
-              ...panelState(ml),
-              empty: ml.data !== undefined && ml.data.enabled === false,
-              emptyState: <ClassifierOffEmpty />,
+              ...panelState(workStats),
+              empty: workStats.data !== undefined && workStats.data.tasks.total === 0,
+              emptyState: <NoTasksEmpty />,
             }}
           >
-            {ml.data && <MlInsightPanel status={ml.data} />}
+            {workStats.data && <WorkStatsBody stats={workStats.data.tasks} />}
           </CommandCenterPanel>
 
           <CommandCenterPanel
             title="Recorded engineering"
             provenance="measured"
+            className="xl:col-span-5"
             description="Commits and active days git recorded on this machine."
             state={{
               ...panelState(developer),
@@ -261,7 +289,14 @@ export default function CommandCenterPage() {
           >
             {developer.data && <EngineeringPanelBody summary={developer.data} />}
           </CommandCenterPanel>
+        </div>
 
+        {/*
+          The last row has no wide panel left to pair, so it is a plain
+          two-column grid rather than a 12 — two halves fill the row exactly
+          instead of leaving four columns of nothing at the foot of the page.
+        */}
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <CommandCenterPanel
             title="Learning"
             provenance="measured"
@@ -276,11 +311,12 @@ export default function CommandCenterPage() {
           </CommandCenterPanel>
 
           {/*
-            A `Card`, not a hand-rolled section. The panel above and below it in
-            this rail are both `CardHeader`/`CardTitle`/`CardContent`, and this
-            one re-stated the same three class strings by hand — so the header
-            spacing, the title's type ramp and the landmark role were three
-            things that had to be kept in step by hand rather than inherited.
+            A `Card`, not a hand-rolled section. The panel beside it and every
+            panel above it are all `CardHeader`/`CardTitle`/`CardContent`, and
+            this one re-stated the same three class strings by hand — so the
+            header spacing, the title's type ramp and the landmark role were
+            three things that had to be kept in step by hand rather than
+            inherited.
           */}
           <Card role="region" aria-labelledby="command-center-quick-actions">
             <CardHeader>

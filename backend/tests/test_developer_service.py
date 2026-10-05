@@ -184,11 +184,19 @@ async def _db_now(session: AsyncSession) -> datetime:
     The same read :meth:`DeveloperIntelligenceService._now` performs. Fixtures are
     placed relative to this rather than to ``datetime.now()`` so that a commit the
     service will read back sits inside the window the service will compute.
+
+    Normalised to UTC rather than returned as it arrived, because ``now()`` comes
+    back labelled with the *connection's* ``TimeZone``. It is the same instant
+    either way, so the arithmetic below is unaffected — but a caller that takes
+    ``.date()`` off the result would otherwise get the server-local day while the
+    service bucketed by the UTC one.
     """
     value = await session.scalar(select(func.now()))
     if not isinstance(value, datetime):
         return datetime.now(UTC)
-    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 # ---------------------------------------------------------------------------
@@ -1373,8 +1381,14 @@ async def test_the_activity_series_zero_fills_every_day_in_the_window(
     assert series.total_commits == 2
     labels = [bucket.bucket_start.date() for bucket in series.buckets]
     assert labels == sorted(labels)
-    assert labels[0] == series.window_start.date()
-    assert labels[-1] == series.window_end.date()
+    # ``astimezone(UTC)`` on the window edges, because they arrive labelled with the
+    # *connection's* ``TimeZone`` while ``bucket_start`` was floored in UTC by the
+    # service. On this server the two labels are ``Asia/Calcutta`` and ``UTC`` for
+    # the very same instants, so a bare ``.date()`` would read a local day against a
+    # UTC one and put the window's first day a day out of step with its own first
+    # bucket for the five and a half hours a day the two calendars disagree.
+    assert labels[0] == series.window_start.astimezone(UTC).date()
+    assert labels[-1] == series.window_end.astimezone(UTC).date()
     assert (labels[-1] - labels[0]).days == 5
     assert all(later - earlier == timedelta(days=1) for earlier, later in pairwise(labels))
     assert [bucket.commits for bucket in series.buckets if bucket.commits] == [1, 1]

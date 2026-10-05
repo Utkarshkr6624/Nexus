@@ -29,6 +29,29 @@ from app.models.user import User
 
 pytestmark = pytest.mark.integration
 
+
+@pytest.fixture(autouse=True)
+def expose_reset_token(monkeypatch: pytest.MonkeyPatch):
+    """Let this module read the raw reset token the API hands back.
+
+    The endpoint withholds it by default: a token returned for a known address
+    and withheld for an unknown one is an account oracle, and redeeming it is an
+    unauthenticated takeover. The tests below assert the behaviour of the reset
+    FLOW, which cannot be exercised at all without a raw token, so they opt in
+    explicitly rather than relying on a default. ``test_the_token_is_withheld_unless_the_install_asks_for_it``
+    pins the default itself.
+
+    ``get_settings`` is cached, so the environment change is only visible after
+    the cache is cleared — and it is cleared again on the way out so the next
+    module does not inherit the opt-in.
+    """
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("DEV_EXPOSE_RESET_TOKEN", "true")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
 ADA = {
     "username": "ada",
     "email": "ada@nexus.dev",
@@ -420,6 +443,32 @@ async def test_a_password_change_spends_outstanding_reset_tokens(
 
 
 # -- Password reset ----------------------------------------------------------
+
+
+async def test_the_token_is_withheld_unless_the_install_asks_for_it(client, monkeypatch):
+    """The raw token is opt-in, and the opt-in is what this module turns on.
+
+    Without it, ``/auth/password/forgot`` answers ``{"dev_token": null}`` for a
+    known address — the same body it gives an unknown one. That is the whole
+    point of the flag: the endpoint may not become an account oracle, and a
+    token in the response would be an unauthenticated takeover for anyone who
+    can guess an address. A local install with no mail transport turns the flag
+    on; nothing else should.
+    """
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("DEV_EXPOSE_RESET_TOKEN", "false")
+    get_settings.cache_clear()
+    await _register(client)
+
+    known = await client.post("/api/v1/auth/password/forgot", json={"email": ADA["email"]})
+    unknown = await client.post("/api/v1/auth/password/forgot", json={"email": "nobody@nexus.dev"})
+
+    assert known.status_code == unknown.status_code == 202
+    assert known.json()["dev_token"] is None
+    # And now indistinguishable in the body itself, which is the property the
+    # default exists to preserve.
+    assert known.json() == unknown.json()
 
 
 async def test_a_reset_request_answers_identically_for_known_and_unknown_addresses(client):

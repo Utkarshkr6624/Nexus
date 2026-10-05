@@ -33,7 +33,7 @@ seam Phase 10 calls — ``models/analytics.py`` says so.
 from __future__ import annotations
 
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, timedelta
 
 import pytest
 from sqlalchemy import func, select
@@ -77,14 +77,21 @@ END = DAY + timedelta(days=6)
 
 
 async def db_today(session: AsyncSession) -> date:
-    """Today on the *database* clock.
+    """Today on the *database* clock, normalised to UTC.
 
     ``feature_snapshot`` and the overdue drill-down both read "now" from
     ``SELECT now()`` so a deadline agrees with the rest of the system, which
     means the expected figures have to be derived from the same clock rather than
     from ``date.today()`` on the test host.
+
+    Normalised to UTC because ``now()`` is a ``timestamptz`` returned **labelled
+    with the connection's** ``TimeZone`` — ``Asia/Calcutta`` on this server — so a
+    bare ``.date()`` on it is the server-local day, while the service converts to
+    UTC before taking the date. The two differ for five and a half hours out of
+    every twenty-four, and every figure derived from ``today`` would then be off
+    by one day for exactly that stretch of the evening.
     """
-    return (await session.scalar(select(func.now()))).date()
+    return (await session.scalar(select(func.now()))).astimezone(UTC).date()
 
 
 async def study_block(seed: AnalyticsSeed, *, day: date, minutes: int = 45) -> CalendarEvent:

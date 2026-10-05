@@ -276,6 +276,7 @@ const LEARNING_SUMMARY: LearningSummaryRead = {
   active_goal_count: 2,
   completed_goal_count: 1,
   skill_count: 3,
+  skills_with_evidence: 2,
   activity_count: 11,
   activities_in_window: 5,
   minutes_in_window: 240,
@@ -580,6 +581,42 @@ describe('command center page', () => {
       '/ml/status',
     ]) {
       expect(requested.some((url) => url.includes(fragment))).toBe(true)
+    }
+  })
+
+  it('pairs every panel into a full-width row rather than filling two rails', async () => {
+    installBackend()
+    renderPage()
+
+    await screen.findByText(OVERDUE_TASK.title)
+
+    const cards = [
+      'Next up',
+      'The classifier',
+      'Findings',
+      'Momentum',
+      'Deadlines and blockers',
+      'Recorded engineering',
+      'Learning',
+      'Quick actions',
+    ].map((name) => panel(name))
+
+    for (const card of cards) expect(card).not.toBeNull()
+
+    /*
+     * A rail is as tall as its own content and nothing else, so two rails of
+     * unequal length leave the short one standing beside a blank column for
+     * however much taller the long one is. A row is as tall as its tallest
+     * panel and the pair shares it, which is why every panel sits in a row
+     * with exactly one partner — four rows for eight panels — instead of two
+     * stacks of three and five.
+     */
+    const rows = new Set(cards.map((card) => card.parentElement as HTMLElement))
+    expect(rows.size).toBe(4)
+    for (const row of rows) {
+      expect(row.className).toMatch(/(^|\s)grid(\s|$)/)
+      expect(row.className).toMatch(/xl:grid-cols-\d+/)
+      expect(row.children).toHaveLength(2)
     }
   })
 
@@ -905,7 +942,15 @@ describe('command center page', () => {
           conflicts: [],
           meta: { total: 0, limit: 50, offset: 0 },
         } as ConflictList),
-      goals: () => json({ items: [], total: 0, limit: 20, offset: 0 } as LearningGoalListRead),
+      goals: () =>
+        json({
+          items: [],
+          total: 0,
+          limit: 20,
+          offset: 0,
+          by_status: { not_started: 0, in_progress: 0, paused: 0, completed: 0, archived: 0 },
+          summary: 'No learning goals yet.',
+        } as LearningGoalListRead),
       riskSummary: () =>
         json({ ...RISK_SUMMARY, critical: 0, high: 0, medium: 0, low: 0, total: 0, needs_attention: false }),
       activityStats: () =>

@@ -20,6 +20,7 @@ import type {
   LearningGoalListRead,
   LearningGoalRead,
   LearningSummaryRead,
+  SkillGapListRead,
   SkillGapRead,
   SkillListRead,
   SkillRead,
@@ -433,6 +434,7 @@ const SUMMARY: LearningSummaryRead = {
   active_goal_count: 1,
   completed_goal_count: 1,
   skill_count: 2,
+  skills_with_evidence: 1,
   activity_count: 11,
   activities_in_window: 3,
   minutes_in_window: 135,
@@ -488,6 +490,8 @@ const ACTIVITIES: LearningActivityListRead = {
   total: 2,
   limit: 12,
   offset: 0,
+  by_type: { study_session: 1, resource_viewed: 1 },
+  summary: '2 learning activities were recorded, newest first.',
 }
 
 const SKILLS: SkillListRead = {
@@ -507,30 +511,55 @@ const SKILLS: SkillListRead = {
   total: 2,
   limit: 50,
   offset: 0,
+  by_level_source: { user_defined: 1, system_estimate: 1 },
+  by_category: {},
+  skills_with_evidence: 1,
+  skills_without_evidence: 1,
 }
 
 /**
  * One measurable gap and one whose levels could not be compared.
  *
- * `GET /learning/gaps` answers a bare array, so "nothing has been recorded at
- * all" is the answer on a cold account and the page has to be able to say it
- * instead of drawing an empty chart.
+ * `GET /learning/gaps` answers a `SkillGapListRead` envelope, so the rows and the
+ * tallies that count them all together arrive together: an `available: false`
+ * row is present in `items` *and* counted in `unavailable_count`, which is what
+ * lets the page say "nothing has been recorded at all" on a cold account instead
+ * of drawing an empty chart.
  */
-const GAPS: SkillGapRead[] = [
-  gap(),
-  gap({
-    skill_id: null,
-    skill_name: 'Rust',
-    available: false,
-    gap: 0,
-    evidence_count: 0,
-    evidence_last_30d: 0,
-    days_since_last_activity: null,
-    reason_if_unavailable: UNMEASURED_REASON,
-    explanation:
-      'No gap could be computed for Rust because no level has ever been recorded against it.',
-  }),
-]
+const GAPS: SkillGapListRead = {
+  items: [
+    gap(),
+    gap({
+      skill_id: null,
+      skill_name: 'Rust',
+      available: false,
+      gap: 0,
+      evidence_count: 0,
+      evidence_last_30d: 0,
+      days_since_last_activity: null,
+      reason_if_unavailable: UNMEASURED_REASON,
+      explanation:
+        'No gap could be computed for Rust because no level has ever been recorded against it.',
+    }),
+  ],
+  total: 2,
+  limit: 50,
+  offset: 0,
+  available_count: 1,
+  unavailable_count: 1,
+  by_level_source: { user_defined: 1, system_estimate: 0 },
+}
+
+/** The same envelope for an account that has recorded nothing at all. */
+const EMPTY_GAPS: SkillGapListRead = {
+  items: [],
+  total: 0,
+  limit: 50,
+  offset: 0,
+  available_count: 0,
+  unavailable_count: 0,
+  by_level_source: { user_defined: 0, system_estimate: 0 },
+}
 
 const COMPLETED_GOAL = goal({
   id: COMPLETED_GOAL_ID,
@@ -546,6 +575,8 @@ const GOALS: LearningGoalListRead = {
   total: 2,
   limit: 50,
   offset: 0,
+  by_status: { not_started: 1, in_progress: 0, paused: 0, completed: 1, archived: 0 },
+  summary: '2 learning goals are recorded on this account.',
 }
 
 /* -------------------------------------------------------------------- tests */
@@ -852,11 +883,36 @@ describe('the learning dashboard', () => {
     installBackend({
       summary: () => json(COLD_SUMMARY),
       activity: () => json({ ...SERIES, buckets: [], total_activities: 0, total_minutes: null }),
-      gaps: () => json([] satisfies SkillGapRead[]),
-      goals: () => json({ items: [], total: 0, limit: 50, offset: 0 } satisfies LearningGoalListRead),
-      skills: () => json({ items: [], total: 0, limit: 50, offset: 0 } satisfies SkillListRead),
+      gaps: () => json(EMPTY_GAPS),
+      goals: () =>
+        json({
+          items: [],
+          total: 0,
+          limit: 50,
+          offset: 0,
+          by_status: {},
+          summary: 'No learning goals.',
+        } satisfies LearningGoalListRead),
+      skills: () =>
+        json({
+          items: [],
+          total: 0,
+          limit: 50,
+          offset: 0,
+          by_level_source: {},
+          by_category: {},
+          skills_with_evidence: 0,
+          skills_without_evidence: 0,
+        } satisfies SkillListRead),
       activities: () =>
-        json({ items: [], total: 0, limit: 12, offset: 0 } satisfies LearningActivityListRead),
+        json({
+          items: [],
+          total: 0,
+          limit: 12,
+          offset: 0,
+          by_type: {},
+          summary: 'No learning activities.',
+        } satisfies LearningActivityListRead),
     })
     const { container } = renderLearningPage()
 

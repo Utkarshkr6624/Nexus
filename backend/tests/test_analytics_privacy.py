@@ -55,7 +55,7 @@ from __future__ import annotations
 import csv
 import io
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, timedelta
 from typing import Any
 
 import pytest
@@ -1064,8 +1064,12 @@ async def test_a_feature_snapshot_describes_only_the_callers_own_task(client, db
     assert body["task_id"] == str(world.bravo_task_ids[0])
     # The stamp is the **database** clock, the same one every feature in the row
     # was derived from; a wrapper dated from a host-local ``date.today()`` would
-    # be a day ahead of them for five and a half hours a day.
-    assert body["generated_at"] == (await db_session.scalar(select(func.now()))).date().isoformat()
+    # be a day ahead of them for five and a half hours a day. Normalised to UTC
+    # for the same reason the service normalises: ``now()`` arrives labelled with
+    # the *connection's* ``TimeZone`` (Asia/Calcutta here), so a bare ``.date()``
+    # on it is the server-local day rather than the one the service stamps.
+    db_now = await db_session.scalar(select(func.now()))
+    assert body["generated_at"] == db_now.astimezone(UTC).date().isoformat()
     assert set(vector) == {
         "priority",
         "task_age_days",

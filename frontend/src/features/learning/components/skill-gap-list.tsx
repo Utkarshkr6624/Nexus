@@ -169,6 +169,14 @@ export function SkillGapListSkeleton({
 
 export interface SkillGapListProps {
   gaps: readonly SkillGapRead[]
+  /**
+   * Gaps matching the query, from the envelope's `total`.
+   *
+   * Preferred over the length of `gaps`, which is only the page in hand: the
+   * endpoint pages, and a header that counted its own rows would say "50 skills"
+   * on an account holding eighty. `null` falls back to the rows in hand.
+   */
+  total?: number | null
   /** The window `evidence_last_30d` was counted over; `null` says "as supplied". */
   windowDays?: number | null
   isLoading?: boolean
@@ -200,6 +208,7 @@ export interface SkillGapListProps {
  */
 export function SkillGapList({
   gaps,
+  total = null,
   windowDays = null,
   isLoading = false,
   isStale = false,
@@ -214,6 +223,8 @@ export function SkillGapList({
   titleLevel = 'h3',
   className,
 }: SkillGapListProps) {
+  const gapCount = total ?? gaps.length
+
   return (
     <Card className={cn('min-w-0', className)}>
       <CardHeader className="pb-4">
@@ -238,7 +249,7 @@ export function SkillGapList({
         ) : (
           <>
             <p className="text-xs text-muted-foreground">
-              {formatNumber(gaps.length)} {gaps.length === 1 ? 'skill' : 'skills'} with a recorded
+              {formatNumber(gapCount)} {gapCount === 1 ? 'skill' : 'skills'} with a recorded
               target, counted over {describeWindow(windowDays)}.
             </p>
             <ul className="divide-y divide-border">

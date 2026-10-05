@@ -89,7 +89,8 @@ import type {
  * strands every component at `pending` in jsdom); only `fetch` is stubbed, by a
  * routing table whose every route returns 404 so a component that started
  * fetching would fail loudly; the retry policy is `src/app/query-client.ts`'s,
- * reproduced rather than relaxed; and recharts is given a size and only a size,
+ * Ships `src/app/query-client.ts`'s own retry policy, not a copy of it; and
+ * recharts is given a size and only a size,
  * with the wrapped box tagged `data-chart-surface` and no assertion anywhere
  * reaching into a library internal.
  *
@@ -197,8 +198,8 @@ function installBackend(overrides: Backend = {}): Call[] {
 }
 
 /**
- * Mirrors `src/app/query-client.ts`. Reproduced rather than replaced so nothing
- * in this file is testing a policy the app does not ship.
+ * Uses `src/app/query-client.ts`'s own `queryRetryPolicy`, so a change to the
+ * shipped policy is a change to what this file tests.
  */
 function createTestClient(): QueryClient {
   return new QueryClient({
@@ -392,16 +393,32 @@ function record(overrides: Partial<CareerExperienceRead> = {}): CareerExperience
   }
 }
 
+/**
+ * `GET /career/summary`, field for field as the route sends it.
+ *
+ * Every key here was read off a live response body, which is the only way a
+ * figure of 19 keys is not quietly a figure of 13: the summary route does not
+ * send `experience_count`, `education_count`, `certification_count`,
+ * `linked_evidence_count`, `by_type` or `target_domain`, and a fixture typed
+ * against the older shape is how four tiles came to render "—".
+ */
 const SUMMARY: CareerSummaryRead = {
   has_profile: true,
   target_role: 'Machine Learning Engineer',
-  target_domain: 'Machine Learning',
-  experience_count: 2,
-  education_count: 1,
-  certification_count: 1,
+  link_count: 2,
+  record_count: 4,
   evidence_count: 4,
-  by_type: { achievement: 1, repository_activity: 2, skill_activity: 1 },
-  linked_evidence_count: 2,
+  evidence_in_window: 1,
+  manual_evidence_count: 3,
+  linked_project_count: 2,
+  project_count: 5,
+  completed_project_count: 2,
+  repository_count: 3,
+  skills_with_evidence: 1,
+  learning_activity_count: 12,
+  window_days: 30,
+  window_start: '2018-12-30T09:00:00Z',
+  window_end: '2019-01-29T09:00:00Z',
   latest_evidence_on: '2019-01-20',
   has_data: true,
   summary: '4 pieces of evidence are on this profile, 2 of them linked to a project, skill or repository.',
@@ -603,11 +620,6 @@ describe('CareerSummaryTiles', () => {
     const { container } = renderComponent(<CareerSummaryTiles summary={SUMMARY} />)
 
     expect(screen.getByText(SUMMARY.summary)).toBeInTheDocument()
-    expect(within(tileFor('Experience')).getByText(formatNumber(2))).toBeInTheDocument()
-    expect(within(tileFor('Education')).getByText(formatNumber(1))).toBeInTheDocument()
-    expect(within(tileFor('Certifications')).getByText(formatNumber(1))).toBeInTheDocument()
-    expect(within(tileFor('Evidence')).getByText(formatNumber(4))).toBeInTheDocument()
-    expect(within(tileFor('Linked evidence')).getByText(formatNumber(2))).toBeInTheDocument()
     expect(screen.getByText(`Most recent evidence dated ${formatCareerDateOf('2019-01-20')}.`)).toBeInTheDocument()
 
     // A reader who wants a judgement is not given one by NEXUS wearing a
@@ -617,6 +629,51 @@ describe('CareerSummaryTiles', () => {
     expectNoFabricatedNumbers(container)
   })
 
+  /**
+   * The regression this row was written for.
+   *
+   * Four of the five tiles read `experience_count`, `education_count`,
+   * `certification_count` and `linked_evidence_count`, none of which
+   * `GET /career/summary` sends — so they rendered `NO_VALUE`, this project's
+   * own "not measured" dash, over figures the backend had counted. Every tile is
+   * now asserted against a value from the fixture **and** against the absence of
+   * the dash, because a dash-free assertion alone would pass on a label that had
+   * quietly stopped rendering a count.
+   */
+  it('renders five real numbers from the fields the summary route sends', () => {
+    const { container } = renderComponent(<CareerSummaryTiles summary={SUMMARY} />)
+
+    const expected: [string, number][] = [
+      ['Dated records', SUMMARY.record_count],
+      ['Evidence', SUMMARY.evidence_count],
+      [`Evidence, last ${formatNumber(SUMMARY.window_days)} days`, SUMMARY.evidence_in_window],
+      ['Entered by you', SUMMARY.manual_evidence_count],
+      ['Projects completed', SUMMARY.completed_project_count],
+    ]
+
+    for (const [label, value] of expected) {
+      const tile = tileFor(label)
+      expect(within(tile).getByText(formatNumber(value))).toBeInTheDocument()
+      expect(tile.textContent ?? '').not.toContain(NO_VALUE)
+    }
+
+    // Not one of the six keys the route dropped survives as a label.
+    const labels = container.textContent ?? ''
+    expect(labels).not.toMatch(/Linked evidence/)
+    expect(screen.queryByText('Certifications')).toBeNull()
+    expectNoFabricatedNumbers(container)
+  })
+
+  it('names the window its date-bounded tile covers, rather than saying "recent"', () => {
+    renderComponent(<CareerSummaryTiles summary={{ ...SUMMARY, window_days: 90 }} />)
+
+    const tile = tileFor(`Evidence, last ${formatNumber(90)} days`)
+    // A tile copied out of context still says what range it counted over.
+    expect(within(tile).getByText(formatNumber(SUMMARY.evidence_in_window))).toBeInTheDocument()
+    expect(tile.textContent).toContain('Evidence dated inside that window, over the whole history before it')
+    expect(screen.queryByText(`Evidence, last ${formatNumber(30)} days`)).toBeNull()
+  })
+
   it('refuses to render a row of zeroes on a profile that holds nothing', () => {
     const { container } = renderComponent(
       <CareerSummaryTiles
@@ -624,13 +681,17 @@ describe('CareerSummaryTiles', () => {
           ...SUMMARY,
           has_profile: false,
           target_role: null,
-          target_domain: null,
-          experience_count: 0,
-          education_count: 0,
-          certification_count: 0,
+          link_count: 0,
+          record_count: 0,
           evidence_count: 0,
-          by_type: {},
-          linked_evidence_count: 0,
+          evidence_in_window: 0,
+          manual_evidence_count: 0,
+          linked_project_count: 0,
+          project_count: 0,
+          completed_project_count: 0,
+          repository_count: 0,
+          skills_with_evidence: 0,
+          learning_activity_count: 0,
           latest_evidence_on: null,
           has_data: false,
           summary: 'Nothing has been recorded on this profile yet.',
@@ -1412,19 +1473,34 @@ describe('the career component library', () => {
   })
 
   it('carries both honesty rules through the shapes the pages hand it', () => {
-    const SKILLS: SkillListRead = { items: [skill()], total: 1, limit: 50, offset: 0 }
+    const SKILLS: SkillListRead = {
+      items: [skill()],
+      total: 1,
+      limit: 50,
+      offset: 0,
+      by_level_source: { user_defined: 1 },
+      by_category: {},
+      skills_with_evidence: 1,
+      skills_without_evidence: 0,
+    }
     const EVIDENCE: CareerEvidenceListRead = {
       items: [evidence()],
       total: 1,
       limit: 50,
       offset: 0,
       by_type: { achievement: 1 },
+      by_source: { manual: 1 },
+      manual_count: 1,
+      summary: '1 career evidence record.',
     }
     const RECORDS: CareerExperienceListRead = {
       items: [record()],
       total: 1,
       limit: 50,
       offset: 0,
+      by_kind: { experience: 1 },
+      current_count: 1,
+      summary: '1 career record.',
     }
 
     const { container } = renderComponent(

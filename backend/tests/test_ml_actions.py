@@ -1466,7 +1466,7 @@ def test_the_filler_title_list_rejects_an_empty_subject() -> None:
 
 
 def test_a_named_subject_keeps_a_trailing_entity_noun_that_is_part_of_its_name() -> None:
-    """ "create a task called finish the rollout task" must not lose a word.
+    """A phrase such as "create a task called finish the rollout task" must not lose a word.
 
     The trailing-noun strip exists so "the API contract task" resolves to the
     row called "API contract" — the noun there is a type. But when the user

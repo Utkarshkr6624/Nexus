@@ -93,6 +93,26 @@ ACCOUNT_PASSWORD = "Correct-Horse-7"
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture
+def expose_reset_token(monkeypatch: pytest.MonkeyPatch):
+    """Let a test read the raw token ``/auth/password/forgot`` hands back.
+
+    The endpoint withholds it by default — returning it for a known address
+    would make the endpoint an account oracle and the token an unauthenticated
+    takeover. A test that exercises the redemption FLOW cannot run without one,
+    so it asks for the token explicitly. Deliberately not autouse: the rest of
+    this module asserts the default behaviour, and an autouse opt-in would hide
+    it. ``get_settings`` is cached, so the change needs the cache cleared on
+    both sides.
+    """
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("DEV_EXPOSE_RESET_TOKEN", "true")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
 def compiled_sql(statement) -> str:
     """Render a statement the way PostgreSQL would receive it.
 
@@ -772,7 +792,9 @@ async def test_every_reset_rejection_carries_the_same_message():
 
 
 @pytest.mark.integration
-async def test_a_reset_link_cannot_be_redeemed_twice_end_to_end(client):
+async def test_a_reset_link_cannot_be_redeemed_twice_end_to_end(
+    client, expose_reset_token: None
+):
     """The redemption is refused the second time, and it sets no password.
 
     The account ends up on the *first* redemption's password, which is the

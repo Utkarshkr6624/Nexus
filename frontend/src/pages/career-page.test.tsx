@@ -9,7 +9,11 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import CareerPage from '@/pages/career-page'
 import { NO_VALUE, formatNumber } from '@/features/analytics/format'
 import { formatLevelOfScale, levelSourcePhrase } from '@/features/learning/components'
-import { NOT_ENOUGH_DATA_TITLE } from '@/features/career/components/career-vocabulary'
+import {
+  CAREER_EVIDENCE_TYPE_META,
+  CAREER_EVIDENCE_TYPE_ORDER,
+  NOT_ENOUGH_DATA_TITLE,
+} from '@/features/career/components/career-vocabulary'
 import { queryRetryPolicy } from '@/app/query-client'
 import type { ApiErrorEnvelope } from '@/types/api'
 import type { Paginated } from '@/types/pagination'
@@ -20,6 +24,7 @@ import type {
   CareerExperienceRead,
   CareerProfileRead,
   CareerSummaryRead,
+  SkillGapListRead,
   SkillGapRead,
   SkillLevelSource,
   SkillListRead,
@@ -251,9 +256,14 @@ function tileFor(label: string, scope: HTMLElement): HTMLElement {
   return within(scope).getByText(label).closest('div.rounded-lg') as HTMLElement
 }
 
-/** The count an `EvidenceCounts` row prints, exactly as it was rendered. */
-function evidenceCountFor(label: string): string {
-  const row = screen.getByText(label).closest('div') as HTMLElement
+/**
+ * The count a breakdown row prints, exactly as it was rendered.
+ *
+ * Scoped to the breakdown card, because every one of these kind labels appears a
+ * second time as a timeline group heading and an unscoped lookup would find two.
+ */
+function evidenceCountFor(label: string, scope: HTMLElement): string {
+  const row = within(scope).getByText(label).closest('div') as HTMLElement
   return (row.querySelector('dd')?.textContent ?? '').trim()
 }
 
@@ -391,20 +401,32 @@ function record(overrides: Partial<CareerExperienceRead> = {}): CareerExperience
   }
 }
 
+/**
+ * `GET /career/summary`, field for field as the route sends it.
+ *
+ * Read off a live body rather than written from the older interface. The six
+ * keys below the summary's real shape — `experience_count`, `education_count`,
+ * `certification_count`, `linked_evidence_count`, `by_type`, `target_domain` —
+ * are absent on purpose: four of the five summary tiles used to read them and
+ * rendered "—" over counts the backend had sent.
+ */
 const SUMMARY: CareerSummaryRead = {
   has_profile: true,
   target_role: 'Machine Learning Engineer',
-  target_domain: 'Machine Learning',
-  experience_count: 2,
-  education_count: 1,
-  certification_count: 1,
+  link_count: 1,
+  record_count: 4,
   evidence_count: 4,
-  // `skill_activity` is a **genuine zero** — the backend counted it and found
-  // none. `repository_activity` is **absent** — the response does not carry the
-  // key at all, which is the server declining to state a count. The two must
-  // never render the same way.
-  by_type: { achievement: 1, skill_activity: 0 },
-  linked_evidence_count: 2,
+  evidence_in_window: 1,
+  manual_evidence_count: 3,
+  linked_project_count: 2,
+  project_count: 5,
+  completed_project_count: 2,
+  repository_count: 3,
+  skills_with_evidence: 1,
+  learning_activity_count: 12,
+  window_days: 30,
+  window_start: '2018-12-30T09:00:00Z',
+  window_end: '2019-01-29T09:00:00Z',
   latest_evidence_on: '2019-01-20',
   has_data: true,
   summary: '4 pieces of evidence are on this profile, 2 of them linked to a project, skill or repository.',
@@ -415,13 +437,17 @@ const NO_PROFILE_SUMMARY: CareerSummaryRead = {
   ...SUMMARY,
   has_profile: false,
   target_role: null,
-  target_domain: null,
-  experience_count: 0,
-  education_count: 0,
-  certification_count: 0,
+  link_count: 0,
+  record_count: 0,
   evidence_count: 0,
-  by_type: {},
-  linked_evidence_count: 0,
+  evidence_in_window: 0,
+  manual_evidence_count: 0,
+  linked_project_count: 0,
+  project_count: 0,
+  completed_project_count: 0,
+  repository_count: 0,
+  skills_with_evidence: 0,
+  learning_activity_count: 0,
   latest_evidence_on: null,
   has_data: false,
   summary: 'Nothing has been recorded on this profile yet.',
@@ -446,24 +472,51 @@ const SKILLS: SkillListRead = {
   total: 2,
   limit: 50,
   offset: 0,
+  by_level_source: { user_defined: 1, system_estimate: 1 },
+  by_category: {},
+  skills_with_evidence: 1,
+  skills_without_evidence: 1,
 }
 
-/** `GET /learning/gaps` answers a bare array, never a wrapped envelope. */
-const GAPS: SkillGapRead[] = [
-  gap(),
-  gap({
-    skill_id: null,
-    skill_name: 'Rust',
-    available: false,
-    gap: 0,
-    evidence_count: 0,
-    evidence_last_30d: 0,
-    days_since_last_activity: null,
-    reason_if_unavailable: UNMEASURED_REASON,
-    explanation:
-      'No gap could be computed for Rust because no level has ever been recorded against it.',
-  }),
-]
+/**
+ * `GET /learning/gaps` answers a `SkillGapListRead`: the rows and the tallies
+ * that count them arrive together, and an unmeasurable row is in `items` *and*
+ * in `unavailable_count`.
+ */
+const GAPS: SkillGapListRead = {
+  items: [
+    gap(),
+    gap({
+      skill_id: null,
+      skill_name: 'Rust',
+      available: false,
+      gap: 0,
+      evidence_count: 0,
+      evidence_last_30d: 0,
+      days_since_last_activity: null,
+      reason_if_unavailable: UNMEASURED_REASON,
+      explanation:
+        'No gap could be computed for Rust because no level has ever been recorded against it.',
+    }),
+  ],
+  total: 2,
+  limit: 50,
+  offset: 0,
+  available_count: 1,
+  unavailable_count: 1,
+  by_level_source: { user_defined: 1, system_estimate: 0 },
+}
+
+/** The same envelope on an account that has recorded nothing at all. */
+const EMPTY_GAPS: SkillGapListRead = {
+  items: [],
+  total: 0,
+  limit: 50,
+  offset: 0,
+  available_count: 0,
+  unavailable_count: 0,
+  by_level_source: { user_defined: 0, system_estimate: 0 },
+}
 
 const EVIDENCE: CareerEvidenceListRead = {
   items: [
@@ -485,7 +538,22 @@ const EVIDENCE: CareerEvidenceListRead = {
   total: 3,
   limit: 50,
   offset: 0,
-  by_type: { achievement: 1, repository_activity: 1, certification: 1 },
+  // `skill_activity` is a **genuine zero** — the backend counted it and found
+  // none. `learning_milestone` is **absent** — the response does not carry the
+  // key at all, which is the server declining to state a count. The two must
+  // never render the same way. (In production the backend zero-fills every kind;
+  // the gap is left open on purpose so the dash path stays covered.)
+  by_type: {
+    project_completed: 0,
+    feature_shipped: 0,
+    repository_activity: 1,
+    skill_activity: 0,
+    certification: 1,
+    achievement: 1,
+  },
+  by_source: { manual: 2, repository: 1 },
+  manual_count: 2,
+  summary: '3 career evidence records, newest first.',
 }
 
 const RECORDS: CareerExperienceListRead = {
@@ -513,6 +581,9 @@ const RECORDS: CareerExperienceListRead = {
   total: 3,
   limit: 50,
   offset: 0,
+  by_kind: { education: 1, experience: 1, certification: 1 },
+  current_count: 1,
+  summary: '3 career records are recorded on this profile.',
 }
 
 const PROJECT: Project = {
@@ -599,13 +670,6 @@ describe('the career page', () => {
 
     const tiles = cardFor('Career summary')
     expect(within(tiles).getByText(SUMMARY.summary)).toBeInTheDocument()
-    expect(within(tileFor('Experience', tiles)).getByText(formatNumber(2))).toBeInTheDocument()
-    expect(within(tileFor('Education', tiles)).getByText(formatNumber(1))).toBeInTheDocument()
-    expect(within(tileFor('Certifications', tiles)).getByText(formatNumber(1))).toBeInTheDocument()
-    expect(within(tileFor('Evidence', tiles)).getByText(formatNumber(4))).toBeInTheDocument()
-    expect(
-      within(tileFor('Linked evidence', tiles)).getByText(formatNumber(2)),
-    ).toBeInTheDocument()
 
     // A reader who wants a judgement is not given one by NEXUS wearing a
     // number's clothes. The scan is for *claims*, not for the words "readiness"
@@ -618,18 +682,83 @@ describe('the career page', () => {
     expectNoFabricatedNumbers(container)
   })
 
-  it('renders a genuine zero beside a missing key as 0 and as a dash respectively', async () => {
+  /**
+   * The regression this page's summary row was written for.
+   *
+   * `GET /career/summary` sends `record_count`, `evidence_count`,
+   * `evidence_in_window`, `manual_evidence_count` and `completed_project_count` —
+   * and never sent `experience_count`, `education_count`, `certification_count`
+   * or `linked_evidence_count`, which four of the five tiles used to read. Each
+   * of those rendered `—`, the surface's own "not measured" sentence, over
+   * figures the backend had counted. Asserting against the dash as well as the
+   * number is what makes this a test: a tile that stopped rendering a count
+   * entirely would satisfy a number assertion only by accident.
+   */
+  it('renders five real numbers from the fields the summary route sends', async () => {
+    installBackend()
+    const { container } = renderCareerPage()
+    await waitForData()
+
+    const tiles = cardFor('Career summary')
+    const expected: [string, number][] = [
+      ['Dated records', SUMMARY.record_count],
+      ['Evidence', SUMMARY.evidence_count],
+      [`Evidence, last ${formatNumber(SUMMARY.window_days)} days`, SUMMARY.evidence_in_window],
+      ['Entered by you', SUMMARY.manual_evidence_count],
+      ['Projects completed', SUMMARY.completed_project_count],
+    ]
+
+    for (const [label, value] of expected) {
+      const tile = tileFor(label, tiles)
+      expect(within(tile).getByText(formatNumber(value))).toBeInTheDocument()
+      expect(tile.textContent ?? '').not.toContain(NO_VALUE)
+    }
+
+    // None of the six keys the route dropped survives as a label, and no tile is
+    // left showing the dash.
+    expect(within(tiles).queryByText(NO_VALUE)).toBeNull()
+    expect(tiles.textContent ?? '').not.toMatch(/Linked evidence/)
+    expectNoFabricatedNumbers(container)
+  })
+
+  /**
+   * The breakdown's other half: it is now sourced from the evidence list's own
+   * `by_type`, because `GET /career/summary` never sent one. Reading it from the
+   * summary left the panel rendering a dash on every row — a card titled "how
+   * this evidence is made up" that could not say how anything was made up.
+   *
+   * Scoped to the breakdown card: the same kind labels appear again as the
+   * timeline's group headings, so an unscoped lookup would find two nodes.
+   */
+  it('reads the per-kind breakdown from the evidence list, not from the summary', async () => {
     installBackend()
     const { container } = renderCareerPage()
     await waitForData()
 
     const breakdown = cardFor('How this evidence is made up')
-    // A type the response *does* carry, counted at zero: a measurement.
-    expect(evidenceCountFor('Linked to a skill')).toBe(formatNumber(0))
-    // A type it does not carry: the server declining to state a count, which is
+    const countFor = (label: string) => evidenceCountFor(label, breakdown)
+
+    // A kind the response *does* carry, counted at zero: a measurement.
+    expect(countFor('Skill activity')).toBe(formatNumber(0))
+    // A kind it does not carry: the server declining to state a count, which is
     // not the same fact and must not be rendered as one.
-    expect(evidenceCountFor('Linked to a repository')).toBe(NO_VALUE)
-    expect(evidenceCountFor('Manually added')).toBe(formatNumber(1))
+    expect(countFor('Learning milestone')).toBe(NO_VALUE)
+    expect(countFor('Repository activity')).toBe(formatNumber(1))
+    expect(countFor('Certification')).toBe(formatNumber(1))
+    expect(countFor('Achievement')).toBe(formatNumber(1))
+
+    // Every member of the vocabulary has a row, so a kind cannot be quietly
+    // dropped from the breakdown to make it shorter.
+    for (const type of CAREER_EVIDENCE_TYPE_ORDER) {
+      expect(within(breakdown).getByText(CAREER_EVIDENCE_TYPE_META[type].label)).toBeInTheDocument()
+    }
+
+    // And the panel says where the counts come from, so a filtered list is not
+    // read as the whole account.
+    expect(breakdown.textContent).toContain(
+      'Counts across the evidence rows the list below is showing, read from that list’s own ' +
+        'response — so the kind filter above narrows them too.',
+    )
     expect(
       breakdown.textContent,
     ).toContain(
@@ -823,12 +952,39 @@ describe('the career page', () => {
       // has been written — a state to render, and the target of the `PUT`.
       profile: () => json(null),
       summary: () => json(NO_PROFILE_SUMMARY),
-      skills: () => json({ items: [], total: 0, limit: 50, offset: 0 } satisfies SkillListRead),
-      gaps: () => json([] satisfies SkillGapRead[]),
+      skills: () =>
+        json({
+          items: [],
+          total: 0,
+          limit: 50,
+          offset: 0,
+          by_level_source: {},
+          by_category: {},
+          skills_with_evidence: 0,
+          skills_without_evidence: 0,
+        } satisfies SkillListRead),
+      gaps: () => json(EMPTY_GAPS),
       evidence: () =>
-        json({ items: [], total: 0, limit: 50, offset: 0, by_type: {} } satisfies CareerEvidenceListRead),
+        json({
+          items: [],
+          total: 0,
+          limit: 50,
+          offset: 0,
+          by_type: {},
+          by_source: {},
+          manual_count: 0,
+          summary: 'No career evidence records.',
+        } satisfies CareerEvidenceListRead),
       experience: () =>
-        json({ items: [], total: 0, limit: 50, offset: 0 } satisfies CareerExperienceListRead),
+        json({
+          items: [],
+          total: 0,
+          limit: 50,
+          offset: 0,
+          by_kind: {},
+          current_count: 0,
+          summary: 'No career records.',
+        } satisfies CareerExperienceListRead),
     })
     const { container } = renderCareerPage()
 

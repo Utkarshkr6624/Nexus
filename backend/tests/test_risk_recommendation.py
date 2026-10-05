@@ -2298,10 +2298,21 @@ async def _db_now(session: AsyncSession) -> datetime:
     :mod:`app.services.learning.service` gives at length: both Phase 9 rules are
     arithmetic on a *distance in days*, so a host clock that drifted from the
     server's would seed a fixture whose own dates disagreed with the rule's.
+
+    Normalised to UTC for the same reason the rule normalises. ``func.now()`` is a
+    ``timestamptz`` returned **labelled with the connection's** ``TimeZone``, and on
+    this server that is ``Asia/Calcutta`` — so the value arrives as the same instant
+    wearing the local zone. The arithmetic on the instant is therefore unaffected,
+    but every ``.date()`` taken off this helper downstream was the *server-local*
+    day while the rules computed against the UTC one, which is a whole day of error
+    on a "passed N day(s) ago" figure for the five and a half hours a day the two
+    calendars disagree.
     """
     value = await session.scalar(select(func.now()))
     assert isinstance(value, datetime)
-    return value
+    if value.tzinfo is None:  # pragma: no cover - psycopg returns aware values
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 async def _goal_columns(
@@ -2550,7 +2561,12 @@ async def test_a_dormant_target_skill_is_raised_with_the_days_idle_and_the_level
     rows = await learning_service.generate_learning(owner=owner)
 
     row = _only(rows, RecommendationType.REVIVE_TARGET_SKILL)
-    idle_on = f"{last.date():%d %b %Y}"
+    # Normalised to UTC because that is the calendar the rule renders the date on.
+    # ``last_evidence_at`` comes back labelled with the *connection's* ``TimeZone``,
+    # so a bare ``.date()`` here is the server-local day and the sentence quoted
+    # below is dated off the other calendar — which for a stamp late in the evening
+    # is a day apart from the one the rule wrote.
+    idle_on = f"{last.astimezone(UTC).date():%d %b %Y}"
     assert row.title == "Add a practice session for Python"
     assert row.description == (
         "Record one short practice activity for Python, or lower its target level if it "

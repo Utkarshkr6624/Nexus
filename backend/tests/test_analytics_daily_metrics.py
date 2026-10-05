@@ -696,7 +696,12 @@ async def test_a_rebuild_advances_updated_at_so_the_staleness_signal_is_real(
     stored = await _stored_rows(db_session, seed.owner.id)
     first_stamp = stored[0]["updated_at"]
     assert isinstance(first_stamp, datetime)
-    assert first_stamp.replace(tzinfo=UTC) > ANCIENT
+    # ``astimezone``, not ``replace(tzinfo=UTC)``: the column is read back aware and
+    # labelled with the connection's ``TimeZone`` — Asia/Calcutta on this server — so
+    # ``replace`` re-reads the local wall clock as if it were UTC and shifts the
+    # instant by the offset. The two agree on any server running UTC, which is why
+    # this assertion only ever failed off-UTC.
+    assert first_stamp.astimezone(UTC) > ANCIENT
 
     await db_session.execute(
         text("UPDATE daily_metrics SET updated_at = :stamp WHERE user_id = :user_id"),
@@ -704,12 +709,12 @@ async def test_a_rebuild_advances_updated_at_so_the_staleness_signal_is_real(
     )
     await db_session.commit()
     aged = await _stored_rows(db_session, seed.owner.id)
-    assert aged[0]["updated_at"].replace(tzinfo=UTC) == ANCIENT
+    assert aged[0]["updated_at"].astimezone(UTC) == ANCIENT
 
     await service.rebuild_range(owner=seed.owner, start=DAY, end=DAY)
     refreshed = await _stored_rows(db_session, seed.owner.id)
 
-    assert refreshed[0]["updated_at"].replace(tzinfo=UTC) > ANCIENT
+    assert refreshed[0]["updated_at"].astimezone(UTC) > ANCIENT
 
 
 # ---------------------------------------------------------------------------

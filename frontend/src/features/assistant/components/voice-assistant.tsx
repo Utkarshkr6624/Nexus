@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { ArrowRight } from 'lucide-react'
 import { CircleAlert, Keyboard, MicVocal, ShieldAlert, Trash2, Undo2, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,6 +13,7 @@ import { ConversationLog, RoutingOutcome } from '@/features/assistant/components
 import { RecordButton } from '@/features/assistant/components/record-button'
 import { VoiceStatePill } from '@/features/assistant/components/voice-state-pill'
 import { RECOGNITION_PRIVACY_NOTICE } from '@/features/assistant/speech-recognition'
+import { destinationLink } from '@/features/assistant/destination-route'
 import { useVoiceAssistant } from '@/features/assistant/use-voice-assistant'
 import { cn } from '@/lib/utils'
 import type { VoiceState } from '@/features/assistant/types'
@@ -134,12 +137,14 @@ export interface VoiceAssistantProps {
 }
 
 export function VoiceAssistant({ className }: VoiceAssistantProps) {
+  const navigate = useNavigate()
   const {
     state,
     error,
     interimTranscript,
     suggestion,
     turns,
+    lastAction,
     startListening,
     stopListening,
     submitTranscript,
@@ -155,6 +160,13 @@ export function VoiceAssistant({ className }: VoiceAssistantProps) {
   const announcement = announcementFor(state, error?.message ?? null)
   const newest = turns.length > 0 ? (turns[turns.length - 1] ?? null) : null
   const lastDecision = newest?.decision ?? null
+
+  // Only an accepted turn names a destination; the others have nowhere to send
+  // the reader, which is exactly what the decision text already says.
+  const link =
+    lastDecision?.status === 'accepted'
+      ? destinationLink(lastAction?.destination ?? lastDecision.destination)
+      : null
 
   // `submitTranscript` is a no-op outside `idle` and `error`, so the field is
   // disabled wherever it is: offering an input that silently swallows text is
@@ -279,6 +291,18 @@ export function VoiceAssistant({ className }: VoiceAssistantProps) {
               <p className="text-sm text-foreground">“{newest.transcript.trim()}”</p>
             )}
             <RoutingOutcome decision={lastDecision} />
+            {link && (
+              /* An accepted turn names a destination. Naming it without offering
+                 it is a dead end: the reader is told NEXUS understood the
+                 request and then given no way to act on it, which reads as the
+                 assistant having done nothing at all. Routing is not execution —
+                 the button is the honest next step, and it is labelled as
+                 navigation rather than as work NEXUS carried out. */
+              <Button type="button" variant="outline" size="sm" onClick={() => navigate(link.to)}>
+                Go to {link.label}
+                <ArrowRight aria-hidden="true" />
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}

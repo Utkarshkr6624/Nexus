@@ -79,8 +79,8 @@ import type {
   LearningSummaryRead,
   LearningWindowParams,
   SkillCreatePayload,
+  SkillGapListRead,
   SkillGapParams,
-  SkillGapRead,
   SkillListParams,
   SkillListRead,
   SkillRead,
@@ -156,12 +156,19 @@ export function fetchLearningSummary(
  * `available: false` rows are present in the list rather than omitted, because
  * "nothing has been recorded for this skill" is the honest answer on a cold
  * account and the page must be able to say it instead of drawing an empty chart.
+ *
+ * **The envelope is returned whole.** The endpoint answers `SkillGapListRead`
+ * — `items` plus `total`, `available_count`, `unavailable_count` and
+ * `by_level_source` — and every one of those counts spans all matching gaps
+ * rather than the page in hand. Unwrapping to `items` here would hand the
+ * caller a shorter list than the server described and silently delete the
+ * tallies, so the caller destructures the envelope instead.
  */
 export function fetchSkillGaps(
   params: SkillGapParams = {},
   signal?: AbortSignal,
-): Promise<SkillGapRead[]> {
-  return apiClient.get<SkillGapRead[]>(LEARNING_ENDPOINTS.gaps, {
+): Promise<SkillGapListRead> {
+  return apiClient.get<SkillGapListRead>(LEARNING_ENDPOINTS.gaps, {
     query: queryFrom({ window_days: params.window_days, skill_id: params.skill_id }),
     signal,
   })
@@ -311,13 +318,16 @@ export function fetchCareerSummary(signal?: AbortSignal): Promise<CareerSummaryR
 }
 
 /**
- * The caller's career profile.
+ * The caller's career profile, or `null` when there is not one yet.
  *
- * A 404 when no profile has been created yet — which is a state to render, not a
- * failure, and the reason `PUT` exists in the first place.
+ * **"No profile" is a 200 carrying `null`, not a 404.** The endpoint answers
+ * `CareerProfileRead | null`, and the empty state is a state to render rather
+ * than a failure — which is the reason `PUT` exists in the first place. Typing
+ * this as a bare `CareerProfileRead` would make every consumer defend against a
+ * value the type promised could not arrive.
  */
-export function fetchCareerProfile(signal?: AbortSignal): Promise<CareerProfileRead> {
-  return apiClient.get<CareerProfileRead>(CAREER_ENDPOINTS.profile, { signal })
+export function fetchCareerProfile(signal?: AbortSignal): Promise<CareerProfileRead | null> {
+  return apiClient.get<CareerProfileRead | null>(CAREER_ENDPOINTS.profile, { signal })
 }
 
 /**

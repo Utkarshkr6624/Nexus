@@ -814,6 +814,16 @@ npm run dev
 | Backend | `http://localhost:8000` |
 | API Docs | `http://localhost:8000/docs` |
 
+## 4. One command (Windows, with the NEXO chat assistant)
+
+After steps 2 and 3 have been done once, `start.cmd` in the repository root checks PostgreSQL, then starts the
+backend (`http://127.0.0.1:8000`) with NEXO chat (internally "Jarvis") enabled and the frontend (`http://localhost:5173`),
+verifies each health check and prints the URL. The Qwen3-8B model is **not** loaded at start: press "Turn NEXO on" on
+`http://localhost:5173/nexo` to load it (runtime: `Jarvis/jarvis_phase7/runtime/README.md`). Ctrl+C stops what it
+started; if one service dies, the launcher names it and stops the rest. `start.cmd --no-jarvis` starts NEXUS with
+NEXO chat off. NEXO is a development candidate that is **not** acceptance-qualified; current status, verified
+capabilities and blockers: `Jarvis/jarvis_phase7/FINAL_ENGINEERING_REPORT.md`.
+
 ---
 
 # Configuration
@@ -863,6 +873,7 @@ processes regardless of the working directory. Every variable is case-insensitiv
 | Developer intelligence (Phase 8) | `DEVELOPER_GIT_TIMEOUT_SECONDS` (30), `DEVELOPER_MAX_COMMITS_PER_SCAN` (2000), `DEVELOPER_MAX_REPOSITORIES` (100), `DEVELOPER_DEFAULT_WINDOW_DAYS` (30), `DEVELOPER_MAX_WINDOW_DAYS` (366), `DEVELOPER_ACTIVITY_GRANULARITY_DEFAULT` (`day`), `DEVELOPER_PATH_ALLOWLIST` (unset) |
 | Learning and career (Phase 9) | `LEARNING_DEFAULT_WINDOW_DAYS` (30), `LEARNING_MAX_WINDOW_DAYS` (366), `LEARNING_MAX_GOALS` (200), `LEARNING_MAX_SKILLS` (100), `LEARNING_MIN_EVIDENCE_FOR_ESTIMATE` (3), `CAREER_MAX_EVIDENCE` (500), `CAREER_STALE_INACTIVE_DAYS` (21) |
 | ML integration (Phase 11) | `ML_ENABLED` (true — off means no checkpoint is loaded and the ML endpoints answer `503 ml_unavailable`), `ML_MODEL_PATH` (**empty**, which resolves `<backend>/ml/artifacts/small-model/final` relative to the repository; never a hard-coded absolute path), `ML_DEVICE` (`auto` — CUDA when the machine has a working build, CPU otherwise), `ML_CONFIDENCE_THRESHOLD` (0.90 — an **integration threshold, not a calibrated probability**), `ML_MAX_INPUT_CHARS` (2000), `ML_REJECT_CREDENTIALS` (true), `ML_FAIL_FAST` (false) |
+| Jarvis development integration (Phase 7, **off by default, unqualified model**) | `JARVIS_ENABLED` (false), `JARVIS_MODEL_URL` (empty — the separate Qwen3-8B generation server), `JARVIS_EXPECTED_ADAPTER_SHA256` (checkpoint_v31_139, `d754a3c6…`; a server reporting another adapter is treated as unavailable), `JARVIS_GENERATION_TIMEOUT_SECONDS` (120), `JARVIS_MAX_STEPS` (5), `JARVIS_MAX_INPUT_CHARS` (8000), `JARVIS_TOOL_TIMEOUT_SECONDS` (20), `JARVIS_WORKSPACE_DIR` (empty — disables the `fs_*` tools), `JARVIS_SHELL_ALLOWLIST` (empty — disables `shell_run`), `JARVIS_WEB_SEARCH_PROVIDER` (`searxng`; `wikipedia` is the free keyless MediaWiki search, used by `start.cmd`), `JARVIS_WEB_SEARCH_URL` (empty — with `searxng`, disables `web_search`), `JARVIS_WEB_SEARCH_CONTACT` (`https://localhost/nexo` — contact in the search User-Agent; Wikimedia answers 403 without one), `JARVIS_WEB_ALLOW_PRIVATE_HOSTS` (false), `JARVIS_WEB_MAX_BYTES` (200000), `JARVIS_CONFIRMATION_TTL_SECONDS` (600), `JARVIS_MODEL_LAUNCH_ARGV` (empty — JSON argv the backend uses to start the model server on demand; `start.cmd` sets it), `JARVIS_MODEL_LOAD_TIMEOUT_SECONDS` (900), `JARVIS_IDLE_UNLOAD_MINUTES` (10; 0 never unloads), `JARVIS_GIT_REPO_DIR` (empty — disables `git_inspect`; `start.cmd` sets this project), `JARVIS_PROJECT_COMMANDS` (empty — JSON of approved `test`/`lint` argv; disables `run_project_tests`/`run_project_lint`). See `Jarvis/jarvis_phase7/PHASE7_REPORT.md`. |
 
 `ML_CONFIDENCE_THRESHOLD` deserves its own note, because 0.90 is easy to misread. It was
 chosen by re-running the Phase 10 checkpoint over the held-out split and measuring what

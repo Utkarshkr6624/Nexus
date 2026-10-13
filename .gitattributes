@@ -1,0 +1,6 @@
+# One line-ending policy for every clone. Without it, core.autocrlf=true on Windows rewrote every text
+# file to CRLF on checkout, which broke the recorded SHA-256 manifests under Jarvis/.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf

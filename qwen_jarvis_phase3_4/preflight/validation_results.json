@@ -1,0 +1,66 @@
+{
+ "dir": "E:\\Nexo\\qwen_jarvis_phase3_4\\dataset\\v2_clean",
+ "total": 11262,
+ "split_counts": {
+  "train": 10231,
+  "validation": 516,
+  "test": 515
+ },
+ "hard_failures": [],
+ "content_check_failures": {},
+ "content_check_examples": [],
+ "unique_ids": true,
+ "exact_duplicate_conversations": 0,
+ "duplicate_normalised_prompts": 0,
+ "leakage": {
+  "train_vs_validation_identical_prompts": 0,
+  "train_vs_validation_identical_long_answers": 0,
+  "train_vs_test_identical_prompts": 0,
+  "train_vs_test_identical_long_answers": 0,
+  "validation_vs_test_identical_prompts": 0,
+  "validation_vs_test_identical_long_answers": 0,
+  "validation_near_duplicate_prompts_vs_train": 0,
+  "test_near_duplicate_prompts_vs_train": 0
+ },
+ "category_counts": {
+  "general_conversation": 1090,
+  "general_knowledge": 1173,
+  "reasoning": 1483,
+  "programming": 1500,
+  "mathematics": 728,
+  "instruction_following": 750,
+  "jarvis_assistant": 985,
+  "nexus_knowledge": 944,
+  "tool_aware": 975,
+  "capability_boundaries": 650,
+  "multi_turn_context": 492,
+  "safety": 492
+ },
+ "category_vs_phase2_minimum": {
+  "general_conversation": 90,
+  "general_knowledge": 173,
+  "reasoning": -17,
+  "programming": 0,
+  "mathematics": -22,
+  "instruction_following": 0,
+  "jarvis_assistant": -15,
+  "nexus_knowledge": 194,
+  "tool_aware": 225,
+  "capability_boundaries": 150,
+  "multi_turn_context": -8,
+  "safety": -8
+ },
+ "multi_turn_examples": 1457,
+ "with_tools_attached": 0,
+ "with_tool_calls": 0,
+ "code_blocks": {
+  "python": 440,
+  "sql": 52,
+  "json": 106,
+  "javascript": 56,
+  "java_program": 10,
+  "cpp_program": 6,
+  "c_program": 7
+ },
+ "code_bad_examples": []
+}

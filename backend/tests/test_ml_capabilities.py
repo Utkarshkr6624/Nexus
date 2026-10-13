@@ -54,11 +54,16 @@ APP_DIR = Path(app.__file__).parent
 # over tables that already existed. So nothing in the training data is stale, but
 # the counts below now describe a backend three generations newer than the corpus
 # was drawn from.
-EXPECTED_TOTAL_ROUTES = 191
-EXPECTED_DOMAINS = 21
+# Phase 7 (Jarvis development integration) added the ``/jarvis`` domain and its
+# three endpoints, ``status``, ``chat`` and ``confirm`` (-> 194/22). Like ``ml``,
+# it is not a destination any intent routes to, so the corpus is unaffected.
+# Phase 7b added ``/jarvis/model/load`` and ``/jarvis/model/unload`` (-> 196/22).
+EXPECTED_TOTAL_ROUTES = 196
+EXPECTED_DOMAINS = 22
 EXPECTED_RECOMMENDATION_TYPES = 12
 EXPECTED_RISK_TYPES = 7
-EXPECTED_PERMISSIONS = 11
+# Phase 7 added `jarvis.use` (11 -> 12).
+EXPECTED_PERMISSIONS = 12
 # Phase 14 added `PROJECT_DELETED`. A project deletion had been recorded as
 # `PROJECT_UPDATED` with a `deleted: true` in its metadata, so every reader
 # filtering the feed for deletions saw none — and `TASK_DELETED` already

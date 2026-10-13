@@ -7,6 +7,7 @@ import { RequireAnonymous } from '@/routes/guards'
 import {
   AnalyticsPage,
   AssistantPage,
+  JarvisPage,
   CareerPage,
   CommandCenterPage,
   DashboardPage,
@@ -62,6 +63,9 @@ export const router = createBrowserRouter([
       { path: '/learning', element: <LearningPage /> },
       { path: '/career', element: <CareerPage /> },
       { path: '/assistant', element: <AssistantPage /> },
+      { path: '/nexo', element: <JarvisPage /> },
+      // The chat assistant was called Jarvis before it was renamed NEXO; old links keep working.
+      { path: '/jarvis', element: <Navigate to="/nexo" replace /> },
       { path: '/experiments', element: <ExperimentsPage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> },

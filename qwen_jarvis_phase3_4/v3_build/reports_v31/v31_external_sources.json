@@ -1,0 +1,28 @@
+{
+ "inspected_2026_10_12": [
+  {"dataset": "lgoyal/open-refusal-steering", "revision": "8abcacf1b5f29f1999432999dc45a5d1916057d8", "license": "CC BY 4.0 (dataset card)",
+   "decision": "REJECTED - no usable training targets",
+   "evidence": "over_refusal_100.jsonl is the evaluation set (not used). contrastive_pairs.jsonl has 32 rows with keys id/topic/refuse_side/comply_side: prompts only, no assistant responses. Creating answers would mean authoring new content; not done."},
+  {"dataset": "arnaiztech/llms-mental-health-crisis-benchmark", "revision": "7f0a0d31bb8309b0e52e670d535d954d6fa7a386", "license": "CC BY-NC 4.0 (verified on card)",
+   "decision": "REJECTED - classification benchmark, no assistant responses",
+   "evidence": "Columns: example_id, inputs, label, source_dataset_id (hugg_1..hugg_N, original sources unnamed). Intended uses: crisis-category classification benchmarking and agreement analysis."},
+  {"dataset": "arnaiztech/llms-mental-health-crisis-responses", "license": "CC BY-NC 4.0 (verified on card)",
+   "citation": "Arnaiz-Rodriguez et al., 'Between Help and Harm: An Evaluation of Mental Health Crisis Handling by LLMs', JMIR Mental Health 2026, doi:10.2196/88435",
+   "decision": "REJECTED - too few eligible records and unverifiable input provenance",
+   "evidence": "Human appropriateness ratings exist only for 206 validation responses (2 raters, 1-5). Both raters = 5: 91, of which 79 are no_crisis. Crisis-labelled and both = 5: 12; only 5 pass the project crisis audit (others: 18 unaudited phone numbers, 1 contact claim). User inputs come from unnamed source datasets, so consent/privacy cannot be verified. Intended uses: response analysis and evaluator comparison, not training."},
+  {"dataset": "AmazonScience/FalseReject (train.jsonl)", "revision": "493ba967714ea54c6f01067e1f61e389cc2c9b3e", "license": "CC BY-NC 4.0 (verified on card)",
+   "citation": "Zhang, Xu, Wu, Reddy, 'FalseReject: A Resource for Improving Contextual Safety and Mitigating Over-Refusals in LLMs via Structured Reasoning', arXiv:2505.08054",
+   "local_copy": "v3_build/external/falsereject/train.jsonl sha256 0331899da03e9c2c232acffd8b086e5e57116e1f53986012743b9a3bea46f868 (provenance only; not used)",
+   "decision": "REJECTED - response style would reinforce the targeted failure",
+   "evidence": "14,624 machine-generated responses; none human-verified. Restricted to 5 low-risk categories and filtered (length <= 1800, no refusal opening, crisis audit): 1,298 candidates, 0 evaluation-leakage hits. But 818/1298 (63%) push 'consult a professional', 89 contain refusal wording mid-response, responses open with a templated 'I notice your query contains...' and prompts in even the low-risk categories mix in harmful framing. Training on these teaches hedged partial-declines, the over-refusal pattern being fixed."},
+  {"dataset": "allenai/coconot", "license": "AI2 ImpACT License - Low Risk (requires accepting the licence agreement)",
+   "decision": "NOT ADOPTED - licence needs explicit acceptance by the project owner; contrast split is test-only",
+   "evidence": "Configs: original (train 11,477 / test 1,001), contrast (test 379 only), pref (train). The contrast set targeting over-refusal is test-only."}
+ ],
+ "accepted_external_records": 0,
+ "gaps": {
+  "safety_fiction": "No eligible source found: FalseReject's 93 fiction-like prompts sit mostly in excluded high-risk categories; no internal V2/V3 fiction records (0 dedicated subcategory).",
+  "safety_crisis": "No eligible external source. Internal: 6 V3 crisis_support records (pass the crisis audit) plus empathy records, already seen during V3 training.",
+  "safety_benign_new": "No eligible external source with direct, non-hedged answers. Internal V2/V3 records reused in replay (already seen during V3 training)."
+ }
+}

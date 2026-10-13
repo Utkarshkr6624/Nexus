@@ -1,0 +1,13 @@
+{
+ "checkpoint": "checkpoint-800",
+ "metrics": {
+  "lora_B_norm": 13.534541126822369,
+  "metrics_step": 800,
+  "skipped_steps": 1,
+  "train_loss": 0.3852315992116928,
+  "val_loss": 0.6658911464513418,
+  "val_ppl": 1.9462241194947845,
+  "val_tokens": 36056
+ },
+ "step": 800
+}

@@ -1,0 +1,186 @@
+{
+ "run4": {
+  "dir": "E:\\Nexo\\Jarvis\\phase6_run4_new\\phase6_run3",
+  "missing_or_empty": [],
+  "csv_rows": 23,
+  "requested": [
+   "checkpoint_v31_139"
+  ],
+  "completed": [
+   "checkpoint_v31_139"
+  ],
+  "raw_files": [
+   "checkpoint_v31_139"
+  ],
+  "requested_equals_completed": true,
+  "raw_file_per_requested_config": true,
+  "elapsed_h": 0.796,
+  "package_gate": "PASS",
+  "adapter_hash_gate_all_pass": true,
+  "base_logit_reference_pass": true,
+  "adapters_pairwise_distinct": true,
+  "configs": {
+   "checkpoint_v31_139": {
+    "n_rows": 422,
+    "n_rows_field": 422,
+    "complete": true,
+    "unique_items": 406,
+    "repeats": 16,
+    "duplicates": 0,
+    "gen_errors": 0,
+    "empty_outputs": 0,
+    "scored_items": 400,
+    "suites": {
+     "instruction_following": 25,
+     "multi_turn": 25,
+     "nexus_facts": 25,
+     "tool_awareness": 114,
+     "capability_boundaries": 54,
+     "safety": 59,
+     "general": 25,
+     "testsplit": 25,
+     "phase6_format": 16,
+     "phase6_reasoning": 16,
+     "phase6_coding": 7,
+     "phase6_identity": 7,
+     "phase6_agentic": 8
+    },
+    "settings": {
+     "suites": [
+      "instruction_following",
+      "multi_turn",
+      "nexus_facts",
+      "tool_awareness",
+      "capability_boundaries",
+      "safety",
+      "general",
+      "testsplit",
+      "phase6_format",
+      "phase6_reasoning",
+      "phase6_coding",
+      "phase6_identity",
+      "phase6_agentic"
+     ],
+     "max_items_original": 25,
+     "full_suites": [
+      "capability_boundaries",
+      "safety",
+      "tool_awareness"
+     ],
+     "seed": 20261011,
+     "repeat_format": 2,
+     "exec_enabled": true,
+     "stub": null
+    },
+    "decoding": {
+     "do_sample": false,
+     "temperature": null,
+     "top_p": null,
+     "num_beams": 1,
+     "max_new_tokens": 384,
+     "enable_thinking": false,
+     "note": "greedy decoding; chat template rendered with enable_thinking=False (the data is non-thinking)"
+    }
+   }
+  }
+ },
+ "definitions_identical_to_run1_base": {
+  "run1/base_model": {
+   "same_item_keys": true,
+   "same_prompts": true,
+   "same_category_and_scored": true,
+   "same_settings": true,
+   "same_decoding": true
+  },
+  "run1/checkpoint_1100": {
+   "same_item_keys": true,
+   "same_prompts": true,
+   "same_category_and_scored": true,
+   "same_settings": true,
+   "same_decoding": true
+  },
+  "run1/checkpoint_1200": {
+   "same_item_keys": true,
+   "same_prompts": true,
+   "same_category_and_scored": true,
+   "same_settings": true,
+   "same_decoding": true
+  },
+  "run1/checkpoint_800": {
+   "same_item_keys": true,
+   "same_prompts": true,
+   "same_category_and_scored": true,
+   "same_settings": true,
+   "same_decoding": true
+  },
+  "run2/checkpoint_v31_139": {
+   "same_item_keys": true,
+   "same_prompts": true,
+   "same_category_and_scored": true,
+   "same_settings": true,
+   "same_decoding": true
+  }
+ },
+ "item_level_rescore_v1": {
+  "local_package_gate": {
+   "package_manifest_sha256": "888b18ba9ea2f684d7eaa14a71c5500765d5dc34e0616ff931f0ebdf7c6005a0",
+   "files_verified": 63,
+   "status": "PASS"
+  },
+  "note": "python_exec checks were executed on Kaggle only; locally they are compared by every other check type",
+  "run1/checkpoint_v31_139": {
+   "rows": 422,
+   "agree": 422,
+   "disagree": 0,
+   "disagreeing_ids": [],
+   "prompt_mismatch_vs_item_definition": 0
+  }
+ },
+ "run4_summaries_rederived_from_raw": {
+  "acceptance.json": true,
+  "determinism.json": true,
+  "failed_tests.json": true,
+  "regressions.json": true,
+  "CHECKPOINT_COMPARISON.csv": true
+ },
+ "v1_merged_rows": 230,
+ "v1_historical_rows_unchanged": true,
+ "v2_merged_rows": 230,
+ "v2_historical_rows_unchanged": true,
+ "configs": [
+  "base_model",
+  "checkpoint_1100",
+  "checkpoint_1200",
+  "checkpoint_1300",
+  "checkpoint_1400",
+  "checkpoint_1500",
+  "checkpoint_1596",
+  "checkpoint_800",
+  "checkpoint_v31_139",
+  "checkpoint_v3_700"
+ ],
+ "base_model_rows": 23,
+ "scorer_v2_sha256": "bdc108bfa24a8805c9ad6395f6892a5fba5a77a93c8611a742ba1b4f618be8df",
+ "scorer_v2_matches_frozen": true,
+ "new_adapter_sha256": "d754a3c6b77fb80bf24e67527d5b32f04606d8496e9e7c2b9d7cccef48f48fa8",
+ "new_adapter_matches_kaggle_gate": true,
+ "determinism": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "generation_length_caps": "NOT TESTED (tokenizers package absent from this interpreter)",
+ "source_evidence_unchanged": true,
+ "source_evidence_sha256": {
+  "phase6_run4_new\\phase6_run3\\CHECKPOINT_COMPARISON.csv": "658cb4d4ca5deb233b2921839e7dded918477cabe853f16b23d311688727b627",
+  "phase6_run4_new\\phase6_run3\\acceptance.json": "ad95ec2a6898d7cfd88b354c590542b5d2035f43ed38ef8ab38e968b492c2f0d",
+  "phase6_run4_new\\phase6_run3\\determinism.json": "12753e67da90d696a30404a100cd299d8f263095cc71e76568e09839e2e36d80",
+  "phase6_run4_new\\phase6_run3\\env.json": "be5e3461bc983639d61447a66f1159fa5620daf0340242b7d8db640476b5a6d3",
+  "phase6_run4_new\\phase6_run3\\failed_tests.json": "159cf18536c344549e0318edf6c6181931429221d70f469d4e36c71015c5adec",
+  "phase6_run4_new\\phase6_run3\\launcher.log": "e00c3a2b3d13c513cd33dad06332ba1d241e079679af70e935c9b5762ca80cc1",
+  "phase6_run4_new\\phase6_run3\\raw\\checkpoint_v31_139.json": "123a1c5999d1b61cc4d1c0f37824ad6284f5f62b08ef965ba8f1fa6433cddff2",
+  "phase6_run4_new\\phase6_run3\\regressions.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "phase6_run4_new\\phase6_run3\\run_status.json": "0089c2de38d69a528bd4b785d365b4e34752ca5784f16726ae858fbffa55dc9b",
+  "phase6_run4_new\\phase6_run3\\runner.log": "d048124c9e41e0c254cee2d900f034ca5cfb0fd931f4306b8416a573b80fe936"
+ }
+}

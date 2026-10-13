@@ -1811,7 +1811,7 @@ The seams below exist today. None of the *destinations* is implemented; the
 | Repository analysis | **live since Phase 8** — see [§17](#17-developer-learning-and-career) | background rescans | read-only, from disk; `git_scan_runs` is the seam a scheduler writes to |
 | Module data | `catalog.ts` registry | the remaining placeholder modules (Search, AI Assistant, Experiments) | add a route entry and a catalog entry; nothing else |
 | Role set | `user` / `admin` in a Python map | custom roles, per-tenant roles, delegated scopes | call sites ask for a `Permission`, never a role, so only `ROLE_PERMISSIONS` and the duplicated role constants change |
-| Module permissions | eleven capabilities, all granted to `user`; every module router guards its reads and writes | none outstanding | `require_permission()` is the only place a capability is checked |
+| Module permissions | twelve capabilities (Phase 7 added `jarvis.use`), all granted to `user`; every module router guards its reads and writes | none outstanding | `require_permission()` is the only place a capability is checked |
 | ML training | **live since Phase 11** — `backend/ml/` still trains on its own interpreter and its own entry point, and its artifacts are now served by `app/ml/`; see [§19](#19-phase-10--ml-training) and [§20](#20-phase-11--ml-integration) | a model registry, a second checkpoint, and anything that would put a generative model behind `large-model:unavailable` | the taxonomy and the checkpoint's `id2label` are cross-validated on **every** load, so a reorder or a rename refuses the load instead of misrouting traffic; `torch` stays a lazy import so the app still boots without it |
 
 Phase numbering is not invented here — it is the `phase` field in

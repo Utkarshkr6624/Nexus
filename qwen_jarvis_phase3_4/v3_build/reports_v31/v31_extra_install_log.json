@@ -1,0 +1,10 @@
+{
+ "source_zip_sha256": "503a30c807822290804f9606427d316c5c21f8f1bb42e70229f139b2dc3ba039",
+ "staging": "E:\\Nexo\\Jarvis\\_v31_drafts_staging",
+ "corrections": [
+  {
+   "id": "qj31x-crisis-015",
+   "change": "metadata.subcategory crisis_us -> crisis_country_unknown (user states they are not in the US); content unchanged"
+  }
+ ]
+}

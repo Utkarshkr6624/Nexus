@@ -1,0 +1,74 @@
+{
+ "label": "fa_f16kv",
+ "props": null,
+ "runs": {
+  "dry0.8|search_answer": {
+   "text": "The search returned returned returned returned a few results, but none of them look like movies you'd enjoy. I can't recommend you to a good movie. I can suggest ideas for genres or themes you like, or I can list some popular films I know.",
+   "secs": 6.7,
+   "adjacent_repeats": [
+    "returned",
+    "returned",
+    "returned"
+   ]
+  },
+  "dry0.8|chat": {
+   "text": "Hi. I'm NEXO, the assistant in NEXUS. I can help you with tasks, notes, planning, references, quick calculations, and general. For anything outside those, I may not be the right person, and I'll tell you. What would you like to do?",
+   "secs": 7.4,
+   "adjacent_repeats": []
+  },
+  "dry0.8|fact": {
+   "text": "I can answer this directly. Water boils boils at 100 \u00b0C at sea level.",
+   "secs": 3.0,
+   "adjacent_repeats": [
+    "boils"
+   ]
+  },
+  "dry0.8|multiturn": {
+   "text": "1) Break the subjects into daily goals2) Set a due date for each topic3) Review progress weekly. Do you want me to add it to your task list?",
+   "secs": 3.7,
+   "adjacent_repeats": []
+  },
+  "dry0.8|toolcall": {
+   "text": "I'll use the task tool for that.\n<tool_call>\n{\"name\": \"app_list_tasks\", \"arguments\": {\"filter\": \"open\"}}\n</tool_call>",
+   "secs": 3.7,
+   "adjacent_repeats": []
+  },
+  "dry0.8|structured": {
+   "text": "I'll use `app_create_task` for this.\n<tool_call>\n{\"name\": \"app_create_task\", \"arguments\": {\"title\": \"Submit physics report\"}}\n</tool_call>",
+   "secs": 5.9,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|search_answer": {
+   "text": "The search returned returned brought up a few results for 'good movies', such as Cult filmilm, (a cult following), Good Witch and (television franchise) and The Good,the Bad and the Ugly.together with a few others, I can you pick one to read more?",
+   "secs": 10.0,
+   "adjacent_repeats": [
+    "returned"
+   ]
+  },
+  "dry0.8+rep1.3_last8|chat": {
+   "text": "Hi. I'm NEXO, the assistant in this environment. I can help you with tasks, notes and planning. For anything outside I can use tools such as task and note applications. Tell me what you need and I'll start with a plan.",
+   "secs": 7.9,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|fact": {
+   "text": "I can answer this directly. Water boils at sea level boils boiling point is 100 degrees Celsius.",
+   "secs": 3.7,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|multiturn": {
+   "text": "1) Break the subjects into daily goals20-minute sessions. 3) Review one topic per session. 2) Do a few problems at the end of each session.",
+   "secs": 5.1,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|toolcall": {
+   "text": "I'll use the task tool for that.\n<tool_call>\n{\"name\": \"app_list_tasks\", \"arguments\": {\"filter\": \"open\"}}\n</tool_call>",
+   "secs": 4.3,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|structured": {
+   "text": "I'll use `app_create_task` for this.\n<tool_call>\n{\"name\": \"app_create_task\", \"arguments\": {\"title\": \"Submit physics report\"}}\n</tool_call>",
+   "secs": 5.0,
+   "adjacent_repeats": []
+  }
+ }
+}

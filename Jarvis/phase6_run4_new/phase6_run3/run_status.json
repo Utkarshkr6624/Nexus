@@ -1,0 +1,47 @@
+{
+ "configs_requested": [
+  "checkpoint_v31_139"
+ ],
+ "completed": [
+  "checkpoint_v31_139"
+ ],
+ "skipped_existing": [],
+ "not_started_time_budget": [],
+ "package_gate": {
+  "package_manifest_sha256": "888b18ba9ea2f684d7eaa14a71c5500765d5dc34e0616ff931f0ebdf7c6005a0",
+  "files_verified": 63,
+  "status": "PASS"
+ },
+ "adapter_verification": {
+  "reference": "bare base logits before any adapter was attached",
+  "adapter_hash_gate": {
+   "checkpoint_v31_139": {
+    "candidates": [
+     {
+      "path": "/kaggle/input/notebooks/utkarsh6624/jarvis-v31-remediation-train/runs/qwen3_8b_jarvis_v3_1_remediation/checkpoint-139",
+      "match": true,
+      "sha256": {
+       "adapter_model.safetensors": "d754a3c6b77fb80bf24e67527d5b32f04606d8496e9e7c2b9d7cccef48f48fa8",
+       "adapter_config.json": "d40a7049e7c3ce987cbe585190c45abfa0d9a60cfd850dc316de7b11b261efab"
+      }
+     }
+    ],
+    "chosen": "/kaggle/input/notebooks/utkarsh6624/jarvis-v31-remediation-train/runs/qwen3_8b_jarvis_v3_1_remediation/checkpoint-139/adapter",
+    "status": "PASS"
+   }
+  },
+  "base_model": {
+   "max_abs_logit_diff_vs_reference": 0.0,
+   "pass": true
+  },
+  "checkpoint_v31_139": {
+   "active_adapters": [
+    "checkpoint_v31_139"
+   ],
+   "max_abs_logit_diff_vs_base": 21.5,
+   "pass": true
+  },
+  "adapters_pairwise_distinct": true
+ },
+ "elapsed_h": 0.796
+}

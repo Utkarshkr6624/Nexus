@@ -1,0 +1,64 @@
+105 test files in 12 sequential batches (from batch 1)
+
+=== batch 1/12 exit=0 266s
+files: tests/test_account.py tests/test_activity_audit_trail.py tests/test_analytics_daily_metrics.py tests/test_analytics_day_agreement.py tests/test_analytics_edge_cases.py tests/test_analytics_export_api.py tests/test_analytics_feature_snapshot.py tests/test_analytics_learning_api.py tests/test_analytics_overview_api.py
+173 passed, 259 warnings in 263.77s (0:04:23)
+
+
+=== batch 2/12 exit=0 302s
+files: tests/test_analytics_pagination.py tests/test_analytics_privacy.py tests/test_analytics_projects_api.py tests/test_analytics_scores_api.py tests/test_analytics_scoring.py tests/test_auth.py tests/test_auth_phase2.py tests/test_availability_atomicity.py tests/test_career_api.py
+265 passed, 285 warnings in 294.15s (0:04:54)
+
+
+=== batch 3/12 exit=0 142s
+files: tests/test_career_query_efficiency.py tests/test_career_repository.py tests/test_career_schemas.py tests/test_career_service.py tests/test_config.py tests/test_developer_api.py tests/test_developer_features.py tests/test_developer_git.py tests/test_developer_git_integration.py
+289 passed, 1 skipped, 92 warnings in 140.22s (0:02:20)
+SKIPPED [1] tests\test_developer_git.py:1306: this platform will not create a directory symlink: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\utkar\\AppData\\Local\\Temp\\pytest-of-utkar\\pytest-555\\test_a_registered_path_that_be0\\elsewhere' -> 'C:\\Users\\utkar\\AppData\\Local\\Temp\\pytest-of-utkar\\pytest-555\\test_a_registered_path_that_be0\\allowed\\demo'
+
+=== batch 4/12 exit=0 83s
+files: tests/test_developer_metrics.py tests/test_developer_repository.py tests/test_developer_schema.py tests/test_developer_service.py tests/test_documentation_claims.py tests/test_error_handling.py tests/test_errors.py tests/test_event_loop.py tests/test_health.py
+175 passed, 1 warning in 80.96s (0:01:20)
+
+
+=== batch 5/12 exit=0 400s
+files: tests/test_jarvis_api.py tests/test_jarvis_crisis_guard.py tests/test_jarvis_toolcalls.py tests/test_jarvis_tools.py tests/test_jarvis_workspace_tools.py tests/test_knowledge_api.py tests/test_knowledge_query_efficiency.py tests/test_learning_api.py tests/test_learning_career_routers.py
+512 passed, 2 skipped, 456 warnings in 398.31s (0:06:38)
+SKIPPED [1] tests\test_jarvis_tools.py:247: symlinks need developer mode on Windows
+SKIPPED [1] tests\test_jarvis_tools.py:308: symlinks need developer mode on Windows
+
+=== batch 6/12 exit=0 38s
+files: tests/test_learning_gaps.py tests/test_learning_metrics.py tests/test_learning_repository.py tests/test_learning_schemas.py tests/test_learning_service.py tests/test_logging.py tests/test_middleware.py tests/test_migration_0010.py tests/test_migration_ddl.py
+507 passed in 36.76s
+
+
+=== batch 7/12 exit=0 93s
+files: tests/test_migrations.py tests/test_ml_actions.py tests/test_ml_actions_api.py tests/test_ml_capabilities.py tests/test_ml_checkpoint.py tests/test_ml_config.py tests/test_ml_datasets.py tests/test_ml_features.py tests/test_ml_hardening.py
+438 passed, 105 warnings in 90.93s (0:01:30)
+
+
+=== batch 8/12 exit=0 50s
+files: tests/test_ml_integration_api.py tests/test_ml_integration_classification.py tests/test_ml_integration_config.py tests/test_ml_integration_loading.py tests/test_ml_integration_routing.py tests/test_ml_manifest.py tests/test_ml_metrics.py tests/test_ml_normalize.py tests/test_ml_schema.py
+746 passed, 14 xfailed, 1 warning in 47.89s
+
+
+=== batch 9/12 exit=0 33s
+files: tests/test_ml_secrets.py tests/test_ml_splits.py tests/test_ml_taxonomy.py tests/test_ml_validation.py tests/test_ml_wire_contract.py tests/test_models.py tests/test_observability.py tests/test_offline_local_first.py tests/test_password_policy.py
+265 passed, 29 warnings in 31.53s
+
+
+=== batch 10/12 exit=0 83s
+files: tests/test_password_reset.py tests/test_permissions.py tests/test_planner_api.py tests/test_planner_day_arithmetic.py tests/test_rate_limit.py tests/test_rbac.py tests/test_regressions_routes.py tests/test_regressions_security.py tests/test_regressions_users.py
+180 passed, 113 warnings in 81.72s (0:01:21)
+
+
+=== batch 11/12 exit=0 277s
+files: tests/test_repositories.py tests/test_repository_invariants.py tests/test_risk_api.py tests/test_risk_detection.py tests/test_risk_recommendation.py tests/test_risk_scoring.py tests/test_search_api.py tests/test_security.py tests/test_session_database_lock.py
+404 passed, 189 warnings in 275.53s (0:04:35)
+
+
+=== batch 12/12 exit=0 128s
+files: tests/test_sessions.py tests/test_task_blocked_dependencies.py tests/test_task_integrity.py tests/test_task_project_api.py tests/test_user_journeys.py tests/test_warnings.py
+71 passed, 105 warnings in 125.27s (0:02:05)
+
+
+TOTAL {'passed': 4025, 'skipped': 3, 'xfailed': 14} worst_exit=0

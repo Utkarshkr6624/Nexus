@@ -1,0 +1,181 @@
+{
+ "configs_requested": [
+  "base_model",
+  "checkpoint_1300",
+  "checkpoint_1400",
+  "checkpoint_1500",
+  "checkpoint_1596"
+ ],
+ "completed": [
+  "base_model",
+  "checkpoint_1300",
+  "checkpoint_1400",
+  "checkpoint_1500",
+  "checkpoint_1596"
+ ],
+ "skipped_existing": [],
+ "not_started_time_budget": [],
+ "package_gate": {
+  "package_manifest_sha256": "888b18ba9ea2f684d7eaa14a71c5500765d5dc34e0616ff931f0ebdf7c6005a0",
+  "files_verified": 63,
+  "status": "PASS"
+ },
+ "adapter_verification": {
+  "reference": "bare base logits before any adapter was attached",
+  "adapter_hash_gate": {
+   "checkpoint_800": {
+    "candidates": [
+     {
+      "path": "/kaggle/input/datasets/utkarsh6624/qwen3-8b-jarvis-full-v3-checkpoints/qwen3_8b_jarvis_full_v3/checkpoint-800",
+      "match": true,
+      "sha256": {
+       "adapter_model.safetensors": "41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc",
+       "adapter_config.json": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64"
+      }
+     }
+    ],
+    "chosen": "/kaggle/input/datasets/utkarsh6624/qwen3-8b-jarvis-full-v3-checkpoints/qwen3_8b_jarvis_full_v3/checkpoint-800/adapter",
+    "status": "PASS"
+   },
+   "checkpoint_1100": {
+    "candidates": [
+     {
+      "path": "/kaggle/input/datasets/utkarsh6624/qwen3-8b-jarvis-full-v3-checkpoints/qwen3_8b_jarvis_full_v3/checkpoint-1100",
+      "match": true,
+      "sha256": {
+       "adapter_model.safetensors": "35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe",
+       "adapter_config.json": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64"
+      }
+     }
+    ],
+    "chosen": "/kaggle/input/datasets/utkarsh6624/qwen3-8b-jarvis-full-v3-checkpoints/qwen3_8b_jarvis_full_v3/checkpoint-1100/adapter",
+    "status": "PASS"
+   },
+   "checkpoint_1200": {
+    "candidates": [
+     {
+      "path": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1200",
+      "match": true,
+      "sha256": {
+       "adapter_model.safetensors": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b",
+       "adapter_config.json": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64"
+      }
+     }
+    ],
+    "chosen": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1200/adapter",
+    "status": "PASS"
+   },
+   "checkpoint_1300": {
+    "candidates": [
+     {
+      "path": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1300",
+      "match": true,
+      "sha256": {
+       "adapter_model.safetensors": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c",
+       "adapter_config.json": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0"
+      }
+     }
+    ],
+    "chosen": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1300/adapter",
+    "status": "PASS"
+   },
+   "checkpoint_1400": {
+    "candidates": [
+     {
+      "path": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1400",
+      "match": true,
+      "sha256": {
+       "adapter_model.safetensors": "8ea48e39cfc975fdad23ae8dc2bfc2ba19af9b574be0600b633460f4eb7e34fe",
+       "adapter_config.json": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0"
+      }
+     }
+    ],
+    "chosen": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1400/adapter",
+    "status": "PASS"
+   },
+   "checkpoint_1500": {
+    "candidates": [
+     {
+      "path": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1500",
+      "match": true,
+      "sha256": {
+       "adapter_model.safetensors": "b9d16c934d689952da179c4b8b3dbdfb104172ce2e95a46ecad685d48c865e9a",
+       "adapter_config.json": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0"
+      }
+     }
+    ],
+    "chosen": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1500/adapter",
+    "status": "PASS"
+   },
+   "checkpoint_1596": {
+    "candidates": [
+     {
+      "path": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1596",
+      "match": true,
+      "sha256": {
+       "adapter_model.safetensors": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8",
+       "adapter_config.json": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0"
+      }
+     }
+    ],
+    "chosen": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1596/adapter",
+    "status": "PASS"
+   }
+  },
+  "base_model": {
+   "max_abs_logit_diff_vs_reference": 0.0,
+   "pass": true
+  },
+  "checkpoint_800": {
+   "active_adapters": [
+    "checkpoint_800"
+   ],
+   "max_abs_logit_diff_vs_base": 22.625,
+   "pass": true
+  },
+  "checkpoint_1100": {
+   "active_adapters": [
+    "checkpoint_1100"
+   ],
+   "max_abs_logit_diff_vs_base": 21.375,
+   "pass": true
+  },
+  "checkpoint_1200": {
+   "active_adapters": [
+    "checkpoint_1200"
+   ],
+   "max_abs_logit_diff_vs_base": 21.25,
+   "pass": true
+  },
+  "checkpoint_1300": {
+   "active_adapters": [
+    "checkpoint_1300"
+   ],
+   "max_abs_logit_diff_vs_base": 21.125,
+   "pass": true
+  },
+  "checkpoint_1400": {
+   "active_adapters": [
+    "checkpoint_1400"
+   ],
+   "max_abs_logit_diff_vs_base": 21.0,
+   "pass": true
+  },
+  "checkpoint_1500": {
+   "active_adapters": [
+    "checkpoint_1500"
+   ],
+   "max_abs_logit_diff_vs_base": 21.0,
+   "pass": true
+  },
+  "checkpoint_1596": {
+   "active_adapters": [
+    "checkpoint_1596"
+   ],
+   "max_abs_logit_diff_vs_base": 21.125,
+   "pass": true
+  },
+  "adapters_pairwise_distinct": true
+ },
+ "elapsed_h": 4.642
+}

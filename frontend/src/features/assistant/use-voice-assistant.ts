@@ -95,16 +95,16 @@ function nextTurnId(): string {
  * product does; each one names a service, a destination, or a gap.
  */
 const VOICE_COPY = {
-  noSpeech: 'NEXO did not hear anything. Try again, or type the request instead.',
+  noSpeech: 'The AI Assistant did not hear anything. Try again, or type the request instead.',
   timeout:
-    'The classifier did not answer in time. It is the only model NEXO runs, so nothing else can pick this up.',
+    'The classifier did not answer in time. It is the only model the AI Assistant runs, so nothing else can pick this up.',
   classifierUnavailable:
-    "NEXO's intent classifier is not running on this backend, so the request could not be routed. Everything else in the app keeps working — typing still works, and voice routing needs the model loaded.",
-  invalidResponse: 'NEXO could not use the answer it got back. Try again in a moment.',
-  auth: 'NEXO could not route that because it does not know who is asking. Sign in again, then retry.',
+    "The AI Assistant's intent classifier is not running on this backend, so the request could not be routed. Everything else in the app keeps working — typing still works, and voice routing needs the model loaded.",
+  invalidResponse: 'The AI Assistant could not use the answer it got back. Try again in a moment.',
+  auth: 'The AI Assistant could not route that because it does not know who is asking. Sign in again, then retry.',
   validation:
-    'NEXO could not accept that request. Rephrase it as a single short instruction and try again.',
-  synthesisFailed: 'NEXO lost track of what it was reading out. The result above is unchanged.',
+    'The AI Assistant could not accept that request. Rephrase it as a single short instruction and try again.',
+  synthesisFailed: 'The AI Assistant lost track of what it was reading out. The result above is unchanged.',
 } as const
 
 const NO_SPEECH_ERROR: VoiceError = {
@@ -358,7 +358,7 @@ export function describeRoutingFailure(cause: unknown): VoiceError {
   if (cause.isTransportError) {
     return {
       code: 'timeout',
-      message: 'NEXO could not reach the backend, so nothing could be classified.',
+      message: 'The AI Assistant could not reach the backend, so nothing could be classified.',
       retryable: true,
     }
   }
@@ -642,7 +642,7 @@ function spokenConfirmation(decision: RoutingDecisionRead): string | null {
       return target ? `Routing to ${humaniseServiceName(target.service)}.` : null
     }
     case 'generation_unavailable':
-      return 'NEXO recognised that request, but it runs no generative model, so there is nothing here that can answer it.'
+      return 'The AI Assistant recognised that request, but it runs no generative model, so it cannot answer it here. NEXO, the separate generative assistant, can.'
     case 'out_of_scope':
       return 'That is outside what NEXUS can route.'
     case 'uncertain':

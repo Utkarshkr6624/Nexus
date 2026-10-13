@@ -1,0 +1,1299 @@
+
+ RUN  v3.2.7 E:/Nexo/frontend
+
+stderr | src/pages/search-page.test.tsx > global search page > asks for nothing until the box holds a non-blank term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > asks for nothing until the box holds a non-blank term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ ✓ src/pages/register-page.test.tsx (8 tests) 4157ms
+   ✓ RegisterPage > shows the live policy checklist under the password field  444ms
+   ✓ RegisterPage > names the strength level in text and updates it as the value changes  767ms
+   ✓ RegisterPage > reports a confirmation mismatch only once the field has been left  709ms
+   ✓ RegisterPage > refuses a mismatched confirmation without a round trip  859ms
+   ✓ RegisterPage > KNOWN LIMITATION: a pointer submit reports the mismatch without moving focus to it  867ms
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ ✓ src/features/quick-actions/quick-action-form.test.tsx (9 tests) 4105ms
+   ✓ quick action requests > writes nothing until the user submits  714ms
+   ✓ quick action requests > posts a task to /tasks with the documented body  692ms
+   ✓ quick action requests > omits the optional fields rather than guessing them  418ms
+   ✓ quick action requests > reports a created task with the name the server echoed back  748ms
+   ✓ quick action requests > reports a refusal as a refusal and never as a creation  331ms
+   ✓ quick action requests > reports a transport failure as a failure rather than swallowing it  386ms
+   ✓ quick action requests > posts a note to the knowledge endpoint, not the work one  330ms
+   ✓ quick action requests > sends the chosen wall-clock time as a real instant  312ms
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > debounces the box and fires one request carrying the settled term
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ ✓ src/components/layout/command-palette.test.tsx (16 tests) 4700ms
+   ✓ command palette results > renders destinations, quick actions and records in one grouped list  658ms
+   ✓ command palette results > shows every kind that needs no query and spends no request on it  653ms
+   ✓ command palette results > searches only after the typing settles, and only once  846ms
+   ✓ command palette keyboard > reaches a record from the search endpoint with the arrow keys  384ms
+   ✓ command palette keyboard > cycles Tab and Shift+Tab inside the palette instead of neutralising them  319ms
+   ✓ command palette selection > navigates to the page that owns a selected record  405ms
+   ✓ command palette selection > opens a project record on its own detail page  391ms
+ ✓ src/pages/jarvis-page.test.tsx (21 tests) 5279ms
+   ✓ JarvisPage > shows the server error instead of an answer when chat is refused  394ms
+   ✓ JarvisPage > sends the conversation and renders the outcome, trace and guard result  474ms
+   ✓ JarvisPage > runs a proposal only after Approve, once  391ms
+   ✓ JarvisPage voice > speaks the actual reply after a voice request, and the speaker button mutes it  382ms
+   ✓ JarvisPage approvals > explains what approval means and shows the target and reason on the card  323ms
+   ✓ JarvisPage approvals > declining sends approve=false once and shows that nothing ran  356ms
+   ✓ JarvisPage approvals > reports an expired or lost approval as such, with nothing run  406ms
+   ✓ JarvisPage approvals > never says an approval ran or did not run when no answer came back  400ms
+   ✓ JarvisPage approvals > keeps the card approvable when the server refused before taking the proposal (503 busy)  413ms
+   ✓ JarvisPage approvals > sends one confirmation for a double click on Approve  335ms
+   ✓ JarvisPage search and speech failures > lists the real search results and says what was searched  348ms
+stderr | src/pages/search-page.test.tsx > global search page > sends the selected kinds as repeated `types` and the page as limit/offset
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ ✓ src/pages/auth-form-errors.test.tsx (6 tests) 5331ms
+   ✓ tmp auth pages > login validates and shows the password toggle  569ms
+   ✓ tmp auth pages > register shows meter, checklist and blocks on mismatch  1876ms
+   ✓ tmp auth network paths > maps a 409 to a field error, not a banner  892ms
+   ✓ tmp auth network paths > maps a 409 username conflict to the username field  936ms
+   ✓ tmp auth network paths > toasts and navigates to the intended destination on a good login  577ms
+   ✓ tmp auth network paths > shows a human 401 on the login form  478ms
+stderr | src/pages/search-page.test.tsx > global search page > sends the selected kinds as repeated `types` and the page as limit/offset
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > renders the hits grouped by kind, one block per kind present on the page
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > renders the same page as a flat ranked list when grouping is off
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > renders the same page as a flat ranked list when grouping is off
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+stderr | src/pages/search-page.test.tsx > global search page > pages with limit and offset, and submitting returns to the first page
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ ✓ src/pages/recommendations-page.test.tsx (10 tests) 5820ms
+   ✓ recommendations page > groups by priority, most severe first, with an icon and a word on each heading  440ms
+   ✓ recommendations page > answers with accept, completion and decline, each through its own endpoint  477ms
+   ✓ recommendations page > reaches every status, including an explicit "all", through the filter  894ms
+   ✓ recommendations page > reports a failed read with a retry that asks again and recovers  3149ms
+stderr | src/pages/search-page.test.tsx > global search page > announces the settled count in a live region that exists before it
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `project-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `task-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `note-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `resource-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `concept-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `repository-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `goal-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skill-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `event-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `risk-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `recommendation-22222222-2222-4222-8222-222222222222`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+
+ ✓ src/pages/search-page.test.tsx (16 tests) 7698ms
+   ✓ global search page > offers a chip for every searchable kind, each with its icon and its word  310ms
+   ✓ global search page > asks for nothing until the box holds a non-blank term  1816ms
+   ✓ global search page > debounces the box and fires one request carrying the settled term  1088ms
+   ✓ global search page > sends the selected kinds as repeated `types` and the page as limit/offset  551ms
+   ✓ global search page > renders the same page as a flat ranked list when grouping is off  335ms
+   ✓ global search page > pages with limit and offset, and submitting returns to the first page  567ms
+   ✓ global search page > announces the settled count in a live region that exists before it  468ms
+ ✓ src/pages/career-page.test.tsx (16 tests) 7477ms
+   ✓ the career page > prints only what the person wrote, and says so on the profile itself  669ms
+   ✓ the career page > reports a 5xx evidence read with a retry that asks again and recovers  3314ms
+   ✓ the career page > surfaces a 422 on the profile form under the field the server named  691ms
+   ✓ the career page > never sends a user id, and never sends a generated field on save  403ms
+ ✓ src/pages/tasks-page.test.tsx (7 tests) 1848ms
+   ✓ the tasks page > offers Start on a task nobody has started, and no Complete  366ms
+   ✓ the tasks page > completes only the tasks the lifecycle allows, and says which it skipped  356ms
+ ✓ src/pages/risk-center-page.test.tsx (12 tests) 8602ms
+   ✓ risk center page > leads with the four summary bands, their counts and their band links  577ms
+   ✓ risk center page > acknowledges, dismisses and resolves through the three transition endpoints  574ms
+   ✓ risk center page > reports a failed list with a retry that asks again and recovers  3212ms
+   ✓ risk center page > reports a failed summary separately from a failed list  3135ms
+ ✓ src/stores/auth-store.test.ts (15 tests) 3576ms
+   ✓ boot verification of a persisted session > holds an unverified session unverified on a 500 rather than half-signing it out  1171ms
+   ✓ boot verification of a persisted session > treats a 429 as no verdict either  1187ms
+   ✓ boot verification of a persisted session > treats a 404 from a wrong base URL as no verdict  1190ms
+ ✓ src/features/analytics/components/date-range-picker.test.tsx (52 tests) 3419ms
+   ✓ DateRangePicker keyboard operation > reaches every preset by Tab and activates it with Enter or Space  401ms
+   ✓ DateRangePicker keyboard operation > walks from the presets into the custom fields and out to Apply  486ms
+   ✓ the window drives the URL and the query key > re-runs the windowed read with the new dates and leaves the rest of the app alone  379ms
+ ✓ src/features/assistant/components/voice-assistant.test.tsx (19 tests) 10124ms
+   ✓ VoiceAssistant > keeps typing available where there is no microphone at all  553ms
+   ✓ VoiceAssistant > sends the single utterance and nothing else  502ms
+   ✓ VoiceAssistant > keeps the typed path open after a failure, because typing is the way out  774ms
+   ✓ VoiceAssistant > keeps the conversation on screen, oldest first  1020ms
+   ✓ VoiceAssistant > reports a request that needs generation as a gap, not as a reply  551ms
+   ✓ the destination an accepted turn names > offers the route it just named, and the button takes you there  624ms
+   ✓ the destination an accepted turn names > withholds the button when the destination names no page  414ms
+   ✓ the confirmation a creatable turn produces > offers the backend’s own sentence, with a Confirm and a Cancel  659ms
+   ✓ the confirmation a creatable turn produces > is keyboard-operable: Escape is a cancel, and it discards the proposal  1021ms
+   ✓ the confirmation a creatable turn produces > confirms with exactly what the proposal published, and shows what happened  704ms
+   ✓ the confirmation a creatable turn produces > cancels without a request and leaves the routing decision standing  697ms
+   ✓ the confirmation a creatable turn produces > treats a refusal as nothing to do — no dialog, no alert, nothing disabled  955ms
+   ✓ the confirmation a creatable turn produces > warns before a destructive write, and acknowledges it on the wire  723ms
+   ✓ the confirmation a creatable turn produces > explains a refused confirmation without closing the dialog or disabling it  648ms
+ ✓ src/pages/login-page.test.tsx (6 tests) 2461ms
+   ✓ LoginPage > disables and announces the submit while the request is in flight  806ms
+   ✓ LoginPage > reports a malformed address and stops before the password round trip  622ms
+   ✓ LoginPage > navigates to the dashboard on a good sign-in  727ms
+stderr | src/pages/analytics-page.test.tsx > analytics page > offers the eight sections the brief names, with Overview open and no other
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/assistant/use-voice-assistant.test.ts (71 tests) 2298ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders the five headline metrics with their values and comparisons
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > reaches every tab and renders the sections that belong to it
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > keeps one distinct headline row above the panels, not a grid of equal cards
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > keeps one distinct headline row above the panels, not a grid of equal cards
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > reaches every tab and renders the sections that belong to it
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders each lower panel with its title and the recorded data behind it
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders each lower panel with its title and the recorded data behind it
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > reaches every tab and renders the sections that belong to it
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/pages/command-center-page.test.tsx (21 tests) 11776ms
+   ✓ command center page > renders every panel from the endpoint that panel reads  596ms
+   ✓ command center page > is insensitive to the order the records arrived in  383ms
+   ✓ command center page > never presents a prediction as a measurement  621ms
+   ✓ command center page > keeps every other panel alive when one request fails, and retries it  3279ms
+   ✓ command center page > names a source that failed while the rest of the queue still ranks  3286ms
+   ✓ command center page > creates a record through the real endpoint and reports what came back  415ms
+   ✓ command center page > reports what a 422 actually refused rather than only that it was refused  417ms
+   ✓ command center page > keeps the page alive when a panel body throws while rendering  381ms
+   ✓ command center page > opens the command palette rather than duplicating a search box  357ms
+stderr | src/pages/analytics-page.test.tsx > analytics page > reaches every tab and renders the sections that belong to it
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed panel request rather than an empty state
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > reaches every tab and renders the sections that belong to it
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed panel request rather than an empty state
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/learning/components/learning-components.test.tsx (42 tests) 2958ms
+   ✓ a skill level is never a bare number > renders a self-assessed level with the phrase naming who set it  509ms
+   ✓ LearningActivitySummary > leads with counts of records and the sentence the server composed for them  568ms
+ ✓ src/features/analytics/components/charts.test.tsx (40 tests) 6301ms
+   ✓ ChartShell > renders its title, subtitle and actions as the card header  316ms
+   ✓ TrendChart > plots its rows under a title that names the window  449ms
+   ✓ AnalyticsBarChart > renders its title and window, and mounts the chart  386ms
+   ✓ TimeDistributionChart > labels every slice with a name, a duration and a share — never colour alone  335ms
+ ✓ src/features/developer/components/developer-components.test.tsx (37 tests) 6121ms
+   ✓ DeveloperMetricList > shows all eight, each with its value, its definition and its explanation together  496ms
+   ✓ DeveloperActivitySection > plots every bucket in the window, including the ones that recorded nothing  468ms
+   ✓ LanguageBreakdown > names every recognised language and offers no other bucket at all  397ms
+stderr | src/pages/analytics-page.test.tsx > analytics page > reaches every tab and renders the sections that belong to it
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/auth/components/password-field.test.tsx (10 tests) 1964ms
+   ✓ PasswordField visibility toggle > flips the input type and reports the state through aria-pressed  512ms
+   ✓ PasswordField strength meter > states the level in text, not in colour alone  853ms
+stderr | src/pages/analytics-page.test.tsx > analytics page > leads the Overview tab with the five headline figures over the panels behind them
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/career/components/career-components.test.tsx (54 tests) 2389ms
+   ✓ CareerProfileCard > prints the user’s own words and says who wrote them  389ms
+stderr | src/pages/analytics-page.test.tsx > analytics page > splits the recorded time into a donut whose legend carries the shares
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/components/layout/app-shell.test.tsx (6 tests) 2058ms
+   ✓ AppShell accessibility > offers a skip link that lands on the focusable main region  494ms
+   ✓ AppShell accessibility > moves focus into the open sheet, holds it there, and returns it on close  553ms
+   ✓ AppShell accessibility > keeps the sheet dismiss control inside the keyboard trap  496ms
+stderr | src/pages/analytics-page.test.tsx > analytics page > splits the recorded time into a donut whose legend carries the shares
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > re-reads the analytics endpoints over the window a newly applied range asks for
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/pages/knowledge-page.test.tsx (5 tests) 2423ms
+   ✓ knowledge page — sort the endpoint will accept > sends a sort each list accepts on a stale shared link, and never 422s  576ms
+   ✓ knowledge page — sort the endpoint will accept > drops the sort with the tab so the next list asks for its own ordering  770ms
+   ✓ knowledge page — the Resources Type filter > narrows the rows it shows and says the filter runs over the fetched window  465ms
+   ✓ knowledge page — the Resources Type filter > clears back to every type from the same control  419ms
+stderr | src/pages/analytics-page.test.tsx > analytics page > re-reads the analytics endpoints over the window a newly applied range asks for
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > re-reads the analytics endpoints over the window a newly applied range asks for
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > never asks for a tab it has not opened, and reloads nothing else
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > never asks for a tab it has not opened, and reloads nothing else
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > shows the busy state for the window in flight, then the figures
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/components/ui/dialog.test.tsx (9 tests) 1863ms
+   ✓ Dialog > closes from a DialogClose action and from an outside click  428ms
+   ✓ Dialog > keeps Tab inside the panel while it is open  408ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed panel request rather than an empty state
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/risk/components/risk-components.test.tsx (40 tests) 1627ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed project and activity panel on its own, not as zeroes
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/pages/settings-page.test.tsx (5 tests) 1324ms
+   ✓ settings tab routing > defaults to profile with no query param  400ms
+   ✓ settings tab routing > writes the tab to the URL and walks back and forward  491ms
+ ✓ src/features/settings/sessions-panel.test.tsx (3 tests) 455ms
+   ✓ SessionsPanel device count > does not count an expired session as a signed-in device  322ms
+ ✓ src/components/ui/tabs.test.tsx (8 tests) 901ms
+ ✓ src/features/assistant/components/record-button.test.tsx (10 tests) 483ms
+ ✓ src/features/analytics/components/score-card.test.tsx (32 tests) 1164ms
+   ✓ ScoreCard > shows the score out of 100 with the disclaimer that qualifies it  326ms
+   ✓ MetricCard > puts the long explanation behind a labelled trigger  353ms
+ ✓ src/pages/app-shell.smoke.test.tsx (6 tests) 17094ms
+   ✓ application shell > redirects an anonymous visitor from a protected route to /login  523ms
+   ✓ application shell > signs in against the real auth endpoints and lands on the dashboard  9575ms
+   ✓ application shell > renders the shell, the sidebar groups and the live health card  476ms
+   ✓ application shell > opens the command palette with Ctrl+K and navigates to a module  966ms
+   ✓ application shell > applies the theme preference to the document element  661ms
+   ✓ application shell > degrades to a retryable error state when the backend is down  3257ms
+ ✓ src/features/assistant/components/conversation-log.test.tsx (10 tests) 419ms
+ ✓ src/features/settings/password-form.test.tsx (2 tests) 888ms
+   ✓ PasswordForm strength meter > reports the score on the meter scale rather than on 0-100  716ms
+ ✓ src/routes/guards.test.tsx (3 tests) 441ms
+ ✓ src/pages/assistant-page.test.tsx (5 tests) 439ms
+   ✓ AssistantPage > renders exactly one masthead and names the surface  335ms
+ ✓ src/pages/developer-repository-page.test.tsx (16 tests) 17692ms
+   ✓ developer repository page > shows what the last scan recorded about the repository  1039ms
+   ✓ developer repository page > records a failed scan attempt as data, so the button never throws  434ms
+   ✓ developer repository page > explains the gap between a scan run's discovered and added counts  333ms
+   ✓ developer repository page > reports an unreachable repository with a retry that asks again and recovers  3237ms
+   ✓ developer repository page > links to the project it belongs to, and says plainly when it belongs to none  382ms
+   ✓ developer repository page > developer repository page: acting on the repository > removes a repository only after a confirmation that names it and its recorded history  872ms
+ ✓ src/features/work/components/task-card.test.tsx (7 tests) 430ms
+ ✓ src/pages/experiments-page.test.tsx (7 tests) 452ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed project and activity panel on its own, not as zeroes
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed project and activity panel on its own, not as zeroes
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed time-distribution read rather than an empty donut
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed time-distribution read rather than an empty donut
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/analytics-page.test.tsx > analytics page > never prints NaN, Infinity or an undefined percentage on any tab
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/pages/career-page-forms.test.tsx (19 tests) 19061ms
+   ✓ the add-evidence dialog > opens with nothing filled in, and sends nothing at all until the person types  768ms
+   ✓ the add-evidence dialog > sends only the fields that were typed, and omits every blank rather than emptying it  948ms
+   ✓ the add-evidence dialog > links only what was chosen, and leaves the other two out of the payload  936ms
+   ✓ the add-evidence dialog > answers a blank date under the date box, with the submit button reachable  724ms
+   ✓ the add-evidence dialog > puts a 422 from the server under the field it named, and says it once  819ms
+   ✓ the add-evidence dialog > refetches on a successful create and shows the row the server returned  891ms
+   ✓ the add-evidence dialog > reports a refused create with a toast, and fabricates no row  894ms
+   ✓ the add-record dialog > omits a blank end date rather than sending an empty one or an explicit null  630ms
+   ✓ the add-record dialog > sends a title, an issuer and dates the person typed, and nothing else  2391ms
+   ✓ the add-record dialog > refuses an end date before the start date under the end-date box, writing nothing  581ms
+   ✓ the add-record dialog > adds the record it created and reports it in a toast  1228ms
+   ✓ the career pagers > renders nothing at all over a single page  320ms
+   ✓ the career pagers > quotes the backend’s own total rather than the page in hand  745ms
+   ✓ the career pagers > disables at both boundaries and asks the endpoint for the offset it needs  2102ms
+   ✓ the career pagers > writes the first page as the absent parameter, not as ?offset=0  1206ms
+   ✓ the career pagers > clears its own offset when its filter changes, so a narrowed set cannot strand the reader  1690ms
+   ✓ the career pagers > never claims the whole set on a page that is not the first  1367ms
+   ✓ the career pagers > prints no NaN, Infinity or undefined figure on either paged list  528ms
+ ✓ src/components/ui/button.test.tsx (2 tests) 294ms
+ ✓ src/features/assistant/components/voice-state-pill.test.tsx (7 tests) 300ms
+ ✓ src/components/feedback/app-error-boundary.test.tsx (3 tests) 418ms
+   ✓ AppErrorBoundary > catches a render throw and recovers by reloading the page  361ms
+ ✓ src/app/query-client.test.tsx (1 test) 110ms
+ ✓ src/components/ui/card.test.tsx (2 tests) 268ms
+ ✓ src/components/feedback/error-state.test.tsx (3 tests) 344ms
+ ✓ src/pages/analytics-page.test.tsx (10 tests) 9205ms
+   ✓ analytics page > offers the eight sections the brief names, with Overview open and no other  593ms
+   ✓ analytics page > reaches every tab and renders the sections that belong to it  2045ms
+   ✓ analytics page > leads the Overview tab with the five headline figures over the panels behind them  397ms
+   ✓ analytics page > re-reads the analytics endpoints over the window a newly applied range asks for  495ms
+   ✓ analytics page > never asks for a tab it has not opened, and reloads nothing else  379ms
+   ✓ analytics page > reports a failed analytics read with a retryable error state  3124ms
+   ✓ analytics page > never prints NaN, Infinity or an undefined percentage on any tab  1487ms
+ ✓ src/features/knowledge/markdown.test.tsx (7 tests) 264ms
+ ✓ src/features/auth/components/password-rules-checklist.test.tsx (6 tests) 405ms
+ ✓ src/features/analytics/format.test.ts (66 tests) 79ms
+ ✓ src/lib/api-client.test.ts (14 tests) 56ms
+ ✓ src/stores/theme-store.test.ts (3 tests) 38ms
+ ✓ src/features/assistant/speech-recognition.test.ts (42 tests) 46ms
+ ✓ src/services/ml.test.ts (8 tests) 30ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports a failed time-distribution read rather than an empty donut
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/assistant/speech-synthesis.test.ts (25 tests) 26ms
+ ✓ src/services/analytics.test.ts (7 tests) 23ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders an event type the vocabulary does not know instead of taking the page down
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders an event type the vocabulary does not know instead of taking the page down
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/stores/toast-store.test.ts (12 tests) 24ms
+ ✓ src/features/auth/session-labels.test.ts (14 tests) 21ms
+ ✓ src/features/auth/password-strength.test.ts (9 tests) 18ms
+ ✓ src/features/modules/catalog.test.ts (2 tests) 31ms
+ ✓ src/lib/utils.test.ts (2 tests) 13ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders a relative timestamp for a recorded event
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/types/work.test.ts (6 tests) 22ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders a relative timestamp for a recorded event
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/auth/password-rules.test.ts (12 tests) 18ms
+ ✓ src/features/work/task-transitions.test.ts (21 tests) 16ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders nothing rather than NaN for an event with a malformed created_at
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > renders nothing rather than NaN for an event with a malformed created_at
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/features/analytics/chart-theme.test.ts (9 tests) 10ms
+ ✓ src/features/planner/datetime.test.ts (4 tests) 8ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > shows the headline skeleton while the overview is still in flight
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/types/pagination.test.ts (2 tests) 5ms
+ ✓ src/pages/developer-page.test.tsx (15 tests) 24060ms
+   ✓ developer dashboard > leads with the six summary tiles and the sentence the server composed for them  1606ms
+   ✓ developer dashboard > renders all eight metrics with their value, their definition and their explanation  744ms
+   ✓ developer dashboard > shows an unmeasurable metric as its reason, with no figure beside it  501ms
+   ✓ developer dashboard > renders a genuine zero as 0, never as a dash  394ms
+   ✓ developer dashboard > plots the activity series with its empty buckets, and names its window  345ms
+   ✓ developer dashboard > lists both registered work trees, and a broken one is a card carrying a sentence  495ms
+   ✓ developer dashboard > reports a 5xx repository list with a retry that asks again and recovers  3640ms
+   ✓ developer dashboard > reports a failed activity read with dashes for the change figures, never zeros  3366ms
+   ✓ developer dashboard > surfaces a 422 on the registration form under the field the server named  1326ms
+   ✓ developer dashboard: acting on a repository from its card > scans from the card and redraws its figures, rather than only reporting success  398ms
+   ✓ developer dashboard: acting on a repository from its card > shows a scan as pending, and refuses to start a second one while it runs  369ms
+   ✓ developer dashboard: acting on a repository from its card > removes a repository from the grid only after a confirmation naming it and its history  540ms
+ ✓ src/pages/learning-page-window.test.tsx (19 tests) 24253ms
+   ✓ the learning dashboard grain control > is a named radiogroup with exactly one option in the tab order  857ms
+   ✓ the learning dashboard grain control > moves and selects together with the arrow keys, and puts the grain in the request  1698ms
+   ✓ the learning dashboard grain control > carries the chosen grain into the URL, so the view is shareable  1047ms
+   ✓ the learning dashboard grain control > restores the grain from a shared link, checked on arrival  467ms
+   ✓ the learning dashboard grain control > names the grain the server echoed, never the one the client asked for  781ms
+   ✓ the learning dashboard grain control > updates the caption when the grain changes, rather than leaving the old one up  1072ms
+   ✓ the learning dashboard grain control > will not leave a stale caption standing while a slow re-bucketing is in flight  848ms
+   ✓ the learning dashboard pagers > renders no pager at all when each list already fits on one page  471ms
+   ✓ the learning dashboard pagers > quotes the backend total beside the pager, not the length of the page  462ms
+   ✓ the learning dashboard pagers > disables Previous on the first page and Next on the last, and steps the offset  1184ms
+   ✓ the learning dashboard pagers > pages the skill cards and the trail independently, each with its own page size  1083ms
+   ✓ the learning dashboard pagers > writes the page position into the URL and omits it for page one  890ms
+   ✓ the learning dashboard pagers > drops an out-of-range page instead of sitting disabled on both sides  1570ms
+   ✓ the learning dashboard pagers > has dropped the "Showing the first N goals of M" prose the pager replaces  558ms
+   ✓ the learning dashboard all-time per-skill chart > does not move when the grain or the window does  450ms
+ ✓ src/pages/learning-page.test.tsx (17 tests) 25483ms
+   ✓ the learning dashboard > leads with counts of records and the sentence the server composed for them  1485ms
+   ✓ the learning dashboard > never renders a skill level as a bare number, on either card or gap row  696ms
+   ✓ the learning dashboard > renders the skill-gap explanation verbatim, with its digits intact  721ms
+   ✓ the learning dashboard > shows an unmeasurable gap as its reason, with no level and no figure beside it  513ms
+   ✓ the learning dashboard > renders a genuine zero as 0 and says whose figure it is  581ms
+   ✓ the learning dashboard > separates open goals from completed ones, and never invents a deadline  634ms
+   ✓ the learning dashboard > keeps the recorded trail as events, and names where each came from  520ms
+   ✓ the learning dashboard > plots the window and the per-skill breakdown with its own evidence  543ms
+   ✓ the learning dashboard > never sends a user id, because ownership is the server’s alone  421ms
+   ✓ the learning dashboard > reports a 5xx gap read with a retry that asks again and recovers  3732ms
+   ✓ the learning dashboard > surfaces a 422 on the goal form under the field the server named  1619ms
+   ✓ the learning dashboard > writes down a goal without a progress figure NEXUS would have to invent  1747ms
+   ✓ the learning dashboard > creates a skill without claiming who derived its level  672ms
+   ✓ the learning dashboard > records an activity without claiming a provenance it did not perform  1000ms
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > asks for the overview once across a re-render, for the window on screen
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > asks for the overview once across a re-render, for the window on screen
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports the backend as unreachable once its check stops answering, not as the last green reading
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports the backend as unreachable once its check stops answering, not as the last green reading
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > reports the backend as unreachable once its check stops answering, not as the last green reading
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > states what a recorded session measured rather than asserting that time was recorded
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+stderr | src/pages/dashboard-page.test.tsx > dashboard intelligence surface > states what a recorded session measured rather than asserting that time was recorded
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ ✓ src/pages/dashboard-page.test.tsx (16 tests) 19042ms
+   ✓ dashboard intelligence surface > renders the five headline metrics with their values and comparisons  660ms
+   ✓ dashboard intelligence surface > keeps one distinct headline row above the panels, not a grid of equal cards  648ms
+   ✓ dashboard intelligence surface > renders each lower panel with its title and the recorded data behind it  340ms
+   ✓ dashboard intelligence surface > reports a failed panel request rather than an empty state  3332ms
+   ✓ dashboard intelligence surface > reports a failed project and activity panel on its own, not as zeroes  3354ms
+   ✓ dashboard intelligence surface > reports a failed time-distribution read rather than an empty donut  3216ms
+   ✓ dashboard intelligence surface > reports a failed analytics request with the analytics error state  3086ms
+   ✓ dashboard intelligence surface > reports the backend as unreachable once its check stops answering, not as the last green reading  3164ms
+
+ Test Files  70 passed (70)
+      Tests  1047 passed (1047)
+   Start at  13:30:16
+   Duration  59.97s (transform 11.64s, setup 80.85s, collect 84.80s, tests 282.55s, environment 364.36s, prepare 185.26s)
+
+EXIT=0

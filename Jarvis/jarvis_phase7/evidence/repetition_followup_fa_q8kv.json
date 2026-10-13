@@ -1,0 +1,76 @@
+{
+ "label": "fa_q8kv",
+ "props": null,
+ "runs": {
+  "dry0.8|search_answer": {
+   "text": "The search returned returned returned returned the Wikipedia results, not a movie list. Here are a few of the results: 'Cult film' (a film that has acquired a cult following), 'The good, the Bad and the Ugly' (1966 epic spaghetti Western film), and 'Good Witch (franchise)', a franchise of television films. I can't judge which is best for you, so if you want more suggestions, tell me what you like.",
+   "secs": 17.4,
+   "adjacent_repeats": [
+    "returned",
+    "returned",
+    "returned"
+   ]
+  },
+  "dry0.8|chat": {
+   "text": "Hi. I'm NEXO, the assistant in NEXUS. I can help you with tasks, notes, planning, references, general, quick calculations, and general. Let me know what you're working on.",
+   "secs": 6.0,
+   "adjacent_repeats": []
+  },
+  "dry0.8|fact": {
+   "text": "I can answer this directly. Water boils boils at 100 \u00b0C at sea level.",
+   "secs": 3.0,
+   "adjacent_repeats": [
+    "boils"
+   ]
+  },
+  "dry0.8|multiturn": {
+   "text": "1) Break the subjects into daily topics, 2) Schedule a buffer between between between between and 3) schedule a review session session. Want me to add anything or make it more specific?",
+   "secs": 4.4,
+   "adjacent_repeats": [
+    "between",
+    "between",
+    "between"
+   ]
+  },
+  "dry0.8|toolcall": {
+   "text": "I'll use the task tool for that.\n<tool_call>\n{\"name\": \"app_list_tasks\", \"arguments\": {\"filter\": \"open\"}}\n</tool_call>",
+   "secs": 3.7,
+   "adjacent_repeats": []
+  },
+  "dry0.8|structured": {
+   "text": "I'll use `app_create_task` for this.\n<tool_call>\n{\"name\": \"app_create_task\", \"arguments\": {\"title\": \"Submit physics report\"}}\n</tool_call>",
+   "secs": 4.5,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|search_answer": {
+   "text": "The search returned came back with a few results, such as 'Cult film' and 'The Good, the Bad and the Ugly'. I haven't seen these, so i can't vouch them. I'd rather suggest you tell me what kind of movies matter to you (genre, year) and i'll narrow the search.",
+   "secs": 8.2,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|chat": {
+   "text": "Hi. I'm NEXO, the assistant in this environment. I can help with text, reasoning and general tasks using the tools in this session. What would you like to do?",
+   "secs": 5.0,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|fact": {
+   "text": "I can answer this directly. Water boils at sea level boils boiling point is 100 degrees Celsius.",
+   "secs": 3.3,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|multiturn": {
+   "text": "1) Break the subjects into daily topics, 2) Schedule a buffer between for review, 3) schedule buffer time for questions. Want me to make a calendar for the week?",
+   "secs": 4.1,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|toolcall": {
+   "text": "I'll use the task tool for that.\n<tool_call>\n{\"name\": \"app_list_tasks\", \"arguments\": {\"filter\": \"open\"}}\n</tool_call>",
+   "secs": 3.7,
+   "adjacent_repeats": []
+  },
+  "dry0.8+rep1.3_last8|structured": {
+   "text": "I'll use `app_create_task` for this.\n<tool_call>\n{\"name\": \"app_create_task\", \"arguments\": {\"title\": \"Submit physics report\"}}\n</tool_call>",
+   "secs": 4.5,
+   "adjacent_repeats": []
+  }
+ }
+}

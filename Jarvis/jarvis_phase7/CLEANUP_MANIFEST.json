@@ -1,0 +1,376 @@
+{
+ "created_utc": "2026-10-12T10:57:46+00:00",
+ "dry_run": false,
+ "removed": [
+  {
+   "path": "E:\\Nexo\\Jarvis\\_resume_test\\run\\checkpoint-1596\\trainer_state.pt",
+   "bytes": 349622034,
+   "sha256": "29c19b9c8cf9143167e4df44b25a929192a2448ade14bd6aa8c4c6fbbb38178b",
+   "category": "D exact duplicate",
+   "reason": "byte-identical copy made for the Phase 5 resume load test; its pre/post hashes stay recorded in _resume_test/pre_test_sha256.txt and post_test_sha256.txt; re-copy checkpoint-1596 to rerun load_test.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\checkpoint-1596\\trainer_state.pt"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_resume_test\\run\\checkpoint-1596\\checkpoint_meta.json",
+   "bytes": 1499,
+   "sha256": "a8bef0e232fe367d308ff9c551115a29a8370af01411916beea6ca715a8a7478",
+   "category": "D exact duplicate",
+   "reason": "byte-identical copy made for the Phase 5 resume load test; its pre/post hashes stay recorded in _resume_test/pre_test_sha256.txt and post_test_sha256.txt; re-copy checkpoint-1596 to rerun load_test.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\checkpoint-1596\\checkpoint_meta.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_resume_test\\run\\checkpoint-1596\\adapter\\adapter_model.safetensors",
+   "bytes": 174655536,
+   "sha256": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8",
+   "category": "D exact duplicate",
+   "reason": "byte-identical copy made for the Phase 5 resume load test; its pre/post hashes stay recorded in _resume_test/pre_test_sha256.txt and post_test_sha256.txt; re-copy checkpoint-1596 to rerun load_test.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\checkpoint-1596\\adapter\\adapter_model.safetensors"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_resume_test\\run\\checkpoint-1596\\adapter\\adapter_config.json",
+   "bytes": 1146,
+   "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+   "category": "D exact duplicate",
+   "reason": "byte-identical copy made for the Phase 5 resume load test; its pre/post hashes stay recorded in _resume_test/pre_test_sha256.txt and post_test_sha256.txt; re-copy checkpoint-1596 to rerun load_test.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\checkpoint-1596\\adapter\\adapter_config.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_resume_test\\run\\checkpoint-1596\\adapter\\README.md",
+   "bytes": 5180,
+   "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+   "category": "D exact duplicate",
+   "reason": "byte-identical copy made for the Phase 5 resume load test; its pre/post hashes stay recorded in _resume_test/pre_test_sha256.txt and post_test_sha256.txt; re-copy checkpoint-1596 to rerun load_test.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\checkpoint-1596\\adapter\\README.md"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\base_model.json",
+   "bytes": 733442,
+   "sha256": "8d0444c538ff1c3a8aae05cb5f1e3788c4df3cc178169776d2ace2aa1a3e2263",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\base_model.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_1100.json",
+   "bytes": 561323,
+   "sha256": "c967c0616c024a14dadbfd7dc89bf0882d81c7548abf97e82cae54b84389dd5b",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_1100.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_1200.json",
+   "bytes": 561818,
+   "sha256": "73c53c241cda39f74d2b805317b1a3ecec1ada930733fb13e37d5bd58fd3d1f8",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_1200.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_1300.json",
+   "bytes": 565127,
+   "sha256": "28da68fbe16b43e9d3e15c5f74bad285e54b9d687c3bcf751a85769688622daa",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_1300.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_1400.json",
+   "bytes": 566285,
+   "sha256": "b4c94b34201bfbc197e54dd353a381779c96b446acfe255ec911a281d3e7ecb3",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_1400.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_1500.json",
+   "bytes": 565153,
+   "sha256": "e4307ec177bbeec86c29be32ccebc15a909d86dbf3bfc1397250146a0f36831b",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_1500.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_1596.json",
+   "bytes": 563120,
+   "sha256": "d0265f77f039e7f0360562d9334baa48919135767b396ff1eb1737b61f9c1ea7",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_1596.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_800.json",
+   "bytes": 567469,
+   "sha256": "5cd8130330f1ff24f098c142d3dd331ed01b539ff9aec21a7f0cd83bb1fbfffa",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_800.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_v31_139.json",
+   "bytes": 555537,
+   "sha256": "bb7c7b667edacf6080c04e137e04c6c1ecfbf9fcb84b491a64f9859f86773373",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_v31_139.json"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw\\checkpoint_v3_700.json",
+   "bytes": 560174,
+   "sha256": "b2be09f8308e6e17e8077d699621bdddc2a691a431914d137af82ecc143a36a5",
+   "category": "C recoverable generated output",
+   "reason": "local re-run output identical to the stored scorer-v2.2 re-score; reproducible with jarvis_phase6_final/scripts/rescore_v2.py",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase6_final\\results\\kaggle_run_v31\\merged_v2\\raw\\checkpoint_v3_700.json"
+  },
+  {
+   "path": "E:\\Nexo\\qwen_jarvis_phase3_4\\kaggle\\__pycache__",
+   "bytes": 12185,
+   "files": 1,
+   "category": "E disposable cache",
+   "reason": "Python bytecode cache; regenerated on import",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\qwen_jarvis_phase3_4\\pipeline\\__pycache__",
+   "bytes": 209,
+   "files": 1,
+   "category": "E disposable cache",
+   "reason": "Python bytecode cache; regenerated on import",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\qwen_jarvis_phase3_4\\pipeline\\data\\__pycache__",
+   "bytes": 59542,
+   "files": 6,
+   "category": "E disposable cache",
+   "reason": "Python bytecode cache; regenerated on import",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\qwen_jarvis_phase3_4\\pipeline\\eval\\__pycache__",
+   "bytes": 245712,
+   "files": 14,
+   "category": "E disposable cache",
+   "reason": "Python bytecode cache; regenerated on import",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\qwen_jarvis_phase3_4\\pipeline\\train\\__pycache__",
+   "bytes": 129086,
+   "files": 7,
+   "category": "E disposable cache",
+   "reason": "Python bytecode cache; regenerated on import",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\qwen_jarvis_phase3_4\\tests\\__pycache__",
+   "bytes": 613452,
+   "files": 24,
+   "category": "E disposable cache",
+   "reason": "Python bytecode cache; regenerated on import",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\qwen_jarvis_phase3_4\\tool_protocol\\__pycache__",
+   "bytes": 46424,
+   "files": 2,
+   "category": "E disposable cache",
+   "reason": "Python bytecode cache; regenerated on import",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\qwen_jarvis_phase3_4\\v3_build\\__pycache__",
+   "bytes": 5391,
+   "files": 1,
+   "category": "E disposable cache",
+   "reason": "Python bytecode cache; regenerated on import",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_phase_c_downloads\\checkpoint-1300\\adapter",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_phase_c_downloads\\checkpoint-1400\\adapter",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_phase_c_downloads\\checkpoint-1500\\adapter",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_phase_c_downloads\\checkpoint-1596\\adapter",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_phase_c_downloads\\checkpoint-1300",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_phase_c_downloads\\checkpoint-1400",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_phase_c_downloads\\checkpoint-1500",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_phase_c_downloads\\checkpoint-1596",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_resume_test\\run\\checkpoint-1596\\adapter",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "empty download target directory",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\_resume_test\\run\\checkpoint-1596",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "emptied by the removals above",
+   "authoritative_copy": null
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\scorer_v2_local_rerun\\raw",
+   "bytes": 0,
+   "category": "E empty directory",
+   "reason": "emptied by the removals above",
+   "authoritative_copy": null
+  }
+ ],
+ "removed_bytes": 531196844,
+ "problems": [],
+ "preserved": [
+  {
+   "path": "Jarvis/phase6_run4 (vs phase6_run4_new)",
+   "category": "B",
+   "reason": "Run 4 evidence is protected; the raw files are identical, but both directories are referenced (SOURCE_SHA256 files, reports)"
+  },
+  {
+   "path": "qwen_jarvis_phase3_4/kaggle/v3_upload/*.zip, v31_upload/*.zip (= dist_v3, dist_v31)",
+   "category": "F",
+   "reason": "identical, but each upload folder is the input to `kaggle datasets version`"
+  },
+  {
+   "path": "Jarvis/_resume_test/code",
+   "category": "A",
+   "reason": "pinned evaluation package used by scripts/rescore_v2.py"
+  },
+  {
+   "path": "v3_train_output/.../checkpoint-600, jarvis_v31_remediation_train/.../checkpoint-100",
+   "category": "B",
+   "reason": "unique training artifacts (not duplicates); size alone is no reason"
+  },
+  {
+   "path": "Jarvis/jarvis_phase6_final/{v3_eval,v3_eval_upload,v31_eval,v31_eval_upload,upload_staging}",
+   "category": "B",
+   "reason": "staged copies are upload provenance, with their own STAGING_SHA256SUMS"
+  },
+  {
+   "path": "Jarvis/jarvis_phase6_final/logs/selftest_runs/group1|group2",
+   "category": "B",
+   "reason": "self-test evidence; identical base_model.json is expected"
+  },
+  {
+   "path": "qwen_jarvis_phase3_4/v3_build/*.pre_v3",
+   "category": "F",
+   "reason": "pre-V3 backups of the builder and trainer; uncertain value, kept"
+  },
+  {
+   "path": "qwen_jarvis_phase3_4/v3_build/reports_v31/V31_SHA256SUMS.txt",
+   "category": "B",
+   "reason": "stale (pre-install) but historical; superseded by MANIFEST.json, documented in WORKING_STATE.md"
+  },
+  {
+   "path": "Jarvis/_v31_drafts_staging, jarvis_v31_extra_drafts.zip",
+   "category": "B",
+   "reason": "draft provenance and the validated staging input"
+  },
+  {
+   "path": "all datasets (V2, V3, V3.1, V3.1.1 candidate), 7 original checkpoints, v3_700, v31_139, configs, scripts, reports, run 1-4 evidence, scorers",
+   "category": "A/B",
+   "reason": "protected"
+  }
+ ],
+ "verification_after_cleanup": {
+  "original_checkpoints_sha256sum_c": "35/35 OK",
+  "checkpoint_v31_139_adapter_sha256": "d754a3c6b77fb80bf24e67527d5b32f04606d8496e9e7c2b9d7cccef48f48fa8",
+  "checkpoint_v3_700_adapter_sha256": "0bc6c192baab1e84c5e92da389c17ca04c358450189ba264a7a567604ca97ca9",
+  "resume_test_evidence_kept": [
+   "RESUME_VALIDATION_REPORT.md",
+   "load_test.log",
+   "load_test.py",
+   "load_test_results.json",
+   "load_test_results_run1_order_bug.json",
+   "load_test_run1_order_bug.log",
+   "post_test_sha256.txt",
+   "post_test_sizes.txt",
+   "pre_test_sha256.txt",
+   "pre_test_sizes.txt"
+  ]
+ },
+ "removed_later": [
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\full_suite_run3_batches1-7_backup.txt",
+   "bytes": 3109,
+   "sha256": "692077916ff893686cfd34a73d8dfe6be40a2e718bb9ae70ca4d4317f58bf6da",
+   "category": "D exact duplicate (prefix)",
+   "reason": "temporary safety copy of batches 1-7 made before resuming the batched suite; its bytes are the exact first part of full_suite_run3_batched.txt",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase7\\evidence\\full_suite_run3_batched.txt",
+   "removed_utc": "2026-10-13T04:14:39+00:00"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\downloads\\cudart-llama-bin-win-cuda-12.4-x64.zip",
+   "bytes": 391443627,
+   "sha256": "8c79a9b226de4b3cacfd1f83d24f962d0773be79f1e7b75c6af4ded7e32ae1d6",
+   "category": "redundant download (extracted copy verified)",
+   "reason": "all 3 archive members are byte-identical (sha256 per member) to the extracted files in E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\llama.cpp; re-downloadable from github.com/ggml-org/llama.cpp release b11570 (digest recorded here and in runtime/README.md)",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\llama.cpp",
+   "removed_utc": "2026-10-13T04:55:27+00:00"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\downloads\\llama-b11570-bin-win-cuda-12.4-x64.zip",
+   "bytes": 265217807,
+   "sha256": "7e8cfe94fd6570ae3fa038f7dd070319becaf478f0c08016ab42c86874d20a2e",
+   "category": "redundant download (extracted copy verified)",
+   "reason": "all 52 archive members are byte-identical (sha256 per member) to the extracted files in E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\llama.cpp; re-downloadable from github.com/ggml-org/llama.cpp release b11570 (digest recorded here and in runtime/README.md)",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\llama.cpp",
+   "removed_utc": "2026-10-13T04:55:27+00:00"
+  },
+  {
+   "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\downloads\\llama.cpp-b11570-src.tar.gz",
+   "bytes": 38083290,
+   "sha256": "940114c9de1b2f04cbebfc8f67d3920889ee9de9bd5af20c2343ce9455c4b100",
+   "category": "redundant download (extracted copy verified)",
+   "reason": "all 3769 archive members are byte-identical (sha256 per member) to the extracted files in E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\src\\llama.cpp-b11570; re-downloadable from github.com/ggml-org/llama.cpp release b11570 (digest recorded here and in runtime/README.md)",
+   "authoritative_copy": "E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\src\\llama.cpp-b11570",
+   "removed_utc": "2026-10-13T04:55:27+00:00"
+  }
+ ]
+}

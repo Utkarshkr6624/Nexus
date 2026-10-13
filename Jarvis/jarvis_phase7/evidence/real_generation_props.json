@@ -1,0 +1,6 @@
+{
+  "model_path": "runtime\\models\\Qwen3-8B-Q4_K_M.gguf",
+  "total_slots": 1,
+  "build_info": "b11570-ccdbe2905",
+  "n_ctx": 8192
+}

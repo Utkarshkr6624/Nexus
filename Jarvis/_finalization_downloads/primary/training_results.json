@@ -1,0 +1,13 @@
+{
+  "step": 1596,
+  "total_steps": 1596,
+  "best_step": 1300,
+  "best_val_loss": 0.6599428926175388,
+  "final_val_loss": 0.6626523670572841,
+  "final_val_ppl": 1.9399309255549122,
+  "tokens_seen": 3731843,
+  "skipped_steps": 1,
+  "adapter_updated": true,
+  "training_exit_code": 0,
+  "note": "Metrics recorded from the completed training output."
+}

@@ -1,0 +1,133 @@
+{
+ "env": {
+  "python": "3.13.14",
+  "torch": "2.14.1+cpu",
+  "cuda_available": false,
+  "transformers": "5.19.0",
+  "peft": "0.21.2"
+ },
+ "checks": {
+  "identity_reproduced_from_code": {
+   "status": "PASS",
+   "expected": {
+    "model_id": "Qwen/Qwen3-8B",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "config_hash": "9312597956f22164"
+   },
+   "recorded": {
+    "config_hash": "9312597956f22164",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "model_id": "Qwen/Qwen3-8B"
+   }
+  },
+  "load_checkpoint_weights_only": {
+   "status": "PASS",
+   "mismatches": [],
+   "keys": [
+    "loop",
+    "optimizer",
+    "rng",
+    "scaler",
+    "scheduler"
+   ]
+  },
+  "tokenizer_fingerprint": {
+   "status": "PASS",
+   "reference": "tokenizer_fingerprint.json"
+  },
+  "total_steps_rederived": {
+   "status": "PASS",
+   "train_samples": 12777,
+   "steps_per_epoch": 798,
+   "total": 1596,
+   "warmup": 48
+  },
+  "adapter_fits_qwen3_8b_architecture": {
+   "status": "PASS",
+   "tensors": 504,
+   "finite": true,
+   "lora_B_norm": 14.370671255698555,
+   "meta_lora_B_norm": 14.370671164968513,
+   "missing": [],
+   "unexpected": []
+  },
+  "adapter_lora_B_norm_matches_meta": {
+   "status": "PASS",
+   "computed": 14.370671255698555
+  },
+  "optimizer_state_restored": {
+   "status": "PASS",
+   "n_params": 504,
+   "adam_step_values": [
+    1595.0
+   ],
+   "lr": 1.0296691294042759e-10,
+   "initial_lr": 0.0001,
+   "betas": [
+    0.9,
+    0.999
+   ],
+   "eps": 1e-08,
+   "weight_decay": 0.01,
+   "nonfinite_tensors": 0
+  },
+  "optimizer_step_count_vs_global_step": {
+   "status": "PASS",
+   "note": "1 skipped step expected => adam step 1595",
+   "adam_step": [
+    1595.0
+   ]
+  },
+  "scheduler_state_restored": {
+   "status": "PASS",
+   "last_epoch": 1595,
+   "last_lr": 1.0296691294042759e-10,
+   "cosine_formula_lr": 1.0296691294042759e-10,
+   "optimizer_lr": 1.0296691294042759e-10
+  },
+  "grad_scaler_state_restored": {
+   "status": "PARTIAL",
+   "scale": 32768.0,
+   "saved": {
+    "scale": 32768.0,
+    "growth_factor": 2.0,
+    "backoff_factor": 0.5,
+    "growth_interval": 2000,
+    "_growth_tracker": 1030
+   },
+   "device": "cpu substitute"
+  },
+  "rng_python_numpy_torchcpu_restored": {
+   "status": "PASS"
+  },
+  "rng_torch_cuda_restored": {
+   "status": "UNVERIFIED (no CUDA; original code skips it when CUDA is absent)",
+   "saved_devices": 2
+  },
+  "loop_state_restored": {
+   "status": "PASS",
+   "loop": {
+    "step": 1596,
+    "epoch": 1,
+    "tokens_seen": 3731843,
+    "total_steps": 1596,
+    "skipped_steps": 1,
+    "consecutive_skipped": 0
+   },
+   "stopper": {
+    "best": 0.6599428926175388,
+    "best_step": 1300,
+    "bad": 3
+   },
+   "meta_step": 1596
+  },
+  "resume_would_continue": {
+   "status": "INFO",
+   "note": "step 1596 >= total_steps 1596: Trainer.fit() would perform 0 further steps from checkpoint-1596"
+  }
+ }
+}

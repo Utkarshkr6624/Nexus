@@ -1,0 +1,27 @@
+# Requirements for the Phase 5 Kaggle notebook (Qwen3-8B QLoRA SFT).  Kaggle execution is PENDING PHASE 5 - nothing here has been installed on Kaggle.
+#
+# VERSIONS ON KAGGLE ARE UNVERIFIED until Phase 5.  Every local test in Phase 3/4 ran on a CPU-only venv with
+#   torch 2.14.1 (CPU), transformers 5.19.0, peft 0.21.2, trl 1.15.0, accelerate 1.15.0, datasets 5.1.0, tokenizers 0.23.2, PyYAML 6.0.3,
+#   jsonschema 4.26.0, huggingface_hub 1.33.0.   bitsandbytes (CUDA-only) has never been run.  The code path for transformers 4.51-4.55
+#   (the `dtype=` / `torch_dtype=` fallback in train.py) was never exercised.  The notebook prints the resolved versions and runs `pip check`;
+#   after the first real Kaggle install, pin the exact versions that worked (copy them into this file) before any long run.
+#
+# torch is deliberately NOT listed: Kaggle GPU images ship a CUDA build of torch; reinstalling it from PyPI could replace it with a mismatched build.
+# tokenizers / huggingface_hub / safetensors are deliberately NOT pinned: transformers declares the compatible ranges itself, and pinning them
+# separately is the usual cause of `pip check` conflicts (transformers 4.x needs huggingface_hub<1.0, transformers 5.x needs >=1.0).
+#
+# Lower bounds are hard requirements (documented reasons):
+#   transformers>=4.51.0  -> Qwen3 architecture (config.json of Qwen/Qwen3-8B says transformers_version 4.51.0)
+#   peft>=0.15.0          -> LoRA on Qwen3 projection modules
+#   bitsandbytes>=0.45.0  -> 4-bit NF4 + double quantisation (CUDA only)
+# Upper bounds are NEXT-MAJOR GUARDS ONLY (tested majors: transformers 5, peft 0, trl 1, accelerate 1, datasets 5). They are not claims that every release
+# below the cap works; they only stop pip from jumping to an untested major version on its own.
+transformers>=4.51.0,<6
+peft>=0.15.0,<1
+accelerate>=1.0.0,<2
+bitsandbytes>=0.45.0,<1
+datasets>=2.19.0,<6
+pyyaml>=6.0,<7
+jsonschema>=4.20.0,<5
+# trl is only needed if pipeline/train/train.py imports it (the production config drives a custom loop); installing it is harmless:
+trl>=0.15.0,<2

@@ -638,9 +638,10 @@ error carries `WWW-Authenticate: Bearer`.
 
 ### Permissions
 
-`app/core/permissions.py` defines a `Permission` StrEnum of **eleven** capabilities —
+`app/core/permissions.py` defines a `Permission` StrEnum of **twelve** capabilities —
 `users.read`, `users.write`, `projects.read`, `projects.write`, `tasks.read`, `tasks.write`,
-`analytics.read`, `calendar.read`, `calendar.write`, `knowledge.read`, `knowledge.write` —
+`analytics.read`, `calendar.read`, `calendar.write`, `knowledge.read`, `knowledge.write`,
+`jarvis.use` (Phase 7 development integration) —
 a `ROLE_PERMISSIONS` map, and a `require_permission()` dependency factory. A protected
 route declares the capability it is guarding:
 

@@ -1,0 +1,87 @@
+{
+ "dataset_version": "qwen_jarvis_dataset_v2",
+ "format": "JSONL; one record per line",
+ "training_format": {
+  "file_suffix": "_messages_only.jsonl",
+  "record": {
+   "messages": [
+    {
+     "role": "system|user|assistant",
+     "content": "string"
+    }
+   ]
+  }
+ },
+ "full_format": {
+  "id": "qj2-<hash>",
+  "messages": "as above",
+  "metadata": [
+   "id",
+   "category",
+   "subcategory",
+   "difficulty",
+   "source_type",
+   "group",
+   "validation_status",
+   "turns"
+  ]
+ },
+ "totals": {
+  "examples": 11332,
+  "splits": {
+   "train": 10296,
+   "validation": 518,
+   "test": 518
+  },
+  "multi_turn": 1465
+ },
+ "files": {
+  "dataset/splits/test.jsonl": {
+   "sha256": "9f84fdf351b85ac52985e160aeaaeda4c25d62019e7f11475513fa680e4f70b9",
+   "bytes": 409347,
+   "lines": 518
+  },
+  "dataset/splits/test_messages_only.jsonl": {
+   "sha256": "fbdad0acea5d568e43b916a9aa899e5a7149777c6188e4732ba299a5ed564122",
+   "bytes": 279710,
+   "lines": 518
+  },
+  "dataset/splits/train.jsonl": {
+   "sha256": "8b6808e6c7fc9fa5dfaf4837adcad8f5ee44ba4e74a233aab745e9a7fd183730",
+   "bytes": 8331881,
+   "lines": 10296
+  },
+  "dataset/splits/train_messages_only.jsonl": {
+   "sha256": "e6be412e0399ea8909d813de46a43f43e7a4db739b0381b4c70b2c7c95ee2317",
+   "bytes": 5743475,
+   "lines": 10296
+  },
+  "dataset/splits/validation.jsonl": {
+   "sha256": "a4df19cb9a972980fab4a968d8443247d5bd443210bd4221ba1318cc3860f5fb",
+   "bytes": 416521,
+   "lines": 518
+  },
+  "dataset/splits/validation_messages_only.jsonl": {
+   "sha256": "51b478be6a07a741fb39310a9ef4a60aedfc57f7b7ca11d8a9938476d24b79d5",
+   "bytes": 286843,
+   "lines": 518
+  },
+  "dataset/validated/qwen_jarvis_dataset_v1_all.jsonl": {
+   "sha256": "67e6450541a607687558e54a738cec35becc6130a05fb6e7d14b318dba351720",
+   "bytes": 8602072,
+   "lines": 10500
+  },
+  "dataset/validated/qwen_jarvis_dataset_v2_all.jsonl": {
+   "sha256": "d968315a88524330e28ae7f43ce6afa4754b17c6d73fd92df167cc491f13e0a0",
+   "bytes": 9157749,
+   "lines": 11332
+  }
+ },
+ "validation": {
+  "hard_failures": [],
+  "checks_passed": true
+ },
+ "tool_call_wire_format": "not defined in this dataset (Phase 3)",
+ "tool_result_convention": "tool results appear as user-role messages beginning '[tool result from <tool>]' because a tool role/format is a Phase 3 decision",
+ "isolated_from_nexus": true
+}

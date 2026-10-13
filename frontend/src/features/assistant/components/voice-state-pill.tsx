@@ -47,7 +47,7 @@ const VOICE_STATE_META: Record<VoiceState, VoiceStateMeta> = {
     icon: Ban,
     tone: 'warning',
     description:
-      'This browser ships no speech recogniser. NEXO still classifies typed requests.',
+      'This browser ships no speech recogniser. The AI Assistant still classifies typed requests.',
   },
   idle: {
     label: 'Tap to speak',
@@ -104,7 +104,7 @@ const ROUTING_STATUS_META: Record<RoutingStatus, VoiceStateMeta> = {
     label: 'Needs generation',
     icon: TriangleAlert,
     tone: 'warning',
-    description: 'This request needs free-form generation. NEXO runs no generative model.',
+    description: 'This request needs free-form generation. The AI Assistant runs no generative model; NEXO, a separate assistant, can answer it.',
   },
 }
 

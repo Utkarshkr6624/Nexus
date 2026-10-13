@@ -1,6 +1,8 @@
 import type { ReactElement, ReactNode } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+
+import { WARM_LAZY_CHARTS_TIMEOUT_MS, warmLazyCharts } from '@/test/warm-lazy-charts'
 
 import { ChartShell, ChartTooltip } from '@/features/analytics/components/chart-shell'
 import { EmptyAnalytics } from '@/features/analytics/components/empty-analytics'
@@ -95,6 +97,8 @@ const PLACEHOLDER_TITLE = 'Loading chart'
  * so raising it cannot turn a genuine failure into a pass.
  */
 const LAZY_RESOLVE_TIMEOUT_MS = 10_000
+
+beforeAll(warmLazyCharts, WARM_LAZY_CHARTS_TIMEOUT_MS)
 
 /**
  * Render a chart through the real `Suspense` boundary and resolve once the lazy

@@ -59,6 +59,7 @@ def test_the_permission_set_is_exactly_the_known_capabilities():
         "tasks.read",
         "tasks.write",
         "analytics.read",
+        "jarvis.use",
     }
 
 
@@ -97,6 +98,7 @@ def test_a_user_may_read_and_write_only_its_own_domain():
             Permission.TASKS_READ,
             Permission.TASKS_WRITE,
             Permission.ANALYTICS_READ,
+            Permission.JARVIS_USE,
         }
     )
     assert Permission.USERS_READ in permissions_for(USER_ROLE)

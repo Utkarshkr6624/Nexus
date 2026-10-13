@@ -1,0 +1,42 @@
+import json
+
+lines = []
+
+# === 40 NEW answer_vs_action examples ===
+
+# Example 1
+lines.append(json.dumps({"messages":[{"role":"user","content":"Create a task called 'Prepare Q4 report' in the Finance project with high priority and due date Friday."},{"role":"assistant","content":"","tool_calls":[{"type":"function","function":{"name":"nexus.task.create","arguments":{"title":"Prepare Q4 report","project":"Finance","priority":"high","due_date":"Friday"}}}]},{"role":"tool","name":"nexus.task.create","content":"{\"success\":true,\"id\":\"task-1001\",\"title\":\"Prepare Q4 report\",\"project\":\"Finance\",\"priority\":\"high\"}"},{"role":"assistant","content":"Created task 'Prepare Q4 report' (task-1001) in the Finance project with high priority. Due date set to Friday."}],"metadata":{"category":"answer_vs_action","difficulty":"medium","tools_used":["nexus.task.create"],"multi_step":False,"requires_clarification":False,"requires_confirmation":False}},ensure_ascii=False))
+
+# Example 2
+lines.append(json.dumps({"messages":[{"role":"user","content":"I need to update my learning goal progress. Check my current learning status first."},{"role":"assistant","content":"","tool_calls":[{"type":"function","function":{"name":"nexus.learning.status","arguments":{}}}]},{"role":"tool","name":"nexus.learning.status","content":"{\"success\":true,\"goals\":[{\"title\":\"Learn Python\",\"progress\":0.75},{\"title\":\"Learn Docker\",\"progress\":0.4}],\"skills\":[\"Python\",\"Docker\"]}"},{"role":"assistant","content":"Your current learning status: 'Learn Python' is 75% complete, 'Learn Docker' is 40% complete. Skills: Python, Docker. What would you like to update?"}],"metadata":{"category":"answer_vs_action","difficulty":"medium","tools_used":["nexus.learning.status"],"multi_step":False,"requires_clarification":True,"requires_confirmation":False}},ensure_ascii=False))
+
+# Example 3
+lines.append(json.dumps({"messages":[{"role":"user","content":"Search for anything related to cybersecurity in my knowledge base."},{"role":"assistant","content":"","tool_calls":[{"type":"function","function":{"name":"nexus.knowledge.search","arguments":{"query":"cybersecurity"}}}]},{"role":"tool","name":"nexus.knowledge.search","content":"{\"success\":true,\"results\":[{\"title\":\"Security Best Practices\",\"content\":\"Use MFA and regular audits.\"},{\"title\":\"Incident Response\",\"content\":\"Follow the IR playbook.\"}]}"},{"role":"assistant","content":"Found 2 cybersecurity-related entries: 'Security Best Practices' (Use MFA and regular audits) and 'Incident Response' (Follow the IR playbook)."}],"metadata":{"category":"answer_vs_action","difficulty":"medium","tools_used":["nexus.knowledge.search"],"multi_step":False,"requires_clarification":False,"requires_confirmation":False}},ensure_ascii=False))
+
+# Example 4
+lines.append(json.dumps({"messages":[{"role":"user","content":"Show me my career goals and current role."},{"role":"assistant","content":"","tool_calls":[{"type":"function","function":{"name":"nexus.career.view","arguments":{}}}]},{"role":"tool","name":"nexus.career.view","content":"{\"success\":true,\"profile\":{\"role\":\"Senior Developer\",\"experience_years\":8,\"goals\":[\"Lead Engineer\",\"Tech Lead\"],\"skills\":[\"Python\",\"Kubernetes\"]},\"portfolio_evidence\":[{\"title\":\"NEXUS\",\"type\":\"project\"}]}"},{"role":"assistant","content":"Your profile: Senior Developer with 8 years experience. Current goals: Lead Engineer, Tech Lead. Skills: Python, Kubernetes."}],"metadata":{"category":"answer_vs_action","difficulty":"medium","tools_used":["nexus.career.view"],"multi_step":False,"requires_clarification":False,"requires_confirmation":False}},ensure_ascii=False))
+
+# Example 5
+lines.append(json.dumps({"messages":[{"role":"user","content":"I want to create a new project for my open source work. Can you help?"},{"role":"assistant","content":"I can create a project for you. What name and description would you like for this open source project?"}],"metadata":{"category":"answer_vs_action","difficulty":"easy","tools_used":[],"multi_step":False,"requires_clarification":True,"requires_confirmation":False}},ensure_ascii=False))
+
+# Example 6
+lines.append(json.dumps({"messages":[{"role":"user","content":"What is the difference between task.list and task.create?"},{"role":"assistant","content":"task.list retrieves existing tasks (optionally filtered by project), while task.create adds a new task to a project. task.list is read-only; task.create modifies data and requires confirmation in NEXUS."}],"metadata":{"category":"answer_vs_action","difficulty":"easy","tools_used":[],"multi_step":False,"requires_clarification":False,"requires_confirmation":False}},ensure_ascii=False))
+
+# Example 7
+lines.append(json.dumps({"messages":[{"role":"user","content":"I want to delete a project. Proceed with deleting project 'OldProject'."},{"role":"assistant","content":"This action cannot be undone. All tasks and data under 'OldProject' will be permanently removed. Confirm deletion?"}],"metadata":{"category":"answer_vs_action","difficulty":"medium","tools_used":[],"multi_step":False,"requires_clarification":False,"requires_confirmation":True}},ensure_ascii=False))
+
+# Example 8
+lines.append(json.dumps({"messages":[{"role":"user","content":"Fetch the latest NEXUS changelog from the web."},{"role":"assistant","content":"","tool_calls":[{"type":"function","function":{"name":"web.fetch","arguments":{"url":"https://nexus.example.com/changelog"}}}]},{"role":"tool","name":"web.fetch","content":"{\"success\":true,\"title\":\"NEXUS Changelog\",\"content\":\"v2.1: Added voice assistant. v2.0: Major architecture overhaul. v1.9: Bug fixes.\"}"},{"role":"assistant","content":"Latest NEXUS changelog: v2.1 added voice assistant, v2.0 was a major architecture overhaul, v1.9 included bug fixes."}],"metadata":{"category":"answer_vs_action","difficulty":"medium","tools_used":["web.fetch"],"multi_step":False,"requires_clarification":False,"requires_confirmation":False}},ensure_ascii=False))
+
+# Example 9
+lines.append(json.dumps({"messages":[{"role":"user","content":"Look up information about container orchestration tools on the web."},{"role":"assistant","content":"","tool_calls":[{"type":"function","function":{"name":"web.search","arguments":{"query":"container orchestration tools 2025"}}}]},{"role":"tool","name":"web.search","content":"{\"success\":true,\"results\":[{\"title\":\"Kubernetes vs Docker Swarm\",\"url\":\"https://example.com/k8s-vs-swarm\"},{\"title\":\"Nomad Guide\",\"url\":\"https://example.com/nomad\"}]}"},{"role":"assistant","content":"Found results: 'Kubernetes vs Docker Swarm' (https://example.com/k8s-vs-swarm) and 'Nomad Guide' (https://example.com/nomad)."}],"metadata":{"category":"answer_vs_action","difficulty":"easy","tools_used":["web.search"],"multi_step":False,"requires_clarification":False,"requires_confirmation":False}},ensure_ascii=False))
+
+# Example 10
+lines.append(json.dumps({"messages":[{"role":"user","content":"Research the best practices for container security."},{"role":"assistant","content":"","tool_calls":[{"type":"function","function":{"name":"web.research","arguments":{"topic":"container security best practices"}}}]},{"role":"tool","name":"web.research","content":"{\"success\":true,\"summary\":\"Key container security practices: use minimal base images, scan for vulnerabilities, enforce non-root users, use network policies, and rotate credentials regularly.\"}"},{"role":"assistant","content":"Container security best practices: use minimal base images, scan for vulnerabilities, enforce non-root users, use network policies, and rotate credentials regularly."}],"metadata":{"category":"answer_vs_action","difficulty":"medium","tools_used":["web.research"],"multi_step":False,"requires_clarification":False,"requires_confirmation":False}},ensure_ascii=False))
+
+# Write first batch
+with open("E:/Nexo/qwen3-agent/phase2/dataset/v2_final/category_03_action.jsonl","a",encoding="utf-8") as f:
+    for line in lines:
+        f.write(line + "\n")
+
+print(f"Added {len(lines)} examples so far")

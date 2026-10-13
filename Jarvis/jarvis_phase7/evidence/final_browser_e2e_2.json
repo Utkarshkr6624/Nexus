@@ -1,0 +1,514 @@
+{
+  "started": "2026-10-13T07:45:25.133Z",
+  "label": "REAL END-TO-END",
+  "browser": "Chrome 154.0.8037.99 (headless, playwright-core 1.56.1)",
+  "steps": [
+    {
+      "name": "test project created",
+      "status": "PASS"
+    },
+    {
+      "name": "single-turn: Search Wikipedia for Christopher Nolan films.",
+      "status": "OBSERVED",
+      "outcome": "tool_completed",
+      "tools": [
+        "web_search:executed_ok"
+      ],
+      "text": "Here are the Wikipedia results from Wikipedia for Christopher Nolan films:\n\n1. [The Odyssey](https://en.wikipedia.org/wiki/The_Odyssey_%282026_film%29) - an epi"
+    },
+    {
+      "name": "single-turn: hey can u search good movies for me",
+      "status": "OBSERVED",
+      "outcome": "response",
+      "tools": [],
+      "text": "I can't search the web, but I can suggest ideas for good movies. What do you like? Genre, mood (drama, comedy, action), or do you want recommendations?"
+    },
+    {
+      "name": "single-turn: Look up the Eiffel Tower on Wikipedia.",
+      "status": "OBSERVED",
+      "outcome": "response",
+      "tools": [],
+      "text": "None of the tools attached here (`app_create_event`, `app_create_task`, `app_list_tasks`, `app_read_calendar`, `app_update_event`, `app_update_goal`, `app_updat"
+    },
+    {
+      "name": "single-turn: search for xqzvbnmplk",
+      "status": "OBSERVED",
+      "outcome": "tool_completed",
+      "tools": [
+        "web_search:executed_ok"
+      ],
+      "text": "The search only found Wikipedia, not the web: Wikipedia only, not the web. I have not found any results, so I don't have a list of links to show you. You might "
+    },
+    {
+      "name": "single-turn: What tasks do I have open?",
+      "status": "OBSERVED",
+      "outcome": "tool_completed",
+      "tools": [
+        "app_list_tasks:executed_ok"
+      ],
+      "text": "The task list is empty: nothing to report. That may mean you have no open tasks, or the query returned differently from what I expected. Want me to try another "
+    },
+    {
+      "name": "single-turn: Create a task titled \"Buy milk\".",
+      "status": "OBSERVED",
+      "outcome": "confirmation_required",
+      "tools": [
+        "app_create_task:pending_confirmation"
+      ],
+      "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please app"
+    },
+    {
+      "name": "single-turn: Add a task to buy milk tomorrow",
+      "status": "OBSERVED",
+      "outcome": "response",
+      "tools": [],
+      "text": "That changes state, so I'll confirm first. The function is `app_create_task`.\n\nProposed: `title`: \"Buy milk\"\n\nShall I go on? I won't execute until you confirm. "
+    },
+    {
+      "name": "approval card shows tool, target and exact arguments before anything runs",
+      "status": "FAIL",
+      "card": "NEXO wants to run this action:\n\napp_create_task — Create a task in your NEXUS projects.\n\nTarget: title NEXO browser check 7<PASSWORD>\n\nWhy approval: It changes your data.\n\n{\n  \"title\": \"NEXO browser check 7<PASSWORD>\"\n}\nApprove\nDecline",
+      "has_tool": true,
+      "has_title": false,
+      "listed": {
+        "status": 200,
+        "titles": []
+      }
+    },
+    {
+      "name": "Decline in the browser: nothing created; UI says so",
+      "status": "PASS",
+      "outcome": "denied_by_user",
+      "text": "Here is what actually happened: app_create_task did not complete: the user declined this call; it was not executed."
+    },
+    {
+      "name": "approving a declined proposal later runs nothing (404)",
+      "status": 404
+    },
+    {
+      "name": "another user cannot approve this proposal (404, nothing created)",
+      "status": 404
+    },
+    {
+      "name": "forged id 404, altered arguments 422, no token 401; nothing created",
+      "status": "PASS",
+      "forged": 404,
+      "altered": 422,
+      "noAuth": 401
+    },
+    {
+      "name": "Approve (double-clicked) in the browser: task exists exactly once",
+      "status": "FAIL",
+      "listed": {
+        "status": 200,
+        "titles": [
+          "NEXO browser check 7<PASSWORD>"
+        ]
+      },
+      "tasks_with_title": 0,
+      "confirm_responses_total": 2,
+      "outcome": "tool_completed",
+      "text": "The task was created. The system reports you to confirm before calling.",
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "name": "UI reports the approved outcome",
+      "status": "PASS"
+    },
+    {
+      "name": "approving the same proposal again does not repeat it (404, still 1)",
+      "status": 404
+    },
+    {
+      "name": "browser: search request",
+      "status": "MODEL_DID_NOT_CALL",
+      "sources_rendered": 0,
+      "links": 0,
+      "text": "I can't search the web, but I can suggest ideas for good movies. What do you like? Genre, mood (drama, comedy, action), or do you want recommendations?"
+    },
+    {
+      "name": "model unloaded",
+      "status": "PASS",
+      "memory": {
+        "label": "after unload",
+        "vram_used_total_mb": "866, 4096",
+        "free_ram_mb": 6262,
+        "llama_server_processes": 0
+      }
+    },
+    {
+      "name": "cleanup",
+      "status": "DONE",
+      "cleanup": [
+        [
+          "task",
+          204
+        ],
+        [
+          "project",
+          204
+        ],
+        [
+          "user",
+          204
+        ],
+        [
+          "login after delete",
+          401
+        ],
+        [
+          "user",
+          204
+        ],
+        [
+          "login after delete",
+          401
+        ]
+      ]
+    }
+  ],
+  "turns": [
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "confirmation_required",
+      "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please approve or decline.",
+      "trace": [
+        {
+          "tool": "app_create_task",
+          "status": "pending_confirmation",
+          "arguments": {
+            "title": "NEXO browser check 7<PASSWORD>"
+          }
+        }
+      ],
+      "proposal": [
+        {
+          "name": "app_create_task",
+          "arguments": {
+            "title": "NEXO browser check 7<PASSWORD>"
+          }
+        }
+      ],
+      "proposal_id": "b1dd6f91508b4318902db451629aa395",
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "confirm",
+      "status": 200,
+      "outcome": "denied_by_user",
+      "text": "Here is what actually happened: app_create_task did not complete: the user declined this call; it was not executed.",
+      "trace": [
+        {
+          "tool": "app_create_task",
+          "status": "denied",
+          "arguments": {
+            "title": "NEXO browser check 7<PASSWORD>"
+          },
+          "error": {
+            "code": "denied_by_user",
+            "message": "the user declined this call; it was not executed"
+          }
+        }
+      ],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "replaced",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "confirmation_required",
+      "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please approve or decline.",
+      "trace": [
+        {
+          "tool": "app_create_task",
+          "status": "pending_confirmation",
+          "arguments": {
+            "title": "NEXO browser check 7<PASSWORD>"
+          }
+        }
+      ],
+      "proposal": [
+        {
+          "name": "app_create_task",
+          "arguments": {
+            "title": "NEXO browser check 7<PASSWORD>"
+          }
+        }
+      ],
+      "proposal_id": "891c0e1d7f3d46f2bd8cc8701ea3715f",
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "confirm",
+      "status": 200,
+      "outcome": "tool_completed",
+      "text": "The task was created. The system reports you to confirm before calling.",
+      "trace": [
+        {
+          "tool": "app_create_task",
+          "status": "executed_ok",
+          "arguments": {
+            "title": "NEXO browser check 7<PASSWORD>"
+          }
+        }
+      ],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "response",
+      "text": "I can't search the web, but I can suggest ideas for good movies. What do you like? Genre, mood (drama, comedy, action), or do you want recommendations?",
+      "trace": [],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    }
+  ],
+  "repetition": null,
+  "memory": [
+    {
+      "label": "model ready",
+      "vram_used_total_mb": "3545, 4096",
+      "free_ram_mb": 935,
+      "llama_server_processes": 1
+    },
+    {
+      "label": "after unload",
+      "vram_used_total_mb": "866, 4096",
+      "free_ram_mb": 6262,
+      "llama_server_processes": 0
+    }
+  ],
+  "single_turn": [
+    {
+      "prompt": "Search Wikipedia for Christopher Nolan films.",
+      "http": 200,
+      "secs": 68.411,
+      "outcome": "tool_completed",
+      "text": "Here are the Wikipedia results from Wikipedia for Christopher Nolan films:\n\n1. [The Odyssey](https://en.wikipedia.org/wiki/The_Odyssey_%282026_film%29) - an epic action fantasy film written and directed by Christopher Nolan.\n2. [Christopher Nolan filmography](https://en.wikipedia.org/wiki/Christopher_Nolan_filmography) - a British and American film.\n3. [Cinematic style of Christopher Nolan](https://en.wikipedia.org/wiki/Cinematic_style_of_Christopher_Nolan) - known for using aesthetics, themes and cinematic techniques that are recognisable in his work.\n4. [Christopher Nolan](https://en.wikipedia.org/wiki/Christopher_Nolan) - a British and film.\n5. [Jonathan Nolan](https://en.wikipedia.org/wiki/Jonathan_Nolan) - series Westworld (2016–2022).\n6. [Doodlebug (film)](https://en.wikipedia.org/wiki/Doodlebug_%28film%29) - a thriller film written and directed by Christopher Nolan.\n7. [Oppenheimer (film)](https://en.wikipedia.org/wiki/Oppenheimer_%28film%29), an epic biographical thriller film.\n8. [Christopher Nolan's interpretation of the Odyssey](https://en.wikipedia.org/wiki/Christopher_Nolan%27s_interpretation_of_the_Odyssey) - in Greek around the 8th or 7th century BC.\n9. [The Prestige](https://en.wikipedia.org/wiki/The_Prestige) - a thriller film.\n10. [Memento (film)](https://en.wikipedia.org/wiki/Memento_%28film%29) - a film written for the screen and directed by Christopher Nolan.\n\nI haven't checked these pages beyond the snippets, so I can't vouch them. Want me to go deeper with any of them?",
+      "repeats": [],
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      },
+      "trace": [
+        {
+          "tool": "web_search",
+          "status": "executed_ok",
+          "arguments": {
+            "query": "Christopher Nolan films"
+          },
+          "results": [
+            "The Odyssey (2026 film)",
+            "Christopher Nolan filmography",
+            "Cinematic style of Christopher Nolan",
+            "Christopher Nolan",
+            "Jonathan Nolan",
+            "Doodlebug (film)",
+            "Oppenheimer (film)",
+            "Christopher Nolan's interpretation of the Odyssey",
+            "The Prestige",
+            "Memento (film)"
+          ],
+          "coverage": "Wikipedia articles only, not the general web"
+        }
+      ],
+      "proposal": null
+    },
+    {
+      "prompt": "hey can u search good movies for me",
+      "http": 200,
+      "secs": 6.327,
+      "outcome": "response",
+      "text": "I can't search the web, but I can suggest ideas for good movies. What do you like? Genre, mood (drama, comedy, action), or do you want recommendations?",
+      "repeats": [],
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      },
+      "trace": [],
+      "proposal": null
+    },
+    {
+      "prompt": "Look up the Eiffel Tower on Wikipedia.",
+      "http": 200,
+      "secs": 24.355,
+      "outcome": "response",
+      "text": "None of the tools attached here (`app_create_event`, `app_create_task`, `app_list_tasks`, `app_read_calendar`, `app_update_event`, `app_update_goal`, `app_update_task`, `db_describe`, `fs_delete_file`, `fs_move_file`, `fs_read_file`, `fs_search`, `fs_write_file`, `http_request`, `web_fetch`, `web_search`, `workspace_list_files`, `workspace_file`, `workspace_files`, `workspace_create_file`, `backup_file`, `code_search_symbols`, `code_apply`, `git_inspect`, `json_yaml`, `csv_analyze`, `calculate`) can do that, and I won't pretend they can. I can't search Wikipedia. I can help you work out the Eiffel Tower, or I can state facts from what I know.",
+      "repeats": [],
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      },
+      "trace": [],
+      "proposal": null
+    },
+    {
+      "prompt": "search for xqzvbnmplk",
+      "http": 200,
+      "secs": 13.896,
+      "outcome": "tool_completed",
+      "text": "The search only found Wikipedia, not the web: Wikipedia only, not the web. I have not found any results, so I don't have a list of links to show you. You might want to try a different query. Want me to try another search?",
+      "repeats": [
+        "you"
+      ],
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      },
+      "trace": [
+        {
+          "tool": "web_search",
+          "status": "executed_ok",
+          "arguments": {
+            "query": "xqzvbnmplk"
+          },
+          "results": [],
+          "coverage": "Wikipedia articles only, not the general web"
+        }
+      ],
+      "proposal": null
+    },
+    {
+      "prompt": "What tasks do I have open?",
+      "http": 200,
+      "secs": 10.077,
+      "outcome": "tool_completed",
+      "text": "The task list is empty: nothing to report. That may mean you have no open tasks, or the query returned differently from what I expected. Want me to try another filter?",
+      "repeats": [],
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      },
+      "trace": [
+        {
+          "tool": "app_list_tasks",
+          "status": "executed_ok",
+          "arguments": {
+            "filter": "open"
+          }
+        }
+      ],
+      "proposal": null
+    },
+    {
+      "prompt": "Create a task titled \"Buy milk\".",
+      "http": 200,
+      "secs": 7.681,
+      "outcome": "confirmation_required",
+      "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please approve or decline.",
+      "repeats": [],
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      },
+      "trace": [
+        {
+          "tool": "app_create_task",
+          "status": "pending_confirmation",
+          "arguments": {
+            "title": "Buy milk"
+          }
+        }
+      ],
+      "proposal": [
+        {
+          "name": "app_create_task",
+          "arguments": {
+            "title": "Buy milk"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "Add a task to buy milk tomorrow",
+      "http": 200,
+      "secs": 11.002,
+      "outcome": "response",
+      "text": "That changes state, so I'll confirm first. The function is `app_create_task`.\n\nProposed: `title`: \"Buy milk\"\n\nShall I go on? I won't execute until you confirm. Want me to? I can't confirm, since I'm not able to confirm, but I can tell you what `app_create_task` would return.",
+      "repeats": [],
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      },
+      "trace": [],
+      "proposal": null
+    }
+  ],
+  "cleanup": [
+    [
+      "task",
+      204
+    ],
+    [
+      "project",
+      204
+    ],
+    [
+      "user",
+      204
+    ],
+    [
+      "login after delete",
+      401
+    ],
+    [
+      "user",
+      204
+    ],
+    [
+      "login after delete",
+      401
+    ]
+  ],
+  "finished": "2026-10-13T07:48:56.099Z"
+}

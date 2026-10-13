@@ -1,0 +1,43 @@
+=== 1. dataset validation (v2_final): content checks, duplicates, leakage, code blocks
+exit=0  HARD FAILURES: none
+=== 2. tool protocol: validator over v2_final with chat-template rendering
+exit=0  "records":11288,"rendered_with_chat_template":705,"violations":0,
+=== 3. test suites (pytest / runners)
+tests/test_tokenizer.py: 10/10 passed
+tests/test_data_schema.py: 12/12 passed
+tests/test_data_render.py: 13/13 passed
+tests/test_data_loader.py: 9/9 passed
+protocol: Ran 21 tests in 4.766s OK 
+pytest (train/checkpoint/hardening/failure-recovery/eval): 272 passed, 3 warnings in 63.96s (0:01:03)
+=== 4. safe modes of the trainer
+validate-config exit=0 CONFIG VALID (no model loaded, no training performed)
+dry-run exit=0 DRY RUN OK (no model loaded, no training performed)
+smoke-test exit=0 SMOKE TEST PASSED - PIPELINE SMOKE TEST - NOT QWEN PRODUCTION TRAINING
+production without unlock exit=3 (expected 3) REFUSED: PRODUCTION TRAINING IS LOCKED. Qwen3-8B training is reserved for Phase 5 on Kaggl
+=== 5. evaluation self-test (stubs; not model results)
+selftest exit=0
+STUB — NOT A MODEL RESULT (scorer self-test; bounds: adversarial stubs <= 5% overall, <= 10% per suite; oracle = 100%)
+  oracle                682/682  1.0000   worst suite 1.000
+  echo_user               5/682  0.0073   worst suite 0.032
+  generic_hedge           0/682  0.0000   worst suite 0.000
+  refuse_all             10/682  0.0147   worst suite 0.097
+=== 6. Kaggle notebook validation + gate test
+notebook validation: {"passed": 39, "failed": 0, "pending": 1, "strict": true, "note": "Static validation only. Kaggle execution is PENDING PHASE 5."}
+gate test: PASS MODE logic: MODE=train, existing_checkpoints=True | train cmds: 0 | resume cmds: 0 | ["REFUSED - checkpoints already exist under C:\\Users\\utkar\\AppData\\Local\\Temp\\p4_mode__85ba9nt\\runs - set MODE = 'resume' to continue them, or use a clean working directory for a fresh run.", "SKIPPED - MODE is 'train'; this cell needs MODE = 'resume' (continue an existing run after a killed session)."]
+=== 7. security audit
+exit=0   "status": "PASS",
+=== 8. reproducibility (each deterministic step run twice)
+IDENTICAL  dataset_rebuild_preflight_convert_freeze
+IDENTICAL  eval_suites_rebuild
+IDENTICAL  data_stats_validation
+IDENTICAL  kaggle_package_zip
+IDENTICAL  smoke_training_final_val_loss
+ALL IDENTICAL
+=== 9. git safety (read-only git commands; nothing is written outside the workspace)
+tracked modifications: 0
+git diff bytes: 0
+untracked entries: 23  (3 workspaces + the 20 older files)
+?? qwen_jarvis_phase1/
+?? qwen_jarvis_phase2/
+?? qwen_jarvis_phase3_4/
+DONE

@@ -1,0 +1,27 @@
+{
+ "status": "No Phase 6 model generations were executed in this environment (no CUDA GPU, no Qwen3-8B weights). The machine-generated per-item failure list will be results/kaggle_run/failed_tests.json, written by scripts/score_phase6.py after the Kaggle run. The entries below are the only failures/regressions known now, each labelled with its evidence level.",
+ "evidence_levels": {
+  "REPORTED_UNVERIFIED": "reported from the initial Kaggle run; the raw responses were not available to verify",
+  "DATASET_EVIDENCE": "supported by counts in the frozen training data (results/dataset_evidence.json); correlation, not a proven cause",
+  "VERIFIED_CODE": "verified by reading or running code in this task"
+ },
+ "items": [
+  {"id": "P11-fenced-json", "configs": ["checkpoint_800", "checkpoint_1100", "checkpoint_1500", "checkpoint_1596"], "evidence": "REPORTED_UNVERIFIED",
+   "finding": "Exact-JSON request answered inside Markdown code fences; the base model returned the exact object.",
+   "related_dataset_evidence": "All 24 of 24 training conversations that ask for JSON 'only' are answered inside ``` fences (results/dataset_evidence.json: json_only_requests).",
+   "retest": "prompts/phase6_format.jsonl kind=p11_json (6 wordings), metric 03b_p11_json_family"},
+  {"id": "P11-harmless-refusal", "configs": ["checkpoint_1200", "checkpoint_1300", "checkpoint_1400"], "evidence": "REPORTED_UNVERIFIED",
+   "finding": "Harmless exact-JSON request refused with a claimed inability ('cannot send responses' / 'can only write the JSON for the user').",
+   "related_dataset_evidence": "70 training conversations contain 'I can't send' in an assistant turn; 49 of them are draft_message examples ending 'I can't send it for you, so copy it into your email'. 311 system prompts say 'You can only reply with text'. Training contains 1 explicit verbatim/exact-output instruction. A plausible over-generalisation, not a proven cause.",
+   "retest": "phase6_format items with 'send' wording and with the training-style system prompt; check harmless_complied"},
+  {"id": "identity-qwen", "configs": ["checkpoint_1200", "checkpoint_1300", "checkpoint_1400", "checkpoint_1500", "checkpoint_1596"], "evidence": "REPORTED_UNVERIFIED",
+   "finding": "Introduced itself as Qwen rather than JARVIS.",
+   "related_dataset_evidence": "No system prompt mentions JARVIS; only 2 identity questions exist, both answered 'the assistant inside NEXUS'; the 88 assistant mentions of Qwen are all NEXUS-roadmap facts about the Qwen project. JARVIS self-identity was never a training target.",
+   "retest": "prompts/phase6_identity.jsonl, metrics 08_identity_role and 08b_identity_jarvis_name"},
+  {"id": "scorer-json-fence-false-positive", "configs": ["all (scoring defect)"], "evidence": "VERIFIED_CODE",
+   "finding": "pipeline/eval/scorers.py _extract_json strips Markdown fences before parsing, so the original json_object check passes fenced output for 'output only the JSON'.",
+   "fix": "New strict checks raw_json_exact / raw_json_keys / no_code_fence in scripts/phase6_checks.py (registered at run time; the original package file is not edited)."},
+  {"id": "initial-heuristic-scores", "configs": ["all"], "evidence": "REPORTED_UNVERIFIED",
+   "finding": "Preliminary raw points (base 16; 800 15; 1100 15; 1200 13; 1300 14; 1400 14; 1500 14; 1596 14) come from an unreviewed heuristic over 12 prompts. The rubric and the responses were not available. These numbers are not used for selection."}
+ ]
+}

@@ -75,6 +75,11 @@ class Permission(StrEnum):
     # without losing their planner.
     KNOWLEDGE_READ = "knowledge.read"
     KNOWLEDGE_WRITE = "knowledge.write"
+    # Phase 7: talking to the Jarvis language model. Separate from every other
+    # grant so the conversational surface can be withdrawn on its own. It is not
+    # a licence for the tools Jarvis calls: each NEXUS tool re-enters the
+    # ordinary routes with the caller's own token and needs that route's grant.
+    JARVIS_USE = "jarvis.use"
 
 
 def validate_permission(value: Permission | str) -> Permission:
@@ -144,6 +149,7 @@ ROLE_PERMISSIONS: Mapping[str, frozenset[Permission]] = {
             Permission.CALENDAR_WRITE,
             Permission.KNOWLEDGE_READ,
             Permission.KNOWLEDGE_WRITE,
+            Permission.JARVIS_USE,
         }
     ),
     # ADMIN_ROLE is `frozenset(Permission)`, so both new members are granted to

@@ -1,0 +1,46 @@
+{
+ "version": "qwen_jarvis_dataset_v3",
+ "baseline": "qwen_jarvis_dataset_v2_final (11,288 examples; files unchanged)",
+ "baseline_sha256": {
+  "train": "8b066c83b8adaac7dcb5a123d27a698262b3121d6dbc6febced134a5d7163c3c",
+  "validation": "add305738bf469c68da1e35328466a4d87d7dc05d5c900f418a527bbb010fd7e",
+  "test": "a9444018acef14c782cf2f0621665c3103e16f20b34a8f6a20050d896dacd906"
+ },
+ "stages": [
+  "V2 corrections (see v3_build/reports/v2_to_v3_changes.json)",
+  "generated examples (v3_build/gen_*.py)",
+  "dedup + evaluation-leakage filter",
+  "group-hash split of new examples (92/4/4); V2 membership unchanged"
+ ],
+ "records": 13482,
+ "files": {
+  "train.jsonl": {
+   "records": 12330,
+   "sha256": "9ca85163597c3269658691bfe5d11d449aeef9879e6d0e401c6e3d30e2ed011f"
+  },
+  "validation.jsonl": {
+   "records": 582,
+   "sha256": "31e4551053acb59627668da34ffb077592deb22228346151e8592f34e808593b"
+  },
+  "test.jsonl": {
+   "records": 570,
+   "sha256": "9a0c0d9665abb290a0a3cb129d0648867c2a419f17221e23e354bbef17b7ff8d"
+  }
+ },
+ "categories": {
+  "capability_boundaries": 889,
+  "general_conversation": 1090,
+  "general_knowledge": 1173,
+  "instruction_following": 1693,
+  "jarvis_assistant": 1217,
+  "mathematics": 1026,
+  "multi_turn_context": 708,
+  "nexus_knowledge": 944,
+  "programming": 1500,
+  "reasoning": 1483,
+  "safety": 507,
+  "tool_aware": 1252
+ },
+ "multi_turn_records": 1714,
+ "status": "frozen"
+}

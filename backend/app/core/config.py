@@ -369,6 +369,56 @@ class Settings(BaseSettings):
     #: names the *kind* of credential and never the matched value.
     ml_reject_credentials: bool = True
 
+    # -- Jarvis (Phase 7 development integration) -----------------------------
+    #: Off by default. Jarvis is a separate Qwen3-8B + LoRA model served by its
+    #: own process (``Jarvis/jarvis_phase7/serve_jarvis.py``); NEXUS only talks to
+    #: it over HTTP, so the DeBERTa classifier above is untouched either way.
+    #: Phase 6 did not qualify any adapter, so turning this on runs an explicitly
+    #: unqualified development candidate behind the runtime guards.
+    jarvis_enabled: bool = False
+    #: Base URL of the Jarvis generation server. Blank means "not configured".
+    jarvis_model_url: str = ""
+    #: The adapter the server must report; a mismatch makes Jarvis unavailable
+    #: rather than silently serving another checkpoint. Default: checkpoint_v31_139.
+    jarvis_expected_adapter_sha256: str = (
+        "d754a3c6b77fb80bf24e67527d5b32f04606d8496e9e7c2b9d7cccef48f48fa8"
+    )
+    jarvis_generation_timeout_seconds: float = 120.0
+    #: Model generations per chat turn (tool round-trips included). Bounds loops.
+    jarvis_max_steps: int = 5
+    jarvis_max_input_chars: int = 8000
+    jarvis_tool_timeout_seconds: float = 20.0
+    #: The only directory the fs_* tools may touch. Blank disables them.
+    jarvis_workspace_dir: str = ""
+    #: Comma-separated program names shell_run may start (no shell, argv only).
+    #: Blank disables shell_run.
+    jarvis_shell_allowlist: str = ""
+    #: SearXNG-compatible JSON search endpoint for web_search. Blank disables it.
+    jarvis_web_search_url: str = ""
+    #: ``searxng`` (needs JARVIS_WEB_SEARCH_URL) or ``wikipedia`` (the free, keyless MediaWiki
+    #: search API; JARVIS_WEB_SEARCH_URL may override its endpoint). Anything else disables web_search.
+    jarvis_web_search_provider: str = "searxng"
+    #: Contact URL or e-mail sent in the search User-Agent. Wikimedia's robot policy rejects
+    #: clients without one (HTTP 403); set your own for anything beyond local development.
+    jarvis_web_search_contact: str = "https://localhost/nexo"
+    #: web_fetch / http_request refuse private, loopback and link-local hosts
+    #: unless this is set. Only a test or a deliberately local setup sets it.
+    jarvis_web_allow_private_hosts: bool = False
+    jarvis_web_max_bytes: int = 200_000
+    #: Seconds a pending confirmation stays valid.
+    jarvis_confirmation_ttl_seconds: int = 600
+    #: JSON argv list that starts the model server on demand (set by start.cmd). Blank means
+    #: NEXUS cannot load the model itself; a server started by hand is still used.
+    jarvis_model_launch_argv: str = ""
+    jarvis_model_load_timeout_seconds: float = 900.0
+    #: Unload a model NEXUS started after this many minutes without a chat turn. 0 disables.
+    jarvis_idle_unload_minutes: float = 10.0
+    #: Read-only root for git_inspect (a git working tree). Blank disables it.
+    jarvis_git_repo_dir: str = ""
+    #: JSON object of approved project commands, e.g. {"test": ["pytest", "-q"], "lint": ["ruff", "check", "."]},
+    #: run in JARVIS_WORKSPACE_DIR by run_project_tests / run_project_lint. Blank disables both.
+    jarvis_project_commands: str = ""
+
     # -- Logging -------------------------------------------------------------
     log_level: str = "INFO"
     log_json: bool = True

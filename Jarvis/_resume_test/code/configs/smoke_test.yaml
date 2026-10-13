@@ -1,0 +1,80 @@
+# PIPELINE SMOKE TEST - NOT QWEN PRODUCTION TRAINING.
+# Tiny randomly-initialised Qwen3-ARCHITECTURE model (2 layers, hidden 64) built from the shrunk _hf_meta/config.json.
+# No weights are downloaded. Runs on CPU in seconds. Results say nothing about Qwen3-8B quality.
+mode: smoke
+banner: "PIPELINE SMOKE TEST - NOT QWEN PRODUCTION TRAINING"
+production_locked: true
+
+model:
+  model_id: tiny-random-qwen3-architecture
+  tokenizer_path: ../_hf_meta           # real Qwen3 tokenizer files fetched earlier (no weights)
+  local_tiny: true
+  trust_remote_code: false
+  attn_implementation: eager
+  tiny:
+    hidden_size: 64
+    intermediate_size: 128
+    num_hidden_layers: 2
+    num_attention_heads: 4
+    num_key_value_heads: 2
+    head_dim: 16
+    max_position_embeddings: 2048
+
+quant:
+  enabled: false
+  quant_type: nf4
+  double_quant: true
+  compute_dtype: auto
+  kbit_prepare: manual
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.0
+  bias: none
+  task_type: CAUSAL_LM
+  use_rslora: false
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+data:
+  train_path: ../dataset/v2_final/train.jsonl
+  validation_path: ../dataset/v2_final/validation.jsonl
+  test_path: ../dataset/v2_final/test.jsonl
+  dataset_version: qwen_jarvis_dataset_v2_final
+  max_seq_len: 256
+  train_on: per_turn
+  validate: strict
+  group_by_length: true
+  packing: false
+  max_train_examples: 64
+  max_eval_examples: 16
+
+train:
+  epochs: 1
+  max_steps: 6
+  per_device_batch: 2
+  grad_accum: 2
+  learning_rate: 5.0e-3
+  lr_scheduler: cosine
+  warmup_ratio: 0.0
+  weight_decay: 0.0
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_eps: 1.0e-8
+  max_grad_norm: 1.0
+  optimizer: adamw_torch
+  precision: fp32
+  gradient_checkpointing: false
+  seed: 7
+  eval_every: 3
+  save_every: 2
+  keep_last: 2
+  log_every: 1
+  early_stopping_patience: 0
+  early_stopping_min_delta: 0.0
+  max_consecutive_skipped_steps: 20
+  assumed_tokens_per_sec: 2000
+
+output:
+  output_dir: runs
+  run_name: smoke

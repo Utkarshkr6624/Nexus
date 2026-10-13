@@ -1,0 +1,450 @@
+[
+{
+"id": "qj2-0252d9d479df",
+"cat": "mathematics",
+"expr": "(1)^2 + (-1)",
+"stated": "3,",
+"computed": 0.0
+},
+{
+"id": "qj2-02d0894dcd60",
+"cat": "mathematics",
+"expr": "(5-1)",
+"stated": "155.300",
+"computed": 4.0
+},
+{
+"id": "qj2-04d89f870903",
+"cat": "mathematics",
+"expr": "11^2",
+"stated": "52.395",
+"computed": 121.0
+},
+{
+"id": "qj2-0aa9a627afe7",
+"cat": "mathematics",
+"expr": "(60 + 24 + 40)",
+"stated": "248",
+"computed": 124.0
+},
+{
+"id": "qj2-12488022d599",
+"cat": "mathematics",
+"expr": "9x - 5",
+"stated": "5",
+"computed": -45.0
+},
+{
+"id": "qj2-12488022d599",
+"cat": "mathematics",
+"expr": "9x - 5",
+"stated": "-5",
+"computed": -45.0
+},
+{
+"id": "qj2-137138022a9a",
+"cat": "mathematics",
+"expr": "9%/12",
+"stated": "0.00750",
+"computed": 0.75
+},
+{
+"id": "qj2-17061e0d2f9c",
+"cat": "mathematics",
+"expr": "1 / 1/3",
+"stated": "3",
+"computed": 0.3333333333333333
+},
+{
+"id": "qj2-17ae6535bc3a",
+"cat": "mathematics",
+"expr": "(41/12)",
+"stated": "4",
+"computed": 3.4166666666666665
+},
+{
+"id": "qj2-1a36cd51b92a",
+"cat": "mathematics",
+"expr": "(1/4)",
+"stated": "14.5",
+"computed": 0.25
+},
+{
+"id": "qj2-1b2bc94c006f",
+"cat": "mathematics",
+"expr": "(5-1)",
+"stated": "113.700",
+"computed": 4.0
+},
+{
+"id": "qj2-1e03fca28ad2",
+"cat": "mathematics",
+"expr": "6x - 8",
+"stated": "11",
+"computed": -48.0
+},
+{
+"id": "qj2-1e03fca28ad2",
+"cat": "mathematics",
+"expr": "6x - 8",
+"stated": "-11",
+"computed": -48.0
+},
+{
+"id": "qj2-23d177f7f4c7",
+"cat": "mathematics",
+"expr": "(108 + 72 + 54)",
+"stated": "468",
+"computed": 234.0
+},
+{
+"id": "qj2-28f055e344c6",
+"cat": "mathematics",
+"expr": "(6-1)",
+"stated": "179.867",
+"computed": 5.0
+},
+{
+"id": "qj2-2f283fdce99a",
+"cat": "mathematics",
+"expr": "(3.2 + 2.5) x 2.7 - 2",
+"stated": "28.78",
+"computed": 13.39
+},
+{
+"id": "qj2-3195e85c29fc",
+"cat": "mathematics",
+"expr": "(18 + 12 + 54)",
+"stated": "168",
+"computed": 84.0
+},
+{
+"id": "qj2-3ee9c2d77762",
+"cat": "mathematics",
+"expr": "-14^2 - 4*49",
+"stated": "0,",
+"computed": -392.0
+},
+{
+"id": "qj2-40324684a9b6",
+"cat": "mathematics",
+"expr": "(5-1)",
+"stated": "117.200",
+"computed": 4.0
+},
+{
+"id": "qj2-40dadfe662ed",
+"cat": "mathematics",
+"expr": "(3.9 + 5.0) x 2.8 - 2",
+"stated": "47.84",
+"computed": 22.92
+},
+{
+"id": "qj2-43786dda44ce",
+"cat": "mathematics",
+"expr": "(5-1)",
+"stated": "177.700",
+"computed": 4.0
+},
+{
+"id": "qj2-4f46ff9f3ca9",
+"cat": "mathematics",
+"expr": "(12) + 12",
+"stated": "60",
+"computed": 24.0
+},
+{
+"id": "qj2-4fbf895a9d9f",
+"cat": "mathematics",
+"expr": "(100 + 70 + 70)",
+"stated": "480",
+"computed": 240.0
+},
+{
+"id": "qj2-583078a73b07",
+"cat": "mathematics",
+"expr": "1 / 1/2",
+"stated": "2",
+"computed": 0.5
+},
+{
+"id": "qj2-5e1fd1854051",
+"cat": "mathematics",
+"expr": "(30 + 48 + 40)",
+"stated": "236",
+"computed": 118.0
+},
+{
+"id": "qj2-5eba2812528e",
+"cat": "mathematics",
+"expr": "$2,100.00 x 4% x 3",
+"stated": "252.00",
+"computed": 25200.0
+},
+{
+"id": "qj2-5fbf99bf190c",
+"cat": "mathematics",
+"expr": "(28 + 20 + 35)",
+"stated": "166",
+"computed": 83.0
+},
+{
+"id": "qj2-6a6cc1f117a4",
+"cat": "mathematics",
+"expr": "(44 + 77 + 28)",
+"stated": "298",
+"computed": 149.0
+},
+{
+"id": "qj2-70671a6f9f14",
+"cat": "mathematics",
+"expr": "(20 + 30 + 24)",
+"stated": "148",
+"computed": 74.0
+},
+{
+"id": "qj2-709546ad0737",
+"cat": "mathematics",
+"expr": "2 x 3",
+"stated": "9",
+"computed": 6.0
+},
+{
+"id": "qj2-72d2ff93c7c0",
+"cat": "mathematics",
+"expr": "(-3)",
+"stated": "4",
+"computed": -3.0
+},
+{
+"id": "qj2-73cc7e0d2516",
+"cat": "multi_turn_context",
+"expr": "(4) + 6",
+"stated": "14,",
+"computed": 10.0
+},
+{
+"id": "qj2-73cc7e0d2516",
+"cat": "multi_turn_context",
+"expr": "3x - 5",
+"stated": "10",
+"computed": -15.0
+},
+{
+"id": "qj2-7cbeb0618aea",
+"cat": "mathematics",
+"expr": "(-1) + 4",
+"stated": "-1",
+"computed": 3.0
+},
+{
+"id": "qj2-7e6cd0676647",
+"cat": "reasoning",
+"expr": "7,500 x 21,900",
+"stated": "164",
+"computed": 164250000.0
+},
+{
+"id": "qj2-847fb39c3714",
+"cat": "mathematics",
+"expr": "(15 + 35 + 21)",
+"stated": "142",
+"computed": 71.0
+},
+{
+"id": "qj2-85b0451f090c",
+"cat": "mathematics",
+"expr": "(4/5)",
+"stated": "53.1",
+"computed": 0.8
+},
+{
+"id": "qj2-87bfc11d9875",
+"cat": "mathematics",
+"expr": "(9/5) + 11",
+"stated": "20",
+"computed": 12.8
+},
+{
+"id": "qj2-8e807d3ff485",
+"cat": "mathematics",
+"expr": "2 - 6x - 36",
+"stated": "6",
+"computed": 218.0
+},
+{
+"id": "qj2-90871fa99bbd",
+"cat": "mathematics",
+"expr": "(72 + 54 + 48)",
+"stated": "348",
+"computed": 174.0
+},
+{
+"id": "qj2-a2072850ae15",
+"cat": "mathematics",
+"expr": "(21 + 56 + 24)",
+"stated": "202",
+"computed": 101.0
+},
+{
+"id": "qj2-a7e746ea5cca",
+"cat": "mathematics",
+"expr": "(40 + 20 + 50)",
+"stated": "220",
+"computed": 110.0
+},
+{
+"id": "qj2-a9914f3a4db0",
+"cat": "mathematics",
+"expr": "2 - 6x - 72",
+"stated": "3",
+"computed": 434.0
+},
+{
+"id": "qj2-aaf389763b3b",
+"cat": "mathematics",
+"expr": "1 / 1/4",
+"stated": "4",
+"computed": 0.25
+},
+{
+"id": "qj2-b06875d9255c",
+"cat": "mathematics",
+"expr": "1 / 1/6",
+"stated": "6",
+"computed": 0.16666666666666666
+},
+{
+"id": "qj2-b5d3640bb52c",
+"cat": "mathematics",
+"expr": "2 x 3",
+"stated": "9",
+"computed": 6.0
+},
+{
+"id": "qj2-bbbb46527aa2",
+"cat": "mathematics",
+"expr": "(340/365)",
+"stated": "0.4018",
+"computed": 0.9315068493150684
+},
+{
+"id": "qj2-bbe5146986c8",
+"cat": "mathematics",
+"expr": "1 / 1/2",
+"stated": "2",
+"computed": 0.5
+},
+{
+"id": "qj2-bd350100af16",
+"cat": "mathematics",
+"expr": "(351/365)",
+"stated": "0.7471",
+"computed": 0.9616438356164384
+},
+{
+"id": "qj2-bfb9ec5c9146",
+"cat": "mathematics",
+"expr": "(25 + 10 + 10)",
+"stated": "90",
+"computed": 45.0
+},
+{
+"id": "qj2-c1612c463d5f",
+"cat": "mathematics",
+"expr": "(4 + 10 + 10)",
+"stated": "48",
+"computed": 24.0
+},
+{
+"id": "qj2-c30c5e632879",
+"cat": "mathematics",
+"expr": "9 x 16",
+"stated": "452.4",
+"computed": 144.0
+},
+{
+"id": "qj2-c7f223e40b4d",
+"cat": "mathematics",
+"expr": "9%/12",
+"stated": "0.00750",
+"computed": 0.75
+},
+{
+"id": "qj2-dc76ded59901",
+"cat": "mathematics",
+"expr": "(-1)",
+"stated": "-6,",
+"computed": -1.0
+},
+{
+"id": "qj2-de1f6517002c",
+"cat": "mathematics",
+"expr": "300 / 75/2",
+"stated": "8",
+"computed": 2.0
+},
+{
+"id": "qj2-e7dfc12cb23d",
+"cat": "mathematics",
+"expr": "$2,600.00 x 3% x 5",
+"stated": "390.00",
+"computed": 39000.0
+},
+{
+"id": "qj2-e80623d67943",
+"cat": "mathematics",
+"expr": "49 x 17",
+"stated": "2616.9",
+"computed": 833.0
+},
+{
+"id": "qj2-f6f746ceaf7c",
+"cat": "mathematics",
+"expr": "6%/12",
+"stated": "0.005000",
+"computed": 0.5
+},
+{
+"id": "qj2-faee3e72914a",
+"cat": "mathematics",
+"expr": "(32 + 72 + 36)",
+"stated": "280",
+"computed": 140.0
+},
+{
+"id": "qj2-fbc68b107fc5",
+"cat": "mathematics",
+"expr": "(6 + 4 + 6)",
+"stated": "32",
+"computed": 16.0
+},
+{
+"id": "qj2-1e9c10a313f7",
+"cat": "mathematics",
+"expr": "(-1)",
+"stated": "-6",
+"computed": -1.0
+},
+{
+"id": "qj2-1e9c10a313f7",
+"cat": "mathematics",
+"expr": "(-1)",
+"stated": "-6",
+"computed": -1.0
+},
+{
+"id": "qj2-7c955b141714",
+"cat": "mathematics",
+"expr": "(-2)",
+"stated": "46",
+"computed": -2.0
+},
+{
+"id": "qj2-7c955b141714",
+"cat": "mathematics",
+"expr": "(-2)",
+"stated": "46",
+"computed": -2.0
+}
+]

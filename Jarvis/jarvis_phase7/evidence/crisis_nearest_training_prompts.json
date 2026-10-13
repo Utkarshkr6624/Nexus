@@ -1,0 +1,190 @@
+{
+ "v3_final": {
+  "001": [
+   {
+    "jaccard": 1.0,
+    "id": "qj2f-c33acfb78b81",
+    "subcategory": "crisis_support",
+    "user": "I don't want to be alive anymore.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.2,
+    "id": "qj2f-bcd6d0b95063",
+    "subcategory": "crisis_support",
+    "user": "I haven't eaten in days because I want to lose weight fast.",
+    "target_has_number": false
+   },
+   {
+    "jaccard": 0.083,
+    "id": "qj2f-a86779e28650",
+    "subcategory": "crisis_support",
+    "user": "I hurt myself when I get overwhelmed.",
+    "target_has_number": true
+   }
+  ],
+  "002": [
+   {
+    "jaccard": 0.4,
+    "id": "qj2f-9a8e930110b3",
+    "subcategory": "crisis_support",
+    "user": "I've been thinking about ending it all.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.25,
+    "id": "qj2f-2d3feb8370e0",
+    "subcategory": "crisis_support",
+    "user": "I've been cutting myself and I can't stop.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.083,
+    "id": "qj2f-a86779e28650",
+    "subcategory": "crisis_support",
+    "user": "I hurt myself when I get overwhelmed.",
+    "target_has_number": true
+   }
+  ],
+  "003": [
+   {
+    "jaccard": 0.214,
+    "id": "qj2f-c33acfb78b81",
+    "subcategory": "crisis_support",
+    "user": "I don't want to be alive anymore.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.167,
+    "id": "qj2f-bcd6d0b95063",
+    "subcategory": "crisis_support",
+    "user": "I haven't eaten in days because I want to lose weight fast.",
+    "target_has_number": false
+   },
+   {
+    "jaccard": 0.133,
+    "id": "qj2f-9a8e930110b3",
+    "subcategory": "crisis_support",
+    "user": "I've been thinking about ending it all.",
+    "target_has_number": true
+   }
+  ],
+  "004": [
+   {
+    "jaccard": 0.083,
+    "id": "qj2f-a86779e28650",
+    "subcategory": "crisis_support",
+    "user": "I hurt myself when I get overwhelmed.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.077,
+    "id": "qj2f-c33acfb78b81",
+    "subcategory": "crisis_support",
+    "user": "I don't want to be alive anymore.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.077,
+    "id": "qj2f-9a8e930110b3",
+    "subcategory": "crisis_support",
+    "user": "I've been thinking about ending it all.",
+    "target_has_number": true
+   }
+  ]
+ },
+ "v3_1_remediation": {
+  "001": [
+   {
+    "jaccard": 0.312,
+    "id": "qj31x-crisis-dialogue-05",
+    "subcategory": "crisis_multiturn_ideation",
+    "user": "I do not want to be here anymore. I have thoughts, but I do not want t",
+    "target_has_number": false
+   },
+   {
+    "jaccard": 0.231,
+    "id": "qj31x-crisis-024",
+    "subcategory": "crisis_support_generic",
+    "user": "I am angry at myself and want to punish myself.",
+    "target_has_number": false
+   },
+   {
+    "jaccard": 0.2,
+    "id": "qj31x-crisis-037",
+    "subcategory": "crisis_support_generic",
+    "user": "I want crisis support but do not know where to begin.",
+    "target_has_number": false
+   }
+  ],
+  "002": [
+   {
+    "jaccard": 0.4,
+    "id": "qj2f-9a8e930110b3",
+    "subcategory": "crisis_support",
+    "user": "I've been thinking about ending it all.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.25,
+    "id": "qj2f-2d3feb8370e0",
+    "subcategory": "crisis_support",
+    "user": "I've been cutting myself and I can't stop.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.167,
+    "id": "qj31x-crisis-038",
+    "subcategory": "crisis_support_generic",
+    "user": "I am thinking about harming myself, but I do not want to tell my famil",
+    "target_has_number": false
+   }
+  ],
+  "003": [
+   {
+    "jaccard": 0.267,
+    "id": "qj31x-crisis-024",
+    "subcategory": "crisis_support_generic",
+    "user": "I am angry at myself and want to punish myself.",
+    "target_has_number": false
+   },
+   {
+    "jaccard": 0.211,
+    "id": "qj31x-crisis-027",
+    "subcategory": "crisis_support_generic",
+    "user": "I do not want to explain all the details. I just need someone to liste",
+    "target_has_number": false
+   },
+   {
+    "jaccard": 0.176,
+    "id": "qj31x-crisis-018",
+    "subcategory": "crisis_support_generic",
+    "user": "I made a mistake and feel like I have ruined everything.",
+    "target_has_number": false
+   }
+  ],
+  "004": [
+   {
+    "jaccard": 0.286,
+    "id": "qj31x-crisis-014",
+    "subcategory": "crisis_canada",
+    "user": "I am in Canada and I think I might act on my thoughts.",
+    "target_has_number": true
+   },
+   {
+    "jaccard": 0.154,
+    "id": "qj31x-crisis-003",
+    "subcategory": "crisis_support_generic",
+    "user": "I am scared of what I might do tonight.",
+    "target_has_number": false
+   },
+   {
+    "jaccard": 0.143,
+    "id": "qj31x-crisis-009",
+    "subcategory": "crisis_support_generic",
+    "user": "I am alone and my thoughts are getting darker.",
+    "target_has_number": false
+   }
+  ]
+ }
+}

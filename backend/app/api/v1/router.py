@@ -15,6 +15,7 @@ from app.api.v1 import (
     developer,
     health,
     intelligence,
+    jarvis,
     knowledge,
     learning,
     ml,
@@ -52,5 +53,6 @@ api_v1_router.include_router(career.router)
 api_v1_router.include_router(ml.router)
 api_v1_router.include_router(actions.router)
 api_v1_router.include_router(search.router)
+api_v1_router.include_router(jarvis.router)
 
 __all__ = ["api_v1_router"]

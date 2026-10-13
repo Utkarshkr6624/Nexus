@@ -1,0 +1,220 @@
+{
+ "steps": [
+  {
+   "http": 200,
+   "lifecycle": {
+    "state": "off",
+    "error": null,
+    "on_demand": true,
+    "owned": false,
+    "idle_unload_minutes": 10.0,
+    "idle_seconds": 92,
+    "last_unload": null
+   },
+   "model": {
+    "available": false,
+    "reason": "the NEXO model server is unreachable (ConnectError)"
+   },
+   "gpu_mb": 1139,
+   "llama": 0,
+   "tools_available": 27,
+   "tools_total": 34,
+   "name": "status_before"
+  },
+  {
+   "http": 503,
+   "body": {
+    "error": {
+     "code": "jarvis_unavailable",
+     "message": "NEXO is not available. NEXUS itself, including intent classification, is unaffected.",
+     "details": {
+      "reason": "NEXO is unavailable: the NEXO model server is unreachable (ConnectError).",
+      "errors": [
+       {
+        "message": "NEXO is unavailable: the NEXO model server is unreachable (ConnectError)."
+       }
+      ]
+     },
+     "request_id": "0ba49680-9469-4881-b264-8745f2eeb30b"
+    }
+   },
+   "name": "chat_while_off"
+  },
+  {
+   "http": 200,
+   "body": {
+    "state": "loading",
+    "error": null,
+    "on_demand": true,
+    "owned": true,
+    "idle_unload_minutes": 10.0,
+    "idle_seconds": 0,
+    "last_unload": null
+   },
+   "name": "load_called"
+  },
+  {
+   "http": 200,
+   "state": "loading",
+   "name": "load_called_again"
+  },
+  {
+   "seconds": 14,
+   "lifecycle": {
+    "state": "ready",
+    "error": null,
+    "on_demand": true,
+    "owned": true,
+    "idle_unload_minutes": 10.0,
+    "idle_seconds": 2,
+    "last_unload": null
+   },
+   "model": {
+    "available": true,
+    "model_id": "Qwen/Qwen3-8B",
+    "adapter_sha256": "d754a3c6b77fb80bf24e67527d5b32f04606d8496e9e7c2b9d7cccef48f48fa8"
+   },
+   "gpu_mb": 3688,
+   "llama": 1,
+   "name": "loaded"
+  },
+  {
+   "http": 200,
+   "secs": 9.3,
+   "outcome": "response",
+   "text": "I'm NEXO, a virtual assistant built from tools and models to help you manage text, code, tasks, time and your projects.",
+   "trace": [],
+   "proposal": null,
+   "proposal_id": null,
+   "guards": {
+    "honesty": "pass",
+    "crisis": "inactive",
+    "crisis_violations": [],
+    "crisis_rules": "jarvis-crisis-rules-2"
+   },
+   "name": "text"
+  },
+  {
+   "http": 200,
+   "secs": 8.9,
+   "outcome": "tool_completed",
+   "text": "12 km is about 7.46 miles. The result is approximate, since kilomet cannot be exact for all conversions.",
+   "trace": [
+    {
+     "tool": "calculate",
+     "status": "executed_ok",
+     "ok": true
+    }
+   ],
+   "proposal": null,
+   "proposal_id": null,
+   "guards": {
+    "honesty": "pass",
+    "crisis": "inactive",
+    "crisis_violations": [],
+    "crisis_rules": "jarvis-crisis-rules-2"
+   },
+   "name": "calculate"
+  },
+  {
+   "http": 200,
+   "secs": 7.3,
+   "outcome": "response",
+   "text": "I can't tell you what to watch without. Do you want a recommendation based on your mood, or do you have a genre or rating in mind? If you tell me what you liked or disliked recently, I can suggest.",
+   "trace": [],
+   "proposal": null,
+   "proposal_id": null,
+   "guards": {
+    "honesty": "pass",
+    "crisis": "inactive",
+    "crisis_violations": [],
+    "crisis_rules": "jarvis-crisis-rules-2"
+   },
+   "name": "search"
+  },
+  {
+   "http": 200,
+   "secs": 11.7,
+   "outcome": "tool_completed",
+   "text": "The folder is empty, according shows no files or folders. The listing nothing is truncated, so there are genuinely few than the 1,000 or so that would fit in the response. Want me to list a sub-folder?",
+   "trace": [
+    {
+     "tool": "workspace_list_files",
+     "status": "executed_ok",
+     "ok": true
+    }
+   ],
+   "proposal": null,
+   "proposal_id": null,
+   "guards": {
+    "honesty": "pass",
+    "crisis": "inactive",
+    "crisis_violations": [],
+    "crisis_rules": "jarvis-crisis-rules-2"
+   },
+   "name": "list_files"
+  },
+  {
+   "http": 200,
+   "secs": 6.0,
+   "outcome": "response",
+   "text": "I'll need `app_create_task` to do that properly.\n\nProposed: `title`: \"NEXO e2e check\"\n\nShall I proceed?",
+   "trace": [],
+   "proposal": null,
+   "proposal_id": null,
+   "guards": {
+    "honesty": "pass",
+    "crisis": "inactive",
+    "crisis_violations": [],
+    "crisis_rules": "jarvis-crisis-rules-2"
+   },
+   "name": "create_task"
+  },
+  {
+   "http": 200,
+   "body": {
+    "state": "off",
+    "error": null,
+    "on_demand": true,
+    "owned": false,
+    "idle_unload_minutes": 10.0,
+    "idle_seconds": 4,
+    "last_unload": {
+     "reason": "user",
+     "process_exited": true,
+     "server_still_answers": false,
+     "generations_interrupted": 0,
+     "gpu_used_mb_before": 3671,
+     "gpu_used_mb_after": 946
+    }
+   },
+   "gpu_mb_before": 3671,
+   "gpu_mb_after": 946,
+   "llama": 0,
+   "name": "unloaded"
+  },
+  {
+   "http": 503,
+   "body": {
+    "error": {
+     "code": "jarvis_unavailable",
+     "message": "NEXO is not available. NEXUS itself, including intent classification, is unaffected.",
+     "details": {
+      "reason": "NEXO is unavailable: the NEXO model server is unreachable (ConnectError).",
+      "errors": [
+       {
+        "message": "NEXO is unavailable: the NEXO model server is unreachable (ConnectError)."
+       }
+      ]
+     },
+     "request_id": "b51c0ce7-c3e9-47b5-948f-ad6368ab016a"
+    }
+   },
+   "name": "chat_after_unload"
+  },
+  {
+   "http": 200,
+   "name": "nexus_health_after_unload"
+  }
+ ]
+}

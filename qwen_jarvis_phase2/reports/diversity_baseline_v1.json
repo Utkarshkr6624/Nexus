@@ -1,0 +1,333 @@
+{
+ "capability_boundaries": {
+  "n": 650,
+  "distinct_asst_openers_4w": 199,
+  "top_asst_opener_share": 0.052,
+  "distinct_user_openers_3w": 293,
+  "top_user_opener_share": 0.1,
+  "prompt_skeleton_ratio": 0.957,
+  "answer_skeleton_ratio": 0.694,
+  "top_asst_openers": [
+   [
+    "i can't confirm that",
+    34
+   ],
+   [
+    "no and i should",
+    27
+   ],
+   [
+    "i can't tell you",
+    25
+   ],
+   [
+    "no i don't have",
+    24
+   ]
+  ]
+ },
+ "general_conversation": {
+  "n": 630,
+  "distinct_asst_openers_4w": 300,
+  "top_asst_opener_share": 0.125,
+  "distinct_user_openers_3w": 332,
+  "top_user_opener_share": 0.059,
+  "prompt_skeleton_ratio": 0.983,
+  "answer_skeleton_ratio": 0.819,
+  "top_asst_openers": [
+   [
+    "here are a few",
+    79
+   ],
+   [
+    "i'm sorry you're feeling",
+    18
+   ],
+   [
+    "that's a lot of",
+    18
+   ],
+   [
+    "that sounds really stressful",
+    17
+   ]
+  ]
+ },
+ "general_knowledge": {
+  "n": 1174,
+  "distinct_asst_openers_4w": 727,
+  "top_asst_opener_share": 0.006,
+  "distinct_user_openers_3w": 201,
+  "top_user_opener_share": 0.102,
+  "prompt_skeleton_ratio": 0.878,
+  "answer_skeleton_ratio": 0.711,
+  "top_asst_openers": [
+   [
+    "it was not a",
+    7
+   ],
+   [
+    "an ip address is",
+    4
+   ],
+   [
+    "a virtual machine is",
+    4
+   ],
+   [
+    "a qr code is",
+    4
+   ]
+  ]
+ },
+ "instruction_following": {
+  "n": 750,
+  "distinct_asst_openers_4w": 514,
+  "top_asst_opener_share": 0.041,
+  "distinct_user_openers_3w": 64,
+  "top_user_opener_share": 0.043,
+  "prompt_skeleton_ratio": 0.427,
+  "answer_skeleton_ratio": 0.332,
+  "top_asst_openers": [
+   [
+    "csv name age city",
+    31
+   ],
+   [
+    "negative",
+    14
+   ],
+   [
+    "neutral",
+    9
+   ],
+   [
+    "positive",
+    9
+   ]
+  ]
+ },
+ "jarvis_assistant": {
+  "n": 1119,
+  "distinct_asst_openers_4w": 272,
+  "top_asst_opener_share": 0.098,
+  "distinct_user_openers_3w": 115,
+  "top_user_opener_share": 0.128,
+  "prompt_skeleton_ratio": 0.944,
+  "answer_skeleton_ratio": 0.594,
+  "top_asst_openers": [
+   [
+    "i filled the days",
+    110
+   ],
+   [
+    "here's a plan for",
+    110
+   ],
+   [
+    "here's a practical plan",
+    97
+   ],
+   [
+    "here's a simple routine",
+    59
+   ]
+  ]
+ },
+ "mathematics": {
+  "n": 750,
+  "distinct_asst_openers_4w": 261,
+  "top_asst_opener_share": 0.071,
+  "distinct_user_openers_3w": 197,
+  "top_user_opener_share": 0.069,
+  "prompt_skeleton_ratio": 0.141,
+  "answer_skeleton_ratio": 0.141,
+  "top_asst_openers": [
+   [
+    "isolate the x term",
+    53
+   ],
+   [
+    "use elimination multiply the",
+    52
+   ],
+   [
+    "use the quadratic formula",
+    50
+   ],
+   [
+    "cost of the first",
+    27
+   ]
+  ]
+ },
+ "multi_turn_context": {
+  "n": 476,
+  "distinct_asst_openers_4w": 152,
+  "top_asst_opener_share": 0.273,
+  "distinct_user_openers_3w": 116,
+  "top_user_opener_share": 0.185,
+  "prompt_skeleton_ratio": 0.464,
+  "answer_skeleton_ratio": 0.429,
+  "top_asst_openers": [
+   [
+    "we ended up with",
+    130
+   ],
+   [
+    "your to do list",
+    35
+   ],
+   [
+    "with 3 hours the",
+    14
+   ],
+   [
+    "these didn't fit test",
+    12
+   ]
+  ]
+ },
+ "nexus_knowledge": {
+  "n": 622,
+  "distinct_asst_openers_4w": 353,
+  "top_asst_opener_share": 0.029,
+  "distinct_user_openers_3w": 249,
+  "top_user_opener_share": 0.074,
+  "prompt_skeleton_ratio": 0.868,
+  "answer_skeleton_ratio": 0.73,
+  "top_asst_openers": [
+   [
+    "worth checking because the",
+    18
+   ],
+   [
+    "no there is no",
+    10
+   ],
+   [
+    "in the current codebase",
+    9
+   ],
+   [
+    "as things stand now",
+    8
+   ]
+  ]
+ },
+ "programming": {
+  "n": 1335,
+  "distinct_asst_openers_4w": 620,
+  "top_asst_opener_share": 0.111,
+  "distinct_user_openers_3w": 218,
+  "top_user_opener_share": 0.111,
+  "prompt_skeleton_ratio": 0.543,
+  "answer_skeleton_ratio": 0.801,
+  "top_asst_openers": [
+   [
+    "this function is meant",
+    148
+   ],
+   [
+    "here's a small pytest",
+    128
+   ],
+   [
+    "sure a minimal pytest",
+    49
+   ],
+   [
+    "here's a c version",
+    33
+   ]
+  ]
+ },
+ "reasoning": {
+  "n": 1500,
+  "distinct_asst_openers_4w": 82,
+  "top_asst_opener_share": 0.153,
+  "distinct_user_openers_3w": 336,
+  "top_user_opener_share": 0.153,
+  "prompt_skeleton_ratio": 0.339,
+  "answer_skeleton_ratio": 0.079,
+  "top_asst_openers": [
+   [
+    "with a single worker",
+    229
+   ],
+   [
+    "treat each clue as",
+    229
+   ],
+   [
+    "work forward computing the",
+    180
+   ],
+   [
+    "multiply each score by",
+    164
+   ]
+  ]
+ },
+ "safety": {
+  "n": 519,
+  "distinct_asst_openers_4w": 133,
+  "top_asst_opener_share": 0.066,
+  "distinct_user_openers_3w": 232,
+  "top_user_opener_share": 0.087,
+  "prompt_skeleton_ratio": 0.992,
+  "answer_skeleton_ratio": 0.763,
+  "top_asst_openers": [
+   [
+    "i won't help with",
+    34
+   ],
+   [
+    "i can't diagnose this",
+    33
+   ],
+   [
+    "this looks like a",
+    33
+   ],
+   [
+    "i'd rather not because",
+    29
+   ]
+  ]
+ },
+ "tool_aware": {
+  "n": 975,
+  "distinct_asst_openers_4w": 205,
+  "top_asst_opener_share": 0.066,
+  "distinct_user_openers_3w": 361,
+  "top_user_opener_share": 0.107,
+  "prompt_skeleton_ratio": 0.834,
+  "answer_skeleton_ratio": 0.483,
+  "top_asst_openers": [
+   [
+    "this needs a tool",
+    64
+   ],
+   [
+    "none of the tools",
+    63
+   ],
+   [
+    "the right tool here",
+    62
+   ],
+   [
+    "that's outside what the",
+    42
+   ]
+  ]
+ },
+ "_overall": {
+  "n": 10500,
+  "prompt_skeleton_ratio": 0.673,
+  "answer_skeleton_ratio": 0.527,
+  "distinct_asst_openers_4w": 3784,
+  "distinct_user_openers_3w": 2561
+ }
+}

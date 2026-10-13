@@ -1,0 +1,362 @@
+{
+ "root": "E:\\Nexo\\Jarvis",
+ "checkpoints": {
+  "800": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-800",
+   "checks": {
+    "adapter_config_matches_expected": true,
+    "meta_step_matches_dir": true,
+    "meta_model_id": true,
+    "meta_dataset_version": true,
+    "all_files_hash_match": true
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "e57880b3011b03e2f6f81ee87db1c2d378b68ff4bc0e883ced6814973d848521",
+     "meta_match": true,
+     "sums_file_match": true
+    }
+   },
+   "metrics": {
+    "lora_B_norm": 13.534541126822369,
+    "metrics_step": 800,
+    "skipped_steps": 1,
+    "train_loss": 0.3852315992116928,
+    "val_loss": 0.6658911464513418,
+    "val_ppl": 1.9462241194947845,
+    "val_tokens": 36056
+   },
+   "is_best_meta": true,
+   "saved_utc": "2026-10-10T09:29:34Z",
+   "status": "PASS"
+  },
+  "1100": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1100",
+   "checks": {
+    "adapter_config_matches_expected": true,
+    "meta_step_matches_dir": true,
+    "meta_model_id": true,
+    "meta_dataset_version": true,
+    "all_files_hash_match": true
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "ab9d2be3a7423d9e38490ebf06966926e1e0e9686f7af1d37c552ab1ab7b7b0e",
+     "meta_match": true,
+     "sums_file_match": true
+    }
+   },
+   "metrics": {
+    "lora_B_norm": 14.205066894375754,
+    "metrics_step": 1100,
+    "skipped_steps": 1,
+    "train_loss": 0.5194930732250214,
+    "val_loss": 0.6743624176073134,
+    "val_ppl": 1.9627811422416919,
+    "val_tokens": 36056
+   },
+   "is_best_meta": false,
+   "saved_utc": "2026-10-10T10:19:14Z",
+   "status": "PASS"
+  },
+  "1200": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1200",
+   "checks": {
+    "adapter_config_matches_expected": true,
+    "meta_step_matches_dir": true,
+    "meta_model_id": true,
+    "meta_dataset_version": true,
+    "all_files_hash_match": true
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "67a4d6b7e2200f335524587ec3d685fe49eed4a065b45754b4500596a9e306e6",
+     "meta_match": true,
+     "sums_file_match": true
+    }
+   },
+   "metrics": {
+    "lora_B_norm": 14.300902763638188,
+    "metrics_step": 1200,
+    "skipped_steps": 1,
+    "train_loss": 0.7541809305548668,
+    "val_loss": 0.6673446315759556,
+    "val_ppl": 1.9490549841130627,
+    "val_tokens": 36056
+   },
+   "is_best_meta": false,
+   "saved_utc": "2026-10-10T10:35:09Z",
+   "status": "PASS"
+  },
+  "1300": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1300",
+   "checks": {
+    "adapter_config_matches_expected": true,
+    "meta_step_matches_dir": true,
+    "meta_model_id": true,
+    "meta_dataset_version": true,
+    "all_files_hash_match": true
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "3de2eafb922bf2eb3f268e1c44617da3314666872e6bb3a1d4630d10500faeb5",
+     "meta_match": true,
+     "sums_file_match": true
+    }
+   },
+   "metrics": {
+    "lora_B_norm": 14.345357021833594,
+    "metrics_step": 1300,
+    "skipped_steps": 1,
+    "train_loss": 0.3623398281633854,
+    "val_loss": 0.6599428926175388,
+    "val_ppl": 1.9346818466310716,
+    "val_tokens": 36056
+   },
+   "is_best_meta": true,
+   "saved_utc": "2026-10-10T15:02:05Z",
+   "status": "PASS"
+  },
+  "1400": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1400",
+   "checks": {
+    "adapter_config_matches_expected": true,
+    "meta_step_matches_dir": true,
+    "meta_model_id": true,
+    "meta_dataset_version": true,
+    "all_files_hash_match": true
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "8ea48e39cfc975fdad23ae8dc2bfc2ba19af9b574be0600b633460f4eb7e34fe",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "81d314ae6f3a193fee1f484e79d9d4122fbc294545aae9458017dd8df980384d",
+     "meta_match": true,
+     "sums_file_match": true
+    }
+   },
+   "metrics": {
+    "lora_B_norm": 14.36343023457885,
+    "metrics_step": 1400,
+    "skipped_steps": 1,
+    "train_loss": 0.4566318392753601,
+    "val_loss": 0.6648752473479987,
+    "val_ppl": 1.9442479561181447,
+    "val_tokens": 36056
+   },
+   "is_best_meta": false,
+   "saved_utc": "2026-10-10T15:19:45Z",
+   "status": "PASS"
+  },
+  "1500": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1500",
+   "checks": {
+    "adapter_config_matches_expected": true,
+    "meta_step_matches_dir": true,
+    "meta_model_id": true,
+    "meta_dataset_version": true,
+    "all_files_hash_match": true
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "b9d16c934d689952da179c4b8b3dbdfb104172ce2e95a46ecad685d48c865e9a",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "81f36e901bdde386ac12df440e6f27749b1bd093ed5ac0ab141f2b882fe861dc",
+     "meta_match": true,
+     "sums_file_match": true
+    }
+   },
+   "metrics": {
+    "lora_B_norm": 14.369705346466834,
+    "metrics_step": 1500,
+    "skipped_steps": 1,
+    "train_loss": 0.3862299583852291,
+    "val_loss": 0.6627904218147832,
+    "val_ppl": 1.9401987607359397,
+    "val_tokens": 36056
+   },
+   "is_best_meta": false,
+   "saved_utc": "2026-10-10T15:37:05Z",
+   "status": "PASS"
+  },
+  "1596": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1596",
+   "checks": {
+    "adapter_config_matches_expected": true,
+    "meta_step_matches_dir": true,
+    "meta_model_id": true,
+    "meta_dataset_version": true,
+    "all_files_hash_match": true
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8",
+     "meta_match": true,
+     "sums_file_match": true
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "29c19b9c8cf9143167e4df44b25a929192a2448ade14bd6aa8c4c6fbbb38178b",
+     "meta_match": true,
+     "sums_file_match": true
+    }
+   },
+   "metrics": {
+    "lora_B_norm": 14.370671164968513,
+    "metrics_step": 1596,
+    "skipped_steps": 1,
+    "train_loss": 0.3634506743401289,
+    "val_loss": 0.6626523670572841,
+    "val_ppl": 1.9399309255549122,
+    "val_tokens": 36056
+   },
+   "is_best_meta": false,
+   "saved_utc": "2026-10-10T15:55:02Z",
+   "status": "PASS"
+  }
+ },
+ "best_json": {
+  "checkpoint": "checkpoint-1300",
+  "metrics": {
+   "lora_B_norm": 14.345357021833594,
+   "metrics_step": 1300,
+   "skipped_steps": 1,
+   "train_loss": 0.3623398281633854,
+   "val_loss": 0.6599428926175388,
+   "val_ppl": 1.9346818466310716,
+   "val_tokens": 36056
+  },
+  "step": 1300
+ },
+ "best_json_consistent": true,
+ "lowest_val_loss_step": 1300,
+ "missing_checkpoints": {
+  "900": "absent",
+  "1000": "absent",
+  "explanation": "keep_last=2 pruning during training; not present locally or in either Kaggle checkpoint dataset. Not required to evaluate the 7 available checkpoints."
+ },
+ "status": "PASS"
+}

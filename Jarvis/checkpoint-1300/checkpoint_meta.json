@@ -1,0 +1,54 @@
+{
+ "epoch": 1,
+ "files": {
+  "adapter/README.md": {
+   "bytes": 5180,
+   "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a"
+  },
+  "adapter/adapter_config.json": {
+   "bytes": 1146,
+   "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0"
+  },
+  "adapter/adapter_model.safetensors": {
+   "bytes": 174655536,
+   "sha256": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c"
+  },
+  "trainer_state.pt": {
+   "bytes": 349622034,
+   "sha256": "3de2eafb922bf2eb3f268e1c44617da3314666872e6bb3a1d4630d10500faeb5"
+  }
+ },
+ "identity": {
+  "config_hash": "9312597956f22164",
+  "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+  "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+  "dataset_version": "qwen_jarvis_dataset_v2_final",
+  "model_id": "Qwen/Qwen3-8B"
+ },
+ "is_best": true,
+ "libraries": {
+  "accelerate": "1.14.0",
+  "bitsandbytes": "0.50.2",
+  "datasets": "4.8.5",
+  "numpy": "2.1.3",
+  "peft": "0.20.0",
+  "tokenizers": "0.23.1",
+  "torch": "2.11.0+cu128",
+  "transformers": "5.16.1",
+  "trl": "not importable (ModuleNotFoundError)",
+  "yaml": "6.0.3"
+ },
+ "metrics": {
+  "lora_B_norm": 14.345357021833594,
+  "metrics_step": 1300,
+  "skipped_steps": 1,
+  "train_loss": 0.3623398281633854,
+  "val_loss": 0.6599428926175388,
+  "val_ppl": 1.9346818466310716,
+  "val_tokens": 36056
+ },
+ "saved_ns": 1791644525367828807,
+ "saved_utc": "2026-10-10T15:02:05Z",
+ "schema": 1,
+ "step": 1300
+}

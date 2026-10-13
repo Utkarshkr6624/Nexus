@@ -1,0 +1,30 @@
+HEAD=5a8346c80614f26ff26832e62ea5924ed257521d
+BRANCH=master
+--- tracked modifications:
+--- untracked:
+?? Jarvis/
+?? generate_dataset.py
+?? package-lock.json
+?? package.json
+?? qwen.txt
+?? qwen_jarvis_phase1/
+?? qwen_jarvis_phase2/
+?? qwen_jarvis_phase3_4/
+?? scripts/dedup.py
+?? scripts/gen_examples.py
+?? scripts/gen_part1.py
+?? scripts/validate.py
+?? scripts/write_a2a_batch3.py
+?? scripts/write_batch1.py
+?? scripts/write_batch2.py
+?? scripts/write_batch3.py
+?? scripts/write_batch4.py
+?? scripts/write_batch5.py
+?? scripts/write_fs_batch1.py
+?? scripts/write_fs_batch2.py
+?? scripts/write_fs_batch3.py
+?? scripts/write_fs_batch4.py
+?? scripts/write_fs_batch5.py
+?? scripts/write_fs_final.py
+?? scripts/write_fs_unique.py
+?? trim_and_validate.py

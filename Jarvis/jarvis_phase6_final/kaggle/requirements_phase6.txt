@@ -1,0 +1,7 @@
+# Phase 6 evaluation: the exact library versions recorded in every checkpoint_meta.json of the Phase 5 run
+# (checkpoint-800 ... checkpoint-1596, field "libraries"). torch is NOT installed: Kaggle's CUDA build is used and recorded
+# (training used torch 2.11.0+cu128). trl was not importable during training and is not needed here.
+transformers==5.16.1
+peft==0.20.0
+accelerate==1.14.0
+bitsandbytes==0.50.2

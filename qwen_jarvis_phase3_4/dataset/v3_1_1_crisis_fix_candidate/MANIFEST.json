@@ -1,0 +1,45 @@
+{
+ "version": "qwen_jarvis_dataset_v3_1_1_crisis_fix_candidate",
+ "status": "CANDIDATE_NOT_TRAINED - prepared during Phase 6 local remediation; requires owner review before any training",
+ "baseline": "qwen_jarvis_dataset_v3_1_remediation (unchanged)",
+ "baseline_manifest_sha256": "3952d28a46c2c954010b2195889d47f32e72cf083e5b44962490bc580b6ce4db",
+ "change": "3 replay crisis_support targets: US-only 988 clause replaced by the country-neutral findahelpline.com route",
+ "changes": [
+  {
+   "id": "qj2f-9a8e930110b3",
+   "before": "I'm really sorry you're in so much pain, and I'm glad you told me. You deserve support right now. If you might act on these thoughts or are in immediate danger, please contact your local emergency number now. In the US you can call or text 988, and elsewhere findahelpline.com lists crisis lines by country. If you can, reach out to someone you trust and stay near them tonight. I'm here to listen too. Would you like to tell me what's been happening?",
+   "after": "I'm really sorry you're in so much pain, and I'm glad you told me. You deserve support right now. If you might act on these thoughts or are in immediate danger, please contact your local emergency number now. findahelpline.com lists free, confidential crisis lines for your country. If you can, reach out to someone you trust and stay near them tonight. I'm here to listen too. Would you like to tell me what's been happening?"
+  },
+  {
+   "id": "qj2f-2d3feb8370e0",
+   "before": "Thank you for trusting me with that. It sounds like you're carrying a lot, and it's okay to ask for help. A doctor, school counsellor or therapist can help you find other ways to cope, and a crisis line can talk with you any time (in the US, 988; findahelpline.com lists lines elsewhere). If you've hurt yourself badly, please seek urgent medical care. Do you want to talk about what's been overwhelming you?",
+   "after": "Thank you for trusting me with that. It sounds like you're carrying a lot, and it's okay to ask for help. A doctor, school counsellor or therapist can help you find other ways to cope, and a crisis line can talk with you any time (findahelpline.com lists free lines for your country). If you've hurt yourself badly, please seek urgent medical care. Do you want to talk about what's been overwhelming you?"
+  },
+  {
+   "id": "qj2f-a86779e28650",
+   "before": "Thank you for trusting me with that. It sounds like you're carrying a lot, and it's okay to ask for help. A doctor, school counsellor or therapist can help you find other ways to cope, and a crisis line can talk with you any time (in the US, 988; findahelpline.com lists lines elsewhere). If you've hurt yourself badly, please seek urgent medical care. Do you want to talk about what's been overwhelming you?",
+   "after": "Thank you for trusting me with that. It sounds like you're carrying a lot, and it's okay to ask for help. A doctor, school counsellor or therapist can help you find other ways to cope, and a crisis line can talk with you any time (findahelpline.com lists free lines for your country). If you've hurt yourself badly, please seek urgent medical care. Do you want to talk about what's been overwhelming you?"
+  }
+ ],
+ "files": {
+  "train.jsonl": {
+   "records": 1901,
+   "sha256": "8ad7b225f96dbfa398a259cc472d736d47ceef9e483cbf6adac5046d2c1f5c74"
+  },
+  "validation.jsonl": {
+   "records": 100,
+   "sha256": "bec2d0518b0a082315037142726331120d6de6e1ecaf597d8a99eec9ff9c56f6"
+  },
+  "test.jsonl": {
+   "records": 23,
+   "sha256": "58621b5c4eb3c51c8d36566f3c879cbdc3180b0562472ba7ecddf79ac5dd8bdf"
+  }
+ },
+ "gates": {
+  "source_verified": true,
+  "schema_valid": true,
+  "crisis_audit": true,
+  "no_number_without_stated_country": true,
+  "only_listed_records_changed": true
+ }
+}

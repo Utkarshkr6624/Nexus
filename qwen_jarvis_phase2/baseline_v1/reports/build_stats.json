@@ -1,0 +1,152 @@
+{
+ "version": "qwen_jarvis_dataset_v1",
+ "generated_total": 14592,
+ "generated_by_file": {
+  "boundaries3": 682,
+  "context": 534,
+  "conversation": 563,
+  "conversation2": 452,
+  "conversation3": 186,
+  "instruction": 909,
+  "jarvis": 801,
+  "jarvis2": 422,
+  "knowledge": 792,
+  "knowledge2": 192,
+  "math": 1259,
+  "multiturn": 560,
+  "nexus": 469,
+  "nexus2": 235,
+  "nexus3": 114,
+  "prog_concepts1": 131,
+  "prog_concepts2": 115,
+  "prog_debug": 100,
+  "prog_extra": 168,
+  "prog_multi": 198,
+  "prog_py": 576,
+  "prog_sql_git": 90,
+  "reasoning": 1980,
+  "safety": 152,
+  "safety2": 424,
+  "safety3": 236,
+  "tools": 442,
+  "tools2": 1810
+ },
+ "validation_rejected": 2,
+ "validation_reasons": {
+  "capability-boundary answer lacks an explicit limitation/failure statement": 2
+ },
+ "duplicates_removed": {
+  "exact_duplicate": 1000,
+  "identical_answer_cap": 441,
+  "near_duplicate": 1221,
+  "same_prompt_normalised": 734
+ },
+ "duplicates_removed_total": 3396,
+ "balance_dropped": {
+  "capability_boundaries": 109,
+  "instruction_following": 29,
+  "reasoning": 119,
+  "tool_aware": 267,
+  "mathematics": 170
+ },
+ "leakage_moved_to_train": {
+  "test": 61,
+  "validation": 62
+ },
+ "final_total": 10500,
+ "category_counts": {
+  "general_conversation": 630,
+  "general_knowledge": 1174,
+  "reasoning": 1500,
+  "programming": 1335,
+  "mathematics": 750,
+  "instruction_following": 750,
+  "jarvis_assistant": 1119,
+  "nexus_knowledge": 622,
+  "tool_aware": 975,
+  "capability_boundaries": 650,
+  "multi_turn_context": 476,
+  "safety": 519
+ },
+ "category_targets": {
+  "general_conversation": 1000,
+  "general_knowledge": 1000,
+  "reasoning": 1500,
+  "programming": 1500,
+  "mathematics": 750,
+  "instruction_following": 750,
+  "jarvis_assistant": 1000,
+  "nexus_knowledge": 750,
+  "tool_aware": 750,
+  "capability_boundaries": 500,
+  "multi_turn_context": 500,
+  "safety": 500
+ },
+ "split_counts": {
+  "train": 9556,
+  "validation": 472,
+  "test": 472
+ },
+ "split_by_category": {
+  "train": {
+   "instruction_following": 676,
+   "jarvis_assistant": 1009,
+   "tool_aware": 901,
+   "nexus_knowledge": 570,
+   "general_conversation": 568,
+   "general_knowledge": 1097,
+   "multi_turn_context": 436,
+   "capability_boundaries": 596,
+   "reasoning": 1360,
+   "mathematics": 678,
+   "programming": 1201,
+   "safety": 464
+  },
+  "validation": {
+   "nexus_knowledge": 26,
+   "general_conversation": 31,
+   "reasoning": 71,
+   "instruction_following": 38,
+   "programming": 68,
+   "tool_aware": 37,
+   "mathematics": 36,
+   "safety": 28,
+   "capability_boundaries": 24,
+   "jarvis_assistant": 56,
+   "multi_turn_context": 24,
+   "general_knowledge": 33
+  },
+  "test": {
+   "instruction_following": 36,
+   "programming": 66,
+   "safety": 27,
+   "capability_boundaries": 30,
+   "general_conversation": 31,
+   "tool_aware": 37,
+   "nexus_knowledge": 26,
+   "general_knowledge": 44,
+   "reasoning": 69,
+   "jarvis_assistant": 54,
+   "mathematics": 36,
+   "multi_turn_context": 16
+  }
+ },
+ "multi_turn_examples": 1134,
+ "multi_turn_by_split": {
+  "train": 1062,
+  "validation": 37,
+  "test": 35
+ },
+ "source_types": {
+  "computed": 3760,
+  "composed": 2876,
+  "authored": 2809,
+  "verified": 1055
+ },
+ "with_system_message": 7172,
+ "difficulty": {
+  "easy": 2627,
+  "medium": 7095,
+  "hard": 778
+ }
+}

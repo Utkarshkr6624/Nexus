@@ -27,7 +27,7 @@ export default function AssistantPage() {
         eyebrow={GROUP_LABEL}
         title="AI Assistant"
         description={
-          'Speak or type one request. NEXO classifies it into one of fourteen intents and ' +
+          'Speak or type one request. The AI Assistant classifies it into one of fourteen intents and ' +
           'names the service behind it. It routes your request — it does not write an answer.'
         }
         badges={

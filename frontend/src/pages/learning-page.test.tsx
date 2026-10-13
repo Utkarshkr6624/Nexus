@@ -3,7 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+
+import { WARM_LAZY_CHARTS_TIMEOUT_MS, warmLazyCharts } from '@/test/warm-lazy-charts'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import LearningPage from '@/pages/learning-page'
@@ -85,6 +87,8 @@ vi.mock('recharts', async (importOriginal) => {
 
 /** Only the first test to touch a lazy chart pays for the module import. */
 const LAZY_RESOLVE_TIMEOUT_MS = 10_000
+
+beforeAll(warmLazyCharts, WARM_LAZY_CHARTS_TIMEOUT_MS)
 
 /** The retry policy genuinely backs off; this is not generous for comfort. */
 const RETRY_SURFACE_TIMEOUT_MS = 20_000

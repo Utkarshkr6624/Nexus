@@ -1,0 +1,22 @@
+{
+  "current_dry": {
+    "answer": "The search returned returned returned returned gave 4 results, including for example example \"Cult film\", \"Good Witch (franchise)\", \"The good, the Bad and the Ugly\", and \"Mirchi (film)\". I haven't seen any of them, so I can't say which is best; I can help you shortlist or learn write a review.",
+    "toolcall_raw": "I'll use `app_list_tasks` for that.\n<tool_call>\n{\"name\": \"app_list_tasks\", \"arguments\": {\"filter\": \"open\"}}\n</tool_call>",
+    "toolcall_valid": true
+  },
+  "dry_plus_rep105": {
+    "answer": "The search returned returned returned returned gave 4 results, including for example such as 'Cult film', 'Good Witch (franchise)', 'The good, the Bad and the Ugly' and 'Mirchi (film)'. I haven't checked any of them, so I can't say how good they are; you'll need to read reviews or watch them. Want me to suggest a few more genres?",
+    "toolcall_raw": "I'll use `app_list_tasks` for that.\n<tool_call>\n{\"name\": \"app_list_tasks\", \"arguments\": {\"filter\": \"open\"}}\n</tool_call>",
+    "toolcall_valid": true
+  },
+  "dry_plus_rep110": {
+    "answer": "The search returned returned returned returned gave 4 results, including for example such as 'Cult film', 'Good Witch (franchise)', 'The good, the Bad and the Ugly' and 'Mirchi (film)'. I haven't checked any of them, so I can't say how good they are; you'll need to read reviews or watch a trailer. Want me to suggest a few more genres?",
+    "toolcall_raw": "I'll use `app_list_tasks` for that.\n<tool_call>\n{\"name\": \"app_list_tasks\", \"arguments\": {\"filter\": \"open\"}}\n</tool_call>",
+    "toolcall_valid": true
+  },
+  "lora_scale": {
+    "0": "Here are some results from the search for \"good movies\":\n\n1. [Cult film](https://en.wikipedia.org/wiki/Cult_film) - Information about cult films.\n2. [Good Witch (franchise)](https://en.wikipedia.org/wiki/Good_Witch_(franchise)) - Information about the Good Witch franchise.\n3. [The Good, the Bad and the Ugly](https://en.wikipedia.org/wiki/The_Good,_the_Bad_and_the_Ugly) - A classic film known for its storytelling and acting.\n4. [Mirchi (film)](https",
+    "1": "The search returned returned returned returned returned the Wikipedia results for \"good movies\": \"Cult film\", \"Good Witch (franchise)\", \"The good, the Bad and the Ugly\", and \"Mirchi (film)\". I can't judge the quality of these films, so pick one and let me know if you want more suggestions.",
+    "0.5": "Here are some movies from Wikipedia for you:\n\n- Cult film\n- Good Witch (franchise)\n- The Good, the Bad and the Ugly\n- Mirchi (film)\n\nI can't rate them, so you might want to read reviews or watch trailers to decide. Want more suggestions?"
+  }
+}

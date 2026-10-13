@@ -1,0 +1,14 @@
+{
+  "adapter_sha256": "d754a3c6b77fb80bf24e67527d5b32f04606d8496e9e7c2b9d7cccef48f48fa8",
+  "adapter_path": "E:/Nexo/Jarvis/jarvis_v31_remediation_train/runs/qwen3_8b_jarvis_v3_1_remediation/checkpoint-139/adapter/adapter_model.safetensors",
+  "lora_gguf": "models/jarvis_v31_139_lora.gguf",
+  "lora_gguf_sha256": "73300722d59c31a0cbbce5dc5b531f7967357d908d057d3de17c58e55dda9b68",
+  "outtype": "f16",
+  "converter": "llama.cpp b11570 (commit ccdbe2905) convert_lora_to_gguf.py",
+  "base_config": "Qwen/Qwen3-8B HF config, revision b968826d9c46dd6066d109eabc6255188de91218 (local HF cache)",
+  "base_gguf": "models/Qwen3-8B-Q4_K_M.gguf",
+  "base_gguf_sha256": "d98cdcbd03e17ce47681435b5150e34c1417f50b5c0019dd560e4882c5745785",
+  "base_gguf_source": "huggingface.co/Qwen/Qwen3-8B-GGUF@7c41481f57cb95916b40956ab2f0b139b296d974 (LFS sha256 matched)",
+  "validated": "504 tensors = 36 layers x 7 modules x (A,B); all targets present in base; architecture qwen3; alpha 32",
+  "created": "2026-10-12T21:38:27+05:30"
+}

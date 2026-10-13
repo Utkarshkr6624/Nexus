@@ -1,0 +1,299 @@
+{
+ "records": 518,
+ "samples": 614,
+ "max_len": 2048,
+ "per_sample_tokens": {
+  "n": 614,
+  "total": 75286,
+  "mean": 122.6,
+  "median": 105.0,
+  "p95": 254,
+  "p99": 329,
+  "max": 439,
+  "min": 23
+ },
+ "label_tokens": {
+  "total": 35440,
+  "ratio_of_all_tokens": 0.4707
+ },
+ "samples_fit_pct": {
+  "512": 100.0,
+  "1024": 100.0,
+  "1536": 100.0,
+  "2048": 100.0,
+  "3072": 100.0,
+  "4096": 100.0
+ },
+ "histogram_per_sample": [
+  {
+   "bin": "1-64",
+   "count": 87
+  },
+  {
+   "bin": "65-128",
+   "count": 311
+  },
+  {
+   "bin": "129-192",
+   "count": 125
+  },
+  {
+   "bin": "193-256",
+   "count": 62
+  },
+  {
+   "bin": "257-384",
+   "count": 28
+  },
+  {
+   "bin": "385-512",
+   "count": 1
+  },
+  {
+   "bin": "513-768",
+   "count": 0
+  },
+  {
+   "bin": "769-1024",
+   "count": 0
+  },
+  {
+   "bin": "1025-1536",
+   "count": 0
+  },
+  {
+   "bin": "1537-2048",
+   "count": 0
+  },
+  {
+   "bin": "2049-3072",
+   "count": 0
+  },
+  {
+   "bin": "3073-4096",
+   "count": 0
+  },
+  {
+   "bin": ">4096",
+   "count": 0
+  }
+ ],
+ "multi_turn_records": 46,
+ "tool_records": 0,
+ "records_with_system_message": 286,
+ "load_report": {
+  "path": "..\\qwen_jarvis_phase2\\dataset\\splits\\test.jsonl",
+  "mode": "phase2",
+  "train_on": "per_turn",
+  "max_len": 2048,
+  "records": 518,
+  "invalid": 0,
+  "invalid_examples": [],
+  "samples": 614,
+  "records_with_dropped_turns": 0,
+  "dropped_turns": 0,
+  "records_truncated": 0,
+  "records_skipped": 0,
+  "truncated_pct": 0.0
+ },
+ "per_category_tokens": {
+  "capability_boundaries": {
+   "n": 33,
+   "total": 2747,
+   "mean": 83.2,
+   "median": 83,
+   "p95": 127,
+   "p99": 143,
+   "max": 143,
+   "min": 52
+  },
+  "general_conversation": {
+   "n": 55,
+   "total": 4413,
+   "mean": 80.2,
+   "median": 78,
+   "p95": 134,
+   "p99": 159,
+   "max": 159,
+   "min": 32
+  },
+  "general_knowledge": {
+   "n": 43,
+   "total": 2879,
+   "mean": 67.0,
+   "median": 70,
+   "p95": 97,
+   "p99": 137,
+   "max": 137,
+   "min": 30
+  },
+  "instruction_following": {
+   "n": 42,
+   "total": 3502,
+   "mean": 83.4,
+   "median": 76.5,
+   "p95": 135,
+   "p99": 174,
+   "max": 174,
+   "min": 31
+  },
+  "jarvis_assistant": {
+   "n": 54,
+   "total": 10421,
+   "mean": 193.0,
+   "median": 176.0,
+   "p95": 333,
+   "p99": 351,
+   "max": 351,
+   "min": 45
+  },
+  "mathematics": {
+   "n": 39,
+   "total": 4377,
+   "mean": 112.2,
+   "median": 112,
+   "p95": 148,
+   "p99": 159,
+   "max": 159,
+   "min": 44
+  },
+  "multi_turn_context": {
+   "n": 89,
+   "total": 10630,
+   "mean": 119.4,
+   "median": 108,
+   "p95": 261,
+   "p99": 328,
+   "max": 328,
+   "min": 23
+  },
+  "nexus_knowledge": {
+   "n": 45,
+   "total": 4037,
+   "mean": 89.7,
+   "median": 88,
+   "p95": 145,
+   "p99": 181,
+   "max": 181,
+   "min": 41
+  },
+  "programming": {
+   "n": 76,
+   "total": 12084,
+   "mean": 159.0,
+   "median": 158.0,
+   "p95": 243,
+   "p99": 339,
+   "max": 339,
+   "min": 63
+  },
+  "reasoning": {
+   "n": 77,
+   "total": 13245,
+   "mean": 172.0,
+   "median": 188,
+   "p95": 298,
+   "p99": 439,
+   "max": 439,
+   "min": 60
+  },
+  "safety": {
+   "n": 25,
+   "total": 2612,
+   "mean": 104.5,
+   "median": 99,
+   "p95": 142,
+   "p99": 171,
+   "max": 171,
+   "min": 61
+  },
+  "tool_aware": {
+   "n": 36,
+   "total": 4339,
+   "mean": 120.5,
+   "median": 121.5,
+   "p95": 146,
+   "p99": 148,
+   "max": 148,
+   "min": 92
+  }
+ },
+ "per_conversation_tokens": {
+  "n": 518,
+  "total": 65109,
+  "mean": 125.7,
+  "median": 107.0,
+  "p95": 264,
+  "p99": 331,
+  "max": 439,
+  "min": 30
+ },
+ "conversations_fit_pct": {
+  "512": 100.0,
+  "1024": 100.0,
+  "1536": 100.0,
+  "2048": 100.0,
+  "3072": 100.0,
+  "4096": 100.0
+ },
+ "histogram_per_conversation": [
+  {
+   "bin": "1-64",
+   "count": 58
+  },
+  {
+   "bin": "65-128",
+   "count": 272
+  },
+  {
+   "bin": "129-192",
+   "count": 109
+  },
+  {
+   "bin": "193-256",
+   "count": 51
+  },
+  {
+   "bin": "257-384",
+   "count": 27
+  },
+  {
+   "bin": "385-512",
+   "count": 1
+  },
+  {
+   "bin": "513-768",
+   "count": 0
+  },
+  {
+   "bin": "769-1024",
+   "count": 0
+  },
+  {
+   "bin": "1025-1536",
+   "count": 0
+  },
+  {
+   "bin": "1537-2048",
+   "count": 0
+  },
+  {
+   "bin": "2049-3072",
+   "count": 0
+  },
+  {
+   "bin": "3073-4096",
+   "count": 0
+  },
+  {
+   "bin": ">4096",
+   "count": 0
+  }
+ ],
+ "truncation_pct_at_max_len": 0.0,
+ "source": {
+  "path": "..\\qwen_jarvis_phase2\\dataset\\splits\\test.jsonl",
+  "mode": "phase2",
+  "train_on": "per_turn"
+ }
+}

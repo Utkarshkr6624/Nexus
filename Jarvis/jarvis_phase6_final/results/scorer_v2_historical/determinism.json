@@ -1,0 +1,48 @@
+{
+ "base_model": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_1100": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_1200": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_1300": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_1400": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_1500": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_1596": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_800": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_v3_700": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "cross_run": {}
+}

@@ -1,0 +1,21 @@
+{
+ "gates": {
+  "replay_excludes_eval_similar_v3_records": true,
+  "schema_valid": true,
+  "extra_files_parse": true,
+  "tool_arguments_valid": true,
+  "math_answers_end_with_answer_line": true,
+  "no_new_example_near_eval_prompt": true,
+  "no_contradictory_targets": true,
+  "no_new_group_across_splits": true,
+  "unique_ids": true,
+  "replay_from_matching_v3_split_only": true,
+  "v3_unchanged": true,
+  "crisis_facts_audited": true
+ },
+ "schema_problems": [],
+ "extra_parse_problems": [],
+ "tool_argument_problems": [],
+ "crisis_audit_problems": [],
+ "contradictions": []
+}

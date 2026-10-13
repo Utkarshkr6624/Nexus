@@ -1,0 +1,584 @@
+{
+ "generated_by": "scripts/integrity_check.py",
+ "architecture_reference": "Qwen3-8B config (_hf_meta/config.json) on meta device + original attach_lora",
+ "expected_adapter_tensors": 504,
+ "checkpoints": {
+  "checkpoint-800": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-800",
+   "checks": {
+    "config.peft_type": "PASS",
+    "config.r": "PASS",
+    "config.lora_alpha": "PASS",
+    "config.lora_dropout": "PASS",
+    "config.task_type": "PASS",
+    "config.base_model_name_or_path": "PASS",
+    "config.bias": "PASS",
+    "config.target_modules": "PASS",
+    "config.inference_mode": "INFO True",
+    "safetensors.opens": "PASS",
+    "tensors.keys_match_architecture": "PASS",
+    "tensors.shapes_match_architecture": "PASS",
+    "tensors.all_finite": "PASS",
+    "tensors.lora_B_norm_vs_meta": "PASS"
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "status": "PASS"
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "meta_sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "status": "PASS"
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc",
+     "meta_sha256": "41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc",
+     "status": "PASS"
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "e57880b3011b03e2f6f81ee87db1c2d378b68ff4bc0e883ced6814973d848521",
+     "meta_sha256": "e57880b3011b03e2f6f81ee87db1c2d378b68ff4bc0e883ced6814973d848521",
+     "status": "PASS"
+    },
+    "checkpoint_meta.json": {
+     "bytes": 1496,
+     "sha256": "10b6fe8e3977b172867716da98157e55b21700a3dc4da3080120fbd41e251a17",
+     "status": "UNVERIFIED (self-describing; no external hash)"
+    }
+   },
+   "n_tensors": 504,
+   "lora_B_norm": 13.534541162879227,
+   "metadata": {
+    "step": 800,
+    "epoch": 1,
+    "train_loss": 0.3852315992116928,
+    "val_loss": 0.6658911464513418,
+    "val_ppl": 1.9462241194947845,
+    "val_tokens": 36056,
+    "metrics_step": 800,
+    "is_best": true,
+    "saved_utc": "2026-10-10T09:29:34Z",
+    "config_hash": "9312597956f22164",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "model_id": "Qwen/Qwen3-8B",
+    "libraries": {
+     "accelerate": "1.14.0",
+     "bitsandbytes": "0.50.2",
+     "datasets": "4.8.5",
+     "numpy": "2.1.3",
+     "peft": "0.20.0",
+     "tokenizers": "0.23.1",
+     "torch": "2.11.0+cu128",
+     "transformers": "5.16.1",
+     "trl": "not importable (ModuleNotFoundError)",
+     "yaml": "6.0.3"
+    }
+   },
+   "overall": "PASS"
+  },
+  "checkpoint-1100": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1100",
+   "checks": {
+    "config.peft_type": "PASS",
+    "config.r": "PASS",
+    "config.lora_alpha": "PASS",
+    "config.lora_dropout": "PASS",
+    "config.task_type": "PASS",
+    "config.base_model_name_or_path": "PASS",
+    "config.bias": "PASS",
+    "config.target_modules": "PASS",
+    "config.inference_mode": "INFO True",
+    "safetensors.opens": "PASS",
+    "tensors.keys_match_architecture": "PASS",
+    "tensors.shapes_match_architecture": "PASS",
+    "tensors.all_finite": "PASS",
+    "tensors.lora_B_norm_vs_meta": "PASS"
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "status": "PASS"
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "meta_sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "status": "PASS"
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe",
+     "meta_sha256": "35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe",
+     "status": "PASS"
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "ab9d2be3a7423d9e38490ebf06966926e1e0e9686f7af1d37c552ab1ab7b7b0e",
+     "meta_sha256": "ab9d2be3a7423d9e38490ebf06966926e1e0e9686f7af1d37c552ab1ab7b7b0e",
+     "status": "PASS"
+    },
+    "checkpoint_meta.json": {
+     "bytes": 1499,
+     "sha256": "8b46970ddadf1b6a28f88ce16a329ea2869d2e3309fe8a33daf3ce4caa8c4a0d",
+     "status": "UNVERIFIED (self-describing; no external hash)"
+    }
+   },
+   "n_tensors": 504,
+   "lora_B_norm": 14.205066889655239,
+   "metadata": {
+    "step": 1100,
+    "epoch": 1,
+    "train_loss": 0.5194930732250214,
+    "val_loss": 0.6743624176073134,
+    "val_ppl": 1.9627811422416919,
+    "val_tokens": 36056,
+    "metrics_step": 1100,
+    "is_best": false,
+    "saved_utc": "2026-10-10T10:19:14Z",
+    "config_hash": "9312597956f22164",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "model_id": "Qwen/Qwen3-8B",
+    "libraries": {
+     "accelerate": "1.14.0",
+     "bitsandbytes": "0.50.2",
+     "datasets": "4.8.5",
+     "numpy": "2.1.3",
+     "peft": "0.20.0",
+     "tokenizers": "0.23.1",
+     "torch": "2.11.0+cu128",
+     "transformers": "5.16.1",
+     "trl": "not importable (ModuleNotFoundError)",
+     "yaml": "6.0.3"
+    }
+   },
+   "overall": "PASS"
+  },
+  "checkpoint-1200": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1200",
+   "checks": {
+    "config.peft_type": "PASS",
+    "config.r": "PASS",
+    "config.lora_alpha": "PASS",
+    "config.lora_dropout": "PASS",
+    "config.task_type": "PASS",
+    "config.base_model_name_or_path": "PASS",
+    "config.bias": "PASS",
+    "config.target_modules": "PASS",
+    "config.inference_mode": "INFO True",
+    "safetensors.opens": "PASS",
+    "tensors.keys_match_architecture": "PASS",
+    "tensors.shapes_match_architecture": "PASS",
+    "tensors.all_finite": "PASS",
+    "tensors.lora_B_norm_vs_meta": "PASS"
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "status": "PASS"
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "meta_sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64",
+     "status": "PASS"
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b",
+     "meta_sha256": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b",
+     "status": "PASS"
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "67a4d6b7e2200f335524587ec3d685fe49eed4a065b45754b4500596a9e306e6",
+     "meta_sha256": "67a4d6b7e2200f335524587ec3d685fe49eed4a065b45754b4500596a9e306e6",
+     "status": "PASS"
+    },
+    "checkpoint_meta.json": {
+     "bytes": 1499,
+     "sha256": "edc1737c8745f8c1e29b67ba10fbf4814d5a51ddabb3294764b664ef0ef34fbd",
+     "status": "UNVERIFIED (self-describing; no external hash)"
+    }
+   },
+   "n_tensors": 504,
+   "lora_B_norm": 14.300902828240542,
+   "metadata": {
+    "step": 1200,
+    "epoch": 1,
+    "train_loss": 0.7541809305548668,
+    "val_loss": 0.6673446315759556,
+    "val_ppl": 1.9490549841130627,
+    "val_tokens": 36056,
+    "metrics_step": 1200,
+    "is_best": false,
+    "saved_utc": "2026-10-10T10:35:09Z",
+    "config_hash": "9312597956f22164",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "model_id": "Qwen/Qwen3-8B",
+    "libraries": {
+     "accelerate": "1.14.0",
+     "bitsandbytes": "0.50.2",
+     "datasets": "4.8.5",
+     "numpy": "2.1.3",
+     "peft": "0.20.0",
+     "tokenizers": "0.23.1",
+     "torch": "2.11.0+cu128",
+     "transformers": "5.16.1",
+     "trl": "not importable (ModuleNotFoundError)",
+     "yaml": "6.0.3"
+    }
+   },
+   "overall": "PASS"
+  },
+  "checkpoint-1300": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1300",
+   "checks": {
+    "config.peft_type": "PASS",
+    "config.r": "PASS",
+    "config.lora_alpha": "PASS",
+    "config.lora_dropout": "PASS",
+    "config.task_type": "PASS",
+    "config.base_model_name_or_path": "PASS",
+    "config.bias": "PASS",
+    "config.target_modules": "PASS",
+    "config.inference_mode": "INFO True",
+    "safetensors.opens": "PASS",
+    "tensors.keys_match_architecture": "PASS",
+    "tensors.shapes_match_architecture": "PASS",
+    "tensors.all_finite": "PASS",
+    "tensors.lora_B_norm_vs_meta": "PASS"
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "status": "PASS"
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "meta_sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "status": "PASS"
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c",
+     "meta_sha256": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c",
+     "status": "PASS"
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "3de2eafb922bf2eb3f268e1c44617da3314666872e6bb3a1d4630d10500faeb5",
+     "meta_sha256": "3de2eafb922bf2eb3f268e1c44617da3314666872e6bb3a1d4630d10500faeb5",
+     "status": "PASS"
+    },
+    "checkpoint_meta.json": {
+     "bytes": 1498,
+     "sha256": "3e2739a301f6b580d2c015f18781af2473217e96401f4b0a68c9e468bee4ccec",
+     "status": "UNVERIFIED (self-describing; no external hash)"
+    }
+   },
+   "n_tensors": 504,
+   "lora_B_norm": 14.345357048581267,
+   "metadata": {
+    "step": 1300,
+    "epoch": 1,
+    "train_loss": 0.3623398281633854,
+    "val_loss": 0.6599428926175388,
+    "val_ppl": 1.9346818466310716,
+    "val_tokens": 36056,
+    "metrics_step": 1300,
+    "is_best": true,
+    "saved_utc": "2026-10-10T15:02:05Z",
+    "config_hash": "9312597956f22164",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "model_id": "Qwen/Qwen3-8B",
+    "libraries": {
+     "accelerate": "1.14.0",
+     "bitsandbytes": "0.50.2",
+     "datasets": "4.8.5",
+     "numpy": "2.1.3",
+     "peft": "0.20.0",
+     "tokenizers": "0.23.1",
+     "torch": "2.11.0+cu128",
+     "transformers": "5.16.1",
+     "trl": "not importable (ModuleNotFoundError)",
+     "yaml": "6.0.3"
+    }
+   },
+   "overall": "PASS"
+  },
+  "checkpoint-1400": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1400",
+   "checks": {
+    "config.peft_type": "PASS",
+    "config.r": "PASS",
+    "config.lora_alpha": "PASS",
+    "config.lora_dropout": "PASS",
+    "config.task_type": "PASS",
+    "config.base_model_name_or_path": "PASS",
+    "config.bias": "PASS",
+    "config.target_modules": "PASS",
+    "config.inference_mode": "INFO True",
+    "safetensors.opens": "PASS",
+    "tensors.keys_match_architecture": "PASS",
+    "tensors.shapes_match_architecture": "PASS",
+    "tensors.all_finite": "PASS",
+    "tensors.lora_B_norm_vs_meta": "PASS"
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "status": "PASS"
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "meta_sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "status": "PASS"
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "8ea48e39cfc975fdad23ae8dc2bfc2ba19af9b574be0600b633460f4eb7e34fe",
+     "meta_sha256": "8ea48e39cfc975fdad23ae8dc2bfc2ba19af9b574be0600b633460f4eb7e34fe",
+     "status": "PASS"
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "81d314ae6f3a193fee1f484e79d9d4122fbc294545aae9458017dd8df980384d",
+     "meta_sha256": "81d314ae6f3a193fee1f484e79d9d4122fbc294545aae9458017dd8df980384d",
+     "status": "PASS"
+    },
+    "checkpoint_meta.json": {
+     "bytes": 1498,
+     "sha256": "eaaee64f044ad947d6ed22f21d676c4c416f5f79de2f74357b0abc22b996186b",
+     "status": "UNVERIFIED (self-describing; no external hash)"
+    }
+   },
+   "n_tensors": 504,
+   "lora_B_norm": 14.363430261552226,
+   "metadata": {
+    "step": 1400,
+    "epoch": 1,
+    "train_loss": 0.4566318392753601,
+    "val_loss": 0.6648752473479987,
+    "val_ppl": 1.9442479561181447,
+    "val_tokens": 36056,
+    "metrics_step": 1400,
+    "is_best": false,
+    "saved_utc": "2026-10-10T15:19:45Z",
+    "config_hash": "9312597956f22164",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "model_id": "Qwen/Qwen3-8B",
+    "libraries": {
+     "accelerate": "1.14.0",
+     "bitsandbytes": "0.50.2",
+     "datasets": "4.8.5",
+     "numpy": "2.1.3",
+     "peft": "0.20.0",
+     "tokenizers": "0.23.1",
+     "torch": "2.11.0+cu128",
+     "transformers": "5.16.1",
+     "trl": "not importable (ModuleNotFoundError)",
+     "yaml": "6.0.3"
+    }
+   },
+   "overall": "PASS"
+  },
+  "checkpoint-1500": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1500",
+   "checks": {
+    "config.peft_type": "PASS",
+    "config.r": "PASS",
+    "config.lora_alpha": "PASS",
+    "config.lora_dropout": "PASS",
+    "config.task_type": "PASS",
+    "config.base_model_name_or_path": "PASS",
+    "config.bias": "PASS",
+    "config.target_modules": "PASS",
+    "config.inference_mode": "INFO True",
+    "safetensors.opens": "PASS",
+    "tensors.keys_match_architecture": "PASS",
+    "tensors.shapes_match_architecture": "PASS",
+    "tensors.all_finite": "PASS",
+    "tensors.lora_B_norm_vs_meta": "PASS"
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "status": "PASS"
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "meta_sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "status": "PASS"
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "b9d16c934d689952da179c4b8b3dbdfb104172ce2e95a46ecad685d48c865e9a",
+     "meta_sha256": "b9d16c934d689952da179c4b8b3dbdfb104172ce2e95a46ecad685d48c865e9a",
+     "status": "PASS"
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "81f36e901bdde386ac12df440e6f27749b1bd093ed5ac0ab141f2b882fe861dc",
+     "meta_sha256": "81f36e901bdde386ac12df440e6f27749b1bd093ed5ac0ab141f2b882fe861dc",
+     "status": "PASS"
+    },
+    "checkpoint_meta.json": {
+     "bytes": 1499,
+     "sha256": "c4354c5ab816daaf319fffb08649b8a2309e28d8890aa626b137569ac5d07ec3",
+     "status": "UNVERIFIED (self-describing; no external hash)"
+    }
+   },
+   "n_tensors": 504,
+   "lora_B_norm": 14.369705385094504,
+   "metadata": {
+    "step": 1500,
+    "epoch": 1,
+    "train_loss": 0.3862299583852291,
+    "val_loss": 0.6627904218147832,
+    "val_ppl": 1.9401987607359397,
+    "val_tokens": 36056,
+    "metrics_step": 1500,
+    "is_best": false,
+    "saved_utc": "2026-10-10T15:37:05Z",
+    "config_hash": "9312597956f22164",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "model_id": "Qwen/Qwen3-8B",
+    "libraries": {
+     "accelerate": "1.14.0",
+     "bitsandbytes": "0.50.2",
+     "datasets": "4.8.5",
+     "numpy": "2.1.3",
+     "peft": "0.20.0",
+     "tokenizers": "0.23.1",
+     "torch": "2.11.0+cu128",
+     "transformers": "5.16.1",
+     "trl": "not importable (ModuleNotFoundError)",
+     "yaml": "6.0.3"
+    }
+   },
+   "overall": "PASS"
+  },
+  "checkpoint-1596": {
+   "path": "E:\\Nexo\\Jarvis\\checkpoint-1596",
+   "checks": {
+    "config.peft_type": "PASS",
+    "config.r": "PASS",
+    "config.lora_alpha": "PASS",
+    "config.lora_dropout": "PASS",
+    "config.task_type": "PASS",
+    "config.base_model_name_or_path": "PASS",
+    "config.bias": "PASS",
+    "config.target_modules": "PASS",
+    "config.inference_mode": "INFO True",
+    "safetensors.opens": "PASS",
+    "tensors.keys_match_architecture": "PASS",
+    "tensors.shapes_match_architecture": "PASS",
+    "tensors.all_finite": "PASS",
+    "tensors.lora_B_norm_vs_meta": "PASS"
+   },
+   "files": {
+    "adapter/README.md": {
+     "bytes": 5180,
+     "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "meta_sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a",
+     "status": "PASS"
+    },
+    "adapter/adapter_config.json": {
+     "bytes": 1146,
+     "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "meta_sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0",
+     "status": "PASS"
+    },
+    "adapter/adapter_model.safetensors": {
+     "bytes": 174655536,
+     "sha256": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8",
+     "meta_sha256": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8",
+     "status": "PASS"
+    },
+    "trainer_state.pt": {
+     "bytes": 349622034,
+     "sha256": "29c19b9c8cf9143167e4df44b25a929192a2448ade14bd6aa8c4c6fbbb38178b",
+     "meta_sha256": "29c19b9c8cf9143167e4df44b25a929192a2448ade14bd6aa8c4c6fbbb38178b",
+     "status": "PASS"
+    },
+    "checkpoint_meta.json": {
+     "bytes": 1499,
+     "sha256": "a8bef0e232fe367d308ff9c551115a29a8370af01411916beea6ca715a8a7478",
+     "status": "UNVERIFIED (self-describing; no external hash)"
+    }
+   },
+   "n_tensors": 504,
+   "lora_B_norm": 14.370671255698555,
+   "metadata": {
+    "step": 1596,
+    "epoch": 1,
+    "train_loss": 0.3634506743401289,
+    "val_loss": 0.6626523670572841,
+    "val_ppl": 1.9399309255549122,
+    "val_tokens": 36056,
+    "metrics_step": 1596,
+    "is_best": false,
+    "saved_utc": "2026-10-10T15:55:02Z",
+    "config_hash": "9312597956f22164",
+    "dataset_hash": "8b066c83b8adaac7:add305738bf469c6",
+    "dataset_manifest_sha256": "1cab001ca649dfa8398fa2dd7a6d8c68c9a5d0d07b41506f2e8faa09222faf0e",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "model_id": "Qwen/Qwen3-8B",
+    "libraries": {
+     "accelerate": "1.14.0",
+     "bitsandbytes": "0.50.2",
+     "datasets": "4.8.5",
+     "numpy": "2.1.3",
+     "peft": "0.20.0",
+     "tokenizers": "0.23.1",
+     "torch": "2.11.0+cu128",
+     "transformers": "5.16.1",
+     "trl": "not importable (ModuleNotFoundError)",
+     "yaml": "6.0.3"
+    }
+   },
+   "overall": "PASS"
+  }
+ },
+ "is_best_true": [
+  "checkpoint-800",
+  "checkpoint-1300"
+ ],
+ "checkpoint_1200_duplicates": {
+  "local": "E:\\Nexo\\Jarvis\\checkpoint-1200",
+  "primary_dataset_meta_copy": "E:\\Nexo\\Jarvis\\_finalization_downloads\\primary\\checkpoint-1200\\checkpoint_meta.json",
+  "meta_byte_identical": true,
+  "note": "the primary dataset's checkpoint-1200 meta lists the same adapter/trainer_state hashes; its adapter file itself was not downloaded. One copy is used for behaviour tests."
+ }
+}

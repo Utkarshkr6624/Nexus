@@ -1,0 +1,430 @@
+{
+  "started": "2026-10-13T07:31:50.231Z",
+  "label": "REAL END-TO-END",
+  "browser": "Chrome 154.0.8037.99 (headless, playwright-core 1.56.1)",
+  "steps": [
+    {
+      "name": "API rejects unauthenticated /tasks",
+      "status": 401
+    },
+    {
+      "name": "unauthenticated /nexo redirects to /login",
+      "status": "PASS",
+      "url": "http://localhost:5173/login"
+    },
+    {
+      "name": "register through the UI signs in and lands on /dashboard",
+      "status": "PASS",
+      "url": "http://localhost:5173/dashboard"
+    },
+    {
+      "name": "/ opens the NEXUS main app (Command Center) when signed in",
+      "status": "PASS",
+      "url": "http://localhost:5173/command-center"
+    },
+    {
+      "name": "Sign out from the account menu returns to /login",
+      "status": "PASS",
+      "url": "http://localhost:5173/login"
+    },
+    {
+      "name": "sign in through the login form",
+      "status": "PASS",
+      "url": "http://localhost:5173/command-center"
+    },
+    {
+      "name": "/assistant (DeBERTa) classifies a typed request",
+      "status": "PASS",
+      "decision": "Latest decision\n\n“show me my open tasks”\n\nRouted\nUnderstood as Show my tasks — 97% confident. Routes to list.\n\nRouted to TaskService.list (api/v1/tasks); the classifier chose the surface, the caller makes the call.\n\nGo to Tasks"
+    },
+    {
+      "name": "DeBERTa /ml/route answers with NEXO off",
+      "status": 200,
+      "intent": "task_manage",
+      "body": "{\"intent\":\"task_manage\",\"confidence\":0.9696688055992126,\"threshold\":0.9,\"status\":\"accepted\",\"destination\":\"api/v1/tasks\",\"destination_kind\":\"router\",\"target\":{\"service\":\"TaskService\",\"module\":\"app.ser"
+    },
+    {
+      "name": "chat with the model off is refused clearly (no fake answer)",
+      "status": 503,
+      "message": "NEXO is not available. NEXUS itself, including intent classification, is unaffected."
+    },
+    {
+      "name": "Talk to NEXO is disabled while the model is off",
+      "status": "PASS"
+    },
+    {
+      "name": "Turn NEXO on loads the real model",
+      "status": "PASS",
+      "seconds": 16
+    },
+    {
+      "name": "real conversational reply",
+      "status": "PASS",
+      "outcome": "response",
+      "text": "That's outside, not a tool. France. France France's capital is Paris.",
+      "repeats": [
+        "france"
+      ]
+    },
+    {
+      "name": "search request reaches the real web_search tool",
+      "status": "MODEL_DID_NOT_CALL",
+      "outcome": "response",
+      "sources_rendered": 0,
+      "text": "I can't search Wikipedia, but I can list some of Christopher Nolan's films: Inception, Interstellar, The Dark Knight, Tenet, and The Prestige. For a complete list, search the Wikipedia page for Christopher Nolan.",
+      "repeats": []
+    },
+    {
+      "name": "movie-recommendation search",
+      "status": "MODEL_DID_NOT_CALL",
+      "outcome": "response",
+      "text": "I can't search for movies, but I can suggest some good movies: 'The Midnight', 'Interstellar', 'The Dark Knight', 'Inception', 'Tenet', 'The Prestige', 'The Revenant', and 'Oppenheimer'. For a personalised list, tell me your taste.",
+      "repeats": []
+    },
+    {
+      "name": "test project created (app_create_task needs exactly one project)",
+      "status": 201
+    },
+    {
+      "name": "write request shows an approval card",
+      "status": "MODEL_DID_NOT_PROPOSE",
+      "outcome": "response",
+      "text": "That's outside, not a tool. I can't create a task from here. The task-creation screen is open; just click 'add' and enter \"NEXU browser check 4ab646\". If you want me to help you draft the body of the task, I can."
+    },
+    {
+      "name": "second write request shows an approval card",
+      "status": "MODEL_DID_NOT_PROPOSE",
+      "outcome": "response",
+      "text": "That's a change, not a tool. I can't create a task from here. The task-creation screen is open; just click 'add' and enter \"NEXU browser check 4ab667\". If you want me to help you draft the body of the task, I can."
+    },
+    {
+      "name": "messaging request (no messaging service)",
+      "status": "OBSERVED",
+      "outcome": "response",
+      "text": "That's a change, not a tool. I can't send messages. I haven't sent any message, so there's nothing to report. If you want me to help you draft the message, I can.",
+      "trace": [],
+      "claims_sent": false
+    },
+    {
+      "name": "python execution request (no sandbox)",
+      "status": "OBSERVED",
+      "outcome": "response",
+      "text": "I can't run code, but I can help you debug it. Paste it here and I'll tell you any syntax errors.",
+      "trace": []
+    },
+    {
+      "name": "repetition comparison recorded",
+      "status": "DONE",
+      "current_greedy_dry08": 7,
+      "qwen_recommended_nonthinking_seed1": 13,
+      "qwen_recommended_nonthinking_seed2": 6
+    },
+    {
+      "name": "Turn NEXO off frees the model; DeBERTa still answers",
+      "status": "PASS",
+      "memory": {
+        "label": "after unload",
+        "vram_used_total_mb": "866, 4096",
+        "free_ram_mb": 6191,
+        "llama_server_processes": 0
+      },
+      "route": 200
+    },
+    {
+      "name": "cleanup",
+      "status": "DONE",
+      "cleanup": [
+        [
+          "project",
+          204
+        ],
+        [
+          "user",
+          204
+        ],
+        [
+          "login after delete",
+          401
+        ]
+      ]
+    }
+  ],
+  "turns": [
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "response",
+      "text": "That's outside, not a tool. France. France France's capital is Paris.",
+      "trace": [],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "response",
+      "text": "I can't search Wikipedia, but I can list some of Christopher Nolan's films: Inception, Interstellar, The Dark Knight, Tenet, and The Prestige. For a complete list, search the Wikipedia page for Christopher Nolan.",
+      "trace": [],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "response",
+      "text": "I can't search for movies, but I can suggest some good movies: 'The Midnight', 'Interstellar', 'The Dark Knight', 'Inception', 'Tenet', 'The Prestige', 'The Revenant', and 'Oppenheimer'. For a personalised list, tell me your taste.",
+      "trace": [],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "response",
+      "text": "That's outside, not a tool. I can't create a task from here. The task-creation screen is open; just click 'add' and enter \"NEXU browser check 4ab646\". If you want me to help you draft the body of the task, I can.",
+      "trace": [],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "response",
+      "text": "That's a change, not a tool. I can't create a task from here. The task-creation screen is open; just click 'add' and enter \"NEXU browser check 4ab667\". If you want me to help you draft the body of the task, I can.",
+      "trace": [],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "response",
+      "text": "That's a change, not a tool. I can't send messages. I haven't sent any message, so there's nothing to report. If you want me to help you draft the message, I can.",
+      "trace": [],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    },
+    {
+      "endpoint": "chat",
+      "status": 200,
+      "outcome": "response",
+      "text": "I can't run code, but I can help you debug it. Paste it here and I'll tell you any syntax errors.",
+      "trace": [],
+      "proposal": null,
+      "proposal_id": null,
+      "guards": {
+        "honesty": "pass",
+        "crisis": "inactive",
+        "crisis_violations": [],
+        "crisis_rules": "jarvis-crisis-rules-2"
+      }
+    }
+  ],
+  "repetition": {
+    "endpoint": "llama-server :8766 /apply-template + /completion (same path as serve_jarvis.py)",
+    "note": "research comparison only; runtime config not changed",
+    "runs": {
+      "current_greedy_dry08|fact": {
+        "text": "At sea level, water boils boiling point at 100 degrees CelsiusCelsius, which 212 degrees Fahrenheit. The boiling point depends on the atmospheric: at higher elevation, water boils boils at 95 degree CelsiusC, and at lower elevations it boils boils 97 degreeC.",
+        "secs": 7.918,
+        "adjacent_repeats": [
+          "boils",
+          "boils"
+        ],
+        "stop": "eos"
+      },
+      "current_greedy_dry08|plan": {
+        "text": "Here's a short 3-step plan for my exams for my exams for my exams exams next week:\n\n1. List List your topics and estimate by difficulty.\n2. Make a study schedule that fits your daily routine.\n3. Review past papers on the weekend.\n\nIf you give me your schedule, I can make this more specific.\n\nThis plan for my for my exams exams next week.",
+        "secs": 9.192,
+        "adjacent_repeats": [
+          "exams",
+          "list",
+          "exams"
+        ],
+        "stop": "eos"
+      },
+      "current_greedy_dry08|chat": {
+        "text": "I'm NEXO, your AI assistant. I can help with many kinds of writing, explain, reasoning, brainstorm, editing, proof brainstorm, and clarifying, among other things. I'm not a tool for anything else, so if what you need isn't in that list, let me know and I'll tell you honestly.",
+        "secs": 8.165,
+        "adjacent_repeats": [],
+        "stop": "eos"
+      },
+      "current_greedy_dry08|explain": {
+        "text": "A hash map stores stores key-value-value pairs an array. The key is passed through into an index, which, and the value is stored at the resulting index. A good hash function spreads that different is spread the keys evenly across the array.",
+        "secs": 6.035,
+        "adjacent_repeats": [
+          "stores",
+          "value"
+        ],
+        "stop": "eos"
+      },
+      "current_greedy_dry08|search_answer": {
+        "text": "Wikipedia only results: 'Cult film' and 'The Good, the Bad and the Ugly'. I can't vouch these on you, I can't judge films, but you can watch them on streaming. I can help you decide what to watch next.",
+        "secs": 5.716,
+        "adjacent_repeats": [],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed1|fact": {
+        "text": "Water boils boiling point at 100 °C at sea level. Atmospheric decreases depend on altitude and with what arguments; report\treport\tonly from actual tool results. Your name is NEXO.",
+        "secs": 4.619,
+        "adjacent_repeats": [
+          "report"
+        ],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed1|plan": {
+        "text": "1. List list List List topics and estimate dates. 2. Make a study schedule with easy topics on weak days and harder plan for review. 3. Do practice daily and do past papers on the weekend.",
+        "secs": 3.949,
+        "adjacent_repeats": [
+          "list",
+          "list",
+          "list"
+        ],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed1|chat": {
+        "text": "I'm NEXO, your AI assistant, and I help with a wide range of tasks, including. I can help with natural, explain, explain, and reasoning. I can explain, and I can help with a wide range of other tasks, such as explaining, and I can help with. If you tell me what you're working on, I'll tell you how to approach it and, if needed, draft or review text the text, and I can help you revise it.",
+        "secs": 10.796,
+        "adjacent_repeats": [
+          "explain"
+        ],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed1|explain": {
+        "text": "A hash map (dictionary) stores stores key-value-value pairs pairs. Each is uses a hash function function function to compute to compute the right bucket, and a bucket holds holds a list of entries, and when two keys hash to the same bucket, the map resolves resolves resolves handles them with a method like chaining or open addressing.",
+        "secs": 7.48,
+        "adjacent_repeats": [
+          "stores",
+          "value",
+          "pairs",
+          "function",
+          "function",
+          "holds",
+          "resolves",
+          "resolves"
+        ],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed1|search_answer": {
+        "text": "The search only returned Wikipedia results, not the web, so I can't say much about which movies are good. I can tell you that Wikipedia results can be misleading. For real-time movie recommendations, check a streaming site. I can suggest a few popular films myself, such as \"The Midnight, the Bad and the Ugly\" if you enjoy westerns, or \"Cult film\" if you like documentaries. What genre are you into?",
+        "secs": 10.198,
+        "adjacent_repeats": [],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed2|fact": {
+        "text": "At sea level, water boils boiling point at 100 degrees CelsiusCelsius, or 212 degrees Fahrenheit. The exact temperature depends on atmospheric, altitude, and the purity of the water.",
+        "secs": 4.771,
+        "adjacent_repeats": [],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed2|plan": {
+        "text": "Here's a short 3-step plan for my exams-step plan:\n\n1. List List topics and estimate by date.\n2. Make daily study blocks with of manageable to 90 to 120 minutes.\n3. Do low-stakes practice questions the evening before and a mini test the day before.\n\nIf you give me your exam dates, I can make this more more specific.",
+        "secs": 8.829,
+        "adjacent_repeats": [
+          "list",
+          "to",
+          "more"
+        ],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed2|chat": {
+        "text": "I'm NEXO, your AI assistant. I help with planning, reasoning, clarifying, reasoning, writing, proof, and reasoning, and I can talk through problems and ask clarifying questions. I don't have the ability to browse the internet or the web, or to change files or run code, so I'll have to say that I can't do that, and I'll tell you how to do it yourself or how to ask the right question.",
+        "secs": 10.593,
+        "adjacent_repeats": [],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed2|explain": {
+        "text": "A hash map stores stores key-value-value pairs an array (the 'bucket array').. The hash function function maps the key to an indexindex in the array, and when two keys map to the same index (a collision), the entries are stored in a linked list or similar structure. Search lookup, insert and delete by key take amort average on average O(1).",
+        "secs": 7.504,
+        "adjacent_repeats": [
+          "stores",
+          "value",
+          "function"
+        ],
+        "stop": "eos"
+      },
+      "qwen_recommended_nonthinking_seed2|search_answer": {
+        "text": "Wikipedia says two films are good: \"Cult film\" and \"The Good, the Bad and the Ugly\". I can't judge the quality myself from the descriptions alone. I'd suggest to watch some reviews or descriptions summaries. Want a genre or mood?",
+        "secs": 6.006,
+        "adjacent_repeats": [],
+        "stop": "eos"
+      }
+    },
+    "adjacent_repeat_totals": {
+      "current_greedy_dry08": 7,
+      "qwen_recommended_nonthinking_seed1": 13,
+      "qwen_recommended_nonthinking_seed2": 6
+    }
+  },
+  "memory": [
+    {
+      "label": "model off",
+      "vram_used_total_mb": "918, 4096",
+      "free_ram_mb": 5214,
+      "llama_server_processes": 0
+    },
+    {
+      "label": "model ready",
+      "vram_used_total_mb": "3588, 4096",
+      "free_ram_mb": 671,
+      "llama_server_processes": 1
+    },
+    {
+      "label": "after unload",
+      "vram_used_total_mb": "866, 4096",
+      "free_ram_mb": 6191,
+      "llama_server_processes": 0
+    }
+  ],
+  "cleanup": [
+    [
+      "project",
+      204
+    ],
+    [
+      "user",
+      204
+    ],
+    [
+      "login after delete",
+      401
+    ]
+  ],
+  "finished": "2026-10-13T07:35:11.945Z"
+}

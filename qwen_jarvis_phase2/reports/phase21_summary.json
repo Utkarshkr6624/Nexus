@@ -1,0 +1,43 @@
+{
+ "final_total": 11332,
+ "new_candidates": 3313,
+ "new_survived": 2983,
+ "v1_kept": 8239,
+ "v1_removed": 2261,
+ "v1_removed_by_reason": {
+  "template_trim": 1631,
+  "balance_cap": 622,
+  "same_prompt_normalised": 8
+ },
+ "v1_removed_by_category": {
+  "reasoning": 823,
+  "mathematics": 406,
+  "programming": 283,
+  "instruction_following": 325,
+  "jarvis_assistant": 119,
+  "multi_turn_context": 127,
+  "tool_aware": 36,
+  "capability_boundaries": 51,
+  "safety": 19,
+  "general_conversation": 71,
+  "general_knowledge": 1
+ },
+ "category_counts": {
+  "instruction_following": 750,
+  "jarvis_assistant": 1000,
+  "general_conversation": 1090,
+  "multi_turn_context": 500,
+  "nexus_knowledge": 944,
+  "reasoning": 1500,
+  "tool_aware": 975,
+  "general_knowledge": 1173,
+  "mathematics": 750,
+  "capability_boundaries": 650,
+  "programming": 1500,
+  "safety": 500
+ },
+ "multi_turn": 1465,
+ "tracked_modifications": 0,
+ "template_trimmed": 1944,
+ "all_minimums_met": true
+}

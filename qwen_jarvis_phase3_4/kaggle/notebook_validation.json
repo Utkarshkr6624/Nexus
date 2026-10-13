@@ -1,0 +1,211 @@
+{
+ "summary": {
+  "passed": 39,
+  "failed": 0,
+  "pending": 1,
+  "strict": true,
+  "note": "Static validation only. Kaggle execution is PENDING PHASE 5."
+ },
+ "checks": [
+  {
+   "name": "nbformat valid (v4)",
+   "status": "pass",
+   "detail": "nbformat 4.5, 17 cells"
+  },
+  {
+   "name": "all outputs empty / never executed",
+   "status": "pass",
+   "detail": "dirty cells: []"
+  },
+  {
+   "name": "banner (bold: PHASE 3/4 DO NOT RUN PRODUCTION CELLS; PENDING PHASE 5)",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "notebook metadata: GPU and internet OFF by default",
+   "status": "pass",
+   "detail": "{\"accelerator\": \"none\", \"isGpuEnabled\": false, \"isInternetEnabled\": false, \"note\": \"Phase 3/4 build: GPU and internet are OFF. Enable them only when starting Ph"
+  },
+  {
+   "name": "every code cell compiles (ast.parse, magics stripped)",
+   "status": "pass",
+   "detail": "[]"
+  },
+  {
+   "name": "no name used before it is defined (cell-order dependency analysis)",
+   "status": "pass",
+   "detail": "[]"
+  },
+  {
+   "name": "imports resolvable (stdlib / requirements / Kaggle-preinstalled torch)",
+   "status": "pass",
+   "detail": "imports=['glob', 'hashlib', 'importlib', 'json', 'kaggle_secrets', 'os', 'pathlib', 'platform', 're', 'shutil', 'subprocess', 'sys', 'torch', 'yaml', 'zipfile'] unresolved=[]"
+  },
+  {
+   "name": "requirements list the training stack (transformers>=4.51, peft, bitsandbytes, accelerate)",
+   "status": "pass",
+   "detail": "missing=[]"
+  },
+  {
+   "name": "package file list computed",
+   "status": "pass",
+   "detail": "63 files, dataset from v2_final"
+  },
+  {
+   "name": "paths consistent with the package layout and /kaggle conventions",
+   "status": "pass",
+   "detail": "[]"
+  },
+  {
+   "name": "train entry point pipeline.train.train exists and is runnable as a module",
+   "status": "pass",
+   "detail": "flags found: ['--config', '--confirm-production', '--dry-run', '--force-resume', '--resume', '--set', '--smoke-test', '--validate-config']"
+  },
+  {
+   "name": "train CLI flags used by the notebook exist in the source",
+   "status": "pass",
+   "detail": "used=['--config', '--confirm-production', '--dry-run', '--resume', '--set', '--validate-config'] missing=[]"
+  },
+  {
+   "name": "eval entry point pipeline.eval.cli exists and is runnable as a module",
+   "status": "pass",
+   "detail": "flags found: ['--a', '--adapter', '--allow-model-load', '--b', '--batch-size', '--bootstrap', '--dataset-version', '--label-a', '--label-b', '--limit', '--max-items', '--max-len', '--max-new-tokens', '--model', '--no-4bit', '--out', '--seed', '--split', '--stub', '--suite', '--tag', '--tool-schemas']"
+  },
+  {
+   "name": "eval CLI flags used by the notebook exist in the source",
+   "status": "pass",
+   "detail": "used=['--a', '--adapter', '--allow-model-load', '--b', '--dataset-version', '--label-a', '--label-b', '--model', '--out', '--split', '--suite', '--tag'] missing=[]"
+  },
+  {
+   "name": "--set overrides refer to real config keys (production_locked, output.output_dir)",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "production cells tagged (train, resume, eval, compare)",
+   "status": "pass",
+   "detail": "production cells: [10, 11, 12, 13, 14]"
+  },
+  {
+   "name": "gate unlock string equals the one in configs/qlora_sft.yaml",
+   "status": "pass",
+   "detail": "notebook=I_UNDERSTAND_THIS_STARTS_PRODUCTION_TRAINING config=I_UNDERSTAND_THIS_STARTS_PRODUCTION_TRAINING"
+  },
+  {
+   "name": "gate cell present; switches default to False; checks Kaggle + CUDA + env var",
+   "status": "pass",
+   "detail": "PHASE5_AUTHORIZED=False, CONFIRM_PRODUCTION=False"
+  },
+  {
+   "name": "no cell sets the unlock environment variable",
+   "status": "pass",
+   "detail": "[]"
+  },
+  {
+   "name": "every action in production cells sits behind the production_allowed() branch",
+   "status": "pass",
+   "detail": "[]"
+  },
+  {
+   "name": "no weight download / training launch outside gated cells (safe modes only)",
+   "status": "pass",
+   "detail": "[]"
+  },
+  {
+   "name": "pip install only on Kaggle (never into a local/NEXUS environment)",
+   "status": "pass",
+   "detail": "install cells: [5]"
+  },
+  {
+   "name": "no secrets / tokens in the notebook",
+   "status": "pass",
+   "detail": "[]"
+  },
+  {
+   "name": "no cell prints secrets or dumps the environment",
+   "status": "pass",
+   "detail": "[]"
+  },
+  {
+   "name": "child-process output is redacted before display",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "packaged dataset dir contains MANIFEST.json (exact, case-sensitive name; no lower-case variant)",
+   "status": "pass",
+   "detail": "entries=['dataset/v2_final/MANIFEST.json', 'dataset/v2_final/test.jsonl', 'dataset/v2_final/train.jsonl', 'dataset/v2_final/validation.jsonl'] lower-case variants=[]"
+  },
+  {
+   "name": "MANIFEST.json hashes match the packaged dataset files",
+   "status": "pass",
+   "detail": "mismatches=[]"
+  },
+  {
+   "name": "built zip: dataset/v2_final/MANIFEST.json exact-case and hashes match after extraction",
+   "status": "pass",
+   "detail": "exact=True variants=[] mismatches=[] (rebuild the package if this is stale)"
+  },
+  {
+   "name": "notebook verifies dataset MANIFEST.json (exact name + hashes) after extraction",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "environment cell picks bf16 only for compute capability >= 8 (T4/P100 -> fp16 recommendation)",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "MODE switch: default \"train\"; train cell needs MODE=\"train\", resume cell needs MODE=\"resume\" (other prints which MODE it needs)",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "train cell refuses to start over existing checkpoints",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "a gated production cell runs `pipeline.eval.cli loss` (base vs fine-tuned)",
+   "status": "pass",
+   "detail": "cells=[14]"
+  },
+  {
+   "name": "eval subcommands and flags used by the notebook exist (checked with the real --help)",
+   "status": "pass",
+   "detail": "subcommands=['compare', 'loss', 'run'] bad=[]"
+  },
+  {
+   "name": "pip check and a library-version printout are in the install cell",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "requirement upper bounds are next-major guards only; transformers>=4.51 kept",
+   "status": "pass",
+   "detail": "non-major bounds=[]; unbounded=[]"
+  },
+  {
+   "name": "requirements file states that Kaggle versions are UNVERIFIED",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "README / MEMORY_PLAN: versions UNVERIFIED, T4 over P100, smoke-test workspace-only, no unsupported tokens/s claim",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "gate cell precedes every production cell",
+   "status": "pass",
+   "detail": ""
+  },
+  {
+   "name": "Kaggle execution status",
+   "status": "pending",
+   "detail": "PENDING PHASE 5 - the notebook has not been run on Kaggle; only static validation is claimed here."
+  }
+ ]
+}

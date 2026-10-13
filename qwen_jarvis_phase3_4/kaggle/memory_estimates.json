@@ -1,0 +1,108 @@
+{
+ "label": "ESTIMATED - nothing measured on a GPU",
+ "params": {
+  "embed_tokens": 622329856,
+  "lm_head": 622329856,
+  "per_layer_linear": 192937984,
+  "per_layer_total": 192946432,
+  "linear_total": 6945767424,
+  "total": 8190735360
+ },
+ "weights_gib": {
+  "nf4_double_quant": 5.655961990356445,
+  "nf4_no_double_quant": 5.957605361938477
+ },
+ "lora": {
+  "8": {
+   "params": 21823488,
+   "gib_adamw": 0.3251953125,
+   "gib_adam8bit": 0.2032470703125
+  },
+  "16": {
+   "params": 43646976,
+   "gib_adamw": 0.650390625,
+   "gib_adam8bit": 0.406494140625
+  },
+  "32": {
+   "params": 87293952,
+   "gib_adamw": 1.30078125,
+   "gib_adam8bit": 0.81298828125
+  },
+  "64": {
+   "params": 174587904,
+   "gib_adamw": 2.6015625,
+   "gib_adam8bit": 1.6259765625
+  }
+ },
+ "tokens": {
+  "source": "dataset/v2_final",
+  "note": "approximate ChatML rendering (no tools block, empty think block on last assistant turn); the Data agent's render is authoritative",
+  "train": {
+   "examples": 10298,
+   "total_tokens": 1323179,
+   "assistant_tokens": 808495,
+   "mean": 128.5,
+   "median": 110.0,
+   "p95": 267,
+   "p99": 344,
+   "max": 676,
+   "over_512": 6,
+   "over_1024": 0,
+   "over_2048": 0
+  },
+  "validation": {
+   "examples": 497,
+   "total_tokens": 65778,
+   "assistant_tokens": 40217,
+   "mean": 132.4,
+   "median": 115,
+   "p95": 273,
+   "p99": 358,
+   "max": 440,
+   "over_512": 0,
+   "over_1024": 0,
+   "over_2048": 0
+  },
+  "test": {
+   "examples": 493,
+   "total_tokens": 62507,
+   "assistant_tokens": 38008,
+   "mean": 126.8,
+   "median": 108,
+   "p95": 268,
+   "p99": 337,
+   "max": 440,
+   "over_512": 0,
+   "over_1024": 0,
+   "over_2048": 0
+  }
+ },
+ "tokens_per_sec_estimate": [
+  132.26325668191694,
+  396.7897700457508
+ ],
+ "assumed_mfu": [
+  0.1,
+  0.3
+ ],
+ "peak_gib_grid": {
+  "chunked=False,r=16,seq=1024,mb=1": 11.28,
+  "chunked=False,r=16,seq=1024,mb=2": 13.63,
+  "chunked=False,r=16,seq=1024,mb=4": 18.33,
+  "chunked=False,r=16,seq=2048,mb=1": 13.63,
+  "chunked=False,r=16,seq=2048,mb=2": 18.33,
+  "chunked=False,r=16,seq=2048,mb=4": 27.72,
+  "chunked=False,r=16,seq=3072,mb=1": 15.98,
+  "chunked=False,r=16,seq=3072,mb=2": 23.03,
+  "chunked=False,r=16,seq=3072,mb=4": 37.12,
+  "chunked=True,r=16,seq=1024,mb=1": 10.45,
+  "chunked=True,r=16,seq=1024,mb=2": 11.13,
+  "chunked=True,r=16,seq=1024,mb=4": 12.49,
+  "chunked=True,r=16,seq=2048,mb=1": 11.13,
+  "chunked=True,r=16,seq=2048,mb=2": 12.49,
+  "chunked=True,r=16,seq=2048,mb=4": 15.23,
+  "chunked=True,r=16,seq=3072,mb=1": 11.81,
+  "chunked=True,r=16,seq=3072,mb=2": 13.86,
+  "chunked=True,r=16,seq=3072,mb=4": 17.96
+ }
+}

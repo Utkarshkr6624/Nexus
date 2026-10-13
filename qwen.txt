@@ -1,0 +1,1129 @@
+QWEN3-8B JARVIS AGENT FOR NEXUS
+
+============================================================
+1. OVERALL GOAL
+============================================================
+
+The long-term objective is to make Qwen3-8B the reasoning and action brain of NEXUS.
+
+This is NOT intended to be a simple chatbot.
+
+This is NOT intended to be only a NEXUS knowledge bot.
+
+This is NOT intended to be only an intent classifier.
+
+The target is a general-purpose AI agent with NEXUS awareness and the ability to operate tools.
+
+The desired interaction is:
+
+USER
+↓
+QWEN
+↓
+UNDERSTAND REQUEST
+↓
+REASON
+↓
+DECIDE WHETHER TO ANSWER OR ACT
+↓
+PLAN
+↓
+SELECT APPROPRIATE TOOL(S)
+↓
+EXECUTE TOOL
+↓
+READ TOOL RESULT
+↓
+DECIDE NEXT STEP
+↓
+VERIFY
+↓
+CONTINUE IF NECESSARY
+↓
+FINAL RESPONSE
+
+The long-term experience should feel similar to a JARVIS-style assistant.
+
+The user should be able to communicate naturally instead of learning special commands.
+
+Examples:
+
+"Open this website."
+
+"Search the web for the latest information about NVIDIA."
+
+"Research this topic and summarize it."
+
+"Create E:/test.py."
+
+"Create a Python calculator at E:/test.py and test it."
+
+"Open this project, find the bug, fix it and run the tests."
+
+"Create a task in NEXUS."
+
+"Show me my projects."
+
+"Plan my week."
+
+"Read this file and explain what is wrong."
+
+"Research this topic and save the findings to a markdown file."
+
+Qwen must eventually be able to determine what actions and tools are required.
+
+============================================================
+2. CRITICAL ARCHITECTURE PRINCIPLE
+============================================================
+
+Qwen itself does NOT magically have access to:
+
+- Windows
+- filesystem
+- terminal
+- browser
+- internet
+- websites
+- NEXUS APIs
+- databases
+- Git
+- external services
+
+Those capabilities are provided by the runtime/tool layer.
+
+Therefore:
+
+TRAINING teaches Qwen:
+
+- reasoning
+- planning
+- tool selection
+- tool-call formatting
+- argument selection
+- multi-step behavior
+- verification
+- failure recovery
+- NEXUS understanding
+- answer-vs-action behavior
+
+RUNTIME provides:
+
+- actual tools
+- actual permissions
+- actual execution
+- actual browser access
+- actual filesystem access
+- actual web access
+- actual NEXUS access
+- actual terminal access
+- actual APIs
+
+Never confuse the two.
+
+============================================================
+3. NEXUS CONTEXT
+============================================================
+
+NEXUS is a general-purpose AI assistant/platform.
+
+It is NOT limited to students.
+
+Its intended users can include:
+
+- developers
+- professionals
+- students
+- researchers
+- creators
+- technical users
+- general users
+
+NEXUS is intended to combine AI reasoning with practical tools and workflows.
+
+Known NEXUS technology context includes:
+
+Frontend:
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+
+Backend:
+- FastAPI
+- Python
+- SQLAlchemy
+
+Database:
+- SQLite in the default/local architecture
+- production database infrastructure may differ
+
+Development environment:
+- Windows
+- Node 24
+- npm 11
+- Python 3.13
+
+Important user constraints:
+- No Docker
+- No WSL
+- No local PostgreSQL
+- Prefer zero-cost solutions
+- Do not introduce paid services unless explicitly requested
+
+NEXUS has or is intended to have functionality involving areas such as:
+
+- authentication
+- users/accounts
+- projects
+- tasks
+- planner/scheduling
+- knowledge
+- marks/academic data where applicable
+- analytics
+- learning
+- career
+- developer workflows
+- AI/ML
+- voice
+- command center
+- external tools
+- web/internet capabilities
+
+Do not assume an API or feature exists unless it has been verified from the actual NEXUS project.
+
+============================================================
+4. EXISTING NEXUS ML CONTEXT
+============================================================
+
+NEXUS already has an ML Phase 10 system based on:
+
+microsoft/deberta-v3-base
+
+It was trained as an intent/routing classifier.
+
+Known final Phase 10 information:
+
+- Model: microsoft/deberta-v3-base
+- Parameters: approximately 184.4M
+- Intents: 14
+- Dataset: 2,800 rows
+- 200 examples per intent
+- Train/validation/test split: 1,960 / 420 / 420
+- Epochs: 5
+- Training steps: 615
+- Test accuracy: 0.9738
+- Test macro F1: 0.9737
+- Validation accuracy: approximately 0.9810
+- Validation macro F1: approximately 0.9809
+
+The existing DeBERTa system must NOT be deleted or replaced during the Qwen training phase.
+
+Qwen is a separate model/training effort.
+
+Do not automatically assume DeBERTa + Qwen must remain the final production architecture.
+
+The architecture will be decided after Qwen evaluation.
+
+============================================================
+5. EXISTING NEXUS INTENT CONTEXT
+============================================================
+
+The known NEXUS taxonomy is:
+
+nexo_intents.v1
+
+0  task_manage
+1  project_manage
+2  schedule_plan
+3  knowledge_capture
+4  knowledge_lookup
+5  analytics_insight
+6  risk_query
+7  developer_intel
+8  learning_track
+9  career_track
+10 account_admin
+11 code_assist
+12 deep_reasoning
+13 out_of_scope
+
+Known mappings include:
+
+task_manage
+→ api/v1/tasks
+
+project_manage
+→ api/v1/projects
+
+schedule_plan
+→ api/v1/planner
+
+knowledge_capture
+→ api/v1/knowledge
+
+knowledge_lookup
+→ api/v1/knowledge
+
+analytics_insight
+→ api/v1/analytics
+
+risk_query
+→ api/v1/risks
+
+developer_intel
+→ api/v1/developer
+
+learning_track
+→ api/v1/learning
+
+career_track
+→ api/v1/career
+
+account_admin
+→ api/v1/users
+
+code_assist
+→ Qwen3-8B
+
+deep_reasoning
+→ Qwen3-8B
+
+out_of_scope
+→ abstain
+
+IMPORTANT:
+
+These mappings are historical/project context.
+
+Before using an API route in actual implementation, verify that the route exists in the current NEXUS codebase.
+
+Never fabricate endpoints.
+
+============================================================
+6. QWEN'S INTENDED CAPABILITIES
+============================================================
+
+Qwen should eventually understand and handle:
+
+A. General questions
+
+B. General reasoning
+
+C. NEXUS questions
+
+D. NEXUS actions
+
+E. Filesystem operations
+
+F. Terminal operations
+
+G. Code operations
+
+H. Browser operations
+
+I. Web research
+
+J. API interactions
+
+K. Git operations
+
+L. Multi-tool workflows
+
+M. Planning
+
+N. Verification
+
+O. Failure recovery
+
+P. Clarification
+
+Q. Permission/confirmation boundaries
+
+R. Voice commands
+
+S. Long multi-step workflows
+
+============================================================
+7. ANSWER VS ACTION
+============================================================
+
+Qwen must learn the distinction between explaining something and actually doing something.
+
+Example:
+
+User:
+"How do I create a Python file?"
+
+→ Explain.
+
+User:
+"Create a Python file at E:/test.py."
+
+→ Use filesystem tool.
+
+User:
+"Open Google."
+
+→ Use browser tool if browser capability exists.
+
+User:
+"What is Google?"
+
+→ Answer normally.
+
+User:
+"Research the latest NVIDIA GPUs."
+
+→ Use web research tools when available.
+
+User:
+"How can I research NVIDIA GPUs?"
+
+→ Explain.
+
+============================================================
+8. TOOL-FIRST AGENT MODEL
+============================================================
+
+The future runtime may expose tools such as:
+
+FILESYSTEM
+- create_file
+- read_file
+- write_file
+- edit_file
+- delete_file
+- move_file
+- copy_file
+- list_directory
+- search_files
+- file_exists
+
+TERMINAL
+- run_command
+- inspect_process
+- list_processes
+
+BROWSER
+- open
+- navigate
+- click
+- type
+- extract
+- back
+- forward
+
+WEB
+- search
+- fetch
+- research
+
+CODE
+- inspect
+- modify
+- test
+- format
+- analyze
+
+GIT
+- status
+- diff
+- log
+- branch
+- add
+- commit
+
+NEXUS
+- task operations
+- project operations
+- planner operations
+- knowledge operations
+- analytics operations
+- learning operations
+- career operations
+- account operations
+
+These are conceptual capabilities.
+
+Only use tools that actually exist in the current runtime.
+
+============================================================
+9. TOOL EXECUTION RULE
+============================================================
+
+NEVER hallucinate tool execution.
+
+If Qwen says:
+
+"I created the file."
+
+there must be an actual successful filesystem result.
+
+If Qwen says:
+
+"The tests passed."
+
+there must be an actual test result.
+
+If Qwen says:
+
+"I searched the web."
+
+there must be an actual web-search operation.
+
+Tool result → evidence → conclusion.
+
+============================================================
+10. MULTI-TOOL BEHAVIOR
+============================================================
+
+Qwen must eventually support workflows such as:
+
+User:
+"Research X, save the important findings to report.md and tell me the conclusion."
+
+Possible workflow:
+
+web.search
+↓
+web.open/fetch
+↓
+reason
+↓
+filesystem.create_file
+↓
+filesystem.write_file
+↓
+filesystem.verify
+↓
+final response
+
+Another:
+
+"Find the bug in this project and fix it."
+
+Possible workflow:
+
+filesystem.inspect
+↓
+filesystem.read
+↓
+reason
+↓
+filesystem.edit
+↓
+terminal.run_command
+↓
+inspect result
+↓
+verify
+↓
+final response
+
+============================================================
+11. VERIFICATION
+============================================================
+
+Qwen must not assume success.
+
+Examples:
+
+Create file
+→ verify file exists.
+
+Edit code
+→ run tests.
+
+Run command
+→ inspect output.
+
+Research
+→ inspect sources/results.
+
+Create project
+→ inspect resulting structure.
+
+If verification fails, continue troubleshooting where appropriate.
+
+============================================================
+12. CLARIFICATION
+============================================================
+
+If an action is ambiguous and guessing could cause the wrong result, ask.
+
+Example:
+
+"Delete the project."
+
+If multiple projects exist:
+
+"Which project do you want me to delete?"
+
+Do not guess dangerous or irreversible actions.
+
+============================================================
+13. SAFETY AND PERMISSIONS
+============================================================
+
+The final runtime must use permission and confirmation policies.
+
+Potentially destructive or irreversible operations may require confirmation.
+
+Examples:
+
+- deleting large numbers of files
+- destructive terminal commands
+- deleting projects
+- sending external communications
+- financial operations
+- irreversible changes
+
+Training must teach Qwen to respect runtime permissions.
+
+Qwen must never attempt to bypass security controls.
+
+============================================================
+14. EIGHT-PHASE QWEN ROADMAP
+============================================================
+
+The Qwen project is divided into exactly eight major phases.
+
+Do not skip phases.
+
+Do not silently merge phases.
+
+Do not begin a later phase until the previous phase passes its required gate.
+
+------------------------------------------------------------
+PHASE 1 — AGENT SPECIFICATION AND ARCHITECTURE
+------------------------------------------------------------
+
+Goal:
+
+Define exactly what the Qwen3-8B agent is supposed to become.
+
+Tasks:
+
+- finalize capabilities
+- define agent behavior
+- define answer-vs-action behavior
+- define tool-use principles
+- define NEXUS relationship
+- define safety boundaries
+- define training architecture
+- define runtime architecture conceptually
+- define evaluation criteria
+
+Output:
+
+- architecture specification
+- capability specification
+- behavior specification
+- evaluation specification
+
+Gate:
+
+The agent specification must be internally consistent and complete.
+
+Do not train yet.
+
+------------------------------------------------------------
+PHASE 2 — DATASET ENGINEERING
+------------------------------------------------------------
+
+Goal:
+
+Create the high-quality Qwen agent training dataset.
+
+Dataset must cover:
+
+- NEXUS knowledge
+- general reasoning
+- NEXUS actions
+- filesystem
+- terminal
+- browser
+- web research
+- coding
+- tool selection
+- planning
+- multi-tool workflows
+- verification
+- clarification
+- failure recovery
+- permissions
+
+Use conversational/tool-call compatible data.
+
+Avoid generic world-knowledge duplication.
+
+Use diverse language.
+
+Avoid memorization.
+
+Perform:
+
+- validation
+- deduplication
+- leakage detection
+- schema validation
+- category balancing
+- deterministic splitting
+
+Outputs:
+
+- dataset
+- dataset manifest
+- statistics
+- train split
+- validation split
+- test split
+
+Gate:
+
+Dataset must pass all validation checks.
+
+------------------------------------------------------------
+PHASE 3 — TOOL MANIFEST AND SIMULATION
+------------------------------------------------------------
+
+Goal:
+
+Define the tools Qwen will learn to interact with.
+
+Create:
+
+- tool schemas
+- argument schemas
+- tool descriptions
+- tool-call examples
+- successful tool results
+- failure results
+- recovery examples
+- multi-tool traces
+
+The training tools are simulated representations.
+
+They must NOT execute real system actions during training.
+
+Gate:
+
+All schemas and example traces must validate.
+
+------------------------------------------------------------
+PHASE 4 — TRAINING PIPELINE PREPARATION
+------------------------------------------------------------
+
+Goal:
+
+Prepare the actual Qwen3-8B fine-tuning environment.
+
+Tasks:
+
+- model loading test
+- tokenizer validation
+- hardware detection
+- quantization compatibility
+- LoRA/QLoRA configuration if appropriate
+- training configuration
+- checkpoint configuration
+- reproducibility configuration
+- dry-run training
+- memory checks
+- dataset loading test
+
+Hardware context:
+
+Windows environment.
+
+RTX 3050-class GPU may be limited in VRAM.
+
+Do not assume unlimited GPU memory.
+
+Kaggle GPU may be used for actual training if required.
+
+Do not waste GPU sessions on simple preparation work.
+
+Gate:
+
+The training pipeline must successfully complete a dry run before expensive training begins.
+
+------------------------------------------------------------
+PHASE 5 — QWEN3-8B TRAINING
+------------------------------------------------------------
+
+Goal:
+
+Actually fine-tune Qwen3-8B.
+
+Requirements:
+
+- preserve checkpoints
+- support resume
+- record configuration
+- record training metrics
+- record hardware
+- record software versions
+- save tokenizer/configuration
+- save final model/adapter
+
+Do not modify NEXUS.
+
+Training happens in the isolated Qwen workspace.
+
+Gate:
+
+Training completes successfully and produces a loadable model/adapter.
+
+------------------------------------------------------------
+PHASE 6 — EVALUATION AND VALIDATION
+------------------------------------------------------------
+
+Goal:
+
+Prove that training actually improved the intended behavior.
+
+Evaluate:
+
+- baseline Qwen3-8B
+- fine-tuned Qwen3-8B
+
+Test:
+
+- general reasoning
+- NEXUS knowledge
+- tool selection
+- argument correctness
+- multi-tool planning
+- verification
+- clarification
+- failure recovery
+- hallucinated execution
+- generalization
+- retention of general capabilities
+
+Do not evaluate only training loss.
+
+Produce:
+
+- baseline report
+- fine-tuned report
+- comparison report
+- pass/fail result
+
+Gate:
+
+Qwen must demonstrate useful agent behavior.
+
+If it fails:
+
+STOP.
+
+Do not integrate.
+
+------------------------------------------------------------
+PHASE 7 — QWEN RUNTIME AND NEXUS INTEGRATION
+------------------------------------------------------------
+
+THIS PHASE MUST NOT BEGIN UNTIL PHASE 6 PASSES.
+
+Goal:
+
+Attach the verified Qwen model to NEXUS.
+
+Tasks may eventually include:
+
+- model serving/runtime
+- Qwen API/interface
+- tool registry
+- tool execution layer
+- permission layer
+- NEXUS tool adapters
+- filesystem tools
+- terminal tools
+- browser tools
+- web tools
+- code tools
+- Git tools
+- conversation/context handling
+- error handling
+- execution tracking
+
+Qwen becomes the reasoning/action brain.
+
+NEXUS becomes the environment/tool system.
+
+Do not invent tools that have not been implemented.
+
+Gate:
+
+Qwen must successfully communicate with the actual runtime and execute controlled tool calls.
+
+------------------------------------------------------------
+PHASE 8 — JARVIS / COMMAND CENTER
+------------------------------------------------------------
+
+Goal:
+
+Turn the integrated Qwen system into the final natural-language agent experience.
+
+The user should be able to say things naturally.
+
+Examples:
+
+"Open this website."
+
+"Research this topic."
+
+"Create a file."
+
+"Fix this project."
+
+"Run the tests."
+
+"Plan my week."
+
+"Find this information and save it."
+
+"Do this, then check whether it worked."
+
+The system should:
+
+- understand
+- plan
+- execute
+- observe
+- recover
+- verify
+- respond
+
+Phase 8 may include:
+
+- voice interface
+- browser control
+- web research
+- command center
+- execution history
+- tool visibility
+- confirmations
+- permission controls
+- streaming status
+- error recovery
+- polished UI
+- final end-to-end testing
+
+Gate:
+
+The system must demonstrate reliable real-world multi-step workflows.
+
+============================================================
+15. STRICT PROJECT ISOLATION
+============================================================
+
+During Phases 1–6:
+
+DO NOT modify existing NEXUS source code.
+
+Do not:
+
+- rewrite NEXUS
+- replace NEXUS ML
+- modify NEXUS frontend
+- modify NEXUS backend
+- modify NEXUS database
+- modify NEXUS APIs
+- integrate Qwen
+- alter production deployment
+
+Phases 1–6 are isolated Qwen work.
+
+Phase 7 is the first phase where integration is allowed.
+
+============================================================
+16. ENVIRONMENT CONSTRAINTS
+============================================================
+
+Known constraints:
+
+- Windows
+- Node 24
+- npm 11
+- Python 3.13
+- RTX 3050-class GPU
+- Intel Iris Xe
+- No Docker
+- No WSL
+- No local PostgreSQL
+- Prefer zero-cost architecture
+- Avoid paid APIs/services
+
+Kaggle GPU may be used for Qwen training if appropriate.
+
+Do not waste Kaggle GPU time during dataset construction or ordinary debugging.
+
+============================================================
+17. QWEN TRAINING PRINCIPLE
+============================================================
+
+Do not attempt to make Qwen memorize every possible task.
+
+Train behavioral patterns.
+
+The model should learn:
+
+UNDERSTAND
+→ PLAN
+→ TOOL SELECTION
+→ EXECUTE
+→ OBSERVE
+→ REASON
+→ VERIFY
+→ CONTINUE OR FINISH
+
+The goal is generalization.
+
+============================================================
+18. IMPORTANT DISTINCTION FROM EXISTING DEBERTA
+============================================================
+
+Existing NEXUS Phase 10:
+
+DeBERTa-v3-base
+→ intent classification/routing
+
+Qwen project:
+
+Qwen3-8B
+→ reasoning/agent/tool-use capability
+
+Do not confuse these systems.
+
+Do not replace one with the other automatically.
+
+The final architecture will be decided after evaluation.
+
+============================================================
+19. FUTURE ARCHITECTURE
+============================================================
+
+Conceptually:
+
+                    USER
+                      ↓
+                  NEXUS UI
+                      ↓
+                 QWEN3-8B
+                      ↓
+              ┌───────┴────────┐
+              ↓                ↓
+        ANSWER DIRECTLY     USE TOOLS
+                                ↓
+            ┌───────────┬───────┼───────────┐
+            ↓           ↓       ↓           ↓
+        NEXUS APIs   Files    Terminal    Web/Browser
+            ↓           ↓       ↓           ↓
+            └───────────┴───────┴───────────┘
+                                ↓
+                           TOOL RESULTS
+                                ↓
+                              QWEN
+                                ↓
+                       NEXT ACTION / DONE
+                                ↓
+                         USER RESPONSE
+
+This is the target architecture, not a claim that all components currently exist.
+
+============================================================
+20. OPERATING RULE FOR KIMI
+============================================================
+
+At the beginning of EVERY Qwen phase:
+
+1. Read qwen.txt completely.
+2. Identify the current phase.
+3. Read only the additional phase-specific prompt supplied by the user.
+4. Follow qwen.txt as the permanent source of project context.
+5. Follow the current phase prompt as the immediate task.
+6. Do not skip ahead.
+7. Do not invent missing information.
+8. Do not modify protected NEXUS files unless the current phase explicitly permits integration.
+9. Report what was actually completed.
+10. Report failures honestly.
+
+If the current prompt conflicts with qwen.txt:
+
+STOP and ask for clarification.
+
+============================================================
+21. SOURCE OF TRUTH
+============================================================
+
+qwen.txt is the persistent high-level context document.
+
+It does NOT replace:
+
+- actual NEXUS source code
+- actual API definitions
+- actual documentation
+- actual model documentation
+- actual tool schemas
+- actual training configuration
+
+When implementing something, inspect the real source/documentation rather than trusting an outdated assumption in this file.
+
+============================================================
+22. FINAL OBJECTIVE
+============================================================
+
+The final objective is:
+
+A general-purpose Qwen3-8B-powered AI agent inside NEXUS that can understand natural language, reason about the user's goal, select appropriate tools, perform multi-step actions, inspect results, recover from failures, verify completion, and communicate naturally.
+
+The user should not have to think:
+
+"Which command should I use?"
+
+They should be able to think:
+
+"I want this done."
+
+and tell NEXUS.
+
+NEXUS should then use Qwen and the available tools to determine how to accomplish it.
+
+The intended experience is:
+
+USER:
+"Do this."
+
+NEXUS/QWEN:
+"Understood."
+
+→ reason
+→ plan
+→ use tools
+→ observe
+→ continue
+→ verify
+→ complete
+→ report
+
+This is the ultimate JARVIS-style goal.
+
+============================================================
+23. CURRENT STATUS
+============================================================
+
+Current status:
+
+Qwen project specification phase.
+
+The next action after creating qwen.txt is NOT automatically training.
+
+The user will provide the appropriate phase prompt.
+
+Never assume a phase is complete without evidence.
+
+============================================================
+END OF QWEN PROJECT CONTEXT

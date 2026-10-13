@@ -1,0 +1,8 @@
+{
+ "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+ "vocab_sha256": "8a14c88d4bebfca7f809c730627dfe995334e3db951337df3548d868b5adfa54",
+ "special_tokens_sha256": "f89eee830f45ee6df8171803fe4608174683fcea0a394a464b3f45d1af87e31c",
+ "vocab_size": 151669,
+ "eos_token": "<|im_end|>",
+ "pad_token": "<|endoftext|>"
+}

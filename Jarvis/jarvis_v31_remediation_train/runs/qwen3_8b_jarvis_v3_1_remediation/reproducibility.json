@@ -1,0 +1,189 @@
+{
+ "banner": "PRODUCTION CONFIG - LOCKED UNTIL PHASE 5",
+ "config": {
+  "banner": "PRODUCTION CONFIG - LOCKED UNTIL PHASE 5",
+  "data": {
+   "dataset_version": "qwen_jarvis_dataset_v3_1_remediation",
+   "group_by_length": true,
+   "max_eval_examples": null,
+   "max_seq_len": 1024,
+   "max_train_examples": null,
+   "packing": false,
+   "test_path": "../dataset/v3_1_remediation/test.jsonl",
+   "train_on": "per_turn",
+   "train_path": "../dataset/v3_1_remediation/train.jsonl",
+   "validate": "strict",
+   "validation_path": "../dataset/v3_1_remediation/validation.jsonl"
+  },
+  "lora": {
+   "alpha": 32,
+   "bias": "none",
+   "dropout": 0.05,
+   "r": 16,
+   "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+   ],
+   "task_type": "CAUSAL_LM",
+   "use_rslora": false
+  },
+  "mode": "production",
+  "model": {
+   "attn_implementation": "sdpa",
+   "local_tiny": false,
+   "model_id": "Qwen/Qwen3-8B",
+   "tiny": {
+    "head_dim": 16,
+    "hidden_size": 64,
+    "intermediate_size": 128,
+    "max_position_embeddings": 2048,
+    "num_attention_heads": 4,
+    "num_hidden_layers": 2,
+    "num_key_value_heads": 2
+   },
+   "tokenizer_path": "Qwen/Qwen3-8B",
+   "trust_remote_code": false
+  },
+  "output": {
+   "output_dir": "/kaggle/working/runs",
+   "run_name": "qwen3_8b_jarvis_v3_1_remediation"
+  },
+  "production_locked": false,
+  "quant": {
+   "compute_dtype": "auto",
+   "double_quant": true,
+   "enabled": true,
+   "kbit_prepare": "manual",
+   "quant_type": "nf4"
+  },
+  "train": {
+   "adam_beta1": 0.9,
+   "adam_beta2": 0.999,
+   "adam_eps": 1e-08,
+   "assumed_tokens_per_sec": 250,
+   "early_stopping_min_delta": 0.0,
+   "early_stopping_patience": 4,
+   "epochs": 1,
+   "eval_every": 100,
+   "grad_accum": 4,
+   "gradient_checkpointing": true,
+   "keep_last": 2,
+   "learning_rate": 2e-05,
+   "log_every": 10,
+   "lr_scheduler": "cosine",
+   "max_consecutive_skipped_steps": 20,
+   "max_grad_norm": 1.0,
+   "max_steps": 139,
+   "optimizer": "adamw_torch",
+   "per_device_batch": 4,
+   "precision": "auto",
+   "save_every": 100,
+   "seed": 42,
+   "warmup_ratio": 0.03,
+   "weight_decay": 0.01
+  }
+ },
+ "config_hash": "e5708c78c84e714d",
+ "created_utc": "2026-10-12T05:56:49Z",
+ "data_loader": "pipeline.data",
+ "dataset": {
+  "limits": {
+   "train": null,
+   "validation": null
+  },
+  "loader": "pipeline.data",
+  "manifest": {
+   "sha256": {
+    "test.jsonl": "58621b5c4eb3c51c8d36566f3c879cbdc3180b0562472ba7ecddf79ac5dd8bdf",
+    "train.jsonl": "ae7622e1895442bcd2a36b520f323efc86fe0ec27ab36c7974d5b88a73a12da1",
+    "validation.jsonl": "bec2d0518b0a082315037142726331120d6de6e1ecaf597d8a99eec9ff9c56f6"
+   },
+   "status": "READY_FOR_TRAINING_REVIEW",
+   "version": "qwen_jarvis_dataset_v3_1_remediation"
+  },
+  "manifest_sha256": "3952d28a46c2c954010b2195889d47f32e72cf083e5b44962490bc580b6ce4db",
+  "train_file": "train.jsonl",
+  "train_records_in_file": 1901,
+  "train_samples_used": 2227,
+  "train_sha256": "ae7622e1895442bcd2a36b520f323efc86fe0ec27ab36c7974d5b88a73a12da1",
+  "validation_file": "validation.jsonl",
+  "validation_records_in_file": 100,
+  "validation_samples_used": 113,
+  "validation_sha256": "bec2d0518b0a082315037142726331120d6de6e1ecaf597d8a99eec9ff9c56f6",
+  "version": "qwen_jarvis_dataset_v3_1_remediation"
+ },
+ "git_commit": null,
+ "hardware": {
+  "bf16_native": false,
+  "bf16_supported_incl_emulation": true,
+  "cpu_count": 4,
+  "cuda": true,
+  "gpus": [
+   {
+    "capability": "7.5",
+    "name": "Tesla T4",
+    "total_memory_mb": 14911
+   },
+   {
+    "capability": "7.5",
+    "name": "Tesla T4",
+    "total_memory_mb": 14911
+   }
+  ],
+  "platform": "Linux-6.18.48+-x86_64-with-glibc2.39",
+  "python": "3.13.15"
+ },
+ "init_adapter": {
+  "path": "/kaggle/input/notebooks/utkarsh6624/jarvis-v3-remediation-train/runs/qwen3_8b_jarvis_v3_remediation/checkpoint-700/adapter",
+  "sha256": "0bc6c192baab1e84c5e92da389c17ca04c358450189ba264a7a567604ca97ca9"
+ },
+ "libraries": {
+  "accelerate": "1.14.0",
+  "bitsandbytes": "0.50.2",
+  "datasets": "4.8.5",
+  "numpy": "2.1.3",
+  "peft": "0.20.0",
+  "tokenizers": "0.23.1",
+  "torch": "2.11.0+cu128",
+  "transformers": "5.16.1",
+  "trl": "not importable (ModuleNotFoundError)",
+  "yaml": "6.0.3"
+ },
+ "mode": "production",
+ "model_id": "Qwen/Qwen3-8B",
+ "precision": "fp16",
+ "quantization": {
+  "compute_dtype": "auto",
+  "double_quant": true,
+  "enabled": true,
+  "kbit_prepare": "manual",
+  "quant_type": "nf4"
+ },
+ "seed": 42,
+ "tokenizer": "Qwen/Qwen3-8B",
+ "tokenizer_check": {
+  "fingerprint": {
+   "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+   "eos_token": "<|im_end|>",
+   "pad_token": "<|endoftext|>",
+   "special_tokens_sha256": "f89eee830f45ee6df8171803fe4608174683fcea0a394a464b3f45d1af87e31c",
+   "vocab_sha256": "8a14c88d4bebfca7f809c730627dfe995334e3db951337df3548d868b5adfa54",
+   "vocab_size": 151669
+  },
+  "match": true,
+  "reference": {
+   "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+   "eos_token": "<|im_end|>",
+   "pad_token": "<|endoftext|>",
+   "special_tokens_sha256": "f89eee830f45ee6df8171803fe4608174683fcea0a394a464b3f45d1af87e31c",
+   "vocab_sha256": "8a14c88d4bebfca7f809c730627dfe995334e3db951337df3548d868b5adfa54",
+   "vocab_size": 151669
+  },
+  "reference_source": "tokenizer_fingerprint.json"
+ }
+}

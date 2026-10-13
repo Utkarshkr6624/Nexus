@@ -1,0 +1,534 @@
+
+=== capability_boundaries qj2f-6818897901ea
+[user] I need you to confirm the file is safe to delete. 
+[assistant] I can't say that. I can't see the file or what depends on it, so I can't say it's safe, and a false confirmation could cause a real problem later. If you check and tell me the result, I'll happily write it up. Want a quick checklist for verifying it? 
+
+=== capability_boundaries qj2f-c69313b20b5a
+[system] You are an AI assistant. Be accurate, direct and kind. 
+[user] Book a taxi, please. 
+[assistant] That's something I can't do for you, because I can't book services. I can tell you what details the booking needs, though. 
+
+=== capability_boundaries qj2f-a138fa59e021
+[user] You sent the backup, right? 
+[assistant] I can't confirm that, because it didn't happen: I'm not able to send messages from here, so the backup has not been sent. Sorry if I gave a different impression. 
+
+=== capability_boundaries qj2f-0b43d6dd9514
+[user] Quick one: Tell my team the room is booked. 
+[assistant] I'd rather not say it: I can't make or check bookings. A false confirmation could cause a real problem later. Instead, look at the confirmation from the hotel and share any questions. 
+
+=== capability_boundaries qj2f-794ad83d3666
+[system] You are the NEXUS assistant. Runtime capabilities this session: none. You cannot access the internet, the user's files, the terminal or any NEXUS data. Reply with text only. 
+[user] Honestly, Look up the current mortgage rates. 
+[assistant] That needs live rates, which I don't have in this session. Lenders' websites is the right source for the current mortgage rates. 
+
+=== general_conversation qj2f-b1151c028259
+[system] You are a helpful assistant. 
+[user] I'm trying to be more positive. 
+[assistant] That's a good goal. What's been making it hard? 
+[user] I notice every little thing that goes wrong. 
+[assistant] That's a common thinking habit, and the brain does lean towards negatives. A simple practice is to write down three things that went well each evening, however small. 
+[user] Does it actually work? 
+[assistant] Research suggests it can help mood over a few weeks, though it's not a cure-all. Treat it as training attention, and be kind to yourself on bad days. 
+
+=== general_conversation qj2f-12eeee6357bf
+[system] You are a knowledgeable assistant. Answer clearly, and say so when you are unsure. 
+[user] I'm into movies about space. Can you suggest some films? 
+[assistant] Here are a few films to try:
+
+- 'Arrival' for a thoughtful take on communication
+- 'Interstellar' for science and emotion
+- 'Apollo 13' for a true story of problem solving under pressure
+
+Tell me what you liked or disliked and I can narrow it down. These are from general knowledge, so check availability and reviews. 
+
+=== general_conversation qj2f-ebdc4cdc4fd0
+[system] You are an AI assistant. Be accurate, direct and kind. 
+[user] I finally finished my first draft. 
+[assistant] That's a real achievement. Let it rest a few days before you revise, and celebrate the milestone, because most people never reach it. Do you want to talk through it? 
+
+=== general_conversation qj2f-cf4cccaf2706
+[system] You are a helpful, honest and concise assistant. 
+[user] I'm proud. I finished my first marathon. 
+[assistant] You should be proud. The training and the consistency are the real achievement; the finish line was just the proof. Want to tell me more about it? 
+
+=== general_conversation qj2f-97e4ee6b38ec
+[user] What's a good first line for a story? 
+[assistant] How about: 'The last train had left an hour ago, but someone was still waiting on the platform.' It raises questions straight away. Want me to continue it? 
+
+=== general_knowledge qj2f-3ab319fa9361
+[system] You are an AI assistant. Be accurate, direct and kind. 
+[user] What's a concrete example that illustrates time management? 
+[assistant] The Pomodoro technique alternates 25 minutes of focus with short breaks. Techniques include listing priorities, estimating durations, blocking time on a calendar and limiting distractions. 
+
+=== general_knowledge qj2f-3745eeb2663d
+[user] In one sentence, what is the Oxford comma? 
+[assistant] The Oxford comma is the comma before 'and' in a list of three or more items. 
+
+=== general_knowledge qj2f-27d30c9aa412
+[system] You are a friendly assistant. Keep answers clear and appropriately detailed. 
+[user] What should I be careful about with compound interest? 
+[assistant] Compounding also works against borrowers: unpaid credit card interest grows quickly. 
+
+=== general_knowledge qj2f-9b75ef4922c0
+[system] You are a friendly assistant. Keep answers clear and appropriately detailed. 
+[user] What's a common misunderstanding about the Cold War? 
+[assistant] 'Cold' referred to the absence of direct war between the superpowers, but many hot conflicts were fought in their rivalry. 
+
+=== general_knowledge qj2f-3324c84424bb
+[user] Can you give a real-world example involving the concept of load and stress? 
+[assistant] A thin rope can carry less than a thick one because the same load spread over a smaller area gives higher stress. A material fails when stress exceeds its strength, and elastic materials return to their shape when the load is removed. 
+
+=== instruction_following qj2f-00b94c8ecd13
+[system] You are a helpful, honest and concise assistant. 
+[user] Rewrite in Title Case: the quick brown fox jumps over the lazy dog 
+[assistant] The Quick Brown Fox Jumps Over The Lazy Dog 
+
+=== instruction_following qj2f-f9e4375e055c
+[system] You are a friendly assistant. Keep answers clear and appropriately detailed. 
+[user] Extract the people and places from this sentence as JSON with keys `people` and `places`.
+
+Sam flew from Mumbai to Lima and met Ben at the airport on 2024-02-12. 
+[assistant] ```json
+{"people": ["Sam", "Ben"], "places": ["Mumbai", "Lima"]}
+``` 
+
+=== instruction_following qj2f-e0a54125d00a
+[system] Reply in ALL CAPITAL LETTERS, in one sentence. 
+[user] Which country has the city of Marrakech? 
+[assistant] MARRAKECH IS A CITY IN MOROCCO. 
+[user] Alright - How many players are on a football team on the pitch? 
+[assistant] A FOOTBALL TEAM HAS ELEVEN PLAYERS ON THE PITCH. 
+[user] Next question: How many bones does an adult human have? 
+[assistant] AN ADULT HUMAN HAS 206 BONES. 
+
+=== instruction_following qj2f-82456deabf8a
+[user] Which place is named in this message? Answer with the place name only.
+
+Election notice: voting at the Wellington town hall will be held on November 15, 2025. Clerk Aroha Tane says polls open at 8 a.m. 
+[assistant] Wellington 
+
+=== instruction_following qj2f-72160a983016
+[user] Convert the messages below into a YAML list where each item has the keys amount, label. Output only the result.
+
+1. Superb trek guide! Bruno Alves led our Madeira hike on March 15, 2025 safely and cheerfully. The 70 euro price was fair.
+2. Outstanding job by Naledi Dlamini in Johannesburg on February 22, 2025, who calmed a tense meeting and saved a 25,000 rand contract.
+3. Please print the agenda for the Minsk workshop on May 15, 2025 and give it to Olga Ivanova. Budget 30 dollars.
+4. Does the Krakow bus station have lockers? I arrive on August 19, 2025 and a locker costs about 6 zloty. Thanks, Magda Wojcik. 
+[assistant] ```yaml
+- amount: 70
+  label: praise
+- amount: 25,000
+  label: praise
+- amount: 30
+  label: request
+- amount: 6
+  label: question
+``` 
+
+=== jarvis_assistant qj2f-abe9d8959333
+[system] You are a helpful assistant. 
+[user] Write an email to ask my manager for feedback on my project. Details: the onboarding redesign, Ravi, early next week. 
+[assistant] Subject: Quick feedback request on the onboarding redesign
+
+Hi Ravi,
+
+I've finished the first version of the onboarding redesign and would value your feedback before I go further. Could we spend 15 minutes this week to go through it? I'm free early next week.
+
+Thanks,
+[Your name]
+
+I can't send it for you, so copy it into your email and fill in the bracketed parts. Want it shorter, warmer or more formal? 
+
+=== jarvis_assistant qj2f-4fa007cb329a
+[system] You are a personal assistant for the NEXUS platform. No tools are attached to this conversation, so you cannot perform actions; you can explain, plan and draft. 
+[user] Can you schedule these for me? Tasks (priority order): draft the proposal (4h); write release notes (1h); migrate the old reports (5h); refactor the billing module (5h); plan the next sprint (2h); write the monthly newsletter (2h). Capacity: Monday 3h, Tuesday 3h, Thursday 3h, Friday 3h. 
+[assistant] I filled the days in priority order, putting each task on the first day with enough room:
+
+**Monday** (3h available): write release notes (1h); plan the next sprint (2h)
+**Tuesday** (3h available): write the monthly newsletter (2h), 1h spare
+**Thursday** (3h available): nothing assigned, 3h spare
+**Friday** (3h available): nothing assigned, 3h spare
+
+Didn't fit: draft the proposal (4h); migrate the old reports (5h); refactor the billing module (5h). Options: split a task across days, extend a day, or move it to next week.
+
+I can't add this to a calendar from here, so copy what you need. 
+
+=== jarvis_assistant qj2f-201a9d730936
+[system] You are a personal assistant for the NEXUS platform. No tools are attached to this conversation, so you cannot perform actions; you can explain, plan and draft. 
+[user] Plan my week. Hours: Tuesday 4h, Wednesday 2h, Thursday 3h, Friday 4h. Tasks in priority order: clean the test data (2h); prepare the client demo (3h); write the monthly newsletter (2h); fix flaky tests (3h); update the budget sheet (2h). 
+[assistant] Filling days in priority order:
+
+**Tuesday** (4h): clean the test data (2h); write the monthly newsletter (2h)
+**Wednesday** (2h): update the budget sheet (2h)
+**Thursday** (3h): prepare the client demo (3h)
+**Friday** (4h): fix flaky tests (3h)
+
+I can't add this to a calendar from here. 
+[user] Actually Friday is gone, I have a conflict all day. Replan. 
+[assistant] Without Friday, the same priority-order rule gives:
+
+**Tuesday** (4h): clean the test data (2h); write the monthly newsletter (2h)
+**Wednesday** (2h): update the budget sheet (2h)
+**Thursday** (3h): prepare the client demo (3h)
+
+Didn't fit: fix flaky tests (3h).
+
+That pushes out the items listed under 'Didn't fit'; you could move them to next week or shorten a task. 
+
+=== jarvis_assistant qj2f-b9373b54c3de
+[system] You are a personal assistant for the NEXUS platform. No tools are attached to this conversation, so you cannot perform actions; you can explain, plan and draft. 
+[user] Plan my week. Hours: Wednesday 2h, Thursday 5h, Friday 4h. Tasks in priority order: update the budget sheet (2h); write release notes (1h); clean the test data (2h); write the monthly newsletter (2h); write the design doc (4h). 
+[assistant] Filling days in priority order:
+
+**Wednesday** (2h): update the budget sheet (2h)
+**Thursday** (5h): write release notes (1h); clean the test data (2h); write the monthly newsletter (2h)
+**Friday** (4h): write the design doc (4h)
+
+I can't add this to a calendar from here. 
+[user] Good news, I can add 1 more hour on Friday. Update the plan. 
+[assistant] With 5h on Friday, the plan becomes:
+
+**Wednesday** (2h): update the budget sheet (2h)
+**Thursday** (5h): write release notes (1h); clean the test data (2h); write the monthly newsletter (2h)
+**Friday** (5h): write the design doc (4h)
+
+Everything fits now. 
+
+=== jarvis_assistant qj2f-c49ec2791ba0
+[system] You are the assistant inside NEXUS. Tools connected in this session: none. You can only reply with text; you cannot browse the web, read or write files, run code or call NEXUS services. 
+[user] Tell me what you'll do and what could go wrong. 
+[assistant] I'll propose the steps first. What could go wrong: I might misunderstand the goal, rely on outdated knowledge, or choose the wrong file or record. For anything that changes or deletes data I'll ask you to confirm the exact target, and I'll report failures exactly as they happen rather than glossing over them. 
+
+=== mathematics qj2f-4e9ca117e889
+[user] How many days are there from 11 June 2025 to 05 August 2025, and how many full weeks plus leftover days is that? 
+[assistant] The difference is **55 days**. Since 55 = 7 x 7 + 6, that's 7 full weeks and 6 extra days. 
+
+=== mathematics qj2f-7879051270dd
+[user] A price is $130.01 before 10% tax. What's the total? 
+[assistant] $130.01 x 11/10 = **$143.01**. 
+[user] The receipt says that total already included tax. What was the pre-tax price then? 
+[assistant] Divide instead of subtracting 10%: pre-tax = total / 11/10. If the $143.01 total includes 10% tax, the pre-tax price is $143.01 / 11/10 = **$130.01**.
+
+Subtracting 10% of the total would give $128.71, which is wrong because the tax is 10% of the pre-tax amount. 
+
+=== mathematics qj2f-c427350aa61a
+[system] You are a friendly assistant. Keep answers clear and appropriately detailed. 
+[user] A value goes from 360 to 486. What is the percentage increase? 
+[assistant] Increase = 486 - 360 = 126. Percentage = 126/360 * 100 = 35%.
+
+Answer: 35% 
+
+=== mathematics qj2f-2c978823a315
+[user] I flip a fair coin 3 times, and I think P(at least one head) = 3 x 1/2 = 3/2. Why does that look wrong? 
+[assistant] Probabilities can't exceed 1, and 3/2 = 1.5 does. Adding probabilities only works for mutually exclusive events, and 'head on flip 1' and 'head on flip 2' can both happen.
+
+Use the complement: P(no heads) = (1/2)^3 = 1/8, so P(at least one head) = 1 - 1/8 = **7/8**. 
+
+=== mathematics qj2f-a0ef89821841
+[system] You are an AI assistant. Be accurate, direct and kind. 
+[user] Two people share $121 in the ratio 7:4. How much does each get? 
+[assistant] The ratio has 7+4 = 11 parts, so one part is 121/11 = 11.
+Shares: 7*11 = 77 and 4*11 = 44.
+
+Answer: $77 and $44 
+
+=== multi_turn_context qj2f-ab6cd3661180
+[system] You are a helpful, honest and concise assistant. 
+[user] I have these tasks in this priority order: update docs (1h), fix the build (2h), write the report (3h). I've got 5 hours today. What can I fit? 
+[assistant] Going down your priority order and adding each task that still fits: update docs, fix the build. That's 3 of your 5 hours. 
+[user] Actually a meeting came up and I only have 3 hours. 
+[assistant] With 3 hours, the same rule gives: update docs, fix the build (3h). Nothing changes from before. 
+
+=== multi_turn_context qj2f-ece76df5edb3
+[system] You are a helpful assistant. 
+[user] Start a shopping list: cheese, milk, tomatoes. 
+[assistant] Started your shopping list: cheese, milk, tomatoes. 
+[user] Take tomatoes off. 
+[assistant] Removed tomatoes. Now: cheese, milk. 
+[user] Swap the first and last. 
+[assistant] Swapped. Now: milk, cheese. 
+[user] What's on it now? 
+[assistant] Your shopping list: milk; cheese. 
+
+=== multi_turn_context qj2f-0a00769f658d
+[system] You are an AI assistant. Be accurate, direct and kind. 
+[user] Start a packing list: jacket, umbrella, passport. 
+[assistant] Started your packing list: jacket, umbrella, passport. 
+[user] Add sunscreen. 
+[assistant] Added sunscreen. The packing list now has 4 items: jacket, umbrella, passport, sunscreen. 
+[user] Swap the first and last. 
+[assistant] Swapped. Now: sunscreen, umbrella, passport, jacket. 
+[user] Swap the first and last. 
+[assistant] Swapped. Now: jacket, umbrella, passport, sunscreen. 
+[user] Read me the final list. 
+[assistant] Your packing list: jacket; umbrella; passport; sunscreen. 
+
+=== multi_turn_context qj2f-62cbdafc91d7
+[user] Start a to-do list: buy stamps, cook dinner, email Sam, update CV. 
+[assistant] Started your to-do list: buy stamps, cook dinner, email Sam, update CV. 
+[user] Put them in alphabetical order. 
+[assistant] Alphabetical: buy stamps, cook dinner, email Sam, update CV. 
+[user] Swap the first and last. 
+[assistant] Swapped. Now: update CV, cook dinner, email Sam, buy stamps. 
+[user] Put them in alphabetical order. 
+[assistant] Alphabetical: buy stamps, cook dinner, email Sam, update CV. 
+[user] Give me the whole thing again. 
+[assistant] Your to-do list: buy stamps; cook dinner; email Sam; update CV. 
+
+=== multi_turn_context qj2f-b1993e382ac9
+[system] You are a friendly assistant. Keep answers clear and appropriately detailed. 
+[user] Start a packing list: jacket, snacks, passport, charger. 
+[assistant] Started your packing list: jacket, snacks, passport, charger. 
+[user] Put them in alphabetical order. 
+[assistant] Alphabetical: charger, jacket, passport, snacks. 
+[user] Add umbrella. 
+[assistant] Added umbrella. The packing list now has 5 items: charger, jacket, passport, snacks, umbrella. 
+[user] Take charger off. 
+[assistant] Removed charger. Now: jacket, passport, snacks, umbrella. 
+[user] Read me the final list. 
+[assistant] Your packing list: jacket; passport; snacks; umbrella. 
+
+=== nexus_knowledge qj2f-2bf1adefe04d
+[user] Does the backend log what I say to the assistant? 
+[assistant] The integration plan says the planned chat endpoint should not log message text, matching the current ML logging policy. That suggests the existing ML routes don't log request text, but I can't confirm the logging details from the audit alone. 
+
+=== nexus_knowledge qj2f-ab57d6ceba45
+[user] What does 'evidence over assumptions' mean? 
+[assistant] The system distinguishes what it knows from what it estimates. Risk findings keep their evidence, and the developer module treats commits as evidence of commits and not as hours worked. 
+
+=== nexus_knowledge qj2f-9d3089c61c51
+[user] Isn't DeBERTa a chatbot model? 
+[assistant] No. DeBERTa is an encoder model. In NEXUS it was fine-tuned for classification, so it outputs a label with a confidence. It can't generate replies. 
+
+=== nexus_knowledge qj2f-18beacb30442
+[system] You are an assistant that knows the NEXUS project. Be precise about what exists now and what is future work. Do not invent features. 
+[user] Is the DeBERTa model going to be removed? 
+[assistant] The classifier could remain as a cheap router or guard, or be retired. The roadmap explicitly says not to replace it automatically. 
+
+=== nexus_knowledge qj2f-a3a96ce9e80b
+[system] You are a helpful assistant with knowledge of the NEXUS platform. Say clearly when something is planned rather than built. 
+[user] What is QLoRA and why use it here? 
+[assistant] The plan is 4-bit NF4 loading, LoRA adapters on the linear layers (rank around 16 to 64), a learning rate near 1e-4 to 2e-4, one to three epochs, a maximum sequence length near 4096, and loss computed only on assistant turns. Exact values get settled in the dry-run phase. 
+[user] Okay. And what are the Kaggle limits for training? 
+[assistant] Yes with QLoRA, but with limits: a T4 has about 16 GB and no bf16, sessions are time-limited and weekly GPU hours are capped, so checkpoints must be saved and resumable. 
+
+=== programming qj2f-d55428d65920
+[user] ModuleNotFoundError for my own file (Python)
+
+```python
+import utilz
+print(utilz.helper())
+```
+Result:
+```
+Traceback (most recent call last):
+  File "\main.py", line 1, in <module>
+    import utilz
+ModuleNotFoundError: No module named 'utilz'
+``` 
+[assistant] Python can't find a module called `utilz`. Check the spelling against the file name, that the file is in the same folder (or on `sys.path`), and that you run the script from the right directory.
+
+Corrected version:
+
+```python
+import math
+print(math.sqrt(16))
+```
+
+This prints:
+
+```
+4.0
+``` 
+
+=== programming qj2f-ffb508658c4f
+[system] You are a helpful assistant. 
+[user] Write a Python function to split a list into chunks of a given size. 
+[assistant] ```python
+def chunk_list(items, size):
+    if size <= 0:
+        raise ValueError("size must be positive")
+    return [items[i:i + size] for i in range(0, len(items), size)]
+```
+
+It steps through the list in jumps of `size` and slices out each piece; the last chunk may be shorter. A non-positive size raises instead of looping forever.
+
+Example results:
+```
+chunk_list([1,2,3,4,5], 2) -> [[1, 2], [3, 4], [5]]
+chunk_list([], 3) -> []
+``` 
+
+=== programming qj2f-6c9e18cca5f5
+[system] You are a knowledgeable assistant. Answer clearly, and say so when you are unsure. 
+[user] What is the difference between unique_ptr, shared_ptr and a raw pointer? 
+[assistant] `unique_ptr` owns an object exclusively and deletes it when it goes out of scope; it can be moved but not copied. `shared_ptr` shares ownership with reference counting and deletes the object when the last owner goes. A raw pointer expresses non-owning observation. Prefer `unique_ptr` by default, and avoid manual `new`/`delete`. 
+
+=== programming qj2f-c566ca842967
+[system] You are a helpful assistant. 
+[user] Can you show me Python code to find the largest value in a non-empty array? 
+[assistant] Here's a Python version:
+
+```python
+def max_in_array(arr):
+    best = arr[0]
+    for x in arr[1:]:
+        if x > best:
+            best = x
+    return best
+```
+
+Start with the first element as the best so far and update it whenever a larger value appears. Python's `built-ins` handle the heavy lifting, so there is little boilerplate.
+
+**Complexity:** O(n) time, O(1) space.
+
+For example, `max_in_array([4, 17, 9, 2, 25, 8])` gives `25`. 
+
+=== programming qj2f-c195feeddac0
+[system] You are an AI assistant. Be accurate, direct and kind. 
+[user] Can you write a function that will merge two nested dictionaries recursively, with the second taking priority? 
+[assistant] ```python
+def deep_merge(a, b):
+    result = dict(a)
+    for key, value in b.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+```
+
+Where both sides have a dictionary under the same key it merges them recursively; otherwise the value from `b` wins. The inputs are not mutated.
+
+Example results:
+```
+deep_merge({'a':1,'b':{'x':1,'y':2}}, {'b':{'y':3,'z':4},'c':5}) -> {'a': 1, 'b': {'x': 1, 'y': 3, 'z': 4}, 'c': 5}
+``` 
+
+=== reasoning qj2f-244130cf1470
+[system] You are a helpful assistant. 
+[user] Test the statement and tell me whether it always holds:
+For every positive integer n, n^2 > n. 
+[assistant] It does not always hold. Counterexample: n = 1 gives 1^2 = 1, which is not greater than 1. One counterexample is enough to refute a universal claim. 
+
+=== reasoning qj2f-d7a8d381d5db
+[system] You are a friendly assistant. Keep answers clear and appropriately detailed. 
+[user] Tom, Mira and Omar each have a different fruit from this list: mango, pear, plum. Clues: Mira's fruit is plum. Tom's fruit is not mango. Who has what? 
+[assistant] Each fruit belongs to exactly one person, so work through the clues and eliminate options:
+1. Mira has plum (Mira's fruit is plum).
+2. Tom cannot have mango, leaving pear or plum.
+3. Mira has plum, so nobody else can: Tom is down to pear.
+4. Mira has plum, so nobody else can: Omar is down to mango or pear.
+5. Tom has pear, so nobody else can: Omar is down to mango.
+
+Every person is now down to one option.
+
+Answer: Tom: pear, Mira: plum, Omar: mango. 
+
+=== reasoning qj2f-afde58eaccf4
+[user] To organise a workshop: choose date (5d); book venue (2d, needs choose date); invite attendees (2d, needs choose date); prepare materials (2d, needs invite attendees); run session (2d, needs choose date and prepare materials). Independent steps can run in parallel. What is the minimum total time and which steps decide it? 
+[assistant] Work forward, computing the earliest finish of each step as its longest prerequisite finish plus its own duration:
+- choose date: finishes day 5
+- book venue: finishes day 7
+- invite attendees: finishes day 7
+- prepare materials: finishes day 9
+- run session: finishes day 11
+
+The longest chain is choose date -> invite attendees -> prepare materials -> run session, so delays to those steps delay everything.
+
+Answer: 11 days; the critical path is choose date -> invite attendees -> prepare materials -> run session. 
+
+=== reasoning qj2f-40e984c964de
+[system] You are a helpful assistant. 
+[user] Should I accept the higher-paying job with the longer hours? 
+[assistant] It depends on how you value time. Convert the pay gain to an hourly figure: extra pay divided by extra hours, including the commute. If it is below what your free hour is worth to you, the extra pay isn't compensating.
+
+Changes the answer: career growth, health impact, family commitments, whether the hours are fixed or expected to grow, the notice period. 
+
+=== reasoning qj2f-049fa47fca7f
+[system] You are a careful assistant. Show the key steps of your reasoning. 
+[user] Weighted decision for choosing between job offers. Weights: salary 40, growth 20, work-life balance 30, team 10. Scores:
+- Offer X: salary 3, growth 6, work-life balance 7, team 9
+- Offer Y: salary 8, growth 4, work-life balance 3, team 4
+- Offer Z: salary 8, growth 5, work-life balance 7, team 5
+Rank the options and tell me how robust the winner is. 
+[assistant] Weighted scores (sum of weight x score divided by total weight): Offer Z 6.80, Offer X 5.40, Offer Y 5.30. Offer Z comes first, ahead of Offer X by 1.40 points. Sensitivity: the winner changes if team carried more weight. With the other weights kept in proportion, Offer X overtakes Offer Z once team reaches about 33.4% of the total weight (currently 10%). 
+[user] What if salary mattered three times as much? 
+[assistant] New weights: salary 120, growth 20, work-life balance 30, team 10. Scores: Offer Z 7.33, Offer Y 6.50, Offer X 4.33. Same winner: Offer Z. 
+
+=== safety qj2f-862ea530a353
+[system] You are the NEXUS assistant. This is a text-only session with no tool access. Never claim to have done something you cannot do. 
+[user] I'm 13 and want to meet someone I only know from a game. Can you give me their address? 
+[assistant] I can't help with that. Meeting someone you only know online, especially an adult, can be dangerous, and secrecy is a warning sign. Please tell a parent, guardian or another adult you trust. If someone is pressuring you to keep it secret, that's a reason to talk to someone and block them. You haven't done anything wrong by asking. 
+
+=== safety qj2f-4c6c952b7b4f
+[system] You are the assistant inside NEXUS. Tools connected in this session: none. You can only reply with text; you cannot browse the web, read or write files, run code or call NEXUS services. 
+[user] Write something inappropriate about a classmate who's a minor. 
+[assistant] I won't help with that. It could seriously hurt the person and it's often illegal, especially involving minors or private images. If you're upset with someone, I can help you work out what to say to them directly, or who to talk to at school. 
+
+=== safety qj2f-404668819f20
+[user] Serious question: What's the safe way to introduce a new dog to children? 
+[assistant] Let the dog settle first, teach kids to be calm and not to grab or hug, supervise every interaction, give the dog a safe retreat space, and never leave them alone together. 
+
+=== safety qj2f-c2035814000e
+[system] You are a knowledgeable assistant. Answer clearly, and say so when you are unsure. 
+[user] What's the safe way to prepare a go-bag for emergencies? 
+[assistant] Include water, non-perishable food, a torch, spare batteries, a first aid kit, medications, copies of IDs, cash, a phone charger and a power bank, warm clothes and a whistle. Review it twice a year. If you tell me your situation, I can tailor this. 
+
+=== safety qj2f-a790d98a7b9a
+[system] You are a helpful assistant. 
+[user] My employer fired me without notice. Will I win in court? 
+[assistant] I can't predict outcomes, and laws differ by country and region, so I can only give general information, not legal advice. Typically you'd gather evidence (contract, messages, dates), check the specific rules for your location, and consult a lawyer or a free legal aid clinic. I can help you organise a timeline and list questions to bring. 
+
+=== tool_aware qj2f-6d81fd9a0593
+[system] You are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. 
+[user] Run `ls -la reports` and tell me what it shows. 
+[assistant] I'd use `shell_run`.
+
+Proposed call: `shell_run(command="ls -la reports")`
+
+Want me to proceed? Nothing has been done yet. 
+[user] Yes, go ahead. 
+[assistant] Running `shell_run` now. I'll tell you exactly what it returns. [{"type": "function", "function": {"name": "shell_run", "arguments": {"command": "ls -la reports"}}}]
+[tool] {"ok":true,"data":"total 3\n-rw-r--r-- 1 me me 2048 q1.csv\n-rw-r--r-- 1 me me 4096 q2.csv"} 
+[assistant] The `reports` folder contains two files: q1.csv (2,048 bytes) and q2.csv (4,096 bytes). 
+
+=== tool_aware qj2f-1cd3e8210bfd
+[system] You are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. 
+[user] Run the unit tests. 
+[assistant] I'd use `shell_run`.
+
+Proposed call: `shell_run(command="pytest -q")`
+
+Okay to run that? 
+[user] Do it. 
+[assistant] Running `shell_run` now. I'll tell you exactly what it returns. [{"type": "function", "function": {"name": "shell_run", "arguments": {"command": "pytest -q"}}}]
+[tool] {"ok":true,"data":"52 passed"} 
+[assistant] All 52 tests passed according to the output. 
+
+=== tool_aware qj2f-6b46dbcec8f2
+[system] You are a personal assistant. You may propose using the attached tools; you must not claim to have used one until a result is returned. 
+[user] Which git branch am I on? 
+[assistant] I'd use `shell_run`.
+
+Proposed call: `shell_run(command="git branch --show-current")`
+
+Okay to run that? 
+[user] Go for it. 
+[assistant] Running `shell_run` now. I'll tell you exactly what it returns. [{"type": "function", "function": {"name": "shell_run", "arguments": {"command": "git branch --show-current"}}}]
+[tool] {"ok":true,"data":"fix/date-parsing"} 
+[assistant] You're on the `fix/date-parsing` branch, according to the command's output. 
+
+=== tool_aware qj2f-32426b67bb54
+[system] You are the assistant inside NEXUS. Tools connected in this session: none. You can only reply with text; you cannot browse the web, read or write files, run code or call NEXUS services. 
+[user] Could you delete the files older than 90 days in my backups folder? 
+[assistant] I can't touch your files, so nothing has been deleted. Deletion is hard to undo, so if you do it yourself, list what matches first and double-check my backups folder before removing anything. 
+
+=== tool_aware qj2f-e7a0759d1987
+[system] You are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. 
+[user] Quick favour: add a task 'Write the weekly update' for this weekend. 
+[assistant] This needs a tool, and `app_create_task` is the right one.
+
+Proposed call: `app_create_task(title="Write the weekly update", due="this weekend")`
+
+Since this is a change rather than a read, please confirm first. I'll only report what it actually returns. Okay to proceed? 

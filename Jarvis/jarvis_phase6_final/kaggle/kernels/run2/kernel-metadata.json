@@ -1,0 +1,16 @@
+{
+  "id": "utkarsh6624/jarvis-phase6-eval-run2",
+  "title": "jarvis-phase6-eval-run2",
+  "code_file": "phase6_run2.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": ["utkarsh6624/qwen-jarvis-phase5-package", "utkarsh6624/jarvis-phase5-secure-checkpoint-backup", "utkarsh6624/qwen3-8b-jarvis-full-v3-checkpoints", "utkarsh6624/jarvis-phase6-eval"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

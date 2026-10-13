@@ -1,0 +1,9 @@
+[
+  {
+    "id": 0,
+    "path": "runtime\\models\\jarvis_v31_139_lora.gguf",
+    "scale": 1,
+    "task_name": "",
+    "prompt_prefix": ""
+  }
+]

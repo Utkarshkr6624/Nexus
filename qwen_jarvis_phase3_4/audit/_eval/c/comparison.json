@@ -1,0 +1,1154 @@
+{
+ "label_a": "base",
+ "label_b": "fine-tuned",
+ "n_common": 666,
+ "only_in_a": 0,
+ "only_in_b": 0,
+ "rows": {
+  "overall": {
+   "n": 666,
+   "a": {
+    "n": 666,
+    "pass": 666,
+    "rate": 1.0,
+    "ci95": [
+     0.9943,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 666,
+    "pass": 10,
+    "rate": 0.015,
+    "ci95": [
+     0.0082,
+     0.0274
+    ]
+   },
+   "delta": -0.985,
+   "a_only_pass": 656,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "suite:capability_boundaries": {
+   "n": 30,
+   "a": {
+    "n": 30,
+    "pass": 30,
+    "rate": 1.0,
+    "ci95": [
+     0.8865,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 30,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1135
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 30,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "suite:general": {
+   "n": 113,
+   "a": {
+    "n": 113,
+    "pass": 113,
+    "rate": 1.0,
+    "ci95": [
+     0.9671,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 113,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.0329
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 113,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "suite:instruction_following": {
+   "n": 62,
+   "a": {
+    "n": 62,
+    "pass": 62,
+    "rate": 1.0,
+    "ci95": [
+     0.9417,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 62,
+    "pass": 6,
+    "rate": 0.0968,
+    "ci95": [
+     0.0451,
+     0.1955
+    ]
+   },
+   "delta": -0.9032,
+   "a_only_pass": 56,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "suite:multi_turn": {
+   "n": 40,
+   "a": {
+    "n": 40,
+    "pass": 40,
+    "rate": 1.0,
+    "ci95": [
+     0.9124,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 40,
+    "pass": 2,
+    "rate": 0.05,
+    "ci95": [
+     0.0138,
+     0.165
+    ]
+   },
+   "delta": -0.95,
+   "a_only_pass": 38,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "suite:nexus_facts": {
+   "n": 128,
+   "a": {
+    "n": 128,
+    "pass": 128,
+    "rate": 1.0,
+    "ci95": [
+     0.9709,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 128,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.0291
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 128,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "suite:safety": {
+   "n": 59,
+   "a": {
+    "n": 59,
+    "pass": 59,
+    "rate": 1.0,
+    "ci95": [
+     0.9389,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 59,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.0611
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 59,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "suite:testsplit": {
+   "n": 120,
+   "a": {
+    "n": 120,
+    "pass": 120,
+    "rate": 1.0,
+    "ci95": [
+     0.969,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 120,
+    "pass": 1,
+    "rate": 0.0083,
+    "ci95": [
+     0.0015,
+     0.0457
+    ]
+   },
+   "delta": -0.9917,
+   "a_only_pass": 119,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "suite:tool_awareness": {
+   "n": 114,
+   "a": {
+    "n": 114,
+    "pass": 114,
+    "rate": 1.0,
+    "ci95": [
+     0.9674,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 114,
+    "pass": 1,
+    "rate": 0.0088,
+    "ci95": [
+     0.0016,
+     0.048
+    ]
+   },
+   "delta": -0.9912,
+   "a_only_pass": 113,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:capability_boundaries/no_access": {
+   "n": 30,
+   "a": {
+    "n": 30,
+    "pass": 30,
+    "rate": 1.0,
+    "ci95": [
+     0.8865,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 30,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1135
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 30,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:general/code": {
+   "n": 12,
+   "a": {
+    "n": 12,
+    "pass": 12,
+    "rate": 1.0,
+    "ci95": [
+     0.7575,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 12,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.2425
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 12,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0005,
+   "ci_overlap": false
+  },
+  "category:general/math": {
+   "n": 60,
+   "a": {
+    "n": 60,
+    "pass": 60,
+    "rate": 1.0,
+    "ci95": [
+     0.9398,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 60,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.0602
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 60,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:general/qa": {
+   "n": 41,
+   "a": {
+    "n": 41,
+    "pass": 41,
+    "rate": 1.0,
+    "ci95": [
+     0.9143,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 41,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.0857
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 41,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:instruction_following/classification": {
+   "n": 3,
+   "a": {
+    "n": 3,
+    "pass": 3,
+    "rate": 1.0,
+    "ci95": [
+     0.4385,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 3,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.5615
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 3,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.25,
+   "ci_overlap": true
+  },
+  "category:instruction_following/conflict": {
+   "n": 2,
+   "a": {
+    "n": 2,
+    "pass": 2,
+    "rate": 1.0,
+    "ci95": [
+     0.3424,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 2,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.6576
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 2,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.5,
+   "ci_overlap": true
+  },
+  "category:instruction_following/constraint": {
+   "n": 37,
+   "a": {
+    "n": 37,
+    "pass": 37,
+    "rate": 1.0,
+    "ci95": [
+     0.9059,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 37,
+    "pass": 6,
+    "rate": 0.1622,
+    "ci95": [
+     0.0765,
+     0.3114
+    ]
+   },
+   "delta": -0.8378,
+   "a_only_pass": 31,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:instruction_following/counting": {
+   "n": 2,
+   "a": {
+    "n": 2,
+    "pass": 2,
+    "rate": 1.0,
+    "ci95": [
+     0.3424,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 2,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.6576
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 2,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.5,
+   "ci_overlap": true
+  },
+  "category:instruction_following/extraction": {
+   "n": 3,
+   "a": {
+    "n": 3,
+    "pass": 3,
+    "rate": 1.0,
+    "ci95": [
+     0.4385,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 3,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.5615
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 3,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.25,
+   "ci_overlap": true
+  },
+  "category:instruction_following/list_ops": {
+   "n": 3,
+   "a": {
+    "n": 3,
+    "pass": 3,
+    "rate": 1.0,
+    "ci95": [
+     0.4385,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 3,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.5615
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 3,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.25,
+   "ci_overlap": true
+  },
+  "category:instruction_following/multi_constraint": {
+   "n": 4,
+   "a": {
+    "n": 4,
+    "pass": 4,
+    "rate": 1.0,
+    "ci95": [
+     0.5101,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 4,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.4899
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 4,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.125,
+   "ci_overlap": false
+  },
+  "category:instruction_following/reformat": {
+   "n": 2,
+   "a": {
+    "n": 2,
+    "pass": 2,
+    "rate": 1.0,
+    "ci95": [
+     0.3424,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 2,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.6576
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 2,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.5,
+   "ci_overlap": true
+  },
+  "category:instruction_following/system_rule": {
+   "n": 6,
+   "a": {
+    "n": 6,
+    "pass": 6,
+    "rate": 1.0,
+    "ci95": [
+     0.6097,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 6,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.3903
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 6,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0312,
+   "ci_overlap": false
+  },
+  "category:multi_turn/context": {
+   "n": 40,
+   "a": {
+    "n": 40,
+    "pass": 40,
+    "rate": 1.0,
+    "ci95": [
+     0.9124,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 40,
+    "pass": 2,
+    "rate": 0.05,
+    "ci95": [
+     0.0138,
+     0.165
+    ]
+   },
+   "delta": -0.95,
+   "a_only_pass": 38,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:nexus_facts/absent": {
+   "n": 16,
+   "a": {
+    "n": 16,
+    "pass": 16,
+    "rate": 1.0,
+    "ci95": [
+     0.8064,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 16,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1936
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 16,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:nexus_facts/current": {
+   "n": 68,
+   "a": {
+    "n": 68,
+    "pass": 68,
+    "rate": 1.0,
+    "ci95": [
+     0.9465,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 68,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.0535
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 68,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:nexus_facts/false_premise": {
+   "n": 18,
+   "a": {
+    "n": 18,
+    "pass": 18,
+    "rate": 1.0,
+    "ci95": [
+     0.8241,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 18,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1759
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 18,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:nexus_facts/planned": {
+   "n": 26,
+   "a": {
+    "n": 26,
+    "pass": 26,
+    "rate": 1.0,
+    "ci95": [
+     0.8713,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 26,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1287
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 26,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:safety/benign_lookalike": {
+   "n": 28,
+   "a": {
+    "n": 28,
+    "pass": 28,
+    "rate": 1.0,
+    "ci95": [
+     0.8794,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 28,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1206
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 28,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:safety/crisis": {
+   "n": 4,
+   "a": {
+    "n": 4,
+    "pass": 4,
+    "rate": 1.0,
+    "ci95": [
+     0.5101,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 4,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.4899
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 4,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.125,
+   "ci_overlap": false
+  },
+  "category:safety/harmful": {
+   "n": 27,
+   "a": {
+    "n": 27,
+    "pass": 27,
+    "rate": 1.0,
+    "ci95": [
+     0.8754,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 27,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1246
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 27,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:testsplit/capability_boundaries": {
+   "n": 23,
+   "a": {
+    "n": 23,
+    "pass": 23,
+    "rate": 1.0,
+    "ci95": [
+     0.8569,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 23,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1431
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 23,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:testsplit/mathematics": {
+   "n": 23,
+   "a": {
+    "n": 23,
+    "pass": 23,
+    "rate": 1.0,
+    "ci95": [
+     0.8569,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 23,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1431
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 23,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:testsplit/nexus_knowledge": {
+   "n": 41,
+   "a": {
+    "n": 41,
+    "pass": 41,
+    "rate": 1.0,
+    "ci95": [
+     0.9143,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 41,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.0857
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 41,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:testsplit/safety": {
+   "n": 10,
+   "a": {
+    "n": 10,
+    "pass": 10,
+    "rate": 1.0,
+    "ci95": [
+     0.7225,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 10,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.2775
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 10,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.002,
+   "ci_overlap": false
+  },
+  "category:testsplit/tool_aware": {
+   "n": 23,
+   "a": {
+    "n": 23,
+    "pass": 23,
+    "rate": 1.0,
+    "ci95": [
+     0.8569,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 23,
+    "pass": 1,
+    "rate": 0.0435,
+    "ci95": [
+     0.0077,
+     0.2099
+    ]
+   },
+   "delta": -0.9565,
+   "a_only_pass": 22,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/after_error": {
+   "n": 10,
+   "a": {
+    "n": 10,
+    "pass": 10,
+    "rate": 1.0,
+    "ci95": [
+     0.7225,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 10,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.2775
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 10,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.002,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/after_result": {
+   "n": 13,
+   "a": {
+    "n": 13,
+    "pass": 13,
+    "rate": 1.0,
+    "ci95": [
+     0.7719,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 13,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.2281
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 13,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0002,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/ambiguous": {
+   "n": 6,
+   "a": {
+    "n": 6,
+    "pass": 6,
+    "rate": 1.0,
+    "ci95": [
+     0.6097,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 6,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.3903
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 6,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0312,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/no_tools_attached": {
+   "n": 16,
+   "a": {
+    "n": 16,
+    "pass": 16,
+    "rate": 1.0,
+    "ci95": [
+     0.8064,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 16,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.1936
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 16,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/not_needed": {
+   "n": 14,
+   "a": {
+    "n": 14,
+    "pass": 14,
+    "rate": 1.0,
+    "ci95": [
+     0.7847,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 14,
+    "pass": 1,
+    "rate": 0.0714,
+    "ci95": [
+     0.0127,
+     0.3147
+    ]
+   },
+   "delta": -0.9286,
+   "a_only_pass": 13,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0002,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/read_call": {
+   "n": 24,
+   "a": {
+    "n": 24,
+    "pass": 24,
+    "rate": 1.0,
+    "ci95": [
+     0.862,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 24,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.138
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 24,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/tool_missing": {
+   "n": 8,
+   "a": {
+    "n": 8,
+    "pass": 8,
+    "rate": 1.0,
+    "ci95": [
+     0.6756,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 8,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.3244
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 8,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0078,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/write_after_approval": {
+   "n": 10,
+   "a": {
+    "n": 10,
+    "pass": 10,
+    "rate": 1.0,
+    "ci95": [
+     0.7225,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 10,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.2775
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 10,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.002,
+   "ci_overlap": false
+  },
+  "category:tool_awareness/write_preview": {
+   "n": 13,
+   "a": {
+    "n": 13,
+    "pass": 13,
+    "rate": 1.0,
+    "ci95": [
+     0.7719,
+     1.0
+    ]
+   },
+   "b": {
+    "n": 13,
+    "pass": 0,
+    "rate": 0.0,
+    "ci95": [
+     0.0,
+     0.2281
+    ]
+   },
+   "delta": -1.0,
+   "a_only_pass": 13,
+   "b_only_pass": 0,
+   "mcnemar_p": 0.0002,
+   "ci_overlap": false
+  }
+ },
+ "stub": true
+}

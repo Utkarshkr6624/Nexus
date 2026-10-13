@@ -1,0 +1,214 @@
+{
+ "dataset": "qwen_jarvis_dataset_v2_final",
+ "train_records": 10298,
+ "assistant_mentions_jarvis": {
+  "rows": 20,
+  "categories": [
+   [
+    "nexus_knowledge",
+    20
+   ]
+  ],
+  "subcategories": [
+   [
+    "multi_turn_facts",
+    8
+   ],
+   [
+    "fact_detail",
+    5
+   ],
+   [
+    "n21_misc2",
+    1
+   ],
+   [
+    "n21_qwen_plan",
+    1
+   ],
+   [
+    "fact_bullets",
+    1
+   ]
+  ],
+  "examples": [
+   {
+    "id": "qj2f-00e79060a3fc",
+    "category": "nexus_knowledge",
+    "subcategory": "multi_turn_facts",
+    "user": "Understood. Now, what is Phase 2 of the Qwen project?",
+    "assistant_excerpt": "est and simulation, training pipeline preparation, training, evaluation, runtime and NEXUS integration, and finally the JARVIS and Command Center experience."
+   },
+   {
+    "id": "qj2f-03fce59b47fd",
+    "category": "nexus_knowledge",
+    "subcategory": "n21_misc2",
+    "user": "Which phase makes NEXUS conversational?",
+    "assistant_excerpt": "In the Qwen roadmap, runtime and NEXUS integration (phase 7) adds the chat endpoint and the model, and the JARVIS experience (phase 8) builds on it. Neither has started."
+   },
+   {
+    "id": "qj2f-0b18f428dfb7",
+    "category": "nexus_knowledge",
+    "subcategory": "n21_qwen_plan",
+    "user": "Explain JARVIS in the context of this project.",
+    "assistant_excerpt": "JARVIS is the name for the envisioned assistant experience: a model that converses, reasons, plans and, through tools, a"
+   }
+  ]
+ },
+ "assistant_mentions_qwen": {
+  "rows": 88,
+  "categories": [
+   [
+    "nexus_knowledge",
+    88
+   ]
+  ],
+  "subcategories": [
+   [
+    "built_vs_planned",
+    14
+   ],
+   [
+    "project_qa",
+    10
+   ],
+   [
+    "false_premise",
+    10
+   ],
+   [
+    "fact_detail",
+    8
+   ],
+   [
+    "multi_turn_facts",
+    6
+   ]
+  ],
+  "examples": [
+   {
+    "id": "qj2f-03fce59b47fd",
+    "category": "nexus_knowledge",
+    "subcategory": "n21_misc2",
+    "user": "Which phase makes NEXUS conversational?",
+    "assistant_excerpt": "In the Qwen roadmap, runtime and NEXUS integration (phase 7) adds the chat endpoint and the model, and the JARVIS experience (p"
+   },
+   {
+    "id": "qj2f-071a85561560",
+    "category": "nexus_knowledge",
+    "subcategory": "n21_misc2",
+    "user": "Will training Qwen change the DeBERTa training data?",
+    "assistant_excerpt": "No. The Qwen work is isolated, and the plan says not to touch backend/ml or its artifacts. The DeBERTa datasets, which are gitig"
+   },
+   {
+    "id": "qj2f-09240664bbae",
+    "category": "nexus_knowledge",
+    "subcategory": "n21_scenario",
+    "user": "I asked it to help me debug a Python error and got generation_unavailable.",
+    "assistant_excerpt": "st request, but NEXUS has no language model to hand it to. It's a stated capability gap and not a bug, and a fine-tuned Qwen model is planned to fill it."
+   }
+  ]
+ },
+ "assistant_cant_send": {
+  "rows": 70,
+  "categories": [
+   [
+    "jarvis_assistant",
+    50
+   ],
+   [
+    "tool_aware",
+    11
+   ],
+   [
+    "capability_boundaries",
+    8
+   ],
+   [
+    "multi_turn_context",
+    1
+   ]
+  ],
+  "subcategories": [
+   [
+    "draft_message",
+    49
+   ],
+   [
+    "no_tool_available_http_check",
+    6
+   ],
+   [
+    "did_you_do_it",
+    5
+   ],
+   [
+    "tool_mismatch_http_check",
+    4
+   ],
+   [
+    "no_external_action",
+    3
+   ]
+  ],
+  "examples": [
+   {
+    "id": "qj2f-048e83591aee",
+    "category": "jarvis_assistant",
+    "subcategory": "draft_message",
+    "user": "Draft a message to decline a meeting invitation. It's about the onboarding redesign, the person is Lena, and the date is next Tuesday.",
+    "assistant_excerpt": " a conflict. Could you share the notes afterwards, or would next Tuesday work for a quick catch-up?\n\nBest,\n[Your name]\n\nI can't send it for you, so copy it into your email and fill in the bracketed parts. Want it shorter, warmer or more for"
+   },
+   {
+    "id": "qj2f-0f0e8c433915",
+    "category": "jarvis_assistant",
+    "subcategory": "draft_message",
+    "user": "Draft a message to report a delay on a project. It's about the Q3 report, the person is Maya, and the date is early next week.",
+    "assistant_excerpt": "on] to recover time and will update you on [date].\n\nPlease tell me if this affects anything on your side.\n\n[Your name]\n\nI can't send it for you, so copy it into your email and fill in the bracketed parts. Want it shorter, warmer or more for"
+   },
+   {
+    "id": "qj2f-10ad7b157c58",
+    "category": "jarvis_assistant",
+    "subcategory": "draft_message",
+    "user": "Draft a message to decline a meeting invitation. It's about the onboarding redesign, the person is Sam, and the date is early next week.",
+    "assistant_excerpt": "conflict. Could you share the notes afterwards, or would early next week work for a quick catch-up?\n\nBest,\n[Your name]\n\nI can't send it for you, so copy it into your email and fill in the bracketed parts. Want it shorter, warmer or more for"
+   }
+  ]
+ },
+ "system_prompts_mentioning_jarvis": 0,
+ "system_prompts_only_reply_with_text": 311,
+ "identity_questions": [
+  {
+   "id": "qj2f-40b897a88675",
+   "user": "Who are you?",
+   "assistant": "I'm the assistant inside NEXUS, a personal planning and intelligence app. Right now in this session I work with text only: I can explain, draft and plan with you, but I'm not connected to your tasks, "
+  },
+  {
+   "id": "qj2f-7a87bb0a6850",
+   "user": "What are you going to change, exactly?",
+   "assistant": "Nothing yet. I'm describing a proposed change, not making one. The change would be limited to the lines I name, I'll show you the before and after, and nothing is applied until you approve it. If I ca"
+  }
+ ],
+ "json_only_requests": {
+  "rows": 24,
+  "assistant_answers_with_code_fence": 24,
+  "examples": [
+   {
+    "id": "qj2f-011a2a326774",
+    "user": "Kindly extend my parking permit in Houston past July 31, 2025. The monthly fee of 75 dollars can be charged to Brenda Ca",
+    "assistant": "```json\n{\n  \"person\": \"Brenda Carter\",\n  \"date\": \"2025-07-31\",\n  \"amount\": 75,\n  \"place\": \"Houston\"\n}\n```"
+   },
+   {
+    "id": "qj2f-056ff7e91eae",
+    "user": "Convert this CSV to JSON. Return only the JSON.\n\nname,age,city\nChloe,19,Perth\nIvan,19,Osaka\nRavi,21,Lima\nAisha,50,Quito",
+    "assistant": "```json\n[\n  {\n    \"name\": \"Chloe\",\n    \"age\": 19,\n    \"city\": \"Perth\"\n  },\n  {\n    \"name\": \"Ivan\",\n    \"age\": 19,\n    \"c"
+   },
+   {
+    "id": "qj2f-1ae73229dfe7",
+    "user": "Convert the messages below into JSON Lines (one JSON object per line) with the keys person, label. Output only the resul",
+    "assistant": "```\n{\"person\": \"Carmen Ruiz\", \"label\": \"praise\"}\n{\"person\": \"Lukas Brandt\", \"label\": \"praise\"}\n{\"person\": \"Napat Srisai\""
+   }
+  ]
+ },
+ "verbatim_or_exact_output_instructions": 1
+}

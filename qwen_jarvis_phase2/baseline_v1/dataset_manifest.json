@@ -1,0 +1,82 @@
+{
+ "dataset_version": "qwen_jarvis_dataset_v1",
+ "format": "JSONL; one record per line",
+ "training_format": {
+  "file_suffix": "_messages_only.jsonl",
+  "record": {
+   "messages": [
+    {
+     "role": "system|user|assistant",
+     "content": "string"
+    }
+   ]
+  }
+ },
+ "full_format": {
+  "id": "qj1-<hash>",
+  "messages": "as above",
+  "metadata": [
+   "id",
+   "category",
+   "subcategory",
+   "difficulty",
+   "source_type",
+   "group",
+   "validation_status",
+   "turns"
+  ]
+ },
+ "totals": {
+  "examples": 10500,
+  "splits": {
+   "train": 9556,
+   "validation": 472,
+   "test": 472
+  },
+  "multi_turn": 1134
+ },
+ "files": {
+  "dataset/splits/test.jsonl": {
+   "sha256": "6eddbe8987c6efbfe8663a1dd67b9d8f78e89641f5f187f71c72d4a20d735fee",
+   "bytes": 376005,
+   "lines": 472
+  },
+  "dataset/splits/test_messages_only.jsonl": {
+   "sha256": "557d1ff3750e9eb433e5012a35cf4887df4280830b320f1e642ac2778d3ed4b7",
+   "bytes": 257543,
+   "lines": 472
+  },
+  "dataset/splits/train.jsonl": {
+   "sha256": "58fae42e8ca00b4e5fc21ff75612442c56eb91c4c6b96d147c55a7338a653396",
+   "bytes": 7842045,
+   "lines": 9556
+  },
+  "dataset/splits/train_messages_only.jsonl": {
+   "sha256": "7d59d7a37667b7704c52dc61b089df4bb5412c31ca89f2c3e087bb035ec00228",
+   "bytes": 5431038,
+   "lines": 9556
+  },
+  "dataset/splits/validation.jsonl": {
+   "sha256": "e0753ef33cc775ac4ffd0b95b2a487ac15f64f7f239bb4fec3789943c1d4a958",
+   "bytes": 384022,
+   "lines": 472
+  },
+  "dataset/splits/validation_messages_only.jsonl": {
+   "sha256": "616ea056e1f98b4317800bf3b23c905d1e4fe1343770fa4e5e64e9a4273f28c8",
+   "bytes": 265659,
+   "lines": 472
+  },
+  "dataset/validated/qwen_jarvis_dataset_v1_all.jsonl": {
+   "sha256": "67e6450541a607687558e54a738cec35becc6130a05fb6e7d14b318dba351720",
+   "bytes": 8602072,
+   "lines": 10500
+  }
+ },
+ "validation": {
+  "hard_failures": [],
+  "checks_passed": true
+ },
+ "tool_call_wire_format": "not defined in this dataset (Phase 3)",
+ "tool_result_convention": "tool results appear as user-role messages beginning '[tool result from <tool>]' because a tool role/format is a Phase 3 decision",
+ "isolated_from_nexus": true
+}

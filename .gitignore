@@ -97,6 +97,19 @@ backend/ml/reports/
 *.pkl
 *.joblib
 
+# NEXO (Qwen3-8B) weights and runtime binaries stay on disk only: several exceed GitHub's
+# 100 MB file limit and Git for Windows truncates files over 4 GiB. Jarvis/MODEL_ARTIFACTS.md
+# lists each one with its source and SHA-256 so a clone can restore and verify them.
+*.gguf
+*.safetensors
+*.pt
+*.pth
+/Jarvis/**/*.zip
+/Jarvis/jarvis_phase7/runtime/llama.cpp/
+/Jarvis/jarvis_phase7/runtime/downloads/
+/Jarvis/jarvis_phase7/runtime/src/
+/qwen_jarvis_phase3_4/v3_build/external/
+
 # ---------------------------------------------------------------------------
 # Editors / OS
 # ---------------------------------------------------------------------------

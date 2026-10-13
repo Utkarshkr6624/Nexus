@@ -1,0 +1,335 @@
+{
+ "records": 10226,
+ "samples": 12658,
+ "max_len": 2048,
+ "per_sample_tokens": {
+  "n": 12658,
+  "total": 1840116,
+  "mean": 145.4,
+  "median": 109.0,
+  "p95": 392,
+  "p99": 554,
+  "max": 795,
+  "min": 19
+ },
+ "label_tokens": {
+  "total": 717882,
+  "ratio_of_all_tokens": 0.3901
+ },
+ "samples_fit_pct": {
+  "512": 98.29,
+  "1024": 100.0,
+  "1536": 100.0,
+  "2048": 100.0,
+  "3072": 100.0,
+  "4096": 100.0
+ },
+ "histogram_per_sample": [
+  {
+   "bin": "1-64",
+   "count": 1745
+  },
+  {
+   "bin": "65-128",
+   "count": 5942
+  },
+  {
+   "bin": "129-192",
+   "count": 2419
+  },
+  {
+   "bin": "193-256",
+   "count": 1076
+  },
+  {
+   "bin": "257-384",
+   "count": 807
+  },
+  {
+   "bin": "385-512",
+   "count": 452
+  },
+  {
+   "bin": "513-768",
+   "count": 216
+  },
+  {
+   "bin": "769-1024",
+   "count": 1
+  },
+  {
+   "bin": "1025-1536",
+   "count": 0
+  },
+  {
+   "bin": "1537-2048",
+   "count": 0
+  },
+  {
+   "bin": "2049-3072",
+   "count": 0
+  },
+  {
+   "bin": "3073-4096",
+   "count": 0
+  },
+  {
+   "bin": ">4096",
+   "count": 0
+  }
+ ],
+ "multi_turn_records": 1310,
+ "tool_records": 629,
+ "records_with_system_message": 5710,
+ "load_report": {
+  "path": "dataset\\v2_final_candidate\\train.jsonl",
+  "mode": "skip",
+  "train_on": "per_turn",
+  "max_len": 2048,
+  "records": 10231,
+  "invalid": 5,
+  "invalid_examples": [
+   [
+    1624,
+    "qj2f-22b0384cd095",
+    [
+     "duplicate tool name 'web_search'"
+    ]
+   ],
+   [
+    2173,
+    "qj2f-2ec50dc93764",
+    [
+     "duplicate tool name 'fs_read_file'"
+    ]
+   ],
+   [
+    6561,
+    "qj2f-97754675c298",
+    [
+     "duplicate tool name 'fs_read_file'"
+    ]
+   ],
+   [
+    7518,
+    "qj2f-b22b07e7b863",
+    [
+     "duplicate tool name 'fs_read_file'"
+    ]
+   ],
+   [
+    8446,
+    "qj2f-cb7c0777e97e",
+    [
+     "duplicate tool name 'fs_read_file'"
+    ]
+   ]
+  ],
+  "samples": 12658,
+  "records_with_dropped_turns": 0,
+  "dropped_turns": 0,
+  "records_truncated": 0,
+  "records_skipped": 0,
+  "truncated_pct": 0.0
+ },
+ "per_category_tokens": {
+  "capability_boundaries": {
+   "n": 645,
+   "total": 84845,
+   "mean": 131.5,
+   "median": 92,
+   "p95": 471,
+   "p99": 550,
+   "max": 589,
+   "min": 46
+  },
+  "general_conversation": {
+   "n": 1155,
+   "total": 96758,
+   "mean": 83.8,
+   "median": 78,
+   "p95": 158,
+   "p99": 208,
+   "max": 300,
+   "min": 19
+  },
+  "general_knowledge": {
+   "n": 1474,
+   "total": 120645,
+   "mean": 81.8,
+   "median": 73.0,
+   "p95": 149,
+   "p99": 166,
+   "max": 187,
+   "min": 30
+  },
+  "instruction_following": {
+   "n": 728,
+   "total": 64264,
+   "mean": 88.3,
+   "median": 79.0,
+   "p95": 167,
+   "p99": 257,
+   "max": 296,
+   "min": 32
+  },
+  "jarvis_assistant": {
+   "n": 986,
+   "total": 204955,
+   "mean": 207.9,
+   "median": 193.0,
+   "p95": 342,
+   "p99": 441,
+   "max": 661,
+   "min": 38
+  },
+  "mathematics": {
+   "n": 702,
+   "total": 80772,
+   "mean": 115.1,
+   "median": 111.0,
+   "p95": 166,
+   "p99": 188,
+   "max": 258,
+   "min": 36
+  },
+  "multi_turn_context": {
+   "n": 1583,
+   "total": 190925,
+   "mean": 120.6,
+   "median": 109,
+   "p95": 245,
+   "p99": 336,
+   "max": 446,
+   "min": 24
+  },
+  "nexus_knowledge": {
+   "n": 996,
+   "total": 98781,
+   "mean": 99.2,
+   "median": 91.0,
+   "p95": 173,
+   "p99": 202,
+   "max": 236,
+   "min": 32
+  },
+  "programming": {
+   "n": 1462,
+   "total": 236981,
+   "mean": 162.1,
+   "median": 151.0,
+   "p95": 281,
+   "p99": 349,
+   "max": 486,
+   "min": 57
+  },
+  "reasoning": {
+   "n": 1432,
+   "total": 254276,
+   "mean": 177.6,
+   "median": 176.0,
+   "p95": 317,
+   "p99": 462,
+   "max": 675,
+   "min": 40
+  },
+  "safety": {
+   "n": 449,
+   "total": 46092,
+   "mean": 102.7,
+   "median": 101,
+   "p95": 144,
+   "p99": 171,
+   "max": 196,
+   "min": 49
+  },
+  "tool_aware": {
+   "n": 1046,
+   "total": 360822,
+   "mean": 345.0,
+   "median": 391.0,
+   "p95": 608,
+   "p99": 696,
+   "max": 795,
+   "min": 53
+  }
+ },
+ "per_conversation_tokens": {
+  "n": 10122,
+  "total": 1473896,
+  "mean": 145.6,
+  "median": 111.0,
+  "p95": 374,
+  "p99": 556,
+  "max": 795,
+  "min": 19
+ },
+ "conversations_fit_pct": {
+  "512": 98.29,
+  "1024": 100.0,
+  "1536": 100.0,
+  "2048": 100.0,
+  "3072": 100.0,
+  "4096": 100.0
+ },
+ "histogram_per_conversation": [
+  {
+   "bin": "1-64",
+   "count": 1236
+  },
+  {
+   "bin": "65-128",
+   "count": 4781
+  },
+  {
+   "bin": "129-192",
+   "count": 2078
+  },
+  {
+   "bin": "193-256",
+   "count": 888
+  },
+  {
+   "bin": "257-384",
+   "count": 676
+  },
+  {
+   "bin": "385-512",
+   "count": 290
+  },
+  {
+   "bin": "513-768",
+   "count": 172
+  },
+  {
+   "bin": "769-1024",
+   "count": 1
+  },
+  {
+   "bin": "1025-1536",
+   "count": 0
+  },
+  {
+   "bin": "1537-2048",
+   "count": 0
+  },
+  {
+   "bin": "2049-3072",
+   "count": 0
+  },
+  {
+   "bin": "3073-4096",
+   "count": 0
+  },
+  {
+   "bin": ">4096",
+   "count": 0
+  }
+ ],
+ "truncation_pct_at_max_len": 0.0,
+ "source": {
+  "path": "dataset\\v2_final_candidate\\train.jsonl",
+  "mode": "strict",
+  "train_on": "per_turn"
+ }
+}

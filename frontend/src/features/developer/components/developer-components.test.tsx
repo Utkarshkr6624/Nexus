@@ -3,7 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+
+import { WARM_LAZY_CHARTS_TIMEOUT_MS, warmLazyCharts } from '@/test/warm-lazy-charts'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
 import {
@@ -114,6 +116,8 @@ vi.mock('recharts', async (importOriginal) => {
  * loading, so raising it cannot turn a genuine failure into a pass.
  */
 const LAZY_RESOLVE_TIMEOUT_MS = 10_000
+
+beforeAll(warmLazyCharts, WARM_LAZY_CHARTS_TIMEOUT_MS)
 
 const REPO_ID = '11111111-1111-4111-8111-111111111111'
 const PROJECT_ID = '33333333-3333-4333-8333-333333333333'

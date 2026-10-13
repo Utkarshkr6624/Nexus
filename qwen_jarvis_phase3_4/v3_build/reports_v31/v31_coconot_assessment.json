@@ -1,0 +1,31 @@
+{
+ "dataset": "allenai/coconot", "revision": "2cbe16aabf9069f17e48c8daad8aeabc29469eb7", "last_modified": "2024-07-18", "gated": false,
+ "licence": {
+  "LICENSE.md": "Open Data Commons Attribution License (ODC-By)",
+  "card_licensing_section": "'CoCoNot is made available under the ODC-BY requiring the user to follow the licenses of the subsequent parts.'",
+  "card_header_link": "https://allenai.org/licenses/impact-lr (AI2 ImpACT Low Risk)",
+  "conflict": "The card header points to ImpACT-LR, while LICENSE.md and the Licensing section say ODC-By. 'Subsequent parts' include GPT-4-generated responses (chosen_model = gpt-4 for all 927 pref records), whose provider terms also apply.",
+  "attribution": "Brahman, Kumar et al., 'The Art of Saying No: Contextual Noncompliance in Language Models', arXiv:2407.12043 (2024)",
+  "requires_owner_decision": ["Which licence governs: ODC-By (LICENSE.md) or ImpACT-LR (card link). If ImpACT-LR, its terms must be accepted by the owner.",
+                              "Whether training on GPT-4-generated responses is acceptable under the provider's terms for this project."],
+  "accepted_on_owner_behalf": false
+ },
+ "configs": {
+  "original/train": {"rows": 11477, "fields": "prompt, response", "content": "noncompliance targets (requests that should NOT be complied with)", "use_for_over_refusal": "no; teaches refusals, risks more over-refusal"},
+  "original/test": {"rows": 1001, "eval_only": true},
+  "contrast/test": {"rows": 379, "eval_only": true, "content": "benign look-alikes that should be complied with; test only, NOT used"},
+  "pref/train": {"rows": 927, "fields": "prompt, chosen (compliant, gpt-4), rejected (noncompliant)", "content": "prompts that can safely be complied with; training split",
+                 "overlap_with_contrast_test_prompts": 0}
+ },
+ "pref_train_eligibility": {
+  "filters": "chosen <= 1800 chars; no refusal or self-limitation wording; no phone (>= 8 digits), URL or contact claim; no AI-disclaimer; crisis topics excluded",
+  "excluded": {"too_long": 393, "refusal_wording": 20, "phone_url_contact": 5, "crisis_topic": 1},
+  "eligible": 508,
+  "eligible_by_subcategory": {"false presuppositions": 310, "underspecified": 87, "triggers for offensive language": 56, "input modality limitations": 20,
+                              "dangerous or sensitive topics": 12, "output modality limitations": 10, "privacy violations": 8, "false information": 5},
+  "evaluation_leakage_hits": 0, "hedge_phrase_records": 20,
+  "relevance": "Directly over-refusal-relevant: about 68 (offensive-trigger words in benign requests 56, dangerous/sensitive topics 12). Ambiguity handling: 87 underspecified. False presuppositions (310) mostly train premise correction. No fiction and no crisis content.",
+  "quality_note": "GPT-4 responses, not human-verified; spot-check needed (e.g. one 'dangerous or sensitive topics' answer opens with heavy hedging)."
+ },
+ "decision": "CANDIDATE ONLY - not ingested. Needs the owner's licence decision and a spot-check."
+}

@@ -1,0 +1,15 @@
+{
+ "checkpoint_v31_139": {
+  "criteria": {
+   "no_generation_errors": true,
+   "exact_format_>=_0.80": true,
+   "p11_json_family_all_pass": true,
+   "safety_>=_0.90": false,
+   "capability_honesty_>=_0.80": false,
+   "tool_call_schema_validity_>=_0.90": true,
+   "no_significant_regression_vs_base": true
+  },
+  "all_critical_pass": false,
+  "significant_regressions": []
+ }
+}

@@ -1,0 +1,44 @@
+{
+ "train": {
+  "safety": 304,
+  "general_conversation": 37,
+  "instruction_following": 273,
+  "multi_turn_context": 97,
+  "capability_boundaries": 170,
+  "tool_aware": 170,
+  "nexus_knowledge": 110,
+  "programming": 25,
+  "reasoning": 32,
+  "mathematics": 358,
+  "jarvis_assistant": 21,
+  "general_knowledge": 18,
+  "safety_ambiguous": 36,
+  "safety_benign": 135,
+  "safety_crisis": 42,
+  "safety_fiction": 73
+ },
+ "validation": {
+  "safety": 16,
+  "instruction_following": 16,
+  "capability_boundaries": 10,
+  "tool_aware": 10,
+  "nexus_knowledge": 6,
+  "multi_turn_context": 5,
+  "programming": 2,
+  "reasoning": 2,
+  "mathematics": 10,
+  "general_conversation": 3,
+  "jarvis_assistant": 1,
+  "safety_ambiguous": 2,
+  "safety_benign": 11,
+  "safety_crisis": 3,
+  "safety_fiction": 3
+ },
+ "test": {
+  "mathematics": 10,
+  "safety_ambiguous": 2,
+  "safety_benign": 4,
+  "safety_crisis": 3,
+  "safety_fiction": 4
+ }
+}

@@ -1,0 +1,10 @@
+{
+ "strict_json_targets": {
+  "checked": 697,
+  "failed": []
+ },
+ "tool_call_arguments": {
+  "checked": 391,
+  "failed": []
+ }
+}

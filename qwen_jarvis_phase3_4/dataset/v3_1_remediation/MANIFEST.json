@@ -1,0 +1,32 @@
+{
+ "version": "qwen_jarvis_dataset_v3_1_remediation",
+ "status": "READY_FOR_TRAINING_REVIEW",
+ "foundation": "qwen_jarvis_dataset_v3 (dataset/v3_final, unchanged)",
+ "foundation_sha256": {
+  "train": "9ca85163597c3269658691bfe5d11d449aeef9879e6d0e401c6e3d30e2ed011f",
+  "validation": "31e4551053acb59627668da34ffb077592deb22228346151e8592f34e808593b",
+  "test": "9a0c0d9665abb290a0a3cb129d0648867c2a419f17221e23e354bbef17b7ff8d"
+ },
+ "records": 2024,
+ "files": {
+  "train.jsonl": {
+   "records": 1901,
+   "sha256": "ae7622e1895442bcd2a36b520f323efc86fe0ec27ab36c7974d5b88a73a12da1"
+  },
+  "validation.jsonl": {
+   "records": 100,
+   "sha256": "bec2d0518b0a082315037142726331120d6de6e1ecaf597d8a99eec9ff9c56f6"
+  },
+  "test.jsonl": {
+   "records": 23,
+   "sha256": "58621b5c4eb3c51c8d36566f3c879cbdc3180b0562472ba7ecddf79ac5dd8bdf"
+  }
+ },
+ "by_role": {
+  "replay": 1352,
+  "targeted": 354,
+  "targeted_extra": 318
+ },
+ "assistant_turn_samples_train": 2227,
+ "note": "test.jsonl holds only new targeted examples; the full V3 test split remains the held-out reference"
+}

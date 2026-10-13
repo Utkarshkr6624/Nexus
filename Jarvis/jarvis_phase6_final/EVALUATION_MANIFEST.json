@@ -1,0 +1,101 @@
+{
+ "phase": "JARVIS Phase 6",
+ "evaluation_date": "2026-10-11",
+ "status": "FAIL - evaluation complete and verified; no configuration passes all critical acceptance criteria (results/kaggle_run/PHASE6_FINAL_ACCEPTANCE.json)",
+ "results": {
+  "kaggle_runs": {"run1": {"dir": "E:\\Nexo\\Jarvis\\phase6_run1\\phase6_run1", "configs": ["base_model", "checkpoint_800", "checkpoint_1100", "checkpoint_1200"], "elapsed_h": 3.832},
+                  "run2": {"dir": "E:\\Nexo\\Jarvis\\phase6_run2\\phase6_run2", "configs": ["base_model", "checkpoint_1300", "checkpoint_1400", "checkpoint_1500", "checkpoint_1596"], "elapsed_h": 4.642}},
+  "executed_model_generations": 3798,
+  "scored_generations": 3376,
+  "base_model_scoring": "run 1 copy; run 2 copy bit-identical (422/422), kept as replication, not double-counted",
+  "merged_scoring": "results/kaggle_run/merged/ (scripts/score_phase6.py, unchanged)",
+  "comparison_csv": "CHECKPOINT_COMPARISON.csv (184 rows = 8 configs x 23 metrics)",
+  "verification": "results/kaggle_run/PHASE6_VERIFICATION.json (scripts/finalize_phase6.py)",
+  "summary": "results/kaggle_run/PHASE6_RESULTS_SUMMARY.json",
+  "acceptance": "results/kaggle_run/PHASE6_FINAL_ACCEPTANCE.json",
+  "output_sha256": "results/kaggle_run/PHASE6_OUTPUT_SHA256SUMS.txt"
+ },
+ "base_model": {"id": "Qwen/Qwen3-8B", "weights_included": false,
+                "retrieval": "Hugging Face Hub repo Qwen/Qwen3-8B (public). The tokenizer/config snapshot used locally is b968826d9c46dd6066d109eabc6255188de91218 (HF cache; config + tokenizer only)."},
+ "tokenizer": {"id": "Qwen/Qwen3-8B", "chat_template": "Qwen3 template, enable_thinking=False", "fingerprint_reference": "package configs/tokenizer_fingerprint.json (verified PASS in the resume test)"},
+ "checkpoints": {
+  "ids": ["checkpoint-800", "checkpoint-1100", "checkpoint-1200", "checkpoint-1300", "checkpoint-1400", "checkpoint-1500", "checkpoint-1596"],
+  "adapter_names_for_eval": ["checkpoint_800", "checkpoint_1100", "checkpoint_1200", "checkpoint_1300", "checkpoint_1400", "checkpoint_1500", "checkpoint_1596"],
+  "location": "E:\\Nexo\\Jarvis\\checkpoint-<step>\\ (originals, unchanged)",
+  "integrity_manifest": "manifests/checkpoint_integrity.json (all 7 PASS)",
+  "checksums": "E:\\Nexo\\Jarvis\\CHECKPOINT_SHA256SUMS.txt (35 files; sha256sum -c 35/35 OK at the end of this task)",
+  "adapter_sha256": {
+   "checkpoint-800": "41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc",
+   "checkpoint-1100": "35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe",
+   "checkpoint-1200": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b",
+   "checkpoint-1300": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c",
+   "checkpoint-1400": "8ea48e39cfc975fdad23ae8dc2bfc2ba19af9b574be0600b633460f4eb7e34fe",
+   "checkpoint-1500": "b9d16c934d689952da179c4b8b3dbdfb104172ce2e95a46ecad685d48c865e9a",
+   "checkpoint-1596": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8"},
+  "selected": null,
+  "selected_reason": "no checkpoint passes rubric step 1 (critical criteria); best available candidate for further development: checkpoint_1100 (statistical tie with checkpoint_1300); none recommended for integration. See PHASE6_FINAL_REPORT.md section 10"
+ },
+ "prompt_suite": {
+  "version": "phase6-v1 + original pipeline.eval suites (package manifest pipeline/eval/data/manifest.json)",
+  "phase6_suites": {"phase6_format": 16, "phase6_reasoning": 16, "phase6_coding": 7, "phase6_identity": 7, "phase6_agentic": 8},
+  "original_suites_default": "instruction_following, multi_turn, nexus_facts, general, testsplit subsampled to 25 (seed 20261011); tool_awareness 114, safety 59, capability_boundaries 54 in full",
+  "items_per_config": 406, "generations_per_config": 422, "configurations": 8, "planned_generations": 3376,
+  "sha256": {
+   "prompts/phase6_agentic.jsonl": "185cf4df03aa947d08d51b6d0c21df4a317ce78fc74f09306c195c05365d60a1",
+   "prompts/phase6_coding.jsonl": "c9a350269bcae88757850aee653ad5d61b95f58105aa44a864f4964021ae837f",
+   "prompts/phase6_format.jsonl": "27898d9afc257eb7cc83f01cbdc04978f92ccc1fd850d9e774394148947df2b5",
+   "prompts/phase6_identity.jsonl": "6b03ab433af108b69e82181a82c32836ae9742f94ba06d2891b497f6eeb4b878",
+   "prompts/phase6_reasoning.jsonl": "595078421cf137b7ac665fd377d89d12c9499afd0e26b1d8a46d53cc9252d62e"}
+ },
+ "kaggle_plan": {
+  "status": "EXECUTED 2026-10-11 (run1 + run2 completed; see top-level results)",
+  "runs": {"run1": ["base_model", "checkpoint_800", "checkpoint_1100", "checkpoint_1200"],
+           "run2": ["base_model", "checkpoint_1300", "checkpoint_1400", "checkpoint_1500", "checkpoint_1596"]},
+  "gates_before_generation": ["package: PACKAGE_MANIFEST.json sha256 == trusted 888b18ba9ea2f684d7eaa14a71c5500765d5dc34e0616ff931f0ebdf7c6005a0, then all listed files",
+                              "gpu: Tesla T4, >= 14 GB", "libraries: transformers 5.16.1, peft 0.20.0, accelerate 1.14.0, bitsandbytes 0.50.2",
+                              "adapters: all 7 adapter_model.safetensors + adapter_config.json == trusted sha256 (scripts/trusted_hashes.py)",
+                              "adapter control: disable_adapter reproduces bare-base fingerprint; active_adapters == [name]; fingerprints pairwise distinct"],
+  "time_budget_hours_per_run": 10.5,
+  "instructions": "reports/REPRODUCTION.md section B"
+ },
+ "generation_settings": {"quantization": "4-bit NF4, double quant, fp16 compute", "enable_thinking": false, "do_sample": false, "num_beams": 1, "max_new_tokens": 384,
+                         "eos": "<|im_end|>", "base_config": "model.disable_adapter() (verified by logit fingerprint)", "repeat_policy": "phase6_format x2 for every config; no retries"},
+ "test_counts": {
+  "executed_model_generations_before_kaggle_run": 0,
+  "executed_local_checks": {"checkpoint_integrity_checks": "7 checkpoints x 16 checks: all PASS", "phase6_oracle_items": "54/54 oracle pass",
+                            "strict_check_unit_tests": "19/19", "stub_pipeline_runs": "4 stubs: oracle accepted, 3 adversarial rejected",
+                            "package_scorer_selftest": "oracle 682/682; adversarial stubs <= 1.6%"},
+  "initial_96_review": "SUPERSEDED - files never transferred; findings confirmed by the full Phase 6 evaluation"
+ },
+ "artifacts": {
+  "scripts": {
+   "scripts/dataset_evidence.py": "a3efafae915362456a3f10704e75e744c62c7f519b900e44beed0c8c1cf505eb",
+   "scripts/integrity_check.py": "2c5b0362a119b719692fd40fb4422e3fc8d306258f357e45baec2eeda34c7ba3",
+   "scripts/phase6_checks.py": "784eec566a2623ffa10c642da3230a0cb50380496d92ce0d650771771d9eb815",
+   "scripts/phase6_suites.py": "9d7195af334254f67d7c5df937faa1e119a388c581f8fa9865c247d88cb75113",
+   "scripts/run_phase6_kaggle.py": "ec20be1f22438f977d95c5ee2f41c487ad9909b735c8d7f468d5901390ecad31",
+   "scripts/score_phase6.py": "f701a9e2ab522732b1b474733b5b10a8e2ba1d775b125a5923b081ffa4e77543",
+   "scripts/selftest_phase6.py": "437a02f9d351b66613d77a2414eca2385f2277f67eb27be4adfd691aac157caa",
+   "scripts/trusted_hashes.py": "5fb780eb694b970277fa624d28f796d57ac56525e00b826d404d951cc67b0690"},
+  "kaggle": {
+   "kaggle/phase6_launch.py": "47858fdfff38a3881cf139b09f78db32e27e6d80f2065e873f8d7334acd44333",
+   "kaggle/requirements_phase6.txt": "377658c8b800cd06b4d14a98ab35841f9c2e9cc61a06224dab688455075e9ac0",
+   "kaggle/kernels/run1/kernel-metadata.json": "b9f2fb74fffbdefff83addd127b6c9e4c71e7bb9676aa94fa870247fa0910cb5",
+   "kaggle/kernels/run1/phase6_run1.py": "396dfd5e5484bd9eab07b8eb7318a30a72d213600f60a67db22ed97f6b0fff3d",
+   "kaggle/kernels/run2/kernel-metadata.json": "948fdca8c8a09ec150a7183ee0299d5715c056c8be4ed3788c4df86faca36b83",
+   "kaggle/kernels/run2/phase6_run2.py": "c50a2b9fe97711624b0e17c097fd506cf7f96caeb0059895ca881b08998097f6"},
+  "manifest_backup_before_step1": {"path": "manifests/EVALUATION_MANIFEST.pre_step1.json", "sha256": "d913eb6b3ed7c22c9a0c5c80660b3a5078016152b351d264f87c0f6cce3b9190"},
+  "training_code_package": {"path": "E:\\Nexo\\qwen_jarvis_phase3_4\\kaggle\\dist\\qwen_jarvis_kaggle_package.zip", "sha256": "944eab015ba2f166d4dedb82b36d59ff63d24d5974a073f626e1eabc40ed1ff3"},
+  "deliverable_contents": "evaluation metadata, scripts and prompts only - no adapter copy (none selected), no tokenizer files, no base weights",
+  "kaggle_pulls": "artifacts/kaggle_pull/ (two Phase 5 training notebooks; no Phase 6 code or outputs)"
+ },
+ "known_limitations": [
+  "Behavioural metrics are from 422 generations per configuration (n = 2-91 per metric); no multiple-comparison correction.",
+  "Initial 96-response files never transferred; superseded by the full evaluation.",
+  "python_exec is not an OS-level sandbox; run on an ephemeral machine or with --no-exec.",
+  "Mock tools only; no claim about real tool execution.",
+  "Small n per metric; no statistical significance claims beyond exact paired McNemar per metric; no multiple-comparison correction.",
+  "Pattern-based behaviour checks measure form/grounding, not answer quality; failed items need human review.",
+  "Training data never targets the JARVIS name; strict JARVIS-name identity is informational."
+ ]
+}

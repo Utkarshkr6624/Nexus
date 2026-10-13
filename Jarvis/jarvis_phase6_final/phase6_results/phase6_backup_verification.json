@@ -1,0 +1,27 @@
+{
+ "generated_utc": "2026-10-11T12:38:00Z",
+ "reference_archive": {
+  "recorded_size": "~2.441 GiB",
+  "recorded_sha256": "851113edd178381356774d0a1e3ab595f3f2e725f4e72e49fbf34f6c3360cc04",
+  "archive_exists": "NOT_FOUND",
+  "user_statement_2026-10-11": "User: the backup is the checkpoint folders under E:/Nexo/Jarvis; no separate archive file is kept.",
+  "size_reconciliation": "checkpoint-1200..1596 total 2621426973 bytes = 2.4414 GiB, matching the recorded ~2.441 GiB. The archive almost certainly packed these 5 checkpoints. Its contents are verified per file (28/28 hash match); its own sha256 cannot be recomputed because tar bytes depend on headers/mtimes and the file is gone.",
+  "evidence": "No file >2 GB with .tar*/.zip/.7z under E:/ or C:/Users/utkar/Downloads (find -maxdepth 4). Checksum string appears in no file under E:/Nexo/Jarvis or E:/Nexo/qwen_jarvis_phase3_4. Neither private Kaggle dataset (jarvis-phase5-secure-checkpoint-backup: 26 files; qwen3-8b-jarvis-full-v3-checkpoints: 17 files) contains a tar/zip/7z/gz entry. Most likely it existed only in an ephemeral /kaggle/working session.",
+  "archive_checksum_verified": "NOT_APPLICABLE (archive file no longer exists)",
+  "archive_integrity_verified": "NOT_APPLICABLE (archive file no longer exists)",
+  "archive_contents_verified": "PASS (via per-file hashes of the 5 checkpoints it held)"
+ },
+ "per_file_backups": {
+  "kaggle_datasets": {
+   "utkarsh6624/jarvis-phase5-secure-checkpoint-backup": {"isPrivate": true, "holds": "checkpoint-1200..1596 (per-file)"},
+   "utkarsh6624/qwen3-8b-jarvis-full-v3-checkpoints": {"isPrivate": true, "holds": "checkpoint-800..1200 (per-file)"}
+  },
+  "private_dataset_confirmed": "PASS",
+  "checkpoint_contents_verified": "PASS",
+  "evidence": "Local copies in E:/Nexo/Jarvis/checkpoint-* were downloaded from these datasets (PHASE_C_RECOVERY_REPORT.md) and rehashed 2026-10-11: 28/28 files match checkpoint_meta.json and CHECKPOINT_SHA256SUMS.txt (phase6_checkpoint_integrity.json). The Phase 6 Kaggle run1 adapter gate matched checkpoint-800 adapter sha256 41ee6d98... against the Kaggle copy (logs/run1_stream_latest.txt)."
+ },
+ "independent_backup_confirmed": "PASS",
+ "independent_backup_note": "Two independent copies exist: local disk E:/Nexo/Jarvis and two private Kaggle datasets. This is per-file, not the referenced archive.",
+ "recovery_test_completed": "PASS",
+ "recovery_test_note": "Phase C downloaded every checkpoint from Kaggle to a different environment (Windows host) and hash-matched it. A model-load recovery test from those copies is NOT_TESTED (needs GPU, see Stage 5)."
+}

@@ -1,0 +1,151 @@
+........................................................................ [  1%]
+........................................................................ [  3%]
+........................................................................ [  5%]
+........................................................................ [  7%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 15%]
+........................................................................ [ 17%]
+....................................................................s... [ 19%]
+........................................................................ [ 21%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+........................................................................ [ 30%]
+........................................................................ [ 32%]
+........................................................................ [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+.....................................................x..x.x.........x... [ 59%]
+..xx.x..xxx...........xxxx.............................................. [ 61%]
+........................................................................ [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 67%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 80%]
+........................................................................ [ 82%]
+........................................................................ [ 84%]
+........................................................................ [ 86%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 91%]
+........................................................................ [ 93%]
+........................................................................ [ 95%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+.............                                                            [100%]
+============================== warnings summary ===============================
+tests/test_account.py: 13 warnings
+tests/test_activity_audit_trail.py: 10 warnings
+tests/test_analytics_daily_metrics.py: 3 warnings
+tests/test_analytics_edge_cases.py: 27 warnings
+tests/test_analytics_export_api.py: 27 warnings
+tests/test_analytics_learning_api.py: 25 warnings
+tests/test_analytics_overview_api.py: 23 warnings
+tests/test_analytics_pagination.py: 6 warnings
+tests/test_analytics_privacy.py: 17 warnings
+tests/test_analytics_projects_api.py: 23 warnings
+tests/test_analytics_scores_api.py: 30 warnings
+tests/test_auth.py: 7 warnings
+tests/test_auth_phase2.py: 23 warnings
+tests/test_career_api.py: 34 warnings
+tests/test_developer_api.py: 46 warnings
+tests/test_knowledge_api.py: 32 warnings
+tests/test_learning_api.py: 52 warnings
+tests/test_learning_career_routers.py: 94 warnings
+tests/test_ml_actions_api.py: 52 warnings
+tests/test_observability.py: 16 warnings
+tests/test_planner_api.py: 17 warnings
+tests/test_rbac.py: 9 warnings
+tests/test_regressions_routes.py: 14 warnings
+tests/test_regressions_security.py: 11 warnings
+tests/test_regressions_users.py: 5 warnings
+tests/test_risk_api.py: 61 warnings
+tests/test_search_api.py: 34 warnings
+tests/test_sessions.py: 17 warnings
+tests/test_task_project_api.py: 19 warnings
+tests/test_user_journeys.py: 12 warnings
+  E:\Nexo\.venv\Lib\site-packages\jwt\api_jwt.py:149: InsecureKeyLengthWarning: The HMAC key is 22 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    return self._jws.encode(
+
+tests/test_account.py: 10 warnings
+tests/test_activity_audit_trail.py: 12 warnings
+tests/test_analytics_daily_metrics.py: 3 warnings
+tests/test_analytics_edge_cases.py: 27 warnings
+tests/test_analytics_export_api.py: 26 warnings
+tests/test_analytics_learning_api.py: 25 warnings
+tests/test_analytics_overview_api.py: 23 warnings
+tests/test_analytics_pagination.py: 6 warnings
+tests/test_analytics_privacy.py: 17 warnings
+tests/test_analytics_projects_api.py: 23 warnings
+tests/test_analytics_scores_api.py: 30 warnings
+tests/test_auth.py: 6 warnings
+tests/test_auth_phase2.py: 19 warnings
+tests/test_career_api.py: 34 warnings
+tests/test_developer_api.py: 46 warnings
+tests/test_knowledge_api.py: 32 warnings
+tests/test_learning_api.py: 52 warnings
+tests/test_learning_career_routers.py: 94 warnings
+tests/test_ml_actions_api.py: 52 warnings
+tests/test_observability.py: 12 warnings
+tests/test_planner_api.py: 17 warnings
+tests/test_rbac.py: 9 warnings
+tests/test_regressions_routes.py: 14 warnings
+tests/test_regressions_security.py: 11 warnings
+tests/test_regressions_users.py: 5 warnings
+tests/test_risk_api.py: 61 warnings
+tests/test_search_api.py: 33 warnings
+tests/test_sessions.py: 16 warnings
+tests/test_task_project_api.py: 18 warnings
+tests/test_user_journeys.py: 12 warnings
+  E:\Nexo\.venv\Lib\site-packages\jwt\api_jwt.py:370: InsecureKeyLengthWarning: The HMAC key is 22 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+    decoded = self.decode_complete(
+
+tests/test_analytics_daily_metrics.py: 1 warning
+tests/test_analytics_edge_cases.py: 2 warnings
+tests/test_analytics_export_api.py: 2 warnings
+tests/test_analytics_scores_api.py: 10 warnings
+tests/test_observability.py: 1 warning
+  E:\Nexo\.venv\Lib\site-packages\fastapi\dependencies\utils.py:674: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    solved = await call(**solved_result.values)
+
+tests/test_health.py::test_app_lifespan_runs_without_error
+  E:\Nexo\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_developer_git.py:1306: this platform will not create a directory symlink: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\utkar\\AppData\\Local\\Temp\\pytest-of-utkar\\pytest-534\\test_a_registered_path_that_be0\\elsewhere' -> 'C:\\Users\\utkar\\AppData\\Local\\Temp\\pytest-of-utkar\\pytest-534\\test_a_registered_path_that_be0\\allowed\\demo'
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[project_manage-4] - measured generalization miss: classified account_admin at 0.9512, not project_manage
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[schedule_plan-3] - measured generalization miss: classified analytics_insight at 0.6399, not schedule_plan
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[knowledge_capture-1] - measured generalization miss: classified schedule_plan at 0.4673, not knowledge_capture
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[analytics_insight-3] - measured generalization miss: classified risk_query at 0.9558, not analytics_insight
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[developer_intel-1] - measured generalization miss: classified analytics_insight at 0.9924, not developer_intel
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[developer_intel-2] - measured generalization miss: classified analytics_insight at 0.9586, not developer_intel
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[developer_intel-4] - measured generalization miss: classified knowledge_lookup at 0.8396, not developer_intel
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[learning_track-3] - measured generalization miss: classified risk_query at 0.8173, not learning_track
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[learning_track-4] - measured generalization miss: classified risk_query at 0.3684, not learning_track
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[career_track-1] - measured generalization miss: classified risk_query at 0.5610, not career_track
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[deep_reasoning-1] - measured generalization miss: classified risk_query at 0.3393, not deep_reasoning
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[deep_reasoning-2] - measured generalization miss: classified risk_query at 0.9004, not deep_reasoning
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[deep_reasoning-3] - measured generalization miss: classified risk_query at 0.8495, not deep_reasoning
+XFAIL tests/test_ml_integration_classification.py::TestGeneralizationToHandWrittenNaturalLanguage::test_natural_language_is_classified_as_its_intent[deep_reasoning-4] - measured generalization miss: classified project_manage at 0.4177, not deep_reasoning
+3742 passed, 1 skipped, 14 xfailed, 1521 warnings in 2958.40s (0:49:18)
+EXIT=0

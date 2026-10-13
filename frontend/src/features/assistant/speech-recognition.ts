@@ -36,7 +36,7 @@ import type { VoiceError } from './types'
 export const RECOGNITION_PRIVACY_NOTICE =
   'Your browser transcribes your voice on its own servers, so the audio leaves this device. ' +
   'Chrome and Edge send it to Google and Microsoft respectively; Firefox has no speech recognition at all. ' +
-  'NEXO uses the browser engine rather than a local model because NEXO runs no speech model of its own.'
+  'NEXUS uses the browser engine rather than a local model because NEXUS runs no speech model of its own.'
 
 /** Browser-supplied codes that mean something to the user. */
 type SurfacedErrorCode = Exclude<SpeechRecognitionErrorCode, 'aborted'>

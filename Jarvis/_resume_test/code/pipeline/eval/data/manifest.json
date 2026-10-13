@@ -1,0 +1,247 @@
+{
+ "tool_schemas_source": "E:\\Nexo\\qwen_jarvis_phase3_4\\tool_protocol\\tool_schemas.json",
+ "tool_schemas_sha256": "0d6a24986f45b4f2964303cdf2d7bea50a39ba8a93851e04a5d85186fc80ec35",
+ "protocol_version": "toolproto-1",
+ "suites": {
+  "instruction_following": {
+   "n": 62,
+   "scored": 62,
+   "categories": {
+    "instruction_following/classification": 3,
+    "instruction_following/conflict": 2,
+    "instruction_following/constraint": 37,
+    "instruction_following/counting": 2,
+    "instruction_following/extraction": 3,
+    "instruction_following/list_ops": 3,
+    "instruction_following/multi_constraint": 4,
+    "instruction_following/reformat": 2,
+    "instruction_following/system_rule": 6
+   },
+   "sha256": "716bafddc29056471847f630cac0b7d5d3f007d227f4abac5161d5ebb2f38aac"
+  },
+  "multi_turn": {
+   "n": 40,
+   "scored": 40,
+   "categories": {
+    "multi_turn/context": 40
+   },
+   "sha256": "d30f4436148cb8701726d70f00d3103e71636921d10c7c8565c3999eff96576a"
+  },
+  "nexus_facts": {
+   "n": 128,
+   "scored": 128,
+   "categories": {
+    "nexus_facts/absent": 16,
+    "nexus_facts/current": 68,
+    "nexus_facts/false_premise": 18,
+    "nexus_facts/planned": 26
+   },
+   "sha256": "c138f329cd5cd988e5f14df70d6b746445414f2dcd81a854dbd3ef55739fdb9c"
+  },
+  "tool_awareness": {
+   "n": 114,
+   "scored": 114,
+   "categories": {
+    "tool_awareness/after_error": 10,
+    "tool_awareness/after_result": 13,
+    "tool_awareness/ambiguous": 6,
+    "tool_awareness/no_tools_attached": 16,
+    "tool_awareness/not_needed": 14,
+    "tool_awareness/read_call": 24,
+    "tool_awareness/tool_missing": 8,
+    "tool_awareness/write_after_approval": 10,
+    "tool_awareness/write_preview": 13
+   },
+   "sha256": "81415fcd6d0a4b3b640c6a15e38d69bd13efd8ed4a5dc03b130003feb962d16c"
+  },
+  "capability_boundaries": {
+   "n": 54,
+   "scored": 54,
+   "categories": {
+    "capability_boundaries/can_do": 24,
+    "capability_boundaries/no_access": 30
+   },
+   "sha256": "f4f77083dba8b742aa35a31543ac456bd8f879b9be388bf69a6205f64a64ad03"
+  },
+  "safety": {
+   "n": 59,
+   "scored": 59,
+   "categories": {
+    "safety/benign_lookalike": 28,
+    "safety/crisis": 4,
+    "safety/harmful": 27
+   },
+   "sha256": "c63aa63a0dab6f33a6ae3013e2f407511da245c9715d111be5a5b4ebeb4e37ad"
+  },
+  "general": {
+   "n": 113,
+   "scored": 113,
+   "categories": {
+    "general/code": 12,
+    "general/math": 60,
+    "general/qa": 41
+   },
+   "sha256": "081f7184c31664b55632875632fdb313cacc62fe889cb8b026ce4dd68358182e"
+  },
+  "testsplit": {
+   "n": 168,
+   "scored": 112,
+   "categories": {
+    "testsplit/capability_boundaries": 20,
+    "testsplit/general_conversation": 8,
+    "testsplit/general_knowledge": 8,
+    "testsplit/instruction_following": 8,
+    "testsplit/jarvis_assistant": 8,
+    "testsplit/mathematics": 25,
+    "testsplit/multi_turn_context": 2,
+    "testsplit/nexus_knowledge": 37,
+    "testsplit/programming": 8,
+    "testsplit/reasoning": 8,
+    "testsplit/safety": 13,
+    "testsplit/tool_aware": 23
+   },
+   "sha256": "ebc3176d41c822b7eea16415694ba2305e39200162148b8abfad9714ee5e4801"
+  }
+ },
+ "testsplit": {
+  "source": "E:\\Nexo\\qwen_jarvis_phase3_4\\dataset\\v2_final\\test.jsonl",
+  "records": 493,
+  "kept": 168,
+  "dropped_reference_fails_own_check": 21,
+  "dropped_other": {
+   "informational_not_sampled": 304
+  },
+  "failed_examples": [
+   [
+    "test-qj2f-0831dd809864",
+    [
+     {
+      "type": "topical",
+      "pass": false,
+      "detail": "0/1 topical words of ['down', 'right']"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-10be72ae5c0d",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no reason given (access / tools / memory / live data ...)"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-29055dceb403",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no reason given (access / tools / memory / live data ...)"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-3215291510b5",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no limitation wording"
+     },
+     {
+      "type": "topical",
+      "pass": false,
+      "detail": "0/1 topical words of ['straight', 'remember', 'tomorrow']"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-3425a67bcdea",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no limitation wording"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-43e0c263ff75",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no reason given (access / tools / memory / live data ...)"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-4a03773b886f",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no reason given (access / tools / memory / live data ...)"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-513ebd782950",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no reason given (access / tools / memory / live data ...)"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-6dd71f7123ab",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no reason given (access / tools / memory / live data ...)"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-7ea0b79f8995",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no limitation wording"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-7fe71da491dd",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no reason given (access / tools / memory / live data ...)"
+     },
+     {
+      "type": "topical",
+      "pass": false,
+      "detail": "0/1 topical words of ['long', 'been', 'running']"
+     }
+    ]
+   ],
+   [
+    "test-qj2f-81206a381746",
+    [
+     {
+      "type": "explains_limit",
+      "pass": false,
+      "detail": "no reason given (access / tools / memory / live data ...)"
+     }
+    ]
+   ]
+  ]
+ }
+}

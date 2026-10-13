@@ -22,6 +22,7 @@ export const DeveloperRepositoryPage = lazy(() => import('@/pages/developer-repo
 export const LearningPage = lazy(() => import('@/pages/learning-page'))
 export const CareerPage = lazy(() => import('@/pages/career-page'))
 export const AssistantPage = lazy(() => import('@/pages/assistant-page'))
+export const JarvisPage = lazy(() => import('@/pages/jarvis-page'))
 export const ExperimentsPage = lazy(() => import('@/pages/experiments-page'))
 export const SettingsPage = lazy(() => import('@/pages/settings-page'))
 export const LoginPage = lazy(() => import('@/pages/login-page'))

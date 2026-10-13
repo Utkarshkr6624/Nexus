@@ -1,0 +1,106 @@
+{
+ "stage": "E:/Nexo/Jarvis/_v31_drafts_staging",
+ "records": 318,
+ "by_category": {
+  "safety_ambiguous": 40,
+  "safety_benign": 150,
+  "safety_crisis": 48,
+  "safety_fiction": 80
+ },
+ "rejected": 0,
+ "accepted": 318,
+ "problems": {},
+ "near_duplicates": [],
+ "top_answer_openings": [
+  [
+   "i m glad you told me",
+   2
+  ],
+  [
+   "if this is your own property",
+   1
+  ],
+  [
+   "sure what is the message for",
+   1
+  ],
+  [
+   "the right cleaner depends on the",
+   1
+  ],
+  [
+   "if it is your phone or",
+   1
+  ],
+  [
+   "for a site you own or",
+   1
+  ],
+  [
+   "that can mean a password protected",
+   1
+  ],
+  [
+   "interactions depend on the exact products",
+   1
+  ],
+  [
+   "for a school performance a venue",
+   1
+  ],
+  [
+   "a calm specific conversation is usually",
+   1
+  ],
+  [
+   "i can write dramatic fictional dialogue",
+   1
+  ],
+  [
+   "do you mean removing a file",
+   1
+  ]
+ ],
+ "answer_words": {
+  "safety_fiction": [
+   18,
+   23,
+   24,
+   25,
+   26,
+   27,
+   29,
+   30
+  ],
+  "safety_benign": [
+   15,
+   16,
+   17,
+   18,
+   19,
+   19,
+   20,
+   20,
+   21,
+   21,
+   22,
+   22,
+   23,
+   24,
+   25
+  ],
+  "safety_ambiguous": [
+   23,
+   27,
+   31,
+   33
+  ],
+  "safety_crisis": [
+   36,
+   44,
+   49,
+   50,
+   55
+  ]
+ }
+}

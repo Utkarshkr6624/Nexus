@@ -1,0 +1,248 @@
+## 4 x65 distinct_ctx=39
+     5 PU with QLoRA, because the local RTX 3050 laptop GPU (about 4 GB) cannot train an 8B model.
+     3 bout 15.6 GB of RAM and an RTX 3050 laptop GPU with roughly 4 GB.
+     3  slowly. A 4-bit 8B model is around 5 GB, which exceeds the 4 GB GPU, so it would need CPU offload and generate a few tok
+     3 ds roughly 10 to 14 GB of GPU memory even when quantised to 4 bits, while the local RTX 3050 laptop GPU reports about 4 G
+## 14 x50 distinct_ctx=32
+     8 S runs one model: microsoft/deberta-v3-base fine-tuned as a 14-class intent classifier. It is not a chat or generative mod
+     4 y is microsoft/deberta-v3-base, fine-tuned in Phase 10 as a 14-class intent classifier. It reads one sentence and predicts
+     3 Two of the 14 intents, code_assist and deep_reasoning, were designed for 
+     3 ning on Kaggle's free GPUs. An 8B model needs roughly 10 to 14 GB of GPU memory even when quantised to 4 bits, while the l
+## 20 x35 distinct_ctx=24
+     3 nt to the backend. The browser keeps a bounded log of up to 20 turns for display, with no persistence, and the only contin
+     3 ialogue memory: only the current utterance is sent, and the 20-turn history lives only in the browser.
+     2 nner defaults include a UTC timezone, a working day of 8 to 20, and session lengths between 15 and 240 minutes.
+     2 By default a user can have up to 20 active sessions, each with an absolute lifetime of 30 days.
+## 503 x24 distinct_ctx=17
+     3 if it is missing or ML is disabled, the ML endpoints answer 503 ml_unavailable and the rest of the app keeps working.
+     3 every non-ML route without it; the ML endpoints then answer 503 ml_unavailable. Settings such as ML_ENABLED, ML_MODEL_PATH 
+     2 t, a streamed chat endpoint and a status route that answers 503 when the model is unavailable. This keeps the existing pinn
+     2 checkpoint stops startup. With ML off, the endpoints answer 503 ml_unavailable.
+## 0.90 x23 distinct_ctx=18
+     3  CUDA if a working build exists, ML_CONFIDENCE_THRESHOLD is 0.90, ML_MAX_INPUT_CHARS is 2000, ML_REJECT_CREDENTIALS (true) r
+     2 s only accepted for routing when its confidence is at least 0.90 (the ML_CONFIDENCE_THRESHOLD setting). Below that the respo
+     2  into risk_query, and some wrong predictions were above the 0.90 confidence threshold, so the threshold guards routing but d
+     2 s 75% (42 of 56), and some wrong predictions were above the 0.90 confidence threshold.
+## 12 x21 distinct_ctx=17
+     3 chitecture.md, development.md, api-conventions.md and phase-12-voice.md, a specifications folder with phase 3 to 11 contra
+     2 itecture, development and API-conventions guides, the Phase 12 voice document and per-phase specifications and reports.
+     2 The requirements header, the Phase 12 voice document, offline/local-first tests and the README's 
+     1 nd and backend MlStatusRead schema, documented in the Phase 12 voice document. It was reported, not fixed.
+## 75 x21 distinct_ctx=14
+     5 curacy on a held-out synthetic test set, but only 42 of 56 (75%) on hand-written natural-language requests, so real-world 
+     2 nt classifier, at about 0.974 on its synthetic test set and 75% on hand-written natural language.
+     2 tten natural-language requests it got 42 of 56 right, about 75%. Several of the misses collapsed into risk_query, and some
+     2 enerated test data. On hand-written natural language it was 75% (42 of 56), and some wrong predictions were above the 0.90
+## 0.974 x18 distinct_ctx=13
+     3 It scored about 0.974 accuracy on a held-out synthetic test set, but only 42 of 5
+     2 rate on real wording than its headline number suggests. The 0.974 score came from template-generated data, while hand-written
+     2 y measured model is the DeBERTa intent classifier, at about 0.974 on its synthetic test set and 75% on hand-written natural l
+     2 On the held-out test split the classifier reached roughly 0.974 accuracy, but that data was template-generated. On a set of
+## 3 x18 distinct_ctx=13
+     3 gent specification and architecture, 2 dataset engineering, 3 tool manifest and simulation, 4 training pipeline preparati
+     2 Training tools are simulated representations. Phase 3 also fixes the wire format for tool calls, which this datas
+     2 d and phase-12-voice.md, a specifications folder with phase 3 to 11 contracts and reports, and QA notes. The voice docume
+     2 Phase 4, along with the exact tool-call format, which Phase 3 defines.
+## 5 x18 distinct_ctx=11
+     3 simulation, 4 training pipeline preparation with a dry run, 5 Qwen3-8B training, 6 evaluation against the base model, 7 r
+     2 A 4-bit quantised 8B model needs about 5 to 6 GB, more than the laptop GPU's roughly 4 GB, so part w
+     2  thousand examples across twelve categories, split about 90/5/5 into train, validation and test.
+     2 housand examples across twelve categories, split about 90/5/5 into train, validation and test.
+## 10 x18 distinct_ctx=12
+     4 XUS today is microsoft/deberta-v3-base, fine-tuned in Phase 10 as a 14-class intent classifier. It reads one sentence and 
+     3 ine-tuning on Kaggle's free GPUs. An 8B model needs roughly 10 to 14 GB of GPU memory even when quantised to 4 bits, while
+     2 Phase 10 followed dataset → validation → training → evaluation → mod
+     1 microsoft/deberta-v3-base, fine-tuned during Phase 10 as a 14-class intent classifier.
+## 30 x17 distinct_ctx=12
+     3 ive /api/v1 base URL, and the routing call sets an explicit 30-second timeout.
+     3 up to 20 active sessions, each with an absolute lifetime of 30 days.
+     2  and special characters. Password reset tokens expire after 30 minutes by default, and the DEV_EXPOSE_RESET_TOKEN option s
+     1 NS (default 20) and SESSION_ABSOLUTE_LIFETIME_DAYS (default 30) bound sessions. - Access and refresh tokens are JWTs, and 
+## 3050 x16 distinct_ctx=8
+     5 nned on a free Kaggle GPU with QLoRA, because the local RTX 3050 laptop GPU (about 4 GB) cannot train an 8B model.
+     3 U memory even when quantised to 4 bits, while the local RTX 3050 laptop GPU reports about 4 GB. The local machine is for dat
+     2 on Windows. The machine has about 15.6 GB of RAM and an RTX 3050 laptop GPU with roughly 4 GB.
+     2 A Windows 11 laptop with about 15.6 GB RAM, an RTX 3050 laptop GPU with roughly 4 GB, an Intel Iris Xe GPU and arou
+## 8 x15 distinct_ctx=11
+     3 gainst the base model, 7 runtime and NEXUS integration, and 8 the JARVIS and Command Center experience. Each phase has a 
+     2 The default policy requires at least 8 characters (PASSWORD_MIN_LENGTH) plus uppercase, lowercase,
+     2 ads PLANNER_DEFAULT_TIMEZONE (UTC), PLANNER_DAY_START_HOUR (8) and PLANNER_DAY_END_HOUR (20) as the fallback working wind
+     1 Implemented today: passwords need at least 8 characters, with an uppercase letter, a lowercase letter, a
+## 1 x14 distinct_ctx=11
+     3 The Qwen roadmap has eight phases: 1 agent specification and architecture, 2 dataset engineering
+     2 eading the repository; the suites were not run in the Phase 1 audit.
+     1 1. Say what it is: a 14-label sentence classifier, not a chat
+     1 ding the repository. - the suites were not run in the Phase 1 audit.
+## 42 x14 distinct_ctx=8
+     5 t 0.974 accuracy on a held-out synthetic test set, but only 42 of 56 (75%) on hand-written natural-language requests, so r
+     2 . On a set of hand-written natural-language requests it got 42 of 56 right, about 75%. Several of the misses collapsed int
+     2 ted test data. On hand-written natural language it was 75% (42 of 56), and some wrong predictions were above the 0.90 conf
+     1 template-generated data, while hand-written requests scored 42 of 56. It is a warning against trusting synthetic test sets
+## 56 x14 distinct_ctx=8
+     5 4 accuracy on a held-out synthetic test set, but only 42 of 56 (75%) on hand-written natural-language requests, so real-wo
+     2  set of hand-written natural-language requests it got 42 of 56 right, about 75%. Several of the misses collapsed into risk
+     2 st data. On hand-written natural language it was 75% (42 of 56), and some wrong predictions were above the 0.90 confidence
+     1 te-generated data, while hand-written requests scored 42 of 56. It is a warning against trusting synthetic test sets, and 
+## 11 x12 distinct_ctx=9
+     2  3.13, and the notes for this project give Node 24 with npm 11 on Windows. The machine has about 15.6 GB of RAM and an RTX
+     2 A Windows 11 laptop with about 15.6 GB RAM, an RTX 3050 laptop GPU with 
+     2  phase-12-voice.md, a specifications folder with phase 3 to 11 contracts and reports, and QA notes. The voice document, in
+     1  phase-12-voice.md, a specifications folder with phase 3 to 11 contracts and reports, and QA notes. - The voice document, 
+## 2 x12 distinct_ctx=9
+     3 p has eight phases: 1 agent specification and architecture, 2 dataset engineering, 3 tool manifest and simulation, 4 trai
+     2 Phase 2 builds the training data: general conversation, knowledge, 
+     1 at it is: a 14-label sentence classifier, not a chat model. 2. Give both numbers: about 0.974 on synthetic data, 75% on h
+     1 ur, NEXUS knowledge, tool use and boundary cases. The Phase 2 dataset is larger than that and will be mixed and tuned lat
+## 6 x10 distinct_ctx=6
+     3 g pipeline preparation with a dry run, 5 Qwen3-8B training, 6 evaluation against the base model, 7 runtime and NEXUS inte
+     2 A 4-bit quantised 8B model needs about 5 to 6 GB, more than the laptop GPU's roughly 4 GB, so part would 
+     2 Not comfortably. A 4-bit 8B model is around 5 to 6 GB, more than the 4 GB of GPU memory, so it would need CPU 
+     1 erminal and web tools, a chosen serving runtime and a Phase 6 pass report as prerequisites before integration starts.
+## 16 x10 distinct_ctx=6
+     3 F4 loading, LoRA adapters on the linear layers (rank around 16 to 64), a learning rate near 1e-4 to 2e-4, one to three epo
+     2 Yes with QLoRA, but with limits: a T4 has about 16 GB and no bf16, sessions are time-limited and weekly GPU ho
+     2  and small low-rank adapters are trained, which fits a free 16 GB Kaggle GPU.
+     1 mplemented: yes with QLoRA, but with limits: a T4 has about 16 GB and no bf16, sessions are time-limited and weekly GPU ho
+## 15.6 x9 distinct_ctx=6
+     2  give Node 24 with npm 11 on Windows. The machine has about 15.6 GB of RAM and an RTX 3050 laptop GPU with roughly 4 GB.
+     2 A Windows 11 laptop with about 15.6 GB RAM, an RTX 3050 laptop GPU with roughly 4 GB, an Intel 
+     2 aptop GPU's roughly 4 GB, so part would run on the CPU with 15.6 GB of RAM. Expect slow generation, which may be poor for vo
+     1 ive Node 24 with npm 11 on Windows. - The machine has about 15.6 GB of RAM and an RTX 3050 laptop GPU with roughly 4 GB.
+## two x9 distinct_ctx=7
+     3 Two of the 14 intents, code_assist and deep_reasoning, were des
+     1 Because it is a known gap, not an error. Two of the 14 intents, code_assist and deep_reasoning, were des
+     1 Because the audit found two that the code doesn't back up: Ollama integration and web i
+     1 fourteen intents map to an existing NEXUS service and these two have no destination, so the system answers generation_unava
+## eight x8 distinct_ctx=4
+     3 The Qwen roadmap has eight phases: 1 agent specification and architecture, 2 dataset e
+     3 Eight phases: specification, dataset, tool manifest and simulatio
+     1 Eight gated phases: spec, dataset, tool manifest, training prep, 
+     1 There is no date. The roadmap has eight phases, and integration is phase 7, after training and an e
+## 25 x8 distinct_ctx=7
+     2 ights completion 30, deadlines 25, consistency 20 and focus 25, and the four must sum to 100 or the app refuses to start.
+     1 The productivity score weights completion 30, deadlines 25, consistency 20 and focus 25, and the four must sum to 100 
+     1 ay: the productivity score weights completion 30, deadlines 25, consistency 20 and focus 25, and the four must sum to 100 
+     1 our ANALYTICS_PRODUCTIVITY_WEIGHT_* settings default to 30, 25, 20 and 25. - They are validated at startup, so changing th
+## twelve x7 distinct_ctx=5
+     2 ccount_admin, code_assist, deep_reasoning and out_of_scope. Twelve of them point at an existing NEXUS service; code_assist and
+     2 t-format JSONL dataset of over ten thousand examples across twelve categories, split about 90/5/5 into train, validation and t
+     1  and deep_reasoning. The classifier can recognise them, but twelve of the fourteen intents map to an existing NEXUS service an
+     1 Twelve categories: general conversation, knowledge, reasoning, pro
+## thousand x7 distinct_ctx=6
+     2 ontext and safety. Examples carry metadata, and more than a thousand are multi-turn.
+     1 text and safety. - Examples carry metadata, and more than a thousand are multi-turn.
+     1 d, not implemented: a chat-format JSONL dataset of over ten thousand examples across twelve categories, split about 90/5/5 into 
+     1 The training plan suggests roughly 4 to 8 thousand examples for a first run, with a mix of general replay data
+## 3.13 x6 distinct_ctx=5
+     2 The pinned requirements are built for Python 3.13, and the notes for this project give Node 24 with npm 11 on
+     1 Today: the backend targets CPython 3.13 and the frontend development environment uses Node 24.
+     1 The backend targets CPython 3.13 and the frontend development environment uses Node 24.
+     1 - The pinned requirements are built for Python 3.13, and the notes for this project give Node 24 with npm 11 on
+## 24 x6 distinct_ctx=4
+     2 hon 3.13 and the frontend development environment uses Node 24.
+     2 t for Python 3.13, and the notes for this project give Node 24 with npm 11 on Windows. The machine has about 15.6 GB of RA
+     1 t for Python 3.13, and the notes for this project give Node 24 with npm 11 on Windows. - The machine has about 15.6 GB of 
+     1 According to the audit: Windows 11, Python 3.13, Node 24, an RTX 3050 Laptop GPU reporting about 4 GB, an Intel Iris
+## 7 x6 distinct_ctx=4
+     3 , 5 Qwen3-8B training, 6 evaluation against the base model, 7 runtime and NEXUS integration, and 8 the JARVIS and Command
+     1 In the Qwen roadmap, runtime and NEXUS integration (phase 7) adds the chat endpoint and the model, and the JARVIS exper
+     1 n 5. Qwen3-8B training 6. Evaluation against the base model 7. Runtime and NEXUS integration 8. The JARVIS and Command Ce
+     1 ate. The roadmap has eight phases, and integration is phase 7, after training and an evaluation gate. Right now only the 
+## 15 x6 distinct_ctx=4
+     2 zone, a working day of 8 to 20, and session lengths between 15 and 240 minutes.
+     2  users with no availability rules, session length bounds of 15 and 240 minutes, up to 3 suggestions per task and a 30-day 
+     1 Recognition stops after 15 seconds and reports a timeout, and an utterance that trims 
+     1 Implemented today: recognition stops after 15 seconds and reports a timeout, and an utterance that trims 
+## hundred x6 distinct_ctx=4
+     2 The backend has pytest tests (around a hundred files) and the frontend has Vitest suites (around fifty fil
+     2 The backend is covered by roughly a hundred pytest files and the frontend by roughly fifty Vitest files
+     1 As things stand now, the backend uses pytest with roughly a hundred test files, and the frontend uses Vitest and React Testing 
+     1 The backend uses pytest with roughly a hundred test files, and the frontend uses Vitest and React Testing 
+## fifty x6 distinct_ctx=3
+     2 a hundred files) and the frontend has Vitest suites (around fifty files).
+     2 frontend uses Vitest and React Testing Library with roughly fifty.
+     2  roughly a hundred pytest files and the frontend by roughly fifty Vitest files with React Testing Library. A note of caution:
+## six x6 distinct_ctx=3
+     3 Six states: unsupported, idle, listening, processing, speaking 
+     2 The README states six: keep personal data local, use AI where it adds value and k
+     1 Implemented today: six states: unsupported, idle, listening, processing, speaking 
+## 600 x5 distinct_ctx=4
+     2 ory and keyed by route and client address. The defaults are 600 requests per window of 60 seconds, and 120 for the credenti
+     1 y and keyed by route and client address. - The defaults are 600 requests per window of 60 seconds, and 120 for the credenti
+     1 ent codebase, nEXUS has in-memory rate limiting: by default 600 requests per route per address per 60 seconds, and a strict
+     1 NEXUS has in-memory rate limiting: by default 600 requests per route per address per 60 seconds, and a strict
+## 60 x5 distinct_ctx=3
+     2 client address. The defaults are 600 requests per window of 60 seconds, and 120 for the credential routes (/auth/login and
+     2 limiting: by default 600 requests per route per address per 60 seconds, and a stricter 120 for login and password-reset re
+     1 ient address. - The defaults are 600 requests per window of 60 seconds, and 120 for the credential routes (/auth/login and
+## 120 x5 distinct_ctx=2
+     3 The defaults are 600 requests per window of 60 seconds, and 120 for the credential routes (/auth/login and /auth/password/f
+     2 quests per route per address per 60 seconds, and a stricter 120 for login and password-reset requests.
+## 400 x5 distinct_ctx=4
+     2 The setting exists (default 400 days) but is declared, not enforced: no pruning job exists,
+     1 Implemented today: the setting exists (default 400 days) but is declared, not enforced: no pruning job exists,
+     1 AUDIT_LOG_RETENTION_DAYS defaults to 400, but the README itself notes it is declared and not enforce
+     1 - AUDIT_LOG_RETENTION_DAYS defaults to 400, but the README itself notes it is declared and not enforce
+## 240 x4 distinct_ctx=2
+     2  working day of 8 to 20, and session lengths between 15 and 240 minutes.
+     2 with no availability rules, session length bounds of 15 and 240 minutes, up to 3 suggestions per task and a 30-day lookahea
+## four x4 distinct_ctx=3
+     2 tion 30, deadlines 25, consistency 20 and focus 25, and the four must sum to 100 or the app refuses to start.
+     1 - The four ANALYTICS_PRODUCTIVITY_WEIGHT_* settings default to 30, 25,
+     1 The four ANALYTICS_PRODUCTIVITY_WEIGHT_* settings default to 30, 25,
+## 100 x4 distinct_ctx=3
+     2 s 25, consistency 20 and focus 25, and the four must sum to 100 or the app refuses to start.
+     1 up, so changing them is allowed as long as they still total 100. - A fifth setting, ANALYTICS_COMPARISON_WINDOWS, is declar
+     1 up, so changing them is allowed as long as they still total 100. A fifth setting, ANALYTICS_COMPARISON_WINDOWS, is declared
+## 2.14.1 x3 distinct_ctx=1
+     3 ith the PyTorch CPU extra index, because torch is pinned to 2.14.1+cpu.
+## 2000 x3 distinct_ctx=1
+     3 sts, ML_CONFIDENCE_THRESHOLD is 0.90, ML_MAX_INPUT_CHARS is 2000, ML_REJECT_CREDENTIALS (true) refuses credential-shaped inp
+## ten x3 distinct_ctx=3
+     1 anned, not implemented: a chat-format JSONL dataset of over ten thousand examples across twelve categories, split about 90/
+     1 roadmap: building and validating a training dataset of over ten thousand chat-format examples. It doesn't train anything or
+     1 A chat-format JSONL dataset of over ten thousand examples across twelve categories, split about 90/
+## seven x3 distinct_ctx=2
+     2 There are seven ML settings: ML_ENABLED, ML_MODEL_PATH, ML_DEVICE, ML_CONFI
+     1 Implemented today: there are seven ML settings: ML_ENABLED, ML_MODEL_PATH, ML_DEVICE, ML_CONFI
+## 64 x3 distinct_ctx=1
+     3 ding, LoRA adapters on the linear layers (rank around 16 to 64), a learning rate near 1e-4 to 2e-4, one to three epochs, a
+## three x3 distinct_ctx=1
+     3 around 16 to 64), a learning rate near 1e-4 to 2e-4, one to three epochs, a maximum sequence length near 4096, and loss compu
+## 4096 x3 distinct_ctx=2
+     2 o 2e-4, one to three epochs, a maximum sequence length near 4096, and loss computed only on assistant turns. Exact values ge
+     1 o 2e-4, one to three epochs, a maximum sequence length near 4096, and loss computed only on assistant turns. - Exact values 
+## twenty x3 distinct_ctx=3
+     1 - The Phase 1 audit found about twenty untracked scripts such as generate_dataset.py and scripts/w
+     1 The Phase 1 audit found about twenty untracked scripts such as generate_dataset.py and scripts/w
+     1 That about twenty untracked scripts at the repository root and in scripts/ we
+## 15,000 x3 distinct_ctx=2
+     2 RECOGNITION_TIMEOUT_MS (15,000) aborts a session left open, which releases the microphone.
+     1 - RECOGNITION_TIMEOUT_MS (15,000) aborts a session left open, which releases the microphone.
+## 0. x3 distinct_ctx=1
+     3 e checks, and a tiny dry run on a small model such as Qwen3-0.6B, before any big GPU run.
+## 160 x2 distinct_ctx=1
+     2 ptop GPU with roughly 4 GB, an Intel Iris Xe GPU and around 160 GB of free disk space. Training an 8B model needs Kaggle; l
+## 422 x2 distinct_ctx=2
+     1 The assistant maps 422 to 'rephrase as one short instruction', transport failures 
+     1 - The assistant maps 422 to 'rephrase as one short instruction', transport failures 
+## 90 x2 distinct_ctx=1
+     2 ten thousand examples across twelve categories, split about 90/5/5 into train, validation and test.
+## 30,000 x2 distinct_ctx=2
+     1 - services/ml.ts uses ROUTING_TIMEOUT_MS (30,000) rather than the client default and never retries, because 
+     1 services/ml.ts uses ROUTING_TIMEOUT_MS (30,000) rather than the client default and never retries, because 
+## fourteen x2 distinct_ctx=2
+     1 oning. The classifier can recognise them, but twelve of the fourteen intents map to an existing NEXUS service and these two have
+     1 Fourteen, in a taxonomy called nexo_intents.v1: task_manage, project
+## 401 x2 distinct_ctx=1
+     2 he missing classifier and says everything else still works; 401 and 403 show distinct messages about authentication and per
+## 403 x2 distinct_ctx=1
+     2 ng classifier and says everything else still works; 401 and 403 show distinct messages about authentication and permission.
+## 2.0 x1 distinct_ctx=1
+     1 The training plan notes the Qwen3 release is Apache-2.0 according to its announcement, but it says to re-verify the
+## 103 x1 distinct_ctx=1
+     1 The audit counted about 103 backend test files (pytest) and about 52 frontend test file
+## 52 x1 distinct_ctx=1
+     1 dit counted about 103 backend test files (pytest) and about 52 frontend test files (Vitest with React Testing Library). Th
+## 97 x1 distinct_ctx=1
+     1 s, especially because template-generated data once produced 97% in-distribution and 75% on real phrasing in the DeBERTa pr

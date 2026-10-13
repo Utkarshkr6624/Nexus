@@ -80,6 +80,7 @@ USER_PERMISSIONS = [
     "analytics.read",
     "calendar.read",
     "calendar.write",
+    "jarvis.use",
     "knowledge.read",
     "knowledge.write",
     "projects.read",

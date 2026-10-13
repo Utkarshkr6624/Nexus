@@ -1,0 +1,132 @@
+{
+ "hard_failures": [],
+ "checks": {
+  "total_examples": 11332,
+  "split_counts": {
+   "train": 10296,
+   "validation": 518,
+   "test": 518
+  },
+  "messages_only_files_consistent": true,
+  "unique_ids": true,
+  "content_check_failures": {},
+  "exact_duplicate_conversations": 0,
+  "duplicate_prompts": 0,
+  "leakage": {
+   "train_vs_validation_identical_prompts": 0,
+   "train_vs_validation_identical_long_answers": 0,
+   "train_vs_test_identical_prompts": 0,
+   "train_vs_test_identical_long_answers": 0,
+   "validation_vs_test_identical_prompts": 0,
+   "validation_vs_test_identical_long_answers": 0,
+   "validation_near_duplicate_prompts_vs_train": 0,
+   "test_near_duplicate_prompts_vs_train": 0
+  },
+  "category_counts": {
+   "general_conversation": 1090,
+   "general_knowledge": 1173,
+   "reasoning": 1500,
+   "programming": 1500,
+   "mathematics": 750,
+   "instruction_following": 750,
+   "jarvis_assistant": 1000,
+   "nexus_knowledge": 944,
+   "tool_aware": 975,
+   "capability_boundaries": 650,
+   "multi_turn_context": 500,
+   "safety": 500
+  },
+  "category_pct_of_target": {
+   "general_conversation": 109,
+   "general_knowledge": 117,
+   "reasoning": 100,
+   "programming": 100,
+   "mathematics": 100,
+   "instruction_following": 100,
+   "jarvis_assistant": 100,
+   "nexus_knowledge": 126,
+   "tool_aware": 130,
+   "capability_boundaries": 130,
+   "multi_turn_context": 100,
+   "safety": 100
+  },
+  "multi_turn_examples": 1465,
+  "multi_turn_ge_1000": true,
+  "total_ge_10000": true,
+  "category_minimums_met": {
+   "general_conversation": true,
+   "general_knowledge": true,
+   "reasoning": true,
+   "programming": true,
+   "mathematics": true,
+   "instruction_following": true,
+   "jarvis_assistant": true,
+   "nexus_knowledge": true,
+   "tool_aware": true,
+   "capability_boundaries": true,
+   "multi_turn_context": true,
+   "safety": true
+  },
+  "with_system_message": 6328,
+  "largest_category_share_pct": 13.2,
+  "words_per_example": {
+   "mean": 75.0,
+   "max": 366,
+   "p95": 153
+  },
+  "approx_tokens_total": 1146837,
+  "source_types": {
+   "computed": 3393,
+   "authored": 4029,
+   "composed": 2866,
+   "verified": 1044
+  },
+  "code_blocks": {
+   "python": [
+    440,
+    0
+   ],
+   "json": [
+    106,
+    0
+   ],
+   "javascript": [
+    55,
+    0
+   ],
+   "sql_syntax": [
+    52,
+    0
+   ],
+   "c_cpp_java_full_programs_compiled": [
+    23,
+    0
+   ],
+   "bad_examples": []
+  },
+  "tool_result_answers": {
+   "count": 130,
+   "grounded_in_result": 130,
+   "ungrounded_ids": []
+  },
+  "tool_context": {
+   "no_tools_examples": 1445,
+   "tools_attached_examples": 679,
+   "proposals_when_no_tools": 0
+  },
+  "math_recomputation": {
+   "checked": 107,
+   "agree": 107,
+   "disagree": 0,
+   "not_checked": 643,
+   "disagreements": []
+  },
+  "reasoning_recomputation": {
+   "checked": 46,
+   "agree": 46,
+   "disagree": 0,
+   "not_checked": 1454,
+   "disagreements": []
+  }
+ }
+}

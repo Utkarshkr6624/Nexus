@@ -1,0 +1,299 @@
+{
+ "records": 497,
+ "samples": 576,
+ "max_len": 1024,
+ "per_sample_tokens": {
+  "n": 576,
+  "total": 83292,
+  "mean": 144.6,
+  "median": 116.5,
+  "p95": 346,
+  "p99": 498,
+  "max": 679,
+  "min": 24
+ },
+ "label_tokens": {
+  "total": 36056,
+  "ratio_of_all_tokens": 0.4329
+ },
+ "samples_fit_pct": {
+  "512": 99.31,
+  "1024": 100.0,
+  "1536": 100.0,
+  "2048": 100.0,
+  "3072": 100.0,
+  "4096": 100.0
+ },
+ "histogram_per_sample": [
+  {
+   "bin": "1-64",
+   "count": 69
+  },
+  {
+   "bin": "65-128",
+   "count": 264
+  },
+  {
+   "bin": "129-192",
+   "count": 117
+  },
+  {
+   "bin": "193-256",
+   "count": 66
+  },
+  {
+   "bin": "257-384",
+   "count": 39
+  },
+  {
+   "bin": "385-512",
+   "count": 17
+  },
+  {
+   "bin": "513-768",
+   "count": 4
+  },
+  {
+   "bin": "769-1024",
+   "count": 0
+  },
+  {
+   "bin": "1025-1536",
+   "count": 0
+  },
+  {
+   "bin": "1537-2048",
+   "count": 0
+  },
+  {
+   "bin": "2049-3072",
+   "count": 0
+  },
+  {
+   "bin": "3073-4096",
+   "count": 0
+  },
+  {
+   "bin": ">4096",
+   "count": 0
+  }
+ ],
+ "multi_turn_records": 43,
+ "tool_records": 25,
+ "records_with_system_message": 274,
+ "load_report": {
+  "path": "dataset\\v2_final\\validation.jsonl",
+  "mode": "strict",
+  "train_on": "per_turn",
+  "max_len": 1024,
+  "records": 497,
+  "invalid": 0,
+  "invalid_examples": [],
+  "samples": 576,
+  "records_with_dropped_turns": 0,
+  "dropped_turns": 0,
+  "records_truncated": 0,
+  "records_skipped": 0,
+  "truncated_pct": 0.0
+ },
+ "per_category_tokens": {
+  "capability_boundaries": {
+   "n": 29,
+   "total": 2455,
+   "mean": 84.7,
+   "median": 84,
+   "p95": 111,
+   "p99": 113,
+   "max": 113,
+   "min": 59
+  },
+  "general_conversation": {
+   "n": 64,
+   "total": 6342,
+   "mean": 99.1,
+   "median": 84.5,
+   "p95": 208,
+   "p99": 272,
+   "max": 272,
+   "min": 36
+  },
+  "general_knowledge": {
+   "n": 25,
+   "total": 1610,
+   "mean": 64.4,
+   "median": 63,
+   "p95": 94,
+   "p99": 95,
+   "max": 95,
+   "min": 37
+  },
+  "instruction_following": {
+   "n": 41,
+   "total": 3126,
+   "mean": 76.2,
+   "median": 69,
+   "p95": 125,
+   "p99": 255,
+   "max": 255,
+   "min": 32
+  },
+  "jarvis_assistant": {
+   "n": 56,
+   "total": 12632,
+   "mean": 225.6,
+   "median": 226.0,
+   "p95": 383,
+   "p99": 509,
+   "max": 509,
+   "min": 50
+  },
+  "mathematics": {
+   "n": 33,
+   "total": 4306,
+   "mean": 130.5,
+   "median": 134,
+   "p95": 161,
+   "p99": 165,
+   "max": 165,
+   "min": 83
+  },
+  "multi_turn_context": {
+   "n": 75,
+   "total": 9663,
+   "mean": 128.8,
+   "median": 124,
+   "p95": 275,
+   "p99": 391,
+   "max": 391,
+   "min": 24
+  },
+  "nexus_knowledge": {
+   "n": 38,
+   "total": 3284,
+   "mean": 86.4,
+   "median": 85.0,
+   "p95": 147,
+   "p99": 150,
+   "max": 150,
+   "min": 46
+  },
+  "programming": {
+   "n": 74,
+   "total": 11500,
+   "mean": 155.4,
+   "median": 148.0,
+   "p95": 250,
+   "p99": 386,
+   "max": 386,
+   "min": 73
+  },
+  "reasoning": {
+   "n": 75,
+   "total": 14173,
+   "mean": 189.0,
+   "median": 196,
+   "p95": 327,
+   "p99": 439,
+   "max": 439,
+   "min": 65
+  },
+  "safety": {
+   "n": 26,
+   "total": 2670,
+   "mean": 102.7,
+   "median": 95.5,
+   "p95": 140,
+   "p99": 162,
+   "max": 162,
+   "min": 62
+  },
+  "tool_aware": {
+   "n": 40,
+   "total": 11531,
+   "mean": 288.3,
+   "median": 318.5,
+   "p95": 644,
+   "p99": 679,
+   "max": 679,
+   "min": 95
+  }
+ },
+ "per_conversation_tokens": {
+  "n": 492,
+  "total": 71568,
+  "mean": 145.5,
+  "median": 117.0,
+  "p95": 346,
+  "p99": 509,
+  "max": 679,
+  "min": 32
+ },
+ "conversations_fit_pct": {
+  "512": 99.19,
+  "1024": 100.0,
+  "1536": 100.0,
+  "2048": 100.0,
+  "3072": 100.0,
+  "4096": 100.0
+ },
+ "histogram_per_conversation": [
+  {
+   "bin": "1-64",
+   "count": 55
+  },
+  {
+   "bin": "65-128",
+   "count": 230
+  },
+  {
+   "bin": "129-192",
+   "count": 100
+  },
+  {
+   "bin": "193-256",
+   "count": 54
+  },
+  {
+   "bin": "257-384",
+   "count": 35
+  },
+  {
+   "bin": "385-512",
+   "count": 14
+  },
+  {
+   "bin": "513-768",
+   "count": 4
+  },
+  {
+   "bin": "769-1024",
+   "count": 0
+  },
+  {
+   "bin": "1025-1536",
+   "count": 0
+  },
+  {
+   "bin": "1537-2048",
+   "count": 0
+  },
+  {
+   "bin": "2049-3072",
+   "count": 0
+  },
+  {
+   "bin": "3073-4096",
+   "count": 0
+  },
+  {
+   "bin": ">4096",
+   "count": 0
+  }
+ ],
+ "truncation_pct_at_max_len": 0.0,
+ "source": {
+  "path": "dataset\\v2_final\\validation.jsonl",
+  "mode": "strict",
+  "train_on": "per_turn"
+ }
+}

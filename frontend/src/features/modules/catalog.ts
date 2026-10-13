@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Bot,
   BrainCircuit,
   Briefcase,
   CalendarDays,
@@ -486,9 +487,9 @@ export const MODULES: ModuleDefinition[] = [
     to: '/assistant',
     label: 'AI Assistant',
     summary:
-      'A voice and typed interface over NEXO’s single intent classifier: it decides which part of NEXUS you meant and names the call.',
+      'A voice and typed interface over NEXUS’s microsoft/deberta-v3-base intent classifier: it decides which part of NEXUS you meant and names the call.',
     vision:
-      'NEXO runs one model — microsoft/deberta-v3-base, a fourteen-class intent classifier trained in Phase 10 — and this surface is the voice interface for it. It hears one utterance, returns one intent with a confidence and the validated NEXUS service behind it, and the interface says exactly that. It routes rather than answers, because there is no generative model behind it: code assistance and deep reasoning both come back as needing generation, and NEXO reports that rather than improvising. Recognition comes from the browser’s own Web Speech API, which adds no model NEXO does not already run, and each request is classified alone — a single-utterance classifier has no use for a history and no business being sent one.',
+      'The AI Assistant runs one model — microsoft/deberta-v3-base, a fourteen-class intent classifier trained in Phase 10 — and this surface is the voice interface for it. It hears one utterance, returns one intent with a confidence and the validated NEXUS service behind it, and the interface says exactly that. It routes rather than answers, because there is no generative model behind it: code assistance and deep reasoning both come back as needing generation, and NEXO reports that rather than improvising. Recognition comes from the browser’s own Web Speech API, which adds no model NEXO does not already run, and each request is classified alone — a single-utterance classifier has no use for a history and no business being sent one.',
     phase: 12,
     icon: Sparkles,
     keywords: ['ai', 'assistant', 'ask', 'copilot', 'llm'],
@@ -506,13 +507,46 @@ export const MODULES: ModuleDefinition[] = [
       {
         title: 'Gaps reported as gaps',
         description:
-          'Out-of-scope requests and the two generation-only intents are reported as what they are. NEXO runs no generative model and does not pretend to.',
+          'Out-of-scope requests and the two generation-only intents are reported as what they are. The AI Assistant runs no generative model and does not pretend to; generated answers come from NEXO, a separate model.',
       },
     ],
     metrics: [
       { label: 'Turns in this session', hint: 'Kept in your browser, never sent as history' },
       { label: 'Intents', hint: 'Fourteen classes, from Phase 10 training' },
       { label: 'Routing threshold', hint: 'Below it the classifier abstains' },
+    ],
+  },
+  {
+    to: '/nexo',
+    label: 'NEXO',
+    summary:
+      'A generative assistant (Qwen3-8B with the checkpoint_v31_139 adapter) that can call NEXUS tools, with every side effect held for your approval.',
+    vision:
+      'NEXO is a separate model from the AI Assistant’s intent classifier and runs in its own process. It is a development candidate: its Phase 6 acceptance verdict is FAIL, so it only answers behind runtime guards — strict tool-call validation, approval before any write, an honesty check on claimed actions and a crisis-response check on every reply. When no model server is reachable the page says so instead of answering.',
+    phase: 7,
+    icon: Bot,
+    keywords: ['nexo', 'jarvis', 'qwen', 'chat', 'llm', 'agent', 'tools'],
+    capabilities: [
+      {
+        title: 'Tool use with approval',
+        description:
+          'Reads run directly; writes, deletes, shell commands and outbound requests wait for Approve.',
+      },
+      {
+        title: 'Honest status',
+        description:
+          'The model connection and every tool’s availability are read from the server, blockers included.',
+      },
+      {
+        title: 'Guarded output',
+        description:
+          'Crisis replies with unverified numbers or links are replaced before you see them.',
+      },
+    ],
+    metrics: [
+      { label: 'Tools', hint: 'Twenty-one trained tools, some blocked' },
+      { label: 'Model', hint: 'Served separately; may be offline' },
+      { label: 'Qualification', hint: 'Development candidate only' },
     ],
   },
   {
@@ -635,7 +669,7 @@ export const NAV_GROUPS: NavGroupDefinition[] = [
   {
     id: 'platform',
     label: 'Platform',
-    items: [getModule('/assistant'), getModule('/experiments')],
+    items: [getModule('/assistant'), getModule('/nexo'), getModule('/experiments')],
   },
 ]
 

@@ -91,6 +91,11 @@ class ErrorCode:
     #: and a client retrying once the operator has loaded a checkpoint is
     #: behaving correctly.
     ML_UNAVAILABLE = "ml_unavailable"
+    #: Phase 7. The separate Jarvis generation model is off, unconfigured,
+    #: unreachable or serving an adapter other than the configured one. Kept
+    #: apart from ``ml_unavailable`` because the DeBERTa classifier can be fine
+    #: while Jarvis is down, and the two must never be confused by a client.
+    JARVIS_UNAVAILABLE = "jarvis_unavailable"
 
 
 class NexusError(Exception):

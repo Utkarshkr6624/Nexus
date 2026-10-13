@@ -1,0 +1,516 @@
+{
+ "description": "Writes arg_overrides.json: hand annotations for the 44 Phase 2 'direct call' flows whose assistant turn only said \"I'll use `tool`\" and never stated the arguments.",
+ "entries": [
+  {
+   "match": {
+    "user": "Find the changelog for Libfoo 9.2.",
+    "tool": "web.search",
+    "result_prefix": "No results"
+   },
+   "arguments": {
+    "query": "Libfoo 9.2 changelog"
+   }
+  },
+  {
+   "match": {
+    "user": "Add 'Review pull request 42' to my tasks.",
+    "tool": "app.create_task",
+    "result_prefix": "ERROR 403"
+   },
+   "arguments": {
+    "title": "Review pull request 42"
+   }
+  },
+  {
+   "match": {
+    "user": "Show me the last errors from the app log.",
+    "tool": "shell.run",
+    "result_prefix": "PermissionError"
+   },
+   "arguments": {
+    "command": "tail -n 20 /var/log/app.log"
+   }
+  },
+  {
+   "match": {
+    "user": "Did the tests pass?",
+    "tool": "shell.run",
+    "result_prefix": "exit code 1"
+   },
+   "arguments": {
+    "command": "pytest -q"
+   }
+  },
+  {
+   "match": {
+    "user": "Run the full test suite.",
+    "tool": "shell.run",
+    "result_prefix": "ERROR: command timed out"
+   },
+   "arguments": {
+    "command": "pytest"
+   }
+  },
+  {
+   "match": {
+    "user": "Read config/settings.yaml and tell me the port.",
+    "tool": "fs.read_file",
+    "result_prefix": "ERROR: FileNotFoundError"
+   },
+   "arguments": {
+    "path": "config/settings.yaml"
+   }
+  },
+  {
+   "match": {
+    "user": "Add 'Book flights' to my tasks.",
+    "tool": "app.create_task",
+    "result_prefix": "ERROR 403"
+   },
+   "arguments": {
+    "title": "Book flights"
+   }
+  },
+  {
+   "match": {
+    "user": "Read app.log and tell me the first line.",
+    "tool": "fs.read_file",
+    "result_prefix": "ERROR: FileNotFoundError"
+   },
+   "arguments": {
+    "path": "app.log"
+   }
+  },
+  {
+   "match": {
+    "user": "Add 'call the bank' to my tasks.",
+    "tool": "app.create_task",
+    "result_prefix": "ERROR 403"
+   },
+   "arguments": {
+    "title": "call the bank"
+   }
+  },
+  {
+   "match": {
+    "user": "Save my notes to resume.docx.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: permission denied"
+   },
+   "arguments": {
+    "path": "resume.docx",
+    "content": "Experience: 5 years in logistics coordination.\nSkills: SQL, Excel, route planning.\nEducation: BSc Supply Chain Management.\n"
+   },
+   "new_user": "Save my notes to resume.docx:\n\nExperience: 5 years in logistics coordination.\nSkills: SQL, Excel, route planning.\nEducation: BSc Supply Chain Management."
+  },
+  {
+   "match": {
+    "user": "Save the report to reports/q3.md.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: disk quota"
+   },
+   "arguments": {
+    "path": "reports/q3.md",
+    "content": "# Q3 summary\n\nRevenue grew 8%. Churn stayed flat at 2.1%. Two launches slipped to Q4.\n"
+   },
+   "new_user": "Save the report to reports/q3.md:\n\n# Q3 summary\n\nRevenue grew 8%. Churn stayed flat at 2.1%. Two launches slipped to Q4."
+  },
+  {
+   "match": {
+    "user": "Push my latest commit.",
+    "tool": "shell.run",
+    "result_prefix": "ERROR: remote rejected"
+   },
+   "arguments": {
+    "command": "git push"
+   }
+  },
+  {
+   "match": {
+    "user": "Add 'Prepare slides' to my tasks.",
+    "tool": "app.create_task",
+    "result_prefix": "ERROR 403"
+   },
+   "arguments": {
+    "title": "Prepare slides"
+   }
+  },
+  {
+   "match": {
+    "user": "Show me orders from yesterday.",
+    "tool": "db.query",
+    "result_prefix": "rows: []"
+   },
+   "arguments": {
+    "sql": "SELECT * FROM orders WHERE date(created_at) = date('now', '-1 day')"
+   }
+  },
+  {
+   "match": {
+    "user": "Count the orders from this month.",
+    "tool": "db.query",
+    "result_prefix": "ERROR: relation"
+   },
+   "arguments": {
+    "sql": "SELECT COUNT(*) FROM orders WHERE created_at >= date('now', 'start of month')"
+   }
+  },
+  {
+   "match": {
+    "user": "Run the tests and tell me if they pass.",
+    "tool": "shell.run",
+    "result_prefix": "exit code 1"
+   },
+   "arguments": {
+    "command": "pytest -q"
+   }
+  },
+  {
+   "match": {
+    "user": "Run the tests and tell me if they pass.",
+    "tool": "shell.run",
+    "result_prefix": "ERROR: remote rejected"
+   },
+   "arguments": {
+    "command": "git push"
+   },
+   "new_user": "Push my latest commit."
+  },
+  {
+   "match": {
+    "user": "Fetch the status page for me.",
+    "tool": "http.request",
+    "result_prefix": "HTTP 503"
+   },
+   "arguments": {
+    "method": "GET",
+    "url": "https://status.example.com"
+   },
+   "new_user": "Fetch the status page at https://status.example.com for me."
+  },
+  {
+   "match": {
+    "user": "Search for electric cars.",
+    "tool": "web.search",
+    "result_prefix": "No results"
+   },
+   "arguments": {
+    "query": "electric cars"
+   }
+  },
+  {
+   "match": {
+    "user": "Save my notes to budget.xlsx.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: permission denied"
+   },
+   "arguments": {
+    "path": "budget.xlsx",
+    "content": "Rent 1200\nGroceries 350\nTransport 90\nSavings 400\n"
+   },
+   "new_user": "Save my notes to budget.xlsx:\n\nRent 1200\nGroceries 350\nTransport 90\nSavings 400"
+  },
+  {
+   "match": {
+    "user": "Save my notes to ideas.txt.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: permission denied"
+   },
+   "arguments": {
+    "path": "ideas.txt",
+    "content": "- podcast about local history\n- tiny herb garden on the balcony\n- weekend pottery class\n"
+   },
+   "new_user": "Save my notes to ideas.txt:\n\n- podcast about local history\n- tiny herb garden on the balcony\n- weekend pottery class"
+  },
+  {
+   "match": {
+    "user": "Save my notes to expenses.csv.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: permission denied"
+   },
+   "arguments": {
+    "path": "expenses.csv",
+    "content": "date,item,amount\n2025-03-02,train ticket,18.50\n2025-03-03,lunch,9.20\n"
+   },
+   "new_user": "Save my notes to expenses.csv:\n\ndate,item,amount\n2025-03-02,train ticket,18.50\n2025-03-03,lunch,9.20"
+  },
+  {
+   "match": {
+    "user": "Check if the service answers.",
+    "tool": "http.request",
+    "result_prefix": "HTTP 502"
+   },
+   "arguments": {
+    "method": "GET",
+    "url": "http://localhost:8080/health"
+   },
+   "new_user": "Check if the service at http://localhost:8080/health answers."
+  },
+  {
+   "match": {
+    "user": "Add 'Renew passport' to my tasks.",
+    "tool": "app.create_task",
+    "result_prefix": "ERROR 403"
+   },
+   "arguments": {
+    "title": "Renew passport"
+   }
+  },
+  {
+   "match": {
+    "user": "Save my notes to changelog.md.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: permission denied"
+   },
+   "arguments": {
+    "path": "changelog.md",
+    "content": "## 1.4.0\n- Faster startup\n- Fixed login redirect\n"
+   },
+   "new_user": "Save my notes to changelog.md:\n\n## 1.4.0\n- Faster startup\n- Fixed login redirect"
+  },
+  {
+   "match": {
+    "user": "Fetch that page for me.",
+    "tool": "web.fetch",
+    "result_prefix": "ERROR: timed out"
+   },
+   "arguments": {
+    "url": "https://example.org/docs"
+   },
+   "new_user": "Fetch https://example.org/docs for me."
+  },
+  {
+   "match": {
+    "user": "Book 'Back up the laptop' for tomorrow at 10.",
+    "tool": "app.create_event",
+    "result_prefix": "ERROR: conflict"
+   },
+   "arguments": {
+    "title": "Back up the laptop",
+    "start": "tomorrow at 10"
+   }
+  },
+  {
+   "match": {
+    "user": "Book a call at 10 tomorrow.",
+    "tool": "app.create_event",
+    "result_prefix": "ERROR: conflict"
+   },
+   "arguments": {
+    "title": "Call",
+    "start": "tomorrow at 10"
+   }
+  },
+  {
+   "match": {
+    "user": "What does Acme charge?",
+    "tool": "web.fetch",
+    "result_prefix": "Fetched 48 KB"
+   },
+   "arguments": {
+    "url": "https://acme.example.com/pricing"
+   },
+   "new_user": "What does Acme charge? Their pricing page is https://acme.example.com/pricing."
+  },
+  {
+   "match": {
+    "user": "Read build.log and tell me the first line.",
+    "tool": "fs.read_file",
+    "result_prefix": "ERROR: FileNotFoundError"
+   },
+   "arguments": {
+    "path": "build.log"
+   }
+  },
+  {
+   "match": {
+    "user": "Show me yesterday's orders.",
+    "tool": "db.query",
+    "result_prefix": "0 rows"
+   },
+   "arguments": {
+    "sql": "SELECT * FROM orders WHERE date(created_at) = date('now', '-1 day')"
+   }
+  },
+  {
+   "match": {
+    "user": "Book 'Prepare slides' for tomorrow at 10.",
+    "tool": "app.create_event",
+    "result_prefix": "ERROR: conflict"
+   },
+   "arguments": {
+    "title": "Prepare slides",
+    "start": "tomorrow at 10"
+   }
+  },
+  {
+   "match": {
+    "user": "Add 'Back up the laptop' to my tasks.",
+    "tool": "app.create_task",
+    "result_prefix": "ERROR 403"
+   },
+   "arguments": {
+    "title": "Back up the laptop"
+   }
+  },
+  {
+   "match": {
+    "user": "When was Python 3.13 released?",
+    "tool": "web.search",
+    "result_prefix": "Search results for"
+   },
+   "arguments": {
+    "query": "Python 3.13 release date"
+   }
+  },
+  {
+   "match": {
+    "user": "Book 'Pay the electricity bill' for tomorrow at 10.",
+    "tool": "app.create_event",
+    "result_prefix": "ERROR: conflict"
+   },
+   "arguments": {
+    "title": "Pay the electricity bill",
+    "start": "tomorrow at 10"
+   }
+  },
+  {
+   "match": {
+    "user": "Read thesis_outline.md and tell me the first line.",
+    "tool": "fs.read_file",
+    "result_prefix": "ERROR: FileNotFoundError"
+   },
+   "arguments": {
+    "path": "thesis_outline.md"
+   }
+  },
+  {
+   "match": {
+    "user": "Save my plan to todo.md.",
+    "tool": "fs.write_file",
+    "result_prefix": "OK: wrote 412 bytes"
+   },
+   "arguments": {
+    "path": "todo.md",
+    "content": "# Plan\n\n1. Outline chapter 2 (sources, structure, argument).\n2. Draft the introduction and the methods section.\n3. Email the supervisor with the revised timeline.\n4. Book the library room for Thursday afternoon.\n5. Collect the survey data and clean the missing values.\n6. Write a one-page summary of open questions.\n7. Review the reference list formatting.\n8. Back up the project folder.\n9. Reply to the committ\n"
+   },
+   "new_user": "Save my plan to todo.md:\n\n# Plan\n\n1. Outline chapter 2 (sources, structure, argument).\n2. Draft the introduction and the methods section.\n3. Email the supervisor with the revised timeline.\n4. Book the library room for Thursday afternoon.\n5. Collect the survey data and clean the missing values.\n6. Write a one-page summary of open questions.\n7. Review the reference list formatting.\n8. Back up the project folder.\n9. Reply to the committ"
+  },
+  {
+   "match": {
+    "user": "Search for the housing market.",
+    "tool": "web.search",
+    "result_prefix": "No results"
+   },
+   "arguments": {
+    "query": "housing market"
+   }
+  },
+  {
+   "match": {
+    "user": "Run this and give me the average.",
+    "tool": "code.run_python",
+    "result_prefix": "Traceback"
+   },
+   "arguments": {
+    "code": "values = []\ntotal = sum(values)\naverage = total / len(values)\nprint(average)"
+   },
+   "new_user": "Run this and give me the average:\n\n```python\nvalues = []\ntotal = sum(values)\naverage = total / len(values)\nprint(average)\n```"
+  },
+  {
+   "match": {
+    "user": "Save my notes to main.py.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: permission denied"
+   },
+   "arguments": {
+    "path": "main.py",
+    "content": "def main():\n    print(\"hello\")\n\n\nif __name__ == \"__main__\":\n    main()\n"
+   },
+   "new_user": "Save my notes to main.py:\n\ndef main():\n    print(\"hello\")\n\n\nif __name__ == \"__main__\":\n    main()"
+  },
+  {
+   "match": {
+    "user": "Hit my local API and tell me what the version is.",
+    "tool": "http.request",
+    "result_prefix": "ERROR: connection refused"
+   },
+   "arguments": {
+    "method": "GET",
+    "url": "http://localhost:8000/version"
+   },
+   "new_user": "Hit my local API at http://localhost:8000/version and tell me what the version is."
+  },
+  {
+   "match": {
+    "user": "Book 'Write the weekly update' for tomorrow at 10.",
+    "tool": "app.create_event",
+    "result_prefix": "ERROR: conflict"
+   },
+   "arguments": {
+    "title": "Write the weekly update",
+    "start": "tomorrow at 10"
+   }
+  },
+  {
+   "match": {
+    "user": "Save my notes to package.json.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: permission denied"
+   },
+   "arguments": {
+    "path": "package.json",
+    "content": "{\n  \"name\": \"demo\",\n  \"version\": \"1.0.0\"\n}\n"
+   },
+   "new_user": "Save my notes to package.json:\n\n{\n  \"name\": \"demo\",\n  \"version\": \"1.0.0\"\n}"
+  },
+  {
+   "match": {
+    "user": "Save my notes to shopping.txt.",
+    "tool": "fs.write_file",
+    "result_prefix": "ERROR: permission denied"
+   },
+   "arguments": {
+    "path": "shopping.txt",
+    "content": "milk\neggs\nspinach\nrice\n"
+   },
+   "new_user": "Save my notes to shopping.txt:\n\nmilk\neggs\nspinach\nrice"
+  },
+  {
+   "match": {
+    "user": "Check if the API is responding.",
+    "tool": "http.request",
+    "result_prefix": "ERROR: connection refused"
+   },
+   "arguments": {
+    "method": "GET",
+    "url": "http://localhost:8000/health"
+   },
+   "new_user": "Check if the API at http://localhost:8000/health is responding."
+  },
+  {
+   "match": {
+    "user": "Check if the API is responding.",
+    "tool": "http.request",
+    "result_prefix": "HTTP 503"
+   },
+   "arguments": {
+    "method": "GET",
+    "url": "http://localhost:8000/health"
+   },
+   "new_user": "Check if the API at http://localhost:8000/health is responding."
+  },
+  {
+   "match": {
+    "user": "Check if the API is responding.",
+    "tool": "http.request",
+    "result_prefix": "HTTP 200"
+   },
+   "arguments": {
+    "method": "GET",
+    "url": "http://localhost:8000/health"
+   },
+   "new_user": "Check if the API at http://localhost:8000/health is responding."
+  }
+ ]
+}

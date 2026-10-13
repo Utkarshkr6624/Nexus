@@ -1,0 +1,1637 @@
+[
+ {
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. Your name is NEXO."
+   },
+   {
+    "role": "user",
+    "content": "Hi! Who are you?"
+   }
+  ],
+  "tools": null,
+  "hf_prompt": "<|im_start|>system\nYou are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. Your name is NEXO.<|im_end|>\n<|im_start|>user\nHi! Who are you?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+ },
+ {
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. Your name is NEXO."
+   },
+   {
+    "role": "user",
+    "content": "What tasks do I have?"
+   }
+  ],
+  "tools": [
+   {
+    "type": "function",
+    "function": {
+     "name": "app_create_event",
+     "description": "Create a calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string",
+        "description": "Event title."
+       },
+       "start": {
+        "type": "string",
+        "description": "Start time, natural language or ISO 8601."
+       },
+       "minutes": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Duration in minutes."
+       }
+      },
+      "required": [
+       "title",
+       "start"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_create_task",
+     "description": "Create a task. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string",
+        "description": "Task title."
+       },
+       "due": {
+        "type": "string",
+        "description": "Due date, natural language or ISO 8601."
+       }
+      },
+      "required": [
+       "title"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_list_tasks",
+     "description": "List tasks, optionally filtered. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "filter": {
+        "type": "string",
+        "description": "Filter such as 'open', 'done' or 'overdue'."
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_read_calendar",
+     "description": "Read calendar entries for a time range. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "range": {
+        "type": "string",
+        "description": "Time range, for example 'tomorrow' or 'next Monday'."
+       }
+      },
+      "required": [
+       "range"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_send_message",
+     "description": "Send a message to a person or channel. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "recipient": {
+        "type": "string",
+        "description": "Person or channel."
+       },
+       "text": {
+        "type": "string",
+        "description": "Message text."
+       }
+      },
+      "required": [
+       "recipient",
+       "text"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_event",
+     "description": "Change an existing calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "event": {
+        "type": "string",
+        "description": "Event title or id."
+       },
+       "title": {
+        "type": "string",
+        "description": "New title."
+       },
+       "start": {
+        "type": "string",
+        "description": "New start time."
+       },
+       "minutes": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "New duration in minutes."
+       }
+      },
+      "required": [
+       "event"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_goal",
+     "description": "Update progress on a goal. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "goal": {
+        "type": "string",
+        "description": "Goal title or id."
+       },
+       "progress": {
+        "type": "string",
+        "description": "New progress value, for example '60%'."
+       }
+      },
+      "required": [
+       "goal",
+       "progress"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_task",
+     "description": "Change a task: rename it, move its due date, set its status, or delete it. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "task": {
+        "type": "string",
+        "description": "Task title or id."
+       },
+       "title": {
+        "type": "string",
+        "description": "New title."
+       },
+       "due": {
+        "type": "string",
+        "description": "New due date."
+       },
+       "status": {
+        "type": "string",
+        "enum": [
+         "open",
+         "done"
+        ],
+        "description": "New status."
+       },
+       "action": {
+        "type": "string",
+        "enum": [
+         "delete"
+        ],
+        "description": "Destructive action."
+       }
+      },
+      "required": [
+       "task"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "code_run_python",
+     "description": "Run a short Python snippet in a sandbox and return its output. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "code": {
+        "type": "string",
+        "description": "Python source code."
+       }
+      },
+      "required": [
+       "code"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_describe",
+     "description": "Describe the columns of a database table. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "table": {
+        "type": "string",
+        "description": "Table name."
+       }
+      },
+      "required": [
+       "table"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_execute",
+     "description": "Execute a data-changing SQL statement (INSERT, UPDATE, DELETE, DDL). Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "sql": {
+        "type": "string",
+        "description": "SQL statement."
+       }
+      },
+      "required": [
+       "sql"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_query",
+     "description": "Run a read-only SQL query. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "sql": {
+        "type": "string",
+        "description": "A SELECT statement."
+       }
+      },
+      "required": [
+       "sql"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_delete_file",
+     "description": "Delete a file, or files matching a description inside a path. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File or directory path."
+       },
+       "match": {
+        "type": "string",
+        "description": "Optional pattern or description of which files to delete."
+       }
+      },
+      "required": [
+       "path"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_move_file",
+     "description": "Move or rename a file. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "source": {
+        "type": "string",
+        "description": "Current path."
+       },
+       "destination": {
+        "type": "string",
+        "description": "New path."
+       }
+      },
+      "required": [
+       "source",
+       "destination"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_read_file",
+     "description": "Read a text file. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File path."
+       }
+      },
+      "required": [
+       "path"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_search",
+     "description": "Search for files by name or content. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "query": {
+        "type": "string",
+        "description": "File name pattern or text to find."
+       },
+       "path": {
+        "type": "string",
+        "description": "Directory to search in."
+       }
+      },
+      "required": [
+       "query"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_write_file",
+     "description": "Write text to a file, replacing existing content. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File path."
+       },
+       "content": {
+        "type": "string",
+        "description": "Full file content."
+       }
+      },
+      "required": [
+       "path",
+       "content"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "http_request",
+     "description": "Send an HTTP request. Requires confirmation unless the method is GET. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "method": {
+        "type": "string",
+        "enum": [
+         "GET",
+         "POST",
+         "PUT",
+         "PATCH",
+         "DELETE"
+        ],
+        "description": "HTTP method."
+       },
+       "url": {
+        "type": "string",
+        "description": "Request URL."
+       },
+       "body": {
+        "type": "string",
+        "description": "Optional request body."
+       }
+      },
+      "required": [
+       "method",
+       "url"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "shell_run",
+     "description": "Run a shell command and return its output and exit status. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "command": {
+        "type": "string",
+        "description": "Command line."
+       },
+       "cwd": {
+        "type": "string",
+        "description": "Working directory."
+       }
+      },
+      "required": [
+       "command"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "web_fetch",
+     "description": "Fetch a web page and return its text. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "url": {
+        "type": "string",
+        "description": "Page URL."
+       }
+      },
+      "required": [
+       "url"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "web_search",
+     "description": "Search the web and return result snippets. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "query": {
+        "type": "string",
+        "description": "Search query."
+       }
+      },
+      "required": [
+       "query"
+      ],
+      "additionalProperties": false
+     }
+    }
+   }
+  ],
+  "hf_prompt": "<|im_start|>system\nYou are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. Your name is NEXO.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"app_create_event\", \"description\": \"Create a calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"description\": \"Event title.\"}, \"start\": {\"type\": \"string\", \"description\": \"Start time, natural language or ISO 8601.\"}, \"minutes\": {\"type\": \"integer\", \"minimum\": 1, \"description\": \"Duration in minutes.\"}}, \"required\": [\"title\", \"start\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_create_task\", \"description\": \"Create a task. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"description\": \"Task title.\"}, \"due\": {\"type\": \"string\", \"description\": \"Due date, natural language or ISO 8601.\"}}, \"required\": [\"title\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_list_tasks\", \"description\": \"List tasks, optionally filtered. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"filter\": {\"type\": \"string\", \"description\": \"Filter such as 'open', 'done' or 'overdue'.\"}}, \"required\": [], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_read_calendar\", \"description\": \"Read calendar entries for a time range. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"range\": {\"type\": \"string\", \"description\": \"Time range, for example 'tomorrow' or 'next Monday'.\"}}, \"required\": [\"range\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_send_message\", \"description\": \"Send a message to a person or channel. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"recipient\": {\"type\": \"string\", \"description\": \"Person or channel.\"}, \"text\": {\"type\": \"string\", \"description\": \"Message text.\"}}, \"required\": [\"recipient\", \"text\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_event\", \"description\": \"Change an existing calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"event\": {\"type\": \"string\", \"description\": \"Event title or id.\"}, \"title\": {\"type\": \"string\", \"description\": \"New title.\"}, \"start\": {\"type\": \"string\", \"description\": \"New start time.\"}, \"minutes\": {\"type\": \"integer\", \"minimum\": 1, \"description\": \"New duration in minutes.\"}}, \"required\": [\"event\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_goal\", \"description\": \"Update progress on a goal. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"goal\": {\"type\": \"string\", \"description\": \"Goal title or id.\"}, \"progress\": {\"type\": \"string\", \"description\": \"New progress value, for example '60%'.\"}}, \"required\": [\"goal\", \"progress\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_task\", \"description\": \"Change a task: rename it, move its due date, set its status, or delete it. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"task\": {\"type\": \"string\", \"description\": \"Task title or id.\"}, \"title\": {\"type\": \"string\", \"description\": \"New title.\"}, \"due\": {\"type\": \"string\", \"description\": \"New due date.\"}, \"status\": {\"type\": \"string\", \"enum\": [\"open\", \"done\"], \"description\": \"New status.\"}, \"action\": {\"type\": \"string\", \"enum\": [\"delete\"], \"description\": \"Destructive action.\"}}, \"required\": [\"task\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"code_run_python\", \"description\": \"Run a short Python snippet in a sandbox and return its output. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"Python source code.\"}}, \"required\": [\"code\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_describe\", \"description\": \"Describe the columns of a database table. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"table\": {\"type\": \"string\", \"description\": \"Table name.\"}}, \"required\": [\"table\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_execute\", \"description\": \"Execute a data-changing SQL statement (INSERT, UPDATE, DELETE, DDL). Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"sql\": {\"type\": \"string\", \"description\": \"SQL statement.\"}}, \"required\": [\"sql\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_query\", \"description\": \"Run a read-only SQL query. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"sql\": {\"type\": \"string\", \"description\": \"A SELECT statement.\"}}, \"required\": [\"sql\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_delete_file\", \"description\": \"Delete a file, or files matching a description inside a path. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File or directory path.\"}, \"match\": {\"type\": \"string\", \"description\": \"Optional pattern or description of which files to delete.\"}}, \"required\": [\"path\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_move_file\", \"description\": \"Move or rename a file. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"source\": {\"type\": \"string\", \"description\": \"Current path.\"}, \"destination\": {\"type\": \"string\", \"description\": \"New path.\"}}, \"required\": [\"source\", \"destination\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_read_file\", \"description\": \"Read a text file. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File path.\"}}, \"required\": [\"path\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_search\", \"description\": \"Search for files by name or content. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\", \"description\": \"File name pattern or text to find.\"}, \"path\": {\"type\": \"string\", \"description\": \"Directory to search in.\"}}, \"required\": [\"query\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_write_file\", \"description\": \"Write text to a file, replacing existing content. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File path.\"}, \"content\": {\"type\": \"string\", \"description\": \"Full file content.\"}}, \"required\": [\"path\", \"content\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"http_request\", \"description\": \"Send an HTTP request. Requires confirmation unless the method is GET. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"method\": {\"type\": \"string\", \"enum\": [\"GET\", \"POST\", \"PUT\", \"PATCH\", \"DELETE\"], \"description\": \"HTTP method.\"}, \"url\": {\"type\": \"string\", \"description\": \"Request URL.\"}, \"body\": {\"type\": \"string\", \"description\": \"Optional request body.\"}}, \"required\": [\"method\", \"url\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"shell_run\", \"description\": \"Run a shell command and return its output and exit status. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"command\": {\"type\": \"string\", \"description\": \"Command line.\"}, \"cwd\": {\"type\": \"string\", \"description\": \"Working directory.\"}}, \"required\": [\"command\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"web_fetch\", \"description\": \"Fetch a web page and return its text. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"url\": {\"type\": \"string\", \"description\": \"Page URL.\"}}, \"required\": [\"url\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"web_search\", \"description\": \"Search the web and return result snippets. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\", \"description\": \"Search query.\"}}, \"required\": [\"query\"], \"additionalProperties\": false}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\nWhat tasks do I have?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+ },
+ {
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. Your name is NEXO."
+   },
+   {
+    "role": "user",
+    "content": "What tasks do I have?"
+   },
+   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+     {
+      "type": "function",
+      "function": {
+       "name": "app_list_tasks",
+       "arguments": {
+        "filter": "open"
+       }
+      }
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "name": "app_list_tasks",
+    "content": "{\"ok\":true,\"data\":{\"tasks\":[]}}"
+   }
+  ],
+  "tools": [
+   {
+    "type": "function",
+    "function": {
+     "name": "app_create_event",
+     "description": "Create a calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string",
+        "description": "Event title."
+       },
+       "start": {
+        "type": "string",
+        "description": "Start time, natural language or ISO 8601."
+       },
+       "minutes": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Duration in minutes."
+       }
+      },
+      "required": [
+       "title",
+       "start"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_create_task",
+     "description": "Create a task. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string",
+        "description": "Task title."
+       },
+       "due": {
+        "type": "string",
+        "description": "Due date, natural language or ISO 8601."
+       }
+      },
+      "required": [
+       "title"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_list_tasks",
+     "description": "List tasks, optionally filtered. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "filter": {
+        "type": "string",
+        "description": "Filter such as 'open', 'done' or 'overdue'."
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_read_calendar",
+     "description": "Read calendar entries for a time range. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "range": {
+        "type": "string",
+        "description": "Time range, for example 'tomorrow' or 'next Monday'."
+       }
+      },
+      "required": [
+       "range"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_send_message",
+     "description": "Send a message to a person or channel. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "recipient": {
+        "type": "string",
+        "description": "Person or channel."
+       },
+       "text": {
+        "type": "string",
+        "description": "Message text."
+       }
+      },
+      "required": [
+       "recipient",
+       "text"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_event",
+     "description": "Change an existing calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "event": {
+        "type": "string",
+        "description": "Event title or id."
+       },
+       "title": {
+        "type": "string",
+        "description": "New title."
+       },
+       "start": {
+        "type": "string",
+        "description": "New start time."
+       },
+       "minutes": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "New duration in minutes."
+       }
+      },
+      "required": [
+       "event"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_goal",
+     "description": "Update progress on a goal. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "goal": {
+        "type": "string",
+        "description": "Goal title or id."
+       },
+       "progress": {
+        "type": "string",
+        "description": "New progress value, for example '60%'."
+       }
+      },
+      "required": [
+       "goal",
+       "progress"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_task",
+     "description": "Change a task: rename it, move its due date, set its status, or delete it. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "task": {
+        "type": "string",
+        "description": "Task title or id."
+       },
+       "title": {
+        "type": "string",
+        "description": "New title."
+       },
+       "due": {
+        "type": "string",
+        "description": "New due date."
+       },
+       "status": {
+        "type": "string",
+        "enum": [
+         "open",
+         "done"
+        ],
+        "description": "New status."
+       },
+       "action": {
+        "type": "string",
+        "enum": [
+         "delete"
+        ],
+        "description": "Destructive action."
+       }
+      },
+      "required": [
+       "task"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "code_run_python",
+     "description": "Run a short Python snippet in a sandbox and return its output. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "code": {
+        "type": "string",
+        "description": "Python source code."
+       }
+      },
+      "required": [
+       "code"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_describe",
+     "description": "Describe the columns of a database table. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "table": {
+        "type": "string",
+        "description": "Table name."
+       }
+      },
+      "required": [
+       "table"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_execute",
+     "description": "Execute a data-changing SQL statement (INSERT, UPDATE, DELETE, DDL). Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "sql": {
+        "type": "string",
+        "description": "SQL statement."
+       }
+      },
+      "required": [
+       "sql"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_query",
+     "description": "Run a read-only SQL query. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "sql": {
+        "type": "string",
+        "description": "A SELECT statement."
+       }
+      },
+      "required": [
+       "sql"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_delete_file",
+     "description": "Delete a file, or files matching a description inside a path. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File or directory path."
+       },
+       "match": {
+        "type": "string",
+        "description": "Optional pattern or description of which files to delete."
+       }
+      },
+      "required": [
+       "path"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_move_file",
+     "description": "Move or rename a file. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "source": {
+        "type": "string",
+        "description": "Current path."
+       },
+       "destination": {
+        "type": "string",
+        "description": "New path."
+       }
+      },
+      "required": [
+       "source",
+       "destination"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_read_file",
+     "description": "Read a text file. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File path."
+       }
+      },
+      "required": [
+       "path"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_search",
+     "description": "Search for files by name or content. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "query": {
+        "type": "string",
+        "description": "File name pattern or text to find."
+       },
+       "path": {
+        "type": "string",
+        "description": "Directory to search in."
+       }
+      },
+      "required": [
+       "query"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_write_file",
+     "description": "Write text to a file, replacing existing content. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File path."
+       },
+       "content": {
+        "type": "string",
+        "description": "Full file content."
+       }
+      },
+      "required": [
+       "path",
+       "content"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "http_request",
+     "description": "Send an HTTP request. Requires confirmation unless the method is GET. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "method": {
+        "type": "string",
+        "enum": [
+         "GET",
+         "POST",
+         "PUT",
+         "PATCH",
+         "DELETE"
+        ],
+        "description": "HTTP method."
+       },
+       "url": {
+        "type": "string",
+        "description": "Request URL."
+       },
+       "body": {
+        "type": "string",
+        "description": "Optional request body."
+       }
+      },
+      "required": [
+       "method",
+       "url"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "shell_run",
+     "description": "Run a shell command and return its output and exit status. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "command": {
+        "type": "string",
+        "description": "Command line."
+       },
+       "cwd": {
+        "type": "string",
+        "description": "Working directory."
+       }
+      },
+      "required": [
+       "command"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "web_fetch",
+     "description": "Fetch a web page and return its text. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "url": {
+        "type": "string",
+        "description": "Page URL."
+       }
+      },
+      "required": [
+       "url"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "web_search",
+     "description": "Search the web and return result snippets. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "query": {
+        "type": "string",
+        "description": "Search query."
+       }
+      },
+      "required": [
+       "query"
+      ],
+      "additionalProperties": false
+     }
+    }
+   }
+  ],
+  "hf_prompt": "<|im_start|>system\nYou are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. Your name is NEXO.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"app_create_event\", \"description\": \"Create a calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"description\": \"Event title.\"}, \"start\": {\"type\": \"string\", \"description\": \"Start time, natural language or ISO 8601.\"}, \"minutes\": {\"type\": \"integer\", \"minimum\": 1, \"description\": \"Duration in minutes.\"}}, \"required\": [\"title\", \"start\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_create_task\", \"description\": \"Create a task. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"description\": \"Task title.\"}, \"due\": {\"type\": \"string\", \"description\": \"Due date, natural language or ISO 8601.\"}}, \"required\": [\"title\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_list_tasks\", \"description\": \"List tasks, optionally filtered. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"filter\": {\"type\": \"string\", \"description\": \"Filter such as 'open', 'done' or 'overdue'.\"}}, \"required\": [], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_read_calendar\", \"description\": \"Read calendar entries for a time range. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"range\": {\"type\": \"string\", \"description\": \"Time range, for example 'tomorrow' or 'next Monday'.\"}}, \"required\": [\"range\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_send_message\", \"description\": \"Send a message to a person or channel. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"recipient\": {\"type\": \"string\", \"description\": \"Person or channel.\"}, \"text\": {\"type\": \"string\", \"description\": \"Message text.\"}}, \"required\": [\"recipient\", \"text\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_event\", \"description\": \"Change an existing calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"event\": {\"type\": \"string\", \"description\": \"Event title or id.\"}, \"title\": {\"type\": \"string\", \"description\": \"New title.\"}, \"start\": {\"type\": \"string\", \"description\": \"New start time.\"}, \"minutes\": {\"type\": \"integer\", \"minimum\": 1, \"description\": \"New duration in minutes.\"}}, \"required\": [\"event\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_goal\", \"description\": \"Update progress on a goal. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"goal\": {\"type\": \"string\", \"description\": \"Goal title or id.\"}, \"progress\": {\"type\": \"string\", \"description\": \"New progress value, for example '60%'.\"}}, \"required\": [\"goal\", \"progress\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_task\", \"description\": \"Change a task: rename it, move its due date, set its status, or delete it. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"task\": {\"type\": \"string\", \"description\": \"Task title or id.\"}, \"title\": {\"type\": \"string\", \"description\": \"New title.\"}, \"due\": {\"type\": \"string\", \"description\": \"New due date.\"}, \"status\": {\"type\": \"string\", \"enum\": [\"open\", \"done\"], \"description\": \"New status.\"}, \"action\": {\"type\": \"string\", \"enum\": [\"delete\"], \"description\": \"Destructive action.\"}}, \"required\": [\"task\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"code_run_python\", \"description\": \"Run a short Python snippet in a sandbox and return its output. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"Python source code.\"}}, \"required\": [\"code\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_describe\", \"description\": \"Describe the columns of a database table. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"table\": {\"type\": \"string\", \"description\": \"Table name.\"}}, \"required\": [\"table\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_execute\", \"description\": \"Execute a data-changing SQL statement (INSERT, UPDATE, DELETE, DDL). Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"sql\": {\"type\": \"string\", \"description\": \"SQL statement.\"}}, \"required\": [\"sql\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_query\", \"description\": \"Run a read-only SQL query. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"sql\": {\"type\": \"string\", \"description\": \"A SELECT statement.\"}}, \"required\": [\"sql\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_delete_file\", \"description\": \"Delete a file, or files matching a description inside a path. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File or directory path.\"}, \"match\": {\"type\": \"string\", \"description\": \"Optional pattern or description of which files to delete.\"}}, \"required\": [\"path\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_move_file\", \"description\": \"Move or rename a file. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"source\": {\"type\": \"string\", \"description\": \"Current path.\"}, \"destination\": {\"type\": \"string\", \"description\": \"New path.\"}}, \"required\": [\"source\", \"destination\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_read_file\", \"description\": \"Read a text file. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File path.\"}}, \"required\": [\"path\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_search\", \"description\": \"Search for files by name or content. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\", \"description\": \"File name pattern or text to find.\"}, \"path\": {\"type\": \"string\", \"description\": \"Directory to search in.\"}}, \"required\": [\"query\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_write_file\", \"description\": \"Write text to a file, replacing existing content. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File path.\"}, \"content\": {\"type\": \"string\", \"description\": \"Full file content.\"}}, \"required\": [\"path\", \"content\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"http_request\", \"description\": \"Send an HTTP request. Requires confirmation unless the method is GET. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"method\": {\"type\": \"string\", \"enum\": [\"GET\", \"POST\", \"PUT\", \"PATCH\", \"DELETE\"], \"description\": \"HTTP method.\"}, \"url\": {\"type\": \"string\", \"description\": \"Request URL.\"}, \"body\": {\"type\": \"string\", \"description\": \"Optional request body.\"}}, \"required\": [\"method\", \"url\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"shell_run\", \"description\": \"Run a shell command and return its output and exit status. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"command\": {\"type\": \"string\", \"description\": \"Command line.\"}, \"cwd\": {\"type\": \"string\", \"description\": \"Working directory.\"}}, \"required\": [\"command\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"web_fetch\", \"description\": \"Fetch a web page and return its text. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"url\": {\"type\": \"string\", \"description\": \"Page URL.\"}}, \"required\": [\"url\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"web_search\", \"description\": \"Search the web and return result snippets. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\", \"description\": \"Search query.\"}}, \"required\": [\"query\"], \"additionalProperties\": false}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\nWhat tasks do I have?<|im_end|>\n<|im_start|>assistant\n<tool_call>\n{\"name\": \"app_list_tasks\", \"arguments\": {\"filter\": \"open\"}}\n</tool_call><|im_end|>\n<|im_start|>user\n<tool_response>\n{\"ok\":true,\"data\":{\"tasks\":[]}}\n</tool_response><|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+ },
+ {
+  "messages": [
+   {
+    "role": "system",
+    "content": "You are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. Your name is NEXO."
+   },
+   {
+    "role": "user",
+    "content": "first"
+   },
+   {
+    "role": "assistant",
+    "content": "answer one"
+   },
+   {
+    "role": "user",
+    "content": "second ünïcode “quotes”"
+   }
+  ],
+  "tools": [
+   {
+    "type": "function",
+    "function": {
+     "name": "app_create_event",
+     "description": "Create a calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string",
+        "description": "Event title."
+       },
+       "start": {
+        "type": "string",
+        "description": "Start time, natural language or ISO 8601."
+       },
+       "minutes": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Duration in minutes."
+       }
+      },
+      "required": [
+       "title",
+       "start"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_create_task",
+     "description": "Create a task. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string",
+        "description": "Task title."
+       },
+       "due": {
+        "type": "string",
+        "description": "Due date, natural language or ISO 8601."
+       }
+      },
+      "required": [
+       "title"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_list_tasks",
+     "description": "List tasks, optionally filtered. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "filter": {
+        "type": "string",
+        "description": "Filter such as 'open', 'done' or 'overdue'."
+       }
+      },
+      "required": [],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_read_calendar",
+     "description": "Read calendar entries for a time range. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "range": {
+        "type": "string",
+        "description": "Time range, for example 'tomorrow' or 'next Monday'."
+       }
+      },
+      "required": [
+       "range"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_send_message",
+     "description": "Send a message to a person or channel. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "recipient": {
+        "type": "string",
+        "description": "Person or channel."
+       },
+       "text": {
+        "type": "string",
+        "description": "Message text."
+       }
+      },
+      "required": [
+       "recipient",
+       "text"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_event",
+     "description": "Change an existing calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "event": {
+        "type": "string",
+        "description": "Event title or id."
+       },
+       "title": {
+        "type": "string",
+        "description": "New title."
+       },
+       "start": {
+        "type": "string",
+        "description": "New start time."
+       },
+       "minutes": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "New duration in minutes."
+       }
+      },
+      "required": [
+       "event"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_goal",
+     "description": "Update progress on a goal. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "goal": {
+        "type": "string",
+        "description": "Goal title or id."
+       },
+       "progress": {
+        "type": "string",
+        "description": "New progress value, for example '60%'."
+       }
+      },
+      "required": [
+       "goal",
+       "progress"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "app_update_task",
+     "description": "Change a task: rename it, move its due date, set its status, or delete it. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "task": {
+        "type": "string",
+        "description": "Task title or id."
+       },
+       "title": {
+        "type": "string",
+        "description": "New title."
+       },
+       "due": {
+        "type": "string",
+        "description": "New due date."
+       },
+       "status": {
+        "type": "string",
+        "enum": [
+         "open",
+         "done"
+        ],
+        "description": "New status."
+       },
+       "action": {
+        "type": "string",
+        "enum": [
+         "delete"
+        ],
+        "description": "Destructive action."
+       }
+      },
+      "required": [
+       "task"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "code_run_python",
+     "description": "Run a short Python snippet in a sandbox and return its output. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "code": {
+        "type": "string",
+        "description": "Python source code."
+       }
+      },
+      "required": [
+       "code"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_describe",
+     "description": "Describe the columns of a database table. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "table": {
+        "type": "string",
+        "description": "Table name."
+       }
+      },
+      "required": [
+       "table"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_execute",
+     "description": "Execute a data-changing SQL statement (INSERT, UPDATE, DELETE, DDL). Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "sql": {
+        "type": "string",
+        "description": "SQL statement."
+       }
+      },
+      "required": [
+       "sql"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "db_query",
+     "description": "Run a read-only SQL query. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "sql": {
+        "type": "string",
+        "description": "A SELECT statement."
+       }
+      },
+      "required": [
+       "sql"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_delete_file",
+     "description": "Delete a file, or files matching a description inside a path. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File or directory path."
+       },
+       "match": {
+        "type": "string",
+        "description": "Optional pattern or description of which files to delete."
+       }
+      },
+      "required": [
+       "path"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_move_file",
+     "description": "Move or rename a file. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "source": {
+        "type": "string",
+        "description": "Current path."
+       },
+       "destination": {
+        "type": "string",
+        "description": "New path."
+       }
+      },
+      "required": [
+       "source",
+       "destination"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_read_file",
+     "description": "Read a text file. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File path."
+       }
+      },
+      "required": [
+       "path"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_search",
+     "description": "Search for files by name or content. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "query": {
+        "type": "string",
+        "description": "File name pattern or text to find."
+       },
+       "path": {
+        "type": "string",
+        "description": "Directory to search in."
+       }
+      },
+      "required": [
+       "query"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "fs_write_file",
+     "description": "Write text to a file, replacing existing content. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "path": {
+        "type": "string",
+        "description": "File path."
+       },
+       "content": {
+        "type": "string",
+        "description": "Full file content."
+       }
+      },
+      "required": [
+       "path",
+       "content"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "http_request",
+     "description": "Send an HTTP request. Requires confirmation unless the method is GET. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "method": {
+        "type": "string",
+        "enum": [
+         "GET",
+         "POST",
+         "PUT",
+         "PATCH",
+         "DELETE"
+        ],
+        "description": "HTTP method."
+       },
+       "url": {
+        "type": "string",
+        "description": "Request URL."
+       },
+       "body": {
+        "type": "string",
+        "description": "Optional request body."
+       }
+      },
+      "required": [
+       "method",
+       "url"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "shell_run",
+     "description": "Run a shell command and return its output and exit status. Changes state or has side effects; show the user the exact call and get their confirmation before calling.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "command": {
+        "type": "string",
+        "description": "Command line."
+       },
+       "cwd": {
+        "type": "string",
+        "description": "Working directory."
+       }
+      },
+      "required": [
+       "command"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "web_fetch",
+     "description": "Fetch a web page and return its text. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "url": {
+        "type": "string",
+        "description": "Page URL."
+       }
+      },
+      "required": [
+       "url"
+      ],
+      "additionalProperties": false
+     }
+    }
+   },
+   {
+    "type": "function",
+    "function": {
+     "name": "web_search",
+     "description": "Search the web and return result snippets. Read-only; may be called directly.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "query": {
+        "type": "string",
+        "description": "Search query."
+       }
+      },
+      "required": [
+       "query"
+      ],
+      "additionalProperties": false
+     }
+    }
+   }
+  ],
+  "hf_prompt": "<|im_start|>system\nYou are the assistant inside NEXUS. State which tool you would use and with what arguments; report outcomes only from actual tool results. Your name is NEXO.\n\n# Tools\n\nYou may call one or more functions to assist with the user query.\n\nYou are provided with function signatures within <tools></tools> XML tags:\n<tools>\n{\"type\": \"function\", \"function\": {\"name\": \"app_create_event\", \"description\": \"Create a calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"description\": \"Event title.\"}, \"start\": {\"type\": \"string\", \"description\": \"Start time, natural language or ISO 8601.\"}, \"minutes\": {\"type\": \"integer\", \"minimum\": 1, \"description\": \"Duration in minutes.\"}}, \"required\": [\"title\", \"start\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_create_task\", \"description\": \"Create a task. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\", \"description\": \"Task title.\"}, \"due\": {\"type\": \"string\", \"description\": \"Due date, natural language or ISO 8601.\"}}, \"required\": [\"title\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_list_tasks\", \"description\": \"List tasks, optionally filtered. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"filter\": {\"type\": \"string\", \"description\": \"Filter such as 'open', 'done' or 'overdue'.\"}}, \"required\": [], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_read_calendar\", \"description\": \"Read calendar entries for a time range. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"range\": {\"type\": \"string\", \"description\": \"Time range, for example 'tomorrow' or 'next Monday'.\"}}, \"required\": [\"range\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_send_message\", \"description\": \"Send a message to a person or channel. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"recipient\": {\"type\": \"string\", \"description\": \"Person or channel.\"}, \"text\": {\"type\": \"string\", \"description\": \"Message text.\"}}, \"required\": [\"recipient\", \"text\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_event\", \"description\": \"Change an existing calendar event. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"event\": {\"type\": \"string\", \"description\": \"Event title or id.\"}, \"title\": {\"type\": \"string\", \"description\": \"New title.\"}, \"start\": {\"type\": \"string\", \"description\": \"New start time.\"}, \"minutes\": {\"type\": \"integer\", \"minimum\": 1, \"description\": \"New duration in minutes.\"}}, \"required\": [\"event\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_goal\", \"description\": \"Update progress on a goal. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"goal\": {\"type\": \"string\", \"description\": \"Goal title or id.\"}, \"progress\": {\"type\": \"string\", \"description\": \"New progress value, for example '60%'.\"}}, \"required\": [\"goal\", \"progress\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"app_update_task\", \"description\": \"Change a task: rename it, move its due date, set its status, or delete it. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"task\": {\"type\": \"string\", \"description\": \"Task title or id.\"}, \"title\": {\"type\": \"string\", \"description\": \"New title.\"}, \"due\": {\"type\": \"string\", \"description\": \"New due date.\"}, \"status\": {\"type\": \"string\", \"enum\": [\"open\", \"done\"], \"description\": \"New status.\"}, \"action\": {\"type\": \"string\", \"enum\": [\"delete\"], \"description\": \"Destructive action.\"}}, \"required\": [\"task\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"code_run_python\", \"description\": \"Run a short Python snippet in a sandbox and return its output. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"code\": {\"type\": \"string\", \"description\": \"Python source code.\"}}, \"required\": [\"code\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_describe\", \"description\": \"Describe the columns of a database table. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"table\": {\"type\": \"string\", \"description\": \"Table name.\"}}, \"required\": [\"table\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_execute\", \"description\": \"Execute a data-changing SQL statement (INSERT, UPDATE, DELETE, DDL). Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"sql\": {\"type\": \"string\", \"description\": \"SQL statement.\"}}, \"required\": [\"sql\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"db_query\", \"description\": \"Run a read-only SQL query. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"sql\": {\"type\": \"string\", \"description\": \"A SELECT statement.\"}}, \"required\": [\"sql\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_delete_file\", \"description\": \"Delete a file, or files matching a description inside a path. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File or directory path.\"}, \"match\": {\"type\": \"string\", \"description\": \"Optional pattern or description of which files to delete.\"}}, \"required\": [\"path\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_move_file\", \"description\": \"Move or rename a file. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"source\": {\"type\": \"string\", \"description\": \"Current path.\"}, \"destination\": {\"type\": \"string\", \"description\": \"New path.\"}}, \"required\": [\"source\", \"destination\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_read_file\", \"description\": \"Read a text file. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File path.\"}}, \"required\": [\"path\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_search\", \"description\": \"Search for files by name or content. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\", \"description\": \"File name pattern or text to find.\"}, \"path\": {\"type\": \"string\", \"description\": \"Directory to search in.\"}}, \"required\": [\"query\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"fs_write_file\", \"description\": \"Write text to a file, replacing existing content. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"path\": {\"type\": \"string\", \"description\": \"File path.\"}, \"content\": {\"type\": \"string\", \"description\": \"Full file content.\"}}, \"required\": [\"path\", \"content\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"http_request\", \"description\": \"Send an HTTP request. Requires confirmation unless the method is GET. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"method\": {\"type\": \"string\", \"enum\": [\"GET\", \"POST\", \"PUT\", \"PATCH\", \"DELETE\"], \"description\": \"HTTP method.\"}, \"url\": {\"type\": \"string\", \"description\": \"Request URL.\"}, \"body\": {\"type\": \"string\", \"description\": \"Optional request body.\"}}, \"required\": [\"method\", \"url\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"shell_run\", \"description\": \"Run a shell command and return its output and exit status. Changes state or has side effects; show the user the exact call and get their confirmation before calling.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"command\": {\"type\": \"string\", \"description\": \"Command line.\"}, \"cwd\": {\"type\": \"string\", \"description\": \"Working directory.\"}}, \"required\": [\"command\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"web_fetch\", \"description\": \"Fetch a web page and return its text. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"url\": {\"type\": \"string\", \"description\": \"Page URL.\"}}, \"required\": [\"url\"], \"additionalProperties\": false}}}\n{\"type\": \"function\", \"function\": {\"name\": \"web_search\", \"description\": \"Search the web and return result snippets. Read-only; may be called directly.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\", \"description\": \"Search query.\"}}, \"required\": [\"query\"], \"additionalProperties\": false}}}\n</tools>\n\nFor each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:\n<tool_call>\n{\"name\": <function-name>, \"arguments\": <args-json-object>}\n</tool_call><|im_end|>\n<|im_start|>user\nfirst<|im_end|>\n<|im_start|>assistant\nanswer one<|im_end|>\n<|im_start|>user\nsecond ünïcode “quotes”<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+ }
+]

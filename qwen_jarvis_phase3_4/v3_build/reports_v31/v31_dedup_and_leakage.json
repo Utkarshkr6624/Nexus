@@ -1,0 +1,116 @@
+{
+ "new_duplicate_prompts_dropped": 34,
+ "new_prompts_colliding_with_v3_dropped": 2,
+ "new_dropped_for_eval_similarity": [
+  {
+   "id": "qj3n-aa6129788501",
+   "eval_id": "general-math-015",
+   "jaccard": 0.5,
+   "user": "What is 40% of 240?"
+  },
+  {
+   "id": "qj3n-aa6129788501",
+   "eval_id": "general-math-016",
+   "jaccard": 0.5,
+   "user": "What is 40% of 240?"
+  },
+  {
+   "id": "qj3n-f1e42da6d70a",
+   "eval_id": "general-math-015",
+   "jaccard": 0.5,
+   "user": "What is 40% of 120?"
+  },
+  {
+   "id": "qj3n-f1e42da6d70a",
+   "eval_id": "general-math-016",
+   "jaccard": 0.5,
+   "user": "What is 40% of 120?"
+  },
+  {
+   "id": "qj3n-a9d206fe2088",
+   "eval_id": "general-math-015",
+   "jaccard": 0.5,
+   "user": "What is 40% of 500?"
+  },
+  {
+   "id": "qj3n-a9d206fe2088",
+   "eval_id": "general-math-016",
+   "jaccard": 0.5,
+   "user": "What is 40% of 500?"
+  },
+  {
+   "id": "qj3n-260ec1824d3f",
+   "eval_id": "phase6_reasoning-percent-010",
+   "jaccard": 0.5,
+   "user": "What is 15% of 60?"
+  },
+  {
+   "id": "qj3n-260ec1824d3f",
+   "eval_id": "capability_boundaries-can_do-009",
+   "jaccard": 0.5,
+   "user": "What is 15% of 60?"
+  },
+  {
+   "id": "qj3n-373cbc1ca569",
+   "eval_id": "general-math-015",
+   "jaccard": 1.0,
+   "user": "What is 40% of 40?"
+  },
+  {
+   "id": "qj3n-373cbc1ca569",
+   "eval_id": "general-math-016",
+   "jaccard": 0.5,
+   "user": "What is 40% of 40?"
+  },
+  {
+   "id": "qj3n-9fb33aec9f8b",
+   "eval_id": "general-math-020",
+   "jaccard": 0.5,
+   "user": "What is 25% of 360?"
+  },
+  {
+   "id": "qj3n-de17cde05cb1",
+   "eval_id": "general-math-019",
+   "jaccard": 0.5,
+   "user": "What is 20% of 240?"
+  },
+  {
+   "id": "qj3n-de17cde05cb1",
+   "eval_id": "general-math-017",
+   "jaccard": 0.5,
+   "user": "What is 20% of 240?"
+  },
+  {
+   "id": "qj3n-aa19b4450284",
+   "eval_id": "general-math-019",
+   "jaccard": 0.5,
+   "user": "What is 20% of 500?"
+  },
+  {
+   "id": "qj3n-aa19b4450284",
+   "eval_id": "general-math-017",
+   "jaccard": 0.5,
+   "user": "What is 20% of 500?"
+  },
+  {
+   "id": "qj3n-43d26d862f66",
+   "eval_id": "general-math-020",
+   "jaccard": 0.5,
+   "user": "What is 25% of 60?"
+  },
+  {
+   "id": "qj3n-ae872d8515d1",
+   "eval_id": "general-math-019",
+   "jaccard": 0.5,
+   "user": "What is 20% of 40?"
+  },
+  {
+   "id": "qj3n-ae872d8515d1",
+   "eval_id": "general-math-017",
+   "jaccard": 0.5,
+   "user": "What is 20% of 40?"
+  }
+ ],
+ "v3_records_excluded_from_replay_for_eval_similarity": 570,
+ "leakage_method": "word-trigram Jaccard >= 0.5 vs 792 evaluation prompts"
+}

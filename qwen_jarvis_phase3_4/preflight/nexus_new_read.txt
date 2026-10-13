@@ -1,0 +1,1417 @@
+[qj2-606d963aefc7|n21a-0]
+u: I just joined the team. Can you give me the 30-second version of NEXUS?
+a: NEXUS is a full-stack personal intelligence and decision platform. It pulls projects, tasks, planning, notes, analytics, learning, career records and git activity into one app, then uses that data to surface risks, recommendations and what to work on next. The frontend is React with TypeScript, the backend is FastAPI on PostgreSQL, and the only AI model in it today is a small intent classifier.
+
+[qj2-0fbd1c656aff|n21a-1]
+u: is NEXUS a note-taking app or a project manager or what
+a: It's broader than either. Notes are one part (the knowledge area), and projects and tasks are another, but NEXUS also has a planner with focus sessions, analytics, risk detection, developer activity from local git repositories, learning and career tracking, and a Command Center that combines signals. Think of it as one place for personal planning and decision support.
+
+[qj2-035b6e478b72|n21a-10]
+u: does nexus handle migrations
+a: Yes. The schema is managed with Alembic migrations (the audit counted 14 migration files), and the backend is configured for PostgreSQL.
+
+[qj2-a4f924abb6bf|n21a-11]
+u: I found a note saying NEXUS defaults to SQLite. Should I trust it?
+a: Not without checking. The backend code is configured for PostgreSQL through its postgres settings or a DATABASE_URL, and that is what the Alembic migrations target. A project note mentioned SQLite, so look at your own .env settings before assuming either one. How the dev database runs on a particular machine hasn't been verified.
+
+[qj2-191e7f101d5a|n21a-12]
+u: Roughly how big is the test suite?
+a: The audit counted about 103 backend test files (pytest) and about 52 frontend test files (Vitest with React Testing Library). Those counts come from reading the repository; the suites were not run during the audit, so a pass rate is unknown.
+
+[qj2-20a16fbbb078|n21a-13]
+u: Does NEXUS run offline?
+a: The design principle is local first, and the core features depend on your own backend and database rather than a cloud AI service. The one caveat is voice input: with Chrome or Edge the browser sends your audio to the vendor for transcription, so speech recognition is not offline.
+
+[qj2-c97d3635dc29|n21a-14]
+u: What can the planner do that the task list can't?
+a: The task list says what needs doing; the planner decides when. It handles weekly planning, your availability, time blocks, focus sessions and scheduling suggestions for tasks.
+
+[qj2-88e9076c655f|n21a-15]
+u: How does NEXUS know a deadline is at risk?
+a: A detection engine looks at your recorded data for conditions such as a deadline with no time booked for it, or planned work exceeding your available hours. Each finding is scored and keeps its evidence, and recommendations and attention signals are generated from the findings.
+
+[qj2-c995a508e2f3|n21a-16]
+u: Does the developer module measure how many hours I coded?
+a: No, and that is deliberate. It scans local git repositories you register and analyses commits, branches, changed lines and languages, but it treats a commit as evidence of a commit rather than as hours worked.
+
+[qj2-d2e3e1fa10c6|n21a-17]
+u: Can NEXUS read any folder on my laptop for the developer module?
+a: Only repositories you register, and the backend runs local git against them. There is an optional path allowlist setting (DEVELOPER_PATH_ALLOWLIST) that restricts which paths may be registered. It is not a general file-reading feature.
+
+[qj2-7bd4803e7591|n21a-18]
+u: Is there a place for storing notes and resources?
+a: Yes. The knowledge area holds notes, concepts and resources, and global search can find them along with projects, tasks and other records.
+
+[qj2-9264e90b7d71|n21a-19]
+u: What does the career module record?
+a: A career profile, career records and portfolio evidence. Together with the learning module (goals, skills, activities and skill gaps) it lets you link what you learn to where you want to go.
+
+[qj2-c6dd2de519c2|n21a-2]
+u: Where does the 'intelligence' in 'personal intelligence platform' come from?
+a: Mostly from deterministic code over your own recorded data: analytics, a risk-detection engine that scores conditions with evidence, and recommendations built from them. The one machine-learning model is a DeBERTa intent classifier that routes a sentence to the right area. There is no generative language model in the application today.
+
+[qj2-59727c6341a7|n21a-20]
+u: What exactly does global search cover?
+a: Projects, tasks, notes, resources, concepts, repositories, learning goals, skills, calendar items, risks and recommendations, and the results are limited to your own data.
+
+[qj2-56b4ae8fa935|n21a-22]
+u: What's on the Command Center page?
+a: A priority queue, measured panels, recommendations, recent activity, quick actions and an ML insight panel. Its purpose is to answer what needs attention and what to work on next. It is mostly read-oriented in the code.
+
+[qj2-32fec9e1cc54|n21a-23]
+u: Does the Command Center browse the internet for me?
+a: No. The README mentions web intelligence for that phase, but the audit found no outbound web client or search route in the backend, so the Command Center works from your own data and the classifier's insight panel.
+
+[qj2-b19caed95d0e|n21a-24]
+u: which pages exist in the app
+a: The audit lists feature areas rather than a full page inventory: projects, tasks, planner, knowledge, analytics, risks and recommendations, developer, learning, career, search, a command palette, quick actions, the Command Center and the /assistant page. For the exact route list, check the frontend router.
+
+[qj2-176024d8f6df|n21a-25]
+u: What do focus sessions do?
+a: They are part of the planner: you block out time to work on something, and the system can record the work session. They tie tasks to real time rather than to a due date alone.
+
+[qj2-e4eeb5bd87f5|n21a-26]
+u: What is the NEXUS classifier, in plain words?
+a: A small model that reads one sentence and says which part of NEXUS the request is about, together with a confidence. If someone types 'remind me to pay rent', it should say that this is task-related. It does not write anything back.
+
+[qj2-1afb744a90f4|n21a-27]
+u: Which base model is the classifier built on?
+a: microsoft/deberta-v3-base, fine-tuned during Phase 10 as a 14-class intent classifier.
+
+[qj2-906b06a9d281|n21a-28]
+u: Could the DeBERTa model write me a summary of my week?
+a: No. It is a classifier: its output is a label and a confidence over 14 intents, not text. Writing a summary would need a generative model, and NEXUS doesn't have one yet.
+
+[qj2-546968921da5|n21a-29]
+u: how many intents does it know
+a: Fourteen, in a taxonomy called nexo_intents.v1: task_manage, project_manage, schedule_plan, knowledge_capture, knowledge_lookup, analytics_insight, risk_query, developer_intel, learning_track, career_track, account_admin, code_assist, deep_reasoning and out_of_scope.
+
+[qj2-5ea75f28c731|n21a-3]
+u: How would you describe NEXUS to a non-technical friend?
+a: It's like a personal command post for your work and goals. You keep your projects, tasks, notes, learning goals and schedule in one app, and it points out what needs attention, such as a deadline with no time booked for it. You can also type or speak a request, and it works out which part of the app the request belongs to.
+
+[qj2-38b1a9b7ad31|n21a-30]
+u: Which intents don't lead anywhere today?
+a: code_assist and deep_reasoning. The classifier can recognise them, but twelve of the fourteen intents map to an existing NEXUS service and these two have no destination, so the system answers generation_unavailable.
+
+[qj2-c1842784ce43|n21a-31]
+u: Is 97.4% accuracy good enough to trust it?
+a: Be careful with that number. It was measured on a held-out test set that was generated from templates. On 56 hand-written natural-language requests it got 42 right, which is 75%. So real accuracy is closer to the second number, and the gap shows how much synthetic data flatters a model.
+
+[qj2-82167927d945|n21a-32]
+u: What went wrong in the 14 misses on the hand-written set?
+a: The audit notes that several misses collapsed into risk_query, and some wrong predictions came with confidence above the 0.90 threshold. I don't have a per-request breakdown beyond that.
+
+[qj2-74b9d2e2d87b|n21a-33]
+u: Does the 0.90 threshold make the classifier safe?
+a: It helps but doesn't make it safe. Below 0.90 the request is reported as uncertain instead of being routed. However, some wrong predictions scored above 0.90, and the threshold was picked on synthetic data, so it is a routing guard and not a calibrated probability.
+
+[qj2-abec248488e8|n21a-34]
+u: What happens if I type something the classifier doesn't understand?
+a: If confidence falls below 0.90 you get an 'uncertain' response with runner-up intents instead of a route. If the sentence is unrelated to the app, the intended label is out_of_scope.
+
+[qj2-7d3ad51cc9b0|n21a-35]
+u: Does the classifier remember what I asked earlier?
+a: No. Only the current utterance is sent, and the model maps a single string to a single label. The 20-turn history is kept in the browser purely for display.
+
+[qj2-837583de8eb2|n21a-36]
+u: Is the classifier loaded every time I make a request?
+a: No. The checkpoint is loaded once per backend process, lazily, through a runtime singleton. Settings like ML_ENABLED, ML_MODEL_PATH and ML_DEVICE control it.
+
+[qj2-89e2cdad3996|n21a-37]
+u: What if the ML checkpoint is missing on my machine?
+a: The ML endpoints answer 503 ml_unavailable and the rest of the app keeps working. torch is imported lazily, so the backend still boots and serves all non-ML routes.
+
+[qj2-d09e51b1ed25|n21a-38]
+u: Which endpoints expose the classifier?
+a: GET /api/v1/ml/status tells you whether the classifier is loaded, and POST /api/v1/ml/route classifies one text and returns a routing decision. They need a bearer token, and the classifier routes need the analytics.read permission.
+
+[qj2-dcbad2fb2774|n21a-39]
+u: Does the classifier need a GPU?
+a: No. The backend uses a pinned CPU build of PyTorch, and the ML device setting defaults to auto, using CUDA only if a working build exists. The classifier is small enough that NEXUS doesn't require a GPU.
+
+[qj2-054238ded171|n21a-4]
+u: What problem is NEXUS trying to solve?
+a: Fragmentation. Tasks live in one tool, notes in another, analytics in a third, git history somewhere else. NEXUS keeps them together and connects them, so it can answer questions like what is at risk, what deserves focus next, and how your learning and career records relate to the work you do.
+
+[qj2-89df8455cd04|n21a-40]
+u: Where does the training code for DeBERTa live?
+a: In backend/ml: dataset schema and taxonomy, training configuration, checkpoint and manifest handling, evaluation, train.py and a small-model config. Datasets and artifacts are gitignored.
+
+[qj2-5463f8707ea0|n21a-41]
+u: Why did the model do so much worse on real phrasing?
+a: The training and test data were generated from templates, so the model learned those shapes very well. Real people phrase things differently, which exposed the gap between 0.974 and 75%. The lesson recorded in the audit is that template-generated data is a risk, and the same risk applies to any new training set.
+
+[qj2-17231d42ebd6|n21a-42]
+u: If I say 'add a task to review the budget', what does NEXUS do?
+a: The sentence can go through the propose step, which classifies it and, using hand-written slot extraction, builds a proposal such as creating a task with a title. You see the proposal and decide. Nothing is created until you confirm it through the confirm step.
+
+[qj2-88988af7796c|n21a-43]
+u: Can NEXUS take actions without asking me?
+a: No. The only path that executes a sentence is propose then confirm, and confirm needs you to approve the specific proposal. There is no free-form execution.
+
+[qj2-ff0d40d90c8f|n21a-44]
+u: What are the endpoints for actions?
+a: POST /api/v1/ml/action/propose builds a proposal and POST /api/v1/ml/action/confirm executes it, both authenticated.
+
+[qj2-809c09f0e99a|n21a-45]
+u: Who decides what an action may do?
+a: A closed table of action kinds covers things like tasks, projects, knowledge, learning, planner, developer repositories and account writes. Each kind has a destructive flag, and confirm calls the owner-scoped service for that kind. The model never composes arbitrary calls.
+
+[qj2-652953a0b767|n21a-46]
+u: Is a language model extracting the task title from my sentence?
+a: No. Slot extraction is done by hand-written parsers in the app's ML actions package. The code's own notes say that turning an utterance into an exact service call is slot filling that normally needs a second model or per-utterance parsers, and NEXUS chose parsers.
+
+[qj2-c0d9e9702ccc|n21a-47]
+u: What does the destructive flag do?
+a: It marks action kinds that remove or overwrite data so the proposal can be presented as destructive. It is part of why nothing runs without an explicit confirmation.
+
+[qj2-8ccfcc28540c|n21a-48]
+u: Can I delete everything by voice?
+a: A voice request is only classified. Any delete-type action would have to appear as a proposal, be flagged as destructive, and wait for you to confirm it yourself.
+
+[qj2-7a50a9a75f01|n21a-49]
+u: What does the interface say when I ask for something NEXUS can't do yet?
+a: For coding help or deep reasoning, the response is generation_unavailable, which the UI presents as a stated capability gap rather than an error.
+
+[qj2-6a1fe700e6a2|n21a-5]
+u: Is NEXUS finished?
+a: The README describes 14 completed development phases, from the foundation through ML, voice, the Command Center and hardening. Still, some README claims are broader than the code, and the generative assistant side is not built yet. So the core application is built, while the Qwen-based assistant is a plan.
+
+[qj2-c1b5576cbe3e|n21a-50]
+u: why is propose and confirm separate from routing
+a: Routing only says where a request belongs; it changes nothing. Proposing prepares a concrete change that you can inspect, and confirming performs it. Splitting them follows the design principle that AI actions that change data need user confirmation.
+
+[qj2-4801d4fb0a24|n21a-51]
+u: Does confirming an action go through special AI code?
+a: No. Confirm calls the matching owner-scoped service, the same kind of service the normal REST routes use. The only AI involved earlier is the classifier that picked the intent.
+
+[qj2-dc87cefebee6|n21a-52]
+u: How does NEXUS hear me?
+a: Through the browser's own SpeechRecognition (webkit-prefixed in Safari). NEXUS doesn't run a speech model itself.
+
+[qj2-fbdb8bb0d876|n21a-53]
+u: Does NEXUS use Whisper for speech?
+a: No. Speech recognition is the browser's Web Speech API, and the project's one-model rule kept Whisper out. In Chrome and Edge the audio is transcribed on the vendor's servers.
+
+[qj2-35308f4f47af|n21a-54]
+u: Is voice private?
+a: Partly. Transcription in Chrome and Edge happens on Google's or Microsoft's servers, so your audio leaves the device. The NEXUS backend only receives the resulting text. Speech output is local, using the operating system voice.
+
+[qj2-8073e328e440|n21a-55]
+u: I'm using Firefox and the mic button doesn't work. Is that a bug?
+a: Probably not a bug: Firefox has no SpeechRecognition support, so voice input isn't available there. You can still type your request on the /assistant page.
+
+[qj2-95453839b24c|n21a-56]
+u: What does the assistant say back when I use voice?
+a: Today it reads a routing statement, like 'Routing to Task', using speechSynthesis. It isn't a composed answer, because no generative model sits behind it.
+
+[qj2-5b449342c260|n21a-57]
+u: How many turns does the assistant page keep?
+a: Up to 20 in the browser, in a bounded Zustand store that is never persisted. Refresh the page and the log is gone, and the backend never receives the history.
+
+[qj2-b2dbbe3df0c9|n21a-58]
+u: What are the states of the voice assistant?
+a: Idle, listening, processing, speaking and error, managed by a state machine in the assistant feature's hook. The page also shows a latest-decision card and a conversation log.
+
+[qj2-4d2dc2ebadbe|n21a-59]
+u: Can I ask the voice assistant to explain a concept?
+a: Not today. It routes your sentence to a NEXUS area; it can't explain, reason or hold a conversation, because there is no generative model behind it.
+
+[qj2-8e2f0480404d|n21a-6]
+u: Give me the tech stack for NEXUS in one list.
+a: - Frontend: React, TypeScript, Vite, Tailwind CSS, React Router, TanStack Query, Zustand, Recharts
+- Frontend tests: Vitest and React Testing Library
+- Backend: Python, FastAPI, SQLAlchemy, Pydantic, Alembic
+- Database: PostgreSQL (according to the backend configuration)
+- Auth: JWT access and refresh tokens
+- ML: microsoft/deberta-v3-base fine-tuned as an intent classifier, run on a pinned CPU build of PyTorch
+- Voice: the browser's Web Speech API and speechSynthesis
+
+[qj2-3fc3bfd39f5b|n21a-60]
+u: Is there voice code on the backend?
+a: No. The browser transcribes and speaks, and the backend sees only text at POST /api/v1/ml/route.
+
+[qj2-c60f12819da8|n21a-61]
+u: What happens if my browser has no speech support?
+a: The page falls back to typing. Text input is always available, which matters in browsers such as Firefox.
+
+[qj2-ce5f95d9a48c|n21a-62]
+u: Does NEXUS have a chat window?
+a: Not yet. The /assistant page shows routing decisions and is written to say that NEXUS routes rather than answers. A chat view is a planned addition.
+
+[qj2-7dee54b197f2|n21a-63]
+u: Can I talk to an AI inside NEXUS about my notes?
+a: Not today. There is no generative model, no chat endpoint and no conversation backend. You can search your notes and use the classifier to route a request, but you can't discuss them with an assistant yet.
+
+[qj2-24647b391193|n21a-64]
+u: The README mentions Ollama. Where is it configured?
+a: It isn't. A search of the backend application found no Ollama code, and the requirements file says Ollama is deliberately absent. The README overstates it, so Ollama should be treated as not integrated.
+
+[qj2-b066005c133f|n21a-65]
+u: Does NEXUS have tools like file access or a terminal?
+a: No. There is no tool registry and no filesystem, terminal or browser tools. What exists is its own set of REST services, the propose and confirm actions, and a developer module that runs local git.
+
+[qj2-0fbe34012a0d|n21a-66]
+u: Is there a web search feature in NEXUS?
+a: Not as far as the code shows. The README mentions web intelligence, but the audit found no outbound HTTP client or web-search route in the backend, only URL parsing helpers. The global search in NEXUS covers your own data only.
+
+[qj2-c05f674a68f4|n21a-67]
+u: Can NEXUS send an email for me?
+a: No. It has no email capability and no tool for sending messages. Confirmed actions are limited to creating and changing its own records.
+
+[qj2-2606b9caf040|n21a-68]
+u: Where's the LLM setting in the admin panel?
+a: There isn't one, because NEXUS has no language model today. The settings that exist for ML concern the DeBERTa classifier: ML_ENABLED, ML_MODEL_PATH, ML_DEVICE and the confidence threshold.
+
+[qj2-a3290c5bd652|n21a-69]
+u: Does NEXUS store my conversations on the server?
+a: No. The assistant history lives only in the browser, is capped at 20 turns and is not persisted. There is no server-side conversation store at present.
+
+[qj2-d4ebe477c2f1|n21a-7]
+u: Why does the frontend use a relative /api/v1 URL?
+a: It keeps the browser same-origin. In development Vite proxies those calls to the FastAPI server, so there are no CORS or cookie headaches, and the frontend code doesn't need to know where the backend lives.
+
+[qj2-f3d939c588ca|n21a-70]
+u: can nexus code for me
+a: Not yet. The classifier can recognise a code_assist request, but NEXUS has nowhere to send it, so the answer is generation_unavailable. A fine-tuned Qwen model is planned to fill that role.
+
+[qj2-ba68298efde4|n21a-71]
+u: Is there an API key I need for NEXUS's AI?
+a: No. NEXUS uses no cloud AI service. The classifier runs inside the backend process from a local checkpoint, and the project's rules excluded cloud LLM SDKs.
+
+[qj2-ac4d43eabbf1|n21a-72]
+u: How does NEXUS summarise articles?
+a: It doesn't. Summarising needs a generative model, and the application has none. There is also no web tool for fetching articles.
+
+[qj2-b58cd1c7e40f|n21a-73]
+u: Does the Command Center have an AI that explains its priorities?
+a: The priorities come from deterministic logic over measured data, plus an ML insight panel built on the classifier. No language model writes explanations today.
+
+[qj2-4411d6115685|n21a-74]
+u: What does 'AI with a purpose' mean in the NEXUS design?
+a: It means using AI only where it adds value and keeping the core deterministic. For instance, risk detection is rule-based with evidence, and the one model is a narrow classifier for routing.
+
+[qj2-24a9814d472f|n21a-75]
+u: What does 'evidence over assumptions' mean?
+a: The system distinguishes what it knows from what it estimates. Risk findings keep their evidence, and the developer module treats commits as evidence of commits and not as hours worked.
+
+[qj2-65b379ca8021|n21a-76]
+u: Why did the project refuse a second model for so long?
+a: The one-model rule kept behaviour local, explainable and tied to one measurable artefact. Each extra model adds weights to train, serve and trust, which is also why voice uses the browser instead of Whisper.
+
+[qj2-f983ba194332|n21a-77]
+u: What are the six design principles?
+a: Local first, AI with a purpose, modular by design, evidence over assumptions, user control, and security as a foundation.
+
+[qj2-cd0cf36ff205|n21a-78]
+u: How does user control show up in the product?
+a: Mainly through propose and confirm: AI-derived actions that change data are shown as proposals and only run after you confirm. Destructive ones are flagged.
+
+[qj2-a99280bc9139|n21a-79]
+u: What does 'modular by design' look like in the code?
+a: Routes, services, repositories, models and schemas are separated, and each feature area (tasks, planner, knowledge, analytics, risks, developer, learning, career, search, ML) has its own router and service layer.
+
+[qj2-428ac21241c1|n21a-8]
+u: What's the layering in the NEXUS backend?
+a: The code is split into API routes, services, repositories, models and schemas. Routes are thin and sit under /api/v1, services hold the business logic, repositories handle database access, and Pydantic schemas validate the data going in and out.
+
+[qj2-cc56848eac71|n21a-80]
+u: Which phase added the DeBERTa classifier?
+a: Phase 10, ML training. Phase 11 integrated it into the application, and Phase 12 added the browser-based voice work.
+
+[qj2-a30aac6b7882|n21a-81]
+u: What did Phase 12 actually deliver?
+a: Browser voice: Web Speech API for input, speechSynthesis for output and the /assistant page. The README labels the phase 'Voice + Ollama', but no Ollama code was found, so only the voice part is verified.
+
+[qj2-cbb348ad5d3c|n21a-82]
+u: Did Phase 13 add web intelligence?
+a: The README title says 'Command Center + Web Intelligence', but the audit found only the Command Center side in the code. No outbound web client or search route was found in the backend.
+
+[qj2-327c52e167ea|n21a-83]
+u: Why should I double-check README claims about the AI features?
+a: Because the audit found two that the code doesn't back up: Ollama integration and web intelligence. The README is useful for intent, but for what exists you should check the code and docs.
+
+[qj2-087e76687420|n21a-84]
+u: Are there known schema mismatches?
+a: The audit mentions drift between the frontend and backend MlStatusRead schema, documented in the Phase 12 voice document. It was reported, not fixed.
+
+[qj2-ca24f47d147b|n21a-9]
+u: How does NEXUS keep one user's data away from another's?
+a: Data is scoped to the signed-in user. Requests carry a bearer token, services work on owner-scoped records, and routes check role-based permissions. Security events go to an audit log, and in-memory rate limiting protects the API.
+
+[qj2-92aed6ac22c2|n21b-0]
+u: So is Qwen part of NEXUS or not?
+a: Not yet. Qwen3-8B is the planned generative model for a JARVIS-style assistant, but nothing has been trained, downloaded or integrated, and nothing in the NEXUS application refers to it today.
+
+[qj2-0d96551d3a16|n21b-1]
+u: What will Qwen actually do for NEXUS once it exists?
+a: The plan is for it to be the brain: converse, reason, explain, help with code, and decide whether to answer directly, ask a clarifying question or request a tool. NEXUS would supply the data and services, tools would supply controlled capabilities, and voice would be the interface. All of that is a plan, not something built.
+
+[qj2-83978b25fdd1|n21b-10]
+u: why not let qwen run inside the FastAPI backend
+a: The plan avoids that. The backend is pinned to a CPU build of torch and transformers for the classifier, and an 8B model is too heavy for that environment. A separate local inference process keeps the pinned stack untouched.
+
+[qj2-6b06a0deffd6|n21b-11]
+u: Does NEXUS already have a place in the code where Qwen plugs in?
+a: Not as built code. The architecture plan names integration points such as a model service, a chat endpoint, a conversation manager and a tool layer, but each is marked as missing today. The existing ML package only shows the pattern to follow, which is load once and answer 503 when unavailable.
+
+[qj2-c9adaeefd7e4|n21b-12]
+u: Where will you train Qwen, and why not on my laptop?
+a: The plan is QLoRA fine-tuning on a free Kaggle GPU. Even with 4-bit quantisation, an 8B model needs roughly 10 to 14 GB of GPU memory for training, while the local RTX 3050 laptop GPU reports about 4 GB. So the laptop is for dataset work, validation and tiny dry runs only.
+
+[qj2-83967c78d3e2|n21b-13]
+u: Has training started?
+a: No. No training has been run, no Kaggle GPU has been used and Qwen3-8B has not been downloaded. So far there has been planning and dataset preparation.
+
+[qj2-c1884044a631|n21b-14]
+u: What is QLoRA in simple terms?
+a: A way to fine-tune a large model cheaply. The base weights are loaded in 4-bit form and frozen, and only small added adapter matrices are trained. The result is an adapter that sits on top of the base model. That is the planned method for Qwen3-8B.
+
+[qj2-596abd021846|n21b-15]
+u: How many examples does the training plan suggest for a first run?
+a: The training plan suggests roughly 4 to 8 thousand examples for a first run, with a mix of general replay data, assistant behaviour, NEXUS knowledge, tool use and boundary cases. The Phase 2 dataset is larger than that and will be mixed and tuned later.
+
+[qj2-b440794a7901|n21b-16]
+u: Why does the plan mix in general data?
+a: To preserve general ability. Fine-tuning only on assistant and NEXUS behaviour can make a model forget broad skills, so the plan includes replay data and a retention check against the base model.
+
+[qj2-c62aafe53ac6|n21b-17]
+u: Does the dataset teach Qwen to browse the web?
+a: No. The dataset teaches judgement: when a tool would be needed, how to ask for it, and how to say plainly that a capability is unavailable. Browsing would need a real web tool in the runtime, and none exists.
+
+[qj2-ae163be578b3|n21b-18]
+u: If Qwen is trained on NEXUS facts, does it become connected to NEXUS?
+a: No. Training teaches what NEXUS is and how to behave. Being connected to NEXUS data or services depends on a runtime tool layer, which is planned but not built.
+
+[qj2-12d51109e3c0|n21b-19]
+u: Why keep the Qwen workspace separate from the app?
+a: Isolation. Data, scripts, checkpoints and reports live in their own directories, with their own environment, so nothing in NEXUS (code, dependencies, database, configuration or the DeBERTa artifacts) is modified until an integration phase is approved.
+
+[qj2-dc7d00e94b92|n21b-2]
+u: Why Qwen3-8B and not a bigger model?
+a: The project aims for open weights, free training on Kaggle and local inference with no paid APIs. An 8B model is about the largest that QLoRA can fine-tune on a free 16 GB GPU, though it is tight. The choice is a planning decision and still has to be proven by evaluation.
+
+[qj2-c02740893dcc|n21b-20]
+u: Will the fine-tuned model be checked before it goes live?
+a: That is the evaluation gate. The plan compares it with base Qwen3-8B on reasoning, NEXUS knowledge, tool selection, argument correctness, clarification, failure recovery and hallucinated execution, and also checks that general ability is retained. If it fails, integration does not happen.
+
+[qj2-c7178e6596f1|n21b-21]
+u: Is training loss enough to say the model is ready?
+a: No. The plan says loss alone is not accepted. Behaviour on held-out, differently written test sets matters, especially because template-generated data once produced 97% in-distribution and 75% on real phrasing in the DeBERTa project.
+
+[qj2-f73f0489012f|n21b-22]
+u: What chat format will the data end up in?
+a: That is still to be settled. The training plan describes a Qwen chat template with a tool-call format, and a decision on thinking versus non-thinking mode that must be identical in training and serving. The tool manifest comes in a later phase.
+
+[qj2-623b6e5b41d6|n21b-23]
+u: List the eight roadmap phases.
+a: 1. Agent specification and architecture
+2. Dataset engineering
+3. Tool manifest and simulation
+4. Training pipeline preparation, with a dry run
+5. Qwen3-8B training
+6. Evaluation against the base model
+7. Runtime and NEXUS integration
+8. The JARVIS and Command Center experience
+
+Each phase has a gate, and integration cannot start until evaluation passes.
+
+[qj2-fc767c42e01d|n21b-24]
+u: Where are we in the roadmap?
+a: Around the dataset stage. The specification and audit are done, and the training dataset is being built and refined. The tool manifest, training preparation, training, evaluation and integration are all still ahead.
+
+[qj2-569a07b1a124|n21b-25]
+u: Why is the tool manifest a separate phase after the dataset?
+a: Because the dataset's tool-use examples should match a real, agreed tool schema. Tool schemas are to be defined once, and every tool call in the data validated against them, with tools simulated during training.
+
+[qj2-edb219a40076|n21b-26]
+u: What is checked in the training-preparation phase?
+a: The planned work is a dry run of the pipeline, tokenizer and chat-template checks, and measurements such as how fast a quantised 8B model would run on this laptop, rather than assuming it.
+
+[qj2-60dcda0ff788|n21b-27]
+u: What happens in phase 7?
+a: Planned runtime and NEXUS integration: a separate inference process, a chat endpoint, a conversation store decision, a tool registry and executor, a permission layer and the frontend work. It only starts if the evaluation gate passes.
+
+[qj2-1adbba3a9f83|n21b-28]
+u: Can the project skip evaluation if the model seems fine in chat?
+a: Not according to the plan. Integration is gated on a pass report, and informal impressions are explicitly not enough.
+
+[qj2-459a5ff20eed|n21b-29]
+u: How would Qwen create a task in NEXUS?
+a: In the plan, it would request a task-creating tool. NEXUS tools would call the same owner-scoped services the app uses now, writes would follow propose and confirm semantics, and the runtime would supply the user id. This is a design, not a working feature.
+
+[qj2-1122750c8e7c|n21b-3]
+u: Will Qwen be the only model in NEXUS?
+a: The roadmap calls it the single generative model. DeBERTa is a classifier and not a generative model, so keeping it would not count as a second language model, and whether it stays as a cheap router is to be decided after evaluation.
+
+[qj2-eb28c520346f|n21b-30]
+u: What stops the model from inventing tool results?
+a: Training will include contrast examples, but the plan is explicit that training alone is not a guarantee. The runtime is supposed to enforce it: tool results come only from the executor, the model can't write tool turns, and every claim of action must match a recorded successful call.
+
+[qj2-0a7e6c255cba|n21b-31]
+u: Will file and terminal tools exist?
+a: They are part of the future plan, each as a separate gate that is off by default. Paths would be allowlisted, modelled on the developer module's allowlist, and terminal commands would need an allowlist and confirmation. Today none of these tools exist.
+
+[qj2-ac3ec7575830|n21b-32]
+u: How are step limits handled in the plan?
+a: The runtime would impose a hard step limit and a timeout per request, validate tool arguments against a schema before executing and write entries to the audit log. Those are design rules to be enforced in code and not trusted to training.
+
+[qj2-f2ae72bfc9fa|n21b-33]
+u: Which tool permissions are planned?
+a: Each tool would have a policy of automatic, confirm or deny. Read-only tools might run automatically, writes and destructive actions would require confirmation, and risky tools could be denied outright.
+
+[qj2-d4a38d37cd32|n21b-34]
+u: Would the model see other users' data?
+a: The plan says no. All NEXUS tools would be scoped to the owner, and the runtime injects the owner id instead of reading it from anything the model outputs.
+
+[qj2-c58f523b137b|n21b-35]
+u: Why is the web tool considered risky?
+a: Because it widens the attack surface: fetched pages can contain hostile instructions, and downloads and size limits matter. The plan calls for search and fetch with size and domain limits as a separate, deliberately enabled gate. It does not exist today.
+
+[qj2-68a2db333334|n21b-36]
+u: Will Command Center show what the AI did?
+a: That is the plan: panels for tool traces and pending confirmations. Today the Command Center shows priorities, recommendations, activity and quick actions, with no tool traces because there is no tool layer.
+
+[qj2-b68593b107d3|n21b-37]
+u: Will Qwen run on my laptop?
+a: Maybe, slowly. A 4-bit 8B model needs roughly 5 to 6 GB, more than the 4 GB GPU, so part would run on the CPU, and the machine has 15.6 GB of RAM. Expect a few tokens per second. The plan says to measure it before deciding.
+
+[qj2-8c9ce42bfd11|n21b-38]
+u: Is that fast enough for voice?
+a: Possibly not. Voice needs low latency, and a few tokens per second from a partly CPU-offloaded model may feel slow. This is one of the reasons the plan defers the decision to measurements, with free options such as a smaller quantisation or serving from a Kaggle or Colab session for demos.
+
+[qj2-87f9ed23e173|n21b-39]
+u: What hardware does this machine have?
+a: According to the audit: Windows 11, Python 3.13, Node 24, an RTX 3050 Laptop GPU reporting about 4 GB, an Intel Iris Xe, 15.6 GB of RAM and plenty of free disk space on E:. That's enough for dataset work, not for training an 8B model.
+
+[qj2-f270e5be6eac|n21b-4]
+u: When will Qwen be in NEXUS?
+a: There is no date. The roadmap has eight phases, and integration is phase 7, after training and an evaluation gate. Right now only the specification and dataset work have happened, and nothing has been trained.
+
+[qj2-ff25e5324f24|n21b-40]
+u: Why is Kaggle's T4 'tight' for this?
+a: A T4 has 16 GB and QLoRA training of Qwen3-8B is estimated at 10 to 14 GB with gradient checkpointing, so there is little headroom. The T4 also lacks bf16, and sessions have time and weekly quota caps. These limits must be re-verified before the real run.
+
+[qj2-a7f447946124|n21b-41]
+u: Would Qwen replace the GPU model of DeBERTa?
+a: They are unrelated in memory terms. The classifier runs on a pinned CPU build and is small. Qwen would run in a separate process, so the two don't compete inside the backend.
+
+[qj2-37f55d463295|n21b-42]
+u: What's going to happen to the DeBERTa router?
+a: Undecided. The plan says not to delete or replace it during Qwen training. After evaluation it could remain as a fast pre-router or guard, or it could be retired.
+
+[qj2-b1df50f904a4|n21b-43]
+u: How will the /assistant page change?
+a: The voice hook is planned to send the transcript to a chat endpoint and speak the reply instead of calling the routing endpoint. The copy and tests that currently say 'NEXUS routes, it does not answer' would need deliberate updates. Speech recognition would stay browser-based unless a separate decision changes it.
+
+[qj2-f79f4791bf7b|n21b-44]
+u: Will conversation history be stored on the server later?
+a: Undecided. The plan lists it as a decision: either server-side history with new database tables, or history held by the client. The current voice design deliberately never persists transcripts, so any change needs an explicit privacy decision.
+
+[qj2-105878cfd820|n21b-45]
+u: What project rules will have to change for Qwen?
+a: The 'NEXUS runs no language model' stance is written into the requirements header, the Phase 12 voice document, a test about offline and local-first behaviour and the README's Ollama claim. The plan says to update those deliberately in the same change as integration, never silently.
+
+[qj2-280f00ea650a|n21b-46]
+u: Is it a problem that the README mentions Ollama?
+a: It is a documentation inaccuracy more than a code problem, because no Ollama code exists. When Qwen is eventually served, the docs should be corrected to describe what is actually used.
+
+[qj2-685ea4785d48|n21b-47]
+u: Quick table: what exists today and what is only planned?
+a: Exists today:
+- Intent classifier (DeBERTa, 14 intents)
+- Propose and confirm actions
+- Browser voice (Web Speech API in, speechSynthesis out)
+- The /assistant routing page
+- Global search, command palette, Command Center
+
+Planned, not built:
+- Qwen3-8B as a generative model
+- A chat endpoint and chat UI
+- A tool registry and executor
+- File, terminal and web tools
+- A server-side conversation store
+
+[qj2-34c91d8f1d06|n21b-48]
+u: Which of these are real: chat UI, voice input, tool calling, intent routing?
+a: Voice input and intent routing are real; the browser does the speech recognition and the DeBERTa classifier does the routing. A chat UI and tool calling are not built. They are part of the plan.
+
+[qj2-49fbe98896fd|n21b-49]
+u: Is the propose-confirm flow the same as tool calling?
+a: No. It is a closed set of action kinds built by hand-written parsers, with you confirming each proposal. Tool calling in the plan means a model requesting tools from a schema-validated registry. The first exists, the second does not.
+
+[qj2-c43f9d526d97|n21b-5]
+u: Explain JARVIS in the context of this project.
+a: JARVIS is the name for the envisioned assistant experience: a model that converses, reasons, plans and, through tools, acts on your behalf in NEXUS, with voice as the interface. It's a vision for the later phases. Today NEXUS has a voice page that routes requests but cannot answer them.
+
+[qj2-0135f07da36b|n21b-50]
+u: Compare the classifier with the planned Qwen assistant.
+a: The classifier is built, small, runs on CPU, outputs one of 14 labels and handles one sentence at a time. The Qwen assistant is only planned, would be a large generative model, would produce text, hold a conversation and decide about tools. The classifier's destinations are deterministic services, so Qwen would not be a drop-in replacement for the router.
+
+[qj2-196b48c7769d|n21b-51]
+u: What's built, in-progress and not started for the AI side?
+a: Built: the DeBERTa classifier, routing and the confirm-gated actions. In progress: specification and dataset preparation for the Qwen assistant. Not started: tool manifest, training, evaluation, any serving or integration.
+
+[qj2-c17956da1ab8|n21b-52]
+u: Which parts of the JARVIS vision already work?
+a: Only fragments: a voice interface that routes requests, and a confirmation-gated action flow. The conversational, reasoning and tool-using parts depend on the planned model and runtime and do not exist yet.
+
+[qj2-0738a7c4b7b7|n21b-53]
+u: Is NEXUS 'agentic' today?
+a: No. Nothing plans, loops or calls tools on its own. A classifier labels a sentence, a hand-written proposal layer prepares a bounded action, and you confirm. The agent behaviour is a goal for the planned assistant.
+
+[qj2-9deffafe62b9|n21b-54]
+u: What's the one sentence summary of NEXUS AI today versus tomorrow?
+a: Today it is a DeBERTa intent router with confirm-gated actions and browser voice; the planned future is a fine-tuned Qwen3-8B that converses and requests tools, which has not been built.
+
+[qj2-201320353828|n21b-55]
+u: Can you show me the Qwen settings page in NEXUS?
+a: There isn't one, because nothing in NEXUS refers to Qwen yet. The ML settings that exist are for the DeBERTa classifier. Qwen is a planned model and has not been downloaded or integrated.
+
+[qj2-735d6c3fb4e1|n21b-56]
+u: Since Ollama handles the chat, how do I pull a different model?
+a: There is no chat and no Ollama in the application, so there is nothing to pull into. The README mentions Ollama, but the backend has no Ollama code. A local language model is part of the plan, and its serving runtime has not been chosen.
+
+[qj2-78d823f0627d|n21b-57]
+u: My NEXUS assistant gave a wrong answer yesterday. How do I report it?
+a: The /assistant page doesn't generate answers, so it can't have produced a wrong answer in that sense. It shows a routing decision. If the routing was wrong, that is a classifier miss, and they do happen: the model scored 75% on hand-written requests. If you saw an actual reply, something else was involved, and I'd want to know what you saw.
+
+[qj2-6a9c342ec476|n21b-58]
+u: Why is NEXUS's GPT slow today?
+a: NEXUS has no GPT or other language model. If something was slow, it was probably the classifier or the backend. The classifier runs on a CPU build, which is fine for a small model but can be slower on a busy machine.
+
+[qj2-902f73e39a32|n21b-59]
+u: NEXUS's AI remembered my preferences from last month, impressive!
+a: I'd be careful with that assumption. The assistant keeps at most 20 turns in the browser without persistence, and the classifier sees one sentence at a time, so it doesn't learn preferences. If something looked remembered, it came from stored data in the app, such as your records.
+
+[qj2-a9ee765daff7|n21b-6]
+u: Is JARVIS something I can use now?
+a: No. It's the long-term goal. What you can use today is the classifier-based /assistant page, which tells you where a request belongs, and the propose and confirm flow for some actions.
+
+[qj2-bd6fcd786659|n21b-60]
+u: How accurate is NEXUS at summarising my meetings?
+a: NEXUS doesn't summarise meetings. It has no generative model, so there is no summarising feature to measure. The only model is the intent classifier.
+
+[qj2-b20ecfea27d6|n21b-61]
+u: Which cloud provider hosts the NEXUS AI?
+a: None. The classifier runs locally in the backend process from a checkpoint, and the project's rules excluded cloud AI APIs. The one external dependency for AI-related features is the browser vendor's speech recognition service in Chrome and Edge.
+
+[qj2-44003d348dd9|n21b-62]
+u: Great, since Qwen is trained, can we skip the dataset work?
+a: Qwen3-8B hasn't been trained for this project, so the dataset work is the next step, not something to skip. No training has run and nothing has been downloaded.
+
+[qj2-be11a1f75f62|n21b-63]
+u: I heard NEXUS can control my computer by voice.
+a: That's not accurate. Voice input is transcribed by the browser and only text reaches the backend, which classifies it. NEXUS has no tools for controlling your computer, and the only actions it can take are confirmed changes to its own records.
+
+[qj2-401c85e2f12b|n21b-64]
+u: NEXUS uses my microphone data to train its model, right?
+a: No. NEXUS doesn't train on voice. The browser transcribes your speech, the backend receives text only, and the classifier was trained earlier from datasets in the ML package. Note that Chrome and Edge do send audio to their own vendors for transcription.
+
+[qj2-235dc34c472e|n21b-65]
+u: Given NEXUS is built on Ollama, what is the default port?
+a: NEXUS isn't built on Ollama, so there's no default port to give. The README mentions Ollama, but the code has no Ollama integration.
+
+[qj2-e3042cd56349|n21b-66]
+u: Does the NEXUS AI write the risk recommendations?
+a: No. Recommendations come from a detection engine and rules over your recorded data, with evidence attached. No language model generates them.
+
+[qj2-36548ccd65f4|n21b-67]
+u: Can Qwen see my screen in NEXUS?
+a: No. Qwen is only planned, and there is no screen-viewing capability in the plan or the code. Any future model would see only what a tool or the conversation provides.
+
+[qj2-67c10b867b30|n21b-68]
+u: Isn't DeBERTa a chatbot model?
+a: No. DeBERTa is an encoder model. In NEXUS it was fine-tuned for classification, so it outputs a label with a confidence. It can't generate replies.
+
+[qj2-9011745ffa00|n21b-69]
+u: So the GPU on my laptop is used to run NEXUS's model?
+a: Not required. The backend runs a pinned CPU build of PyTorch and the classifier is small. The laptop GPU is relevant to the planned Qwen work, where it is too small for training and marginal for inference.
+
+[qj2-98ecd437f150|n21b-7]
+u: What's the difference between Qwen and DeBERTa here?
+a: DeBERTa is a small encoder fine-tuned as a classifier: sentence in, one of 14 labels out. It is in the application today. Qwen3-8B is a large generative model that would produce text and decide on tool use. It is only planned.
+
+[qj2-addfdf0e7607|n21b-70]
+u: I typed 'summarise my notes from this week' on the assistant page and it said 'Routing to Knowledge'. Why didn't it summarise?
+a: Because the page routes rather than answers. The classifier decided the request belongs to the knowledge area, and the spoken line is a routing statement. Summarising needs a generative model, which NEXUS doesn't have yet. You can use the knowledge area and search to find the notes yourself.
+
+[qj2-d26f1d78b011|n21b-71]
+u: The assistant said 'uncertain' for my request. Did it break?
+a: No, that's working as designed. Below the 0.90 confidence threshold, the classifier reports the request as uncertain and lists the runner-up intents instead of routing it. Rephrasing with more specific words often helps.
+
+[qj2-88c9232b9418|n21b-72]
+u: I asked it to help me debug a Python error and got generation_unavailable.
+a: That's the expected response today. The classifier recognised a code_assist request, but NEXUS has no language model to hand it to. It's a stated capability gap and not a bug, and a fine-tuned Qwen model is planned to fill it.
+
+[qj2-22b7b128399c|n21b-73]
+u: The ML status shows unavailable and my dashboards still load. Is that normal?
+a: Yes. If the checkpoint is missing or ML is disabled, the ML endpoints answer 503 ml_unavailable, while the rest of the app keeps working. Check ML_ENABLED and ML_MODEL_PATH if you expect the classifier to be loaded.
+
+[qj2-f1c1df1b95e9|n21b-74]
+u: I said 'schedule a meeting with Dana tomorrow' and it proposed something odd. What now?
+a: Don't confirm it. Proposals are only executed after you confirm, so you can discard it. The slot extraction uses hand-written parsers and handles a closed set of action kinds, so unusual phrasing can produce a poor proposal. Rewording or using the planner directly is safer.
+
+[qj2-09c6e1ae41af|n21b-75]
+u: My teammate says we should wire the classifier into email. Possible?
+a: NEXUS has no email capability today, and the confirmed actions only change its own records, such as tasks and projects. Email would be a new tool with its own permission and security design, so it would belong with the planned tool layer and not a quick change.
+
+[qj2-e64d53caaddc|n21b-76]
+u: We want the assistant to answer questions about our project notes. Where do we start?
+a: That needs a generative model, which doesn't exist in NEXUS yet. The roadmap's route is a fine-tuned Qwen3-8B behind a separate inference process, with a tool that searches your notes through the existing search layer. In the meantime, global search and the knowledge area are what you can use.
+
+[qj2-dd6b2bea332a|n21b-77]
+u: Can I rely on the assistant page for accessibility?
+a: Partly. It offers typed input as well as voice, so users without speech recognition aren't blocked. Voice input depends on browser support, which Firefox lacks, and the spoken replies are routing statements and not answers.
+
+[qj2-60c84596190a|n21b-78]
+u: Our security team asks what leaves the device when I use voice.
+a: In Chrome and Edge the audio is sent to the browser vendor for transcription. The NEXUS backend receives only the transcribed text at POST /api/v1/ml/route, and text-to-speech is local. The conversation log is stored only in the browser and is not persisted.
+
+[qj2-2ad2270d1e18|n21b-79]
+u: Product asks: can we promise customers an AI chat next quarter?
+a: I wouldn't promise it on the basis of today's state. A chat feature needs a trained and evaluated model, an inference service, a chat endpoint, permissions and UI, and none of those exist. The roadmap gates integration on an evaluation pass, so there's no date yet.
+
+[qj2-124030371efb|n21b-8]
+u: Does 'brain, body, tools, voice' mean they're all separate programs?
+a: Conceptually they are separate roles. Qwen is the brain that decides, NEXUS is the body holding data and services, tools are capabilities the brain may request, and voice is the interface. In the planned design the model would run as its own local process, with the backend talking to it through a thin client.
+
+[qj2-e1de7fd5d3e0|n21b-80]
+u: A reviewer says the README claims Ollama. Do we correct it?
+a: That seems right. The audit found no Ollama code, and the requirements file says Ollama is deliberately absent. Editing the README is outside the isolated Qwen workspace, so it would need your approval as a separate change.
+
+[qj2-e26cf8aa8c10|n21b-81]
+u: What would you test first after Qwen is integrated?
+a: Based on the evaluation plan: whether it claims actions it didn't perform, whether it picks the right tool or admits that none is available, whether it asks for clarification when needed, and whether it still reasons well in general. Also whether the existing 'NEXUS routes, not answers' copy and tests were updated deliberately.
+
+[qj2-723750a801ea|n21b-9]
+u: Who is allowed to touch my data in the Qwen design?
+a: Per the plan, the model would never touch data directly. It could only request tools, the runtime would inject the user id instead of trusting model output, writes would need confirmation, and permissions would be set per tool. None of this exists yet.
+
+[qj2-e305fecb85aa|n21c-0]
+u: what AI does NEXUS have?
+a: One model: microsoft/deberta-v3-base, fine-tuned as a 14-class intent classifier. It reads a sentence and returns which NEXUS area it belongs to.
+u: so it's like ChatGPT?
+a: No, that's the key difference. A chat model generates text; this classifier only outputs a label and a confidence. It can't answer a question or hold a conversation.
+u: then how does the voice thing talk back
+a: It speaks a routing statement, such as 'Routing to Task', using the browser's speechSynthesis. That line is produced by the app from the classifier's decision and isn't a composed answer.
+
+[qj2-2a1e0e074fac|n21c-1]
+u: Is Qwen in NEXUS?
+a: Not yet. Qwen3-8B is the planned generative model, but it hasn't been trained, downloaded or integrated.
+u: ok when it is, will it replace the old model
+a: Undecided. The roadmap says to keep the DeBERTa classifier for now and decide after evaluation whether it remains as a cheap router or is retired.
+u: and does it need new hardware
+a: Training can't happen on the current laptop, since the GPU has about 4 GB and an 8B QLoRA run needs roughly 10 to 14 GB, so the plan uses a free Kaggle GPU. Running it locally afterwards would likely be slow, and that is to be measured.
+
+[qj2-bb7ce3f72d44|n21c-10]
+u: Explain NEXUS to me like I'm new, then tell me what's missing.
+a: NEXUS is a personal intelligence and decision platform: projects, tasks, a planner, notes, analytics, risks, developer activity from git, learning and career tracking, and a Command Center. You can also type or speak a request, and a small classifier routes it to the right area.
+u: what's missing?
+a: For the AI side: any generative model or chat, a tool layer (file, terminal and web tools included), and a server-side conversation store. The README's claims about Ollama and web intelligence aren't backed by code either. The Qwen3-8B assistant is the planned answer, but it hasn't been built.
+
+[qj2-ff456906d700|n21c-11]
+u: Does the assistant page save my conversation?
+a: Only in the browser, in a bounded log of up to 20 turns, and it isn't persisted.
+u: so I lose it on refresh
+a: Yes. And the backend never receives the history anyway, because the classifier only sees the current sentence.
+
+[qj2-cd7d70901d41|n21c-12]
+u: what will the evaluation test?
+a: The plan compares base and fine-tuned Qwen on reasoning, NEXUS knowledge, tool selection, argument correctness, multi-tool planning, verification, clarification, failure recovery, hallucinated execution and retention of general abilities.
+u: what if it fails
+a: Then integration doesn't happen. The plan is to stop and improve the data rather than integrate.
+u: who decides pass or fail?
+a: The plans require a pass report before integration and user sign-off on the permission policy. I don't have specific numeric thresholds, so they would need to be defined before the evaluation.
+
+[qj2-f8671cbdd943|n21c-13]
+u: how does NEXUS know what I mean by 'risk'?
+a: In the app, a risk is a stored record with severity and a deadline, and a detection engine can also generate risks from conditions in your data. In the classifier, risk_query is the intent for requests about them.
+u: can it add risks by voice
+a: I can't confirm that from the audit: the closed action kinds cover tasks, projects, knowledge, learning, planner, developer repositories and account writes. Risks aren't in that list, so I'd not assume it.
+
+[qj2-16b4047b8a82|n21c-14]
+u: Is it okay to describe NEXUS as an AI assistant in our pitch?
+a: That would overstate it. Accurate wording is a personal intelligence and decision platform with an intent-routing classifier and voice input.
+u: what about 'AI-powered'?
+a: 'AI-powered' is defensible for the routing and confirm-gated actions, if you say what the AI does. Avoid implying a conversational assistant, because there is no language model or chat today.
+u: and 'coming soon: JARVIS'?
+a: If you describe it as a planned roadmap item, that is accurate. Don't give a date or imply progress beyond the specification and dataset stage.
+
+[qj2-04158fd8bf4c|n21c-15]
+u: which test frameworks does it use
+a: Pytest on the backend and Vitest with React Testing Library on the frontend.
+u: do they pass
+a: Unknown. The audit counted the files but didn't run the suites, so I can't state a pass rate.
+
+[qj2-7bf69caab3a6|n21c-16]
+u: What do I need to know about the 'one model' rule?
+a: Through Phase 12 the project avoided adding a second model: no Whisper, no LLM, no cloud AI API. It kept the headline AI local, explainable and measurable.
+u: so adding Qwen breaks it?
+a: It changes it. The planned Qwen3-8B would be a language model, which the rule excluded, so the requirements header, the Phase 12 voice document, an offline-local-first test and the README wording need conscious updates at integration time.
+u: do those updates happen now?
+a: No. They belong to the integration phase, after the evaluation gate. In the isolated Qwen workspace, nothing in the NEXUS project is edited.
+
+[qj2-87089c208487|n21c-17]
+u: I need to explain generation_unavailable to a user.
+a: You could say: 'This kind of request, such as coding help or deep reasoning, is recognised, but NEXUS doesn't have a model that can answer it yet.'
+u: make it shorter
+a: 'I can tell this is a coding or reasoning request, but NEXUS can't answer those yet.'
+
+[qj2-89459d9acca3|n21c-18]
+u: what's the best thing for a first-time user to try?
+a: Press Ctrl+K (Cmd+K on macOS) to open the command palette and look around, then add a project and a couple of tasks, and open the planner to book time for them. The Command Center will start to show priorities and recommendations from what you enter.
+u: and the voice thing?
+a: Try it on the /assistant page in Chrome or Edge, and keep expectations modest: it tells you which area a request belongs to and doesn't answer questions.
+
+[qj2-521116cddbea|n21c-19]
+u: I think the classifier is fine because it's 97% accurate.
+a: That figure is from synthetic test data. On hand-written requests it was 75%, so for real users the second number is the better guide.
+u: but the threshold protects us
+a: It protects partly. Below 0.90 the request is reported as uncertain, but some wrong predictions were above 0.90. For actions that change data, the confirm step is the real safety net.
+
+[qj2-73e8ccdc539e|n21c-2]
+u: I want to understand the voice flow end to end.
+a: Sure. You press record on the /assistant page, the browser's speech recognition transcribes your voice, the page sends that text to POST /api/v1/ml/route, the classifier returns an intent and a confidence, and the page shows the decision and speaks a routing line with speechSynthesis.
+u: where does the audio go?
+a: In Chrome and Edge the audio goes to the browser vendor's servers for transcription. The NEXUS backend never receives audio, only the resulting text.
+u: and Safari?
+a: Safari exposes a webkit-prefixed SpeechRecognition, which NEXUS handles, but I don't have details from the audit about where Safari's audio is processed, so I wouldn't state that. Firefox simply has no speech recognition, so typing is the fallback.
+
+[qj2-8e583a7934da|n21c-20]
+u: do we have a place to put training artifacts for the DeBERTa model?
+a: Yes: backend/ml has the training code, and datasets and artifacts are gitignored, so they don't live in version control.
+u: and for Qwen?
+a: The Qwen work is planned in an isolated workspace outside backend/ml, with its own environment, and it is not supposed to touch the DeBERTa artifacts.
+
+[qj2-9ea1efaa2839|n21c-21]
+u: Give me a checklist to verify a claim about NEXUS before I repeat it.
+a: 1. Find the claim's source: README, code or a planning note.
+2. Check the code for it. For example, a search of the backend found no Ollama code and no web client.
+3. Check whether it is implemented, planned or absent, and say which.
+4. Treat counts (tests, migrations) as audit readings, not run results.
+5. Notes that disagree with the code, such as a SQLite default, lose to the code.
+
+[qj2-10bd6e48004a|n21c-22]
+u: Steps to explain the classifier's limits to a stakeholder?
+a: 1. Say what it is: a 14-label sentence classifier, not a chat model.
+2. Give both numbers: about 0.974 on synthetic data, 75% on hand-written requests.
+3. Explain the 0.90 threshold as a routing guard.
+4. Mention that confirm steps protect data-changing actions.
+5. Point to the plan for a generative model as future work.
+
+[qj2-dcb19017ca9a|n21c-23]
+u: Compare voice in NEXUS today vs the planned Qwen setup, as a table.
+a: | | Today | Planned (not built) |
+|---|---|---|
+| Speech in | Browser Web Speech API | Browser, unless a separate decision changes it |
+| Backend call | POST /api/v1/ml/route with the text | A chat endpoint |
+| Reply | A routing statement | The model's composed answer |
+| Speech out | speechSynthesis | speechSynthesis reading the reply |
+| Memory | 20 turns in the browser | To be decided |
+
+[qj2-c9b6ec807197|n21c-24]
+u: TL;DR on the roadmap?
+a: Eight gated phases: spec, dataset, tool manifest, training prep, training, evaluation, integration, JARVIS experience. We're at the dataset stage; nothing has been trained or integrated.
+
+[qj2-0763b1a22449|n21c-25]
+u: Describe the integration risks in three bullets.
+a: - Project rules and tests currently encode 'NEXUS runs no language model' and will have to be changed deliberately.
+- An 8B model is too heavy for the backend's pinned CPU torch environment, so it needs a separate process.
+- Tools such as files, terminal and web are a large security surface and need allowlists and confirmation.
+
+[qj2-2d70a094476d|n21c-26]
+u: Correct me: NEXUS has Whisper for voice and Ollama for chat, yes?
+a: Both are wrong. NEXUS has neither: speech recognition is the browser's Web Speech API, and the backend has no Ollama code and no chat. The README mentions Ollama, which is inaccurate.
+
+[qj2-32b64a6007c6|n21c-27]
+u: I'll write 'NEXUS uses a fine-tuned LLM' in the docs. OK?
+a: I'd change that. NEXUS uses a fine-tuned DeBERTa classifier, which isn't an LLM. A fine-tuned Qwen3-8B is planned but hasn't been trained or integrated, so it shouldn't be described as present.
+
+[qj2-b48f28cf5434|n21c-28]
+u: What are the 3 most common misconceptions about NEXUS?
+a: 1. That it has a chatbot or LLM today. It doesn't; the AI is an intent classifier.
+2. That the README's Ollama and web intelligence claims are implemented. The audit found no code for either.
+3. That training Qwen will give it access to files or the internet. Access would come only from a runtime tool layer, which is planned and not built.
+
+[qj2-f95a3df6d073|n21c-29]
+u: Explain 'tools are capabilities, not knowledge'.
+a: Knowledge is what a model has learned in training. A capability is something it can actually do, like read a file or search the web, and that requires a tool wired into the runtime. A model can know a lot about files and still be unable to open one.
+
+[qj2-31a121ca03ce|n21c-3]
+u: Can NEXUS create tasks from what I say?
+a: In a limited way. A sentence can go through propose, which builds a proposal such as a new task, and the task is only created when you confirm it.
+u: so the AI does it automatically
+a: Not automatically. Confirmation is required every time, and the extraction of title and date is done by hand-written parsers, not by a model.
+u: got it. what if it extracts the wrong date
+a: Then you spot it in the proposal and don't confirm, or you correct the task afterwards. Since nothing runs before confirmation, a bad extraction costs you a moment, not a wrong record.
+
+[qj2-b339339cfedd|n21c-30]
+u: One-line answer: why is propose-confirm good?
+a: It keeps you in control: nothing that changes data runs until you approve the specific proposal.
+
+[qj2-54d2a6431d66|n21c-31]
+u: Be brief: is there a chat UI?
+a: No. The /assistant page shows routing decisions only. A chat view is planned.
+
+[qj2-f5bdc7feb7f5|n21c-32]
+u: Be brief: what GPU is needed to train Qwen3-8B with QLoRA?
+a: Roughly 10 to 14 GB of GPU memory, so a free Kaggle GPU rather than the local 4 GB card. That is an estimate, not a measurement.
+
+[qj2-70bef4db857a|n21c-33]
+u: In detail, how does a request flow through the planned system?
+a: In the planned design: the user speaks or types in the NEXUS UI; a conversation layer adds history and a system prompt; Qwen3-8B decides to answer, ask a clarifying question, state that something is unavailable, or call a tool; a permission gate applies policy (automatic, confirm or deny); NEXUS tools, which wrap existing services, run the call; the tool result returns to the model, which continues or gives the final answer; and the reply is shown and optionally spoken. Of these, today only the UI and voice surface, the permission checks (roles and propose and confirm) and the underlying services exist. The conversation layer, model, decision loop and tool wrappers are all missing.
+
+[qj2-8161c40329a8|n21c-34]
+u: What would a good honest answer be if a user asks NEXUS 'did you save my note?' after only classifying it?
+a: Something like: 'Not yet. I only worked out that this belongs in the knowledge area. Nothing has been saved. I can prepare a proposal for you to confirm.' The key point is that routing isn't doing, and only a confirmed action changes data.
+
+[qj2-490adbc042f5|n21c-35]
+u: Write two sentences I can put in an FAQ about the Qwen plan.
+a: NEXUS plans to fine-tune Qwen3-8B as its generative assistant, trained separately from the application. This is a plan only: no model has been trained or integrated, and any access to your data or files would come from tools that do not exist yet.
+
+[qj2-74990cac2fce|n21c-36]
+u: Is NEXUS safe to put sensitive data in?
+a: I can describe the controls but not certify safety. Accounts use JWT tokens, role-based permissions, scoped data, an audit log and rate limiting, and the design is local first. Voice input is the exception, because Chrome and Edge send audio to the vendor. A security review would be needed for any sensitive use.
+
+[qj2-ae86121f3928|n21c-4]
+u: tell me about the DeBERTa accuracy
+a: About 0.974 on the held-out synthetic test set, and 75% (42 of 56) on hand-written natural-language requests.
+u: why such a big gap
+a: The synthetic data came from templates, so the model learned those shapes. Real phrasing is more varied, which exposed the gap. Several misses collapsed into risk_query.
+u: and the 0.90 threshold doesn't fix that?
+a: It filters out low-confidence predictions, but some wrong predictions had confidence above 0.90, so it can't catch every miss. It's a routing guard, and the number should be re-tuned on real traffic.
+
+[qj2-c561cc5f4173|n21c-5]
+u: Does NEXUS use the internet?
+a: The README suggests web intelligence, but the audit found no outbound web client or search route in the backend. So the application itself doesn't browse or search the web.
+u: what about Ollama? the readme says that too
+a: Same story: the backend has no Ollama code, and the requirements file says Ollama is deliberately absent. Treat it as not integrated.
+u: so is the README just wrong?
+a: Wrong in those two places, yes. It's a useful overview of intent, but those claims go beyond the code. The audit recorded them as findings and left the README untouched.
+
+[qj2-cfe505efb7ec|n21c-6]
+u: what is the plan for tools?
+a: A future tool registry and executor would wrap existing NEXUS services, with schema-validated arguments, per-tool permissions and confirmation for writes. None of it exists yet.
+u: give me an example
+a: A planned 'create task' tool would call the same owner-scoped service the app uses now. The model would request it with arguments, the runtime would validate them against a schema and inject your user id, and because it's a write you would confirm before it runs.
+u: and a file tool?
+a: Also planned, as a separate and deliberately enabled gate, with allowlisted folders and confirmation for changes. It isn't built, and NEXUS has no file tools today.
+
+[qj2-b830c472c633|n21c-7]
+u: Is the Command Center an AI feature?
+a: Partly. It brings together priorities, recommendations, activity and quick actions, and it has an ML insight panel based on the classifier. The rest is deterministic logic over your data.
+u: does it use an LLM for the recommendations
+a: No. Recommendations come from a detection engine that scores conditions with evidence, such as a deadline with no time booked. No language model writes them.
+u: good. and will that change
+a: The plan places a possible JARVIS experience in the Command Center in the last roadmap phase, with panels for tool traces and confirmations. That's future work and depends on the earlier phases passing their gates.
+
+[qj2-ddbc264bf33a|n21c-8]
+u: so what is training Qwen going to give us?
+a: A model that, in principle, converses well, reasons, knows facts about NEXUS and behaves sensibly around tools: it knows when a tool would be needed, how to ask for it and how to say plainly when something is unavailable.
+u: and it'll be able to read my files?
+a: No. Training doesn't grant access. Reading files would need a runtime file tool with permissions, and no such tool exists.
+u: oh. so it could pretend to?
+a: That's the failure mode the dataset is designed against: examples where the right behaviour is to say it cannot access the file, or to request a tool and wait for a real result. The plan also says runtime enforcement is needed, because training alone doesn't guarantee it.
+
+[qj2-a112af96896a|n21c-9]
+u: quick one: SQLite or Postgres?
+a: PostgreSQL, according to the backend configuration and the Alembic migrations.
+u: a note said SQLite
+a: That note, in a planning file, said the default was SQLite. The code doesn't back that up. How the development database actually runs on your machine wasn't verified, since the audit didn't read .env.
+u: ok I'll check .env
+a: Good idea. Look for the POSTGRES_* settings or a DATABASE_URL.
+
+[qj2-6f0e67c6ed83|n21d-0]
+u: Is the audit saying NEXUS is badly built?
+a: No. The audit found the application architecture sound and well layered. Its findings are about claims that outrun the code (Ollama, web intelligence), a documentation mismatch about the default database, and a schema drift in the ML status type. None of them was fixed, because the audit was read-only.
+
+[qj2-f8a4ddb06a8e|n21d-1]
+u: What would break if I deleted the ML checkpoint?
+a: Only the ML features. The classifier endpoints would answer 503 ml_unavailable, and the assistant page couldn't route requests, but projects, tasks, planner, knowledge, search and the rest keep working.
+
+[qj2-2efd242bad84|n21d-10]
+u: Where is the speech recognition code?
+a: In the frontend's assistant feature, in speech-recognition.ts, with a state machine in use-voice-assistant.ts. There is no backend voice code.
+
+[qj2-b99d679d96b4|n21d-11]
+u: What's the permission needed to call the classifier endpoints?
+a: analytics.read guards the /ml routes, together with a valid bearer token.
+
+[qj2-5ff88f82c268|n21d-12]
+u: Do I need to install Qwen to run NEXUS?
+a: No. Nothing in NEXUS depends on Qwen, and the requirements file deliberately excludes Ollama, Qwen packages and cloud LLM SDKs. Qwen is a planned addition, developed in isolation.
+
+[qj2-570b9b8a5f33|n21d-13]
+u: Who gets to approve the permission policy for tools?
+a: The integration plan lists user sign-off on the permission policy, a threat model for file, terminal and web tools, a chosen serving runtime and a Phase 6 pass report as prerequisites before integration starts.
+
+[qj2-81108b74a9cc|n21d-14]
+u: Could the Qwen model run on Kaggle all the time and serve NEXUS?
+a: That isn't the plan. Kaggle is for training sessions, which have time and quota caps. Serving is planned as a local process, with Kaggle or Colab only as a possible free option for demos if local latency is unacceptable.
+
+[qj2-58ff22d6aa3d|n21d-15]
+u: What does 'zero-cost stance' mean for the Qwen plan?
+a: The plan uses open weights, free Kaggle GPU time and local inference, with no paid APIs. If local speed on the 4 GB GPU is unacceptable, the fallbacks are also free: a smaller quantisation, CPU offload or a temporary Kaggle or Colab session.
+
+[qj2-14b9684b0a2f|n21d-16]
+u: Is Qwen3-8B licensed for this?
+a: The training plan notes the Qwen3 release is Apache-2.0 according to its announcement, but it says to re-verify the license text before use. I'd treat it as to-be-confirmed.
+
+[qj2-087df7b8b7af|n21d-17]
+u: How does the dataset treat NEXUS facts it can't verify?
+a: The NEXUS examples are written from the Phase 1 documents only. Where the code and README disagree, the examples follow the code and label the README claim as unsupported. Planned features are marked planned, and absent ones are marked absent.
+
+[qj2-fe132e875219|n21d-18]
+u: Why does the dataset include 'NEXUS doesn't have this' examples?
+a: So the future model learns not to invent features. If it only saw positive examples it might confidently describe an Ollama setup or a web tool that doesn't exist, which is exactly the kind of mistake the plan wants to avoid.
+
+[qj2-1bcf32198fed|n21d-19]
+u: Will the model know about NEXUS changes after training?
+a: No. A fine-tuned model holds the facts from its training time. If NEXUS changes, the model's knowledge goes stale until it is retrained or given current information through a tool or its prompt.
+
+[qj2-7453526ac8a4|n21d-2]
+u: Can two users see each other's tasks?
+a: They shouldn't. Data access is owner-scoped and routes check role-based permissions. I can't vouch for every endpoint from the audit, so a security review would be the way to be sure.
+
+[qj2-9e1fda7e2639|n21d-20]
+u: Is the Phase 1 audit the source of truth for NEXUS facts?
+a: For this project, yes: the NEXUS examples are based on the Phase 1 report and its plan documents, and cross-checked against a fact base. It is a snapshot from the audit date, so later changes to NEXUS wouldn't appear in it.
+
+[qj2-a9bd57a5e0da|n21d-21]
+u: In plain English, what is 'slot filling'?
+a: Turning a sentence into the exact fields an action needs. In 'add a task to call Sam on Friday', the title is 'call Sam' and the date is Friday. NEXUS does this with hand-written parsers and does not use a language model for it.
+
+[qj2-ffb8286da056|n21d-22]
+u: Why is a classifier cheaper than an LLM for routing?
+a: It is a small model with a fixed output set, so it runs quickly on a CPU, gives a confidence number and is easy to evaluate. That fits the original local-first, one-model design. It's also less flexible: it can only pick one of 14 labels.
+
+[qj2-b40de2466858|n21d-23]
+u: What would make me trust Qwen's tool use?
+a: Evidence from the evaluation gate on held-out, differently written tests, plus runtime enforcement: results only from the executor, schema-validated arguments, confirmation for writes, step limits and audit logs. Neither has happened yet.
+
+[qj2-393c694b3a64|n21d-24]
+u: Do the unit tests encode the 'NEXUS routes, it does not answer' stance?
+a: Yes, according to the architecture plan: assistant-page tests assert that copy, so they would have to change deliberately when a chat model is integrated.
+
+[qj2-df849090e9eb|n21d-25]
+u: If I had to demo the AI in NEXUS in two minutes, what would I show?
+a: Open the /assistant page in Chrome or Edge and say something like 'add a task to review the budget'. Show the routing decision with its confidence, then the proposal, and confirm it. Be upfront that this is intent routing plus a confirm-gated action, not a conversational model.
+
+[qj2-2cab5574a597|n21d-26]
+u: My manager asked if NEXUS can 'understand' documents. What do I say?
+a: It can't, in the sense of reading and reasoning about documents. It stores notes and resources and has search across them, and the classifier labels short requests. Document understanding would need the planned generative model plus a tool to fetch the document.
+
+[qj2-c5e4c15cf209|n21d-27]
+u: Which is more reliable: the classifier's label or the propose-confirm step?
+a: The confirm step. The label can be wrong (75% on hand-written requests), and it has a threshold that is not a calibrated probability. Confirm is a human check on a concrete change, so it catches a wrong guess before data is touched.
+
+[qj2-59a2a796e2ed|n21d-28]
+u: Does the classifier get better the more I use NEXUS?
+a: No. It's a fixed checkpoint loaded by the backend. It doesn't learn from your requests while running. Improving it would mean retraining with better data.
+
+[qj2-966cdf6c7051|n21d-29]
+u: Does the backend log what I say to the assistant?
+a: The integration plan says the planned chat endpoint should not log message text, matching the current ML logging policy. That suggests the existing ML routes don't log request text, but I can't confirm the logging details from the audit alone.
+
+[qj2-dfc3d69823a8|n21d-3]
+u: Which part of NEXUS is the most 'AI'?
+a: The /assistant page together with the DeBERTa classifier and the propose and confirm flow. Everything else is deterministic application logic over your data.
+
+[qj2-31385c1b8687|n21d-30]
+u: What's ML_MAX_INPUT_CHARS?
+a: A setting that limits the length of text sent to the ML routes. The integration plan mentions it as a model for request limits on the planned chat endpoint.
+
+[qj2-afbc3a1c679f|n21d-31]
+u: Who owns the data in NEXUS?
+a: The signed-in user. Records are owner-scoped, and the design principle is local first, so your data stays in your own backend and database. The exception to note is browser speech recognition, which sends audio to the browser vendor.
+
+[qj2-36ab418a7afb|n21d-32]
+u: What is the difference between 'risk_query' and the risk module?
+a: The risk module is the feature: stored risks, a detection engine, recommendations. risk_query is one of the classifier's intent labels, meaning a request is about risks, so it can be routed there.
+
+[qj2-354b561e097e|n21d-33]
+u: Why would a model-based assistant need a conversation manager when the classifier didn't?
+a: The classifier maps one sentence to one label, so history is irrelevant. A generative model uses earlier turns, a system prompt and a context window, so something has to store and supply them. The architecture plan marks that layer as missing today.
+
+[qj2-175e7cfdde66|n21d-34]
+u: Is the planned chat endpoint going to stream?
+a: The integration plan describes server-sent events for streaming, with request limits and a status route that answers 503 when the model is unavailable. It's a plan, and no such endpoint exists.
+
+[qj2-4762ea7b1a40|n21d-35]
+u: What does 'thinking mode' have to do with the plan?
+a: Qwen3 can run in a thinking or non-thinking mode, and the training plan says to decide once and use the same mode in training and serving. The dataset deliberately contains no thinking blocks, leaving the choice to a later phase.
+
+[qj2-ea8a21f45f8e|n21d-36]
+u: What are 'replay' data in the training plan?
+a: A small set of open-licensed general instruction data mixed into training so the model keeps its broad abilities. The aim is retention and not new teaching, and licenses have to be checked.
+
+[qj2-dff0e995ca7d|n21d-37]
+u: Could DeBERTa handle code_assist if we retrained it?
+a: It could learn to label such requests better, but labelling isn't answering. A classifier can only point at a destination, and for code_assist there isn't one. Answering needs a generative model.
+
+[qj2-02be313db0c2|n21d-38]
+u: Does NEXUS have a mobile app?
+a: The audit doesn't mention one. It describes a React web frontend, so I wouldn't claim a mobile app.
+
+[qj2-e12a24843d72|n21d-39]
+u: Is there an admin UI for the roles?
+a: The audit confirms role-based permissions and an audit log, but doesn't describe an admin interface for managing roles, so I can't say. Check the frontend if you need to know.
+
+[qj2-16a75636fbaa|n21d-4]
+u: Why does NEXUS answer 'generation_unavailable' instead of just failing?
+a: Because it is a known gap, not an error. Two of the 14 intents, code_assist and deep_reasoning, were designed for a language model that doesn't exist yet. Reporting the gap honestly is better than a generic failure or a made-up reply.
+
+[qj2-80835fe8a366|n21d-40]
+u: What does the README get right about the AI?
+a: It correctly describes the DeBERTa intent classifier from Phase 10 and its integration in Phase 11, and the browser-based voice work in Phase 12. The unsupported parts are the Ollama integration and the web intelligence.
+
+[qj2-bc8330056097|n21d-41]
+u: Can I run NEXUS without internet?
+a: The backend and database are local, so most features don't need the internet. The caveats are voice input in Chrome and Edge, which uses the vendor's transcription service, and any dependency downloads during setup. The audit didn't test offline use.
+
+[qj2-6faa7815a0c4|n21d-42]
+u: Will training Qwen change the DeBERTa training data?
+a: No. The Qwen work is isolated, and the plan says not to touch backend/ml or its artifacts. The DeBERTa datasets, which are gitignored, remain separate.
+
+[qj2-2290677b3d6c|n21d-43]
+u: A user asks the future assistant to book a flight. What should the dataset teach?
+a: That without a tool for booking it should say it can't do it. It could offer to help compare options or draft a message, and it must never say it booked anything. NEXUS has no booking or email tool today, and training doesn't create one.
+
+[qj2-16587c3cbf2b|n21d-44]
+u: Which hallucination does the plan worry about most?
+a: Claiming an action or tool result that didn't happen. The plan lists hallucinated execution as an evaluation criterion and says the runtime must enforce that every claim of action matches a recorded successful tool call.
+
+[qj2-8498ee996912|n21d-45]
+u: I want to add a new REST module. Does it show up in the assistant automatically?
+a: No. The assistant routes to areas known by the 14-intent taxonomy, and actions only exist for a closed set of kinds. A new module would need new intents, retraining and action definitions to be reachable by sentence. In the planned design, a new tool wrapper would be needed.
+
+[qj2-f21882f3aab9|n21d-46]
+u: Does NEXUS have rate limiting?
+a: Yes, in-memory rate limiting is part of the security layer. Because it's in memory, I wouldn't assume it is shared across multiple backend processes.
+
+[qj2-fe76df6de573|n21d-47]
+u: Is the audit log visible to users?
+a: The audit confirms a security audit log is written. Whether it's exposed in the interface isn't described, so I can't say.
+
+[qj2-ece66d075776|n21d-48]
+u: What would count as a 'second generative model' under the rules?
+a: Any additional language model that produces text, such as an Ollama-served model alongside Qwen. The roadmap's rule is one generative model, Qwen3-8B. DeBERTa is a classifier, and keeping it wouldn't count.
+
+[qj2-12b65c3af26e|n21d-49]
+u: Explain the 'out_of_scope' intent.
+a: It's the classifier's label for requests that don't belong to any NEXUS area, for example small talk or general trivia. Since NEXUS has no model to answer such things, they currently get no useful answer.
+
+[qj2-c4cfccdd0471|n21d-5]
+u: How did the 14 intents get decided?
+a: They are the taxonomy nexo_intents.v1: twelve map to existing NEXUS areas or services, plus out_of_scope and the two generative ones, code_assist and deep_reasoning. I don't have the design discussion behind them, only the resulting list.
+
+[qj2-dd24521a4920|n21d-50]
+u: So what does a user get today if they ask a general knowledge question?
+a: No answer. The classifier would likely label it out_of_scope or deep_reasoning, and neither leads anywhere, so the user gets a routing result or generation_unavailable, not an answer.
+
+[qj2-0afa3e37bd96|n21d-51]
+u: Which phase makes NEXUS conversational?
+a: In the Qwen roadmap, runtime and NEXUS integration (phase 7) adds the chat endpoint and the model, and the JARVIS experience (phase 8) builds on it. Neither has started.
+
+[qj2-59ad2026f99c|n21d-52]
+u: How do I phrase 'NEXUS will have an AI assistant' safely?
+a: Say 'NEXUS plans to add a fine-tuned Qwen3-8B assistant; it has not been built yet.' Include the plan status every time, so the sentence can't be read as describing a current feature.
+
+[qj2-a09db963a83e|n21d-53]
+u: Do tests exist for the classifier?
+a: The backend has pytest files and the ML package has evaluation code, but the audit didn't run them, and I don't have a list of which tests cover the classifier.
+
+[qj2-f9c0593ff479|n21d-54]
+u: Will the Qwen dataset include the Phase 10 DeBERTa data?
+a: No. The Phase 2 dataset is a new, separate, isolated one for assistant behaviour, and it doesn't reuse the DeBERTa intent datasets.
+
+[qj2-a90db2504d0a|n21d-6]
+u: Does the classifier handle other languages?
+a: The audit doesn't say, and I have no evidence that it was trained or tested on anything other than English. I wouldn't claim multilingual support.
+
+[qj2-ba1e5471b8d0|n21d-7]
+u: Can I tune the 0.90 threshold?
+a: It is the ML_CONFIDENCE_THRESHOLD setting. Lowering it routes more requests but with more mistakes; raising it routes fewer. The audit notes that the current value was picked on synthetic data and should be tuned against real traffic.
+
+[qj2-0789160ed57a|n21d-8]
+u: What would I need to change in the app to add a new intent?
+a: That is a retraining job, not a configuration change: the taxonomy, the datasets and the model's 14-class head would all change, and a destination for the intent would need to exist. I'd treat it as a planned piece of ML work, and the audit doesn't describe a shortcut.
+
+[qj2-c13982fb881f|n21d-9]
+u: Which document describes the voice design?
+a: docs/phase-12-voice.md describes it, including the one-model constraint and a note on the MlStatusRead schema drift. The code is in frontend/src/features/assistant.
+
+[qj2-d9b7096a31b2|n21doc-assistant_page]
+u: Draft one sentence for our docs that answers: What is the /assistant page in NEXUS?
+a: Suggested wording: "It is the voice and text assistant surface: you speak or type a request, it sends only that text to the classifier, and shows the routing decision."
+
+[qj2-2c0a2467c6fe|n21doc-classifier_accuracy]
+u: Give me an accurate two-sentence FAQ entry for 'Is the classifier reliable on real user phrasing?'
+a: Suggested wording: "It scored about 0.974 accuracy on a held-out synthetic test set, but only 42 of 56 (75%) on hand-written natural-language requests, so real-world accuracy is noticeably lower."
+
+[qj2-e22819d28f46|n21doc-command_center]
+u: I need doc wording for this question: What does the Command Center page do?
+a: Suggested wording: "It is the page that brings signals from different modules together: priorities, recommendations, activity, quick actions and ML insight panels, to answer what needs attention and what to work on next."
+
+[qj2-aa94bf6f7815|n21doc-database]
+u: Give me an accurate two-sentence FAQ entry for 'Which database does NEXUS use?'
+a: Suggested wording: "The code is configured for PostgreSQL, with Alembic migrations managing the schema."
+
+[qj2-4eac7b94eff0|n21doc-deberta_future]
+u: Draft one sentence for our docs that answers: Will Qwen replace the DeBERTa classifier? (mark it as planned)
+a: Suggested wording, marked as a plan: "Undecided. The classifier is kept for now, and whether it stays as a cheap router or is retired will be decided after Qwen is evaluated."
+
+[qj2-5edc485e5e86|n21doc-evaluation_gate]
+u: Draft one sentence for our docs that answers: How will we know the fine-tuned Qwen is any good? (mark it as planned)
+a: Suggested wording, marked as a plan: "It will be compared with base Qwen3-8B on reasoning, NEXUS knowledge, tool selection, clarification and hallucinated execution. If it fails, integration does not happen."
+
+[qj2-94e42e18806c|n21doc-generation_unavailable]
+u: I need doc wording for this question: What does generation_unavailable mean?
+a: Suggested wording: "The classifier recognises code_assist and deep_reasoning requests but there is nowhere to send them, so NEXUS answers generation_unavailable. That is a stated capability gap, not a bug."
+
+[qj2-a08b42250d15|n21doc-isolation]
+u: Give me an accurate two-sentence FAQ entry for 'How is the Qwen work kept separate from NEXUS?' (mark it as planned)
+a: Suggested wording, marked as a plan: "No. Dataset, training and evaluation live in isolated workspaces, and NEXUS is not modified until a later integration phase."
+
+[qj2-9cc5c49628bf|n21doc-kaggle_plan]
+u: Write a README-ready line: Where will Qwen be trained? (mark it as planned)
+a: Suggested wording, marked as a plan: "Training is planned on a free Kaggle GPU with QLoRA, because the local RTX 3050 laptop GPU (about 4 GB) cannot train an 8B model."
+
+[qj2-4ed67bdeaecd|n21doc-local_inference]
+u: Give me an accurate two-sentence FAQ entry for 'How fast will Qwen run locally?' (mark it as planned)
+a: Suggested wording, marked as a plan: "Probably only slowly. A 4-bit 8B model is around 5 GB, which exceeds the 4 GB GPU, so it would need CPU offload and generate a few tokens per second. This must be measured, not assumed."
+
+[qj2-b7e8476028a4|n21doc-ml_model]
+u: Draft one sentence for our docs that answers: What AI model does NEXUS use today?
+a: Suggested wording: "Today NEXUS runs one model: microsoft/deberta-v3-base fine-tuned as a 14-class intent classifier. It is not a chat or generative model."
+
+[qj2-0080aec3074e|n21doc-ml_runtime]
+u: Write a README-ready line: How does NEXUS load the classifier?
+a: Suggested wording: "The checkpoint is loaded once, lazily, in the backend process; if it is missing or ML is disabled, the ML endpoints answer 503 ml_unavailable and the rest of the app keeps working."
+
+[qj2-c0530fbf4d92|n21doc-no_chat_ui]
+u: Give me an accurate two-sentence FAQ entry for 'Where do I chat with the AI in NEXUS?' (state this as not existing today)
+a: Suggested wording, written as an absence: "There is no chat UI today. The /assistant page shows routing decisions rather than conversational replies."
+
+[qj2-de0f4736a270|n21doc-no_llm]
+u: I need doc wording for this question: Can NEXUS currently chat with me? (state this as not existing today)
+a: Suggested wording, written as an absence: "No. Today NEXUS has no generative language model and no chat backend; its AI is the DeBERTa intent classifier plus hand-written action parsers."
+
+[qj2-318ba07a0a27|n21doc-no_ollama]
+u: Write a README-ready line: Does NEXUS use Ollama? (state this as not existing today)
+a: Suggested wording, written as an absence: "The README mentions Ollama, but an audit of the backend found no Ollama code, and the requirements file says Ollama is deliberately absent. So treat it as not integrated."
+
+[qj2-36f24e2dc70d|n21doc-no_tools]
+u: Draft one sentence for our docs that answers: Does NEXUS have a tool system for files, terminal or browser? (state this as not existing today)
+a: Suggested wording, written as an absence: "No generic tool system exists yet: no tool registry, and no file, terminal or browser tools. Its capabilities are its own REST services plus the propose/confirm action flow."
+
+[qj2-0c6848da34d1|n21doc-no_web]
+u: Give me an accurate two-sentence FAQ entry for 'Can NEXUS browse the web?' (state this as not existing today)
+a: Suggested wording, written as an absence: "Not as far as the code shows. The README mentions web intelligence, but no outbound web client or search route was found in the backend."
+
+[qj2-7010b2159adc|n21doc-one_model_rule]
+u: I need doc wording for this question: What is the one-model rule?
+a: Suggested wording: "It was a project rule so the headline AI behaviour stays local, explainable and tied to one measurable artefact. It is why voice uses the browser instead of Whisper."
+
+[qj2-e82a50eca576|n21doc-propose_confirm]
+u: I need doc wording for this question: How can NEXUS act on a sentence today?
+a: Suggested wording: "NEXUS can turn some sentences into a proposed action for you to review; only after you confirm does it call the matching service. There is no free-form execution."
+
+[qj2-3cf62a959341|n21doc-qwen_plan]
+u: Draft one sentence for our docs that answers: What role will Qwen3-8B play? (mark it as planned)
+a: Suggested wording, marked as a plan: "The plan is to fine-tune Qwen3-8B as NEXUS's single generative model: the brain that converses, reasons and decides when to use tools, while NEXUS provides the environment and tools."
+
+[qj2-ef670129902c|n21doc-serving_plan]
+u: Write a README-ready line: How will Qwen be served to NEXUS? (mark it as planned)
+a: Suggested wording, marked as a plan: "The plan is a separate local inference process with a chat endpoint in the backend, not an in-process load, because the backend is pinned to a CPU torch build and an 8B model is too heavy for it."
+
+[qj2-88fbfed46573|n21doc-tool_layer_plan]
+u: I need doc wording for this question: What will the tool layer look like? (mark it as planned)
+a: Suggested wording, marked as a plan: "A future tool registry and executor would wrap existing NEXUS services, with schema-validated arguments, per-tool permissions and confirmation for writes. None of it exists yet."
+
+[qj2-220c7d0a86cb|n21doc-training_not_access]
+u: I need doc wording for this question: Does fine-tuning give Qwen internet or file access? (mark it as planned)
+a: Suggested wording, marked as a plan: "No. Training teaches the model how to reason and when a tool is needed. Access to files, the internet or NEXUS comes only from the runtime tool layer."
+
+[qj2-4efb721247d3|n21doc-voice_scope]
+u: Draft one sentence for our docs that answers: Can the NEXUS voice assistant answer my questions?
+a: Suggested wording: "Not today. The voice assistant routes requests to a NEXUS area; it does not generate answers or hold a conversation."
+
+[qj2-f961442985c8|n21doc-voice_stt]
+u: I need doc wording for this question: Does NEXUS use Whisper?
+a: Suggested wording: "Voice input uses the browser's Web Speech API, not a model NEXUS runs. NEXUS does not use Whisper."
+
+[qj2-e8e63d8308b0|n21doc-voice_tts]
+u: Give me an accurate two-sentence FAQ entry for 'What text-to-speech does NEXUS use?'
+a: Suggested wording: "It uses the browser's speechSynthesis, which is the operating system voice and runs locally."
+
+[qj2-3b8132d93991|n21p-classifier_accuracy-confidence_threshold]
+u: How accurate is the NEXUS intent classifier?
+a: It scored about 0.974 accuracy on a held-out synthetic test set, but only 42 of 56 (75%) on hand-written natural-language requests, so real-world accuracy is noticeably lower.
+u: Related thing: what does the 0.90 confidence threshold mean in NEXUS?
+a: The classifier's output is only accepted for routing when its confidence is at least 0.90 (the ML_CONFIDENCE_THRESHOLD setting). Below that the response is 'uncertain' with runner-up intents. The number was picked by measuring a held-out split, and because that data was synthetic it should be tuned against real traffic. It is a routing guard, not a promise of accuracy.
+
+[qj2-5726fb5bdbe5|n21p-generation_unavailable-intent_list]
+u: What does generation_unavailable mean?
+a: Two of the 14 intents, code_assist and deep_reasoning, were designed for a language model that NEXUS does not have. The classifier can recognise such a request correctly, but the router has no destination, so the response is generation_unavailable. The UI presents it as a capability gap rather than an error. A future generative model is what would fill it.
+u: Also, what categories can the classifier output?
+a: The 14 intents are task_manage, project_manage, schedule_plan, knowledge_capture, knowledge_lookup, analytics_insight, risk_query, developer_intel, learning_track, career_track, account_admin, code_assist, deep_reasoning and out_of_scope.
+
+[qj2-0b36c9c5a6a2|n21p-ml_model-intent_list]
+u: What is the NEXUS machine learning model?
+a: Today NEXUS runs one model: microsoft/deberta-v3-base fine-tuned as a 14-class intent classifier. It is not a chat or generative model.
+u: And what categories can the classifier output?
+a: The taxonomy, called nexo_intents.v1, has 14 classes: task_manage, project_manage, schedule_plan, knowledge_capture, knowledge_lookup, analytics_insight, risk_query, developer_intel, learning_track, career_track, account_admin, code_assist, deep_reasoning and out_of_scope. Twelve of them point at an existing NEXUS service; code_assist and deep_reasoning have no destination today.
+
+[qj2-11165c8acc87|n21p-no_web-no_tools]
+u: Can NEXUS browse the web?
+a: Not as far as the code shows. The README mentions web intelligence, but no outbound web client or search route was found in the backend.
+u: Related thing: does NEXUS have a tool system for files, terminal or browser?
+a: NEXUS has no generic tool registry and no filesystem, terminal or browser tools. What it has are its REST services, the closed set of propose/confirm actions, and a developer module that runs local git commands. File, terminal and web tools are part of the future plan and would be gated behind permissions.
+
+[qj2-01064503d3fb|n21p-qwen_plan-brain_body]
+u: Why is NEXUS getting Qwen3-8B?
+a: The roadmap makes Qwen3-8B the one generative model for a JARVIS-style assistant. It would converse, reason, explain, help with code and decide whether to answer, ask a question or request a tool, while NEXUS supplies the body (data and services), the tools provide capabilities, voice is the interface and the Command Center reaches the outside world. This is a plan; none of it is implemented.
+u: Next question: explain the brain, body, tools split in the JARVIS plan.
+a: Qwen reasons and decides; NEXUS holds the data and services; tools are the controlled capabilities Qwen may request; voice is the interface.
+
+[qj2-19ce77058898|n21p-risks-command_center]
+u: How does NEXUS handle risks and recommendations?
+a: The risk module stores risks with severity and deadlines, and a detection engine evaluates the user's recorded data to find conditions such as deadlines without scheduled time or planned load beyond available hours. Each finding keeps its evidence, and recommendations are generated from them. Running an evaluation is a write, so it is a POST and is idempotent.
+u: Also, what does the Command Center page do?
+a: It is the page that brings signals from different modules together: priorities, recommendations, activity, quick actions and ML insight panels, to answer what needs attention and what to work on next.
+
+[qj2-7014e6733c9f|n21p-serving_plan-deberta_future]
+u: Will Qwen run inside the FastAPI process?
+a: The plan is a separate local inference process with a chat endpoint in the backend, not an in-process load, because the backend is pinned to a CPU torch build and an 8B model is too heavy for it.
+u: And will Qwen replace the DeBERTa classifier?
+a: The roadmap says not to delete or replace DeBERTa during Qwen training, and to decide the final architecture after evaluation. It could remain as a fast pre-router or guard, or be retired. Qwen is not a drop-in replacement for the router, because the router's destinations are deterministic services.
+
+[qj2-2d577a9e8d82|n21p-voice_future-no_chat_ui]
+u: Will Qwen work with voice in NEXUS?
+a: Later the assistant page's hook would call a chat endpoint instead of the routing endpoint and speak the reply aloud. That means the text and copy that currently say 'NEXUS routes, it does not answer' would need updating. Speech recognition stays browser-based unless a new decision adds a local model, which would be a separate trade-off.
+u: Next question: where do I chat with the AI in NEXUS?
+a: There is no chat UI today. The /assistant page shows routing decisions rather than conversational replies.
+
+[qj2-03a751e7692e|n21q-assistant_page]
+u: Is the /assistant voice and text page something NEXUS has now, something planned, or neither?
+a: That is implemented. It is the voice and text assistant surface: you speak or type a request, it sends only that text to the classifier, and shows the routing decision.
+
+[qj2-c3785dfc92c6|n21q-auth]
+u: Quick check: where does JWT authentication with roles and an audit log stand: implemented, planned, or not present?
+a: Built and in the current codebase. NEXUS has accounts with JWT access and refresh tokens, persistent sessions, password policies, role-based permissions, audit logging and rate limiting.
+
+[qj2-510e12ca6f00|n21q-command_center]
+u: Status of the Command Center page in NEXUS? Built, planned or absent?
+a: It exists today. It is the page that brings signals from different modules together: priorities, recommendations, activity, quick actions and ML insight panels, to answer what needs attention and what to work on next.
+
+[qj2-a64e968f0312|n21q-dataset_phase]
+u: Quick check: where does a Qwen fine-tuning dataset stand: implemented, planned, or not present?
+a: Planned, and in preparation: the dataset is built for a later training run, but nothing has been trained or integrated.
+
+[qj2-d726eb3cfd81|n21q-deberta_future]
+u: Status of retiring the DeBERTa router in NEXUS? Built, planned or absent?
+a: That is future work. Undecided. The classifier is kept for now, and whether it stays as a cheap router or is retired will be decided after Qwen is evaluated.
+
+[qj2-1ddfc9f828d0|n21q-developer_module]
+u: Is git-based developer analytics something NEXUS has now, something planned, or neither?
+a: Built and in the current codebase. It registers local git repositories, scans them and analyses commits, branches, changed lines and languages, treating commits as evidence of commits and not as hours worked.
+
+[qj2-8b8da0a6d172|n21q-evaluation_gate]
+u: Quick check: where does an evaluation gate before integration stand: implemented, planned, or not present?
+a: Only on the roadmap so far. It will be compared with base Qwen3-8B on reasoning, NEXUS knowledge, tool selection, clarification and hallucinated execution. If it fails, integration does not happen.
+
+[qj2-d0e30cd1d8da|n21q-generation_unavailable]
+u: Status of the generation_unavailable response in NEXUS? Built, planned or absent?
+a: It exists today. The classifier recognises code_assist and deep_reasoning requests but there is nowhere to send them, so NEXUS answers generation_unavailable. That is a stated capability gap, not a bug.
+
+[qj2-c287b1959b84|n21q-history_not_sent]
+u: Is conversation history sent to the backend something NEXUS has now, something planned, or neither?
+a: Not present. Only the current utterance is sent to the backend; the 20-turn history stays in the browser.
+
+[qj2-3e5175ad292d|n21q-kaggle_not_used]
+u: Sort this into 'exists', 'planned' or 'not there': any Kaggle GPU training so far.
+a: Not present in the current system. No. No training has been run and no Kaggle GPU has been used. Only planning and dataset preparation have happened.
+
+[qj2-cc3ab4ac2a99|n21q-kaggle_plan]
+u: Sort this into 'exists', 'planned' or 'not there': QLoRA training on Kaggle.
+a: That is future work. Training is planned on a free Kaggle GPU with QLoRA, because the local RTX 3050 laptop GPU (about 4 GB) cannot train an 8B model.
+
+[qj2-0367fae55e50|n21q-ml_model]
+u: Status of the DeBERTa intent classifier in NEXUS? Built, planned or absent?
+a: Built and in the current codebase. Today NEXUS runs one model: microsoft/deberta-v3-base fine-tuned as a 14-class intent classifier. It is not a chat or generative model.
+
+[qj2-51eb80a869fc|n21q-no_chat_ui]
+u: Quick check: where does a chat user interface stand: implemented, planned, or not present?
+a: That is absent. There is no chat UI today. The /assistant page shows routing decisions rather than conversational replies.
+
+[qj2-42597625197f|n21q-no_llm]
+u: Quick check: where does a built-in generative chatbot stand: implemented, planned, or not present?
+a: That is absent. No. Today NEXUS has no generative language model and no chat backend; its AI is the DeBERTa intent classifier plus hand-written action parsers.
+
+[qj2-66648c171a85|n21q-no_ollama]
+u: Status of an Ollama integration in NEXUS? Built, planned or absent?
+a: It does not exist today. The README mentions Ollama, but an audit of the backend found no Ollama code, and the requirements file says Ollama is deliberately absent. So treat it as not integrated.
+
+[qj2-151f826181f7|n21q-no_server_voice]
+u: Status of server-side speech recognition in NEXUS? Built, planned or absent?
+a: That is absent. No. All speech handling happens in the browser; the backend only receives text.
+
+[qj2-37d87b8355c7|n21q-no_tools]
+u: Sort this into 'exists', 'planned' or 'not there': file, terminal and browser tools.
+a: Not present in the current system. No generic tool system exists yet: no tool registry, and no file, terminal or browser tools. Its capabilities are its own REST services plus the propose/confirm action flow.
+
+[qj2-d39c09f3072e|n21q-no_web]
+u: Is web search or internet access something NEXUS has now, something planned, or neither?
+a: It does not exist today. Not as far as the code shows. The README mentions web intelligence, but no outbound web client or search route was found in the backend.
+
+[qj2-d0410a620ebc|n21q-palette]
+u: Quick check: where does the Ctrl+K command palette stand: implemented, planned, or not present?
+a: Built and in the current codebase. A keyboard-driven launcher opened with Ctrl+K (Cmd+K on macOS) for navigation, quick actions and record search.
+
+[qj2-6f5d9035a112|n21q-propose_confirm]
+u: Is propose and confirm actions something NEXUS has now, something planned, or neither?
+a: Built and in the current codebase. NEXUS can turn some sentences into a proposed action for you to review; only after you confirm does it call the matching service. There is no free-form execution.
+
+[qj2-3da08b62d8be|n21q-qwen_not_trained]
+u: Is a trained Qwen3-8B model something NEXUS has now, something planned, or neither?
+a: It does not exist today. No. Qwen3-8B is the planned model, but nothing has been trained, downloaded or integrated into NEXUS yet.
+
+[qj2-b13480b1fd2b|n21q-qwen_plan]
+u: Sort this into 'exists', 'planned' or 'not there': Qwen3-8B as the generative assistant.
+a: It is planned, not built. The plan is to fine-tune Qwen3-8B as NEXUS's single generative model: the brain that converses, reasons and decides when to use tools, while NEXUS provides the environment and tools.
+
+[qj2-498c0b6f7a71|n21q-risks]
+u: Sort this into 'exists', 'planned' or 'not there': rule-based risk detection with evidence.
+a: Built and in the current codebase. A detection engine finds conditions such as deadlines without booked time, scores them with evidence, and turns them into risks, recommendations and attention signals.
+
+[qj2-fafe36389536|n21q-search]
+u: Sort this into 'exists', 'planned' or 'not there': global search across your own data.
+a: Built and in the current codebase. Global search looks across projects, tasks, notes, resources, concepts, repositories, learning goals, skills, calendar items, risks and recommendations, scoped to your own data.
+
+[qj2-c532aea07f55|n21q-serving_plan]
+u: Status of a separate local inference process for the model in NEXUS? Built, planned or absent?
+a: It is planned, not built. The plan is a separate local inference process with a chat endpoint in the backend, not an in-process load, because the backend is pinned to a CPU torch build and an 8B model is too heavy for it.
+
+[qj2-53e37ed8658f|n21q-slot_extraction]
+u: Sort this into 'exists', 'planned' or 'not there': hand-written slot extraction for actions.
+a: That is implemented. With hand-written parsers, not a model. The ML action module extracts the fields and a proposals layer decides what they may become.
+
+[qj2-01f45c77a03c|n21q-tool_layer_plan]
+u: Quick check: where does a registry of tools the model can call stand: implemented, planned, or not present?
+a: Only on the roadmap so far. A future tool registry and executor would wrap existing NEXUS services, with schema-validated arguments, per-tool permissions and confirmation for writes. None of it exists yet.
+
+[qj2-7768d59ef335|n21q-voice_future]
+u: Is speaking the model's replies through the assistant page something NEXUS has now, something planned, or neither?
+a: That is future work. Planned: the voice hook would send the transcript to a chat endpoint and speak the reply. Speech recognition would still be the browser's unless a separate decision is made.
+
+[qj2-1057ac360273|n21q-voice_stt]
+u: Quick check: where does browser-based speech recognition stand: implemented, planned, or not present?
+a: That is implemented. Voice input uses the browser's Web Speech API, not a model NEXUS runs. NEXUS does not use Whisper.
+
+[qj2-0fb05602a798|n21q-voice_tts]
+u: Status of browser text-to-speech in NEXUS? Built, planned or absent?
+a: It exists today. It uses the browser's speechSynthesis, which is the operating system voice and runs locally.
+

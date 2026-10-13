@@ -1,0 +1,155 @@
+{
+ "checks": {
+  "S1_S2_S3_python": {
+   "files_scanned": 83,
+   "issues": [],
+   "reviewed_and_allowed": [
+    [
+     "S1 eval/exec",
+     "kaggle/test_notebook_gate.py",
+     97,
+     "exec() runs this workspace's OWN notebook cells (not dataset text) inside a temp dir with subprocess.Popen stubbed and every launch recorded; it exists to prove the production cells are inert."
+    ],
+    [
+     "S1 eval/exec",
+     "kaggle/test_notebook_gate.py",
+     99,
+     "exec() runs this workspace's OWN notebook cells (not dataset text) inside a temp dir with subprocess.Popen stubbed and every launch recorded; it exists to prove the production cells are inert."
+    ],
+    [
+     "S1 eval/exec",
+     "kaggle/test_notebook_gate.py",
+     59,
+     "exec() runs this workspace's OWN notebook cells (not dataset text) inside a temp dir with subprocess.Popen stubbed and every launch recorded; it exists to prove the production cells are inert."
+    ]
+   ]
+  },
+  "S5_subprocess_call_sites_for_review": [
+   "kaggle/validate_notebook.py:361",
+   "pipeline/train/repro.py:65",
+   "preflight/patch_js_timing.py:17",
+   "preflight/validate_clean.py:186",
+   "preflight/validate_clean.py:210",
+   "scripts/check_reproducibility.py:24",
+   "tests/test_eval_cli.py:84",
+   "tests/test_failure_recovery_cli.py:18",
+   "tests/test_train_lock_dryrun.py:16",
+   "tests/test_train_lock_dryrun.py:22",
+   "tests/test_train_smoke.py:127",
+   "tool_protocol/test_protocol.py:128"
+  ],
+  "S3_text_and_notebooks": {
+   "issues": [],
+   "reviewed_and_allowed": [
+    [
+     "notebook may print a secret",
+     "kaggle/notebook/qwen_jarvis_phase5_training.ipynb",
+     "the cell prints only whether Kaggle-Secrets auth is 'present'; it never prints the token value (matched the word 'Secrets')."
+    ]
+   ]
+  },
+  "S2_from_pretrained_call_sites_for_review": [
+   [
+    "audit/e_check.py",
+    5,
+    "r\"E:\\Nexo\\qwen_jarvis_phase3_4\\_hf_meta\", local_files_only=True"
+   ],
+   [
+    "tool_protocol/render_demo.py",
+    10,
+    "str(HERE.parent / \"_hf_meta\""
+   ],
+   [
+    "tool_protocol/test_protocol.py",
+    216,
+    "str(HERE.parent / \"_hf_meta\""
+   ],
+   [
+    "tool_protocol/validate_protocol.py",
+    246,
+    "str(HERE.parent / \"_hf_meta\""
+   ],
+   [
+    "pipeline/data/render.py",
+    48,
+    "str(path or DEFAULT_TOKENIZER_DIR"
+   ],
+   [
+    "pipeline/eval/generators.py",
+    134,
+    "model_id, revision=revision, trust_remote_code=trust_remote_code"
+   ],
+   [
+    "pipeline/eval/generators.py",
+    144,
+    "model_id, **kwargs"
+   ],
+   [
+    "pipeline/eval/generators.py",
+    147,
+    "self.model, adapter"
+   ],
+   [
+    "pipeline/train/train.py",
+    77,
+    "cfg.tokenizer_location("
+   ],
+   [
+    "pipeline/train/train.py",
+    121,
+    "cfg.model.model_id, dtype=compute, **kw"
+   ],
+   [
+    "pipeline/train/train.py",
+    123,
+    "cfg.model.model_id, torch_dtype=compute, **kw"
+   ],
+   [
+    "pipeline/train/train.py",
+    218,
+    "str(meta"
+   ]
+  ],
+  "S6_git": {
+   "tracked_modifications": 0,
+   "pre_existing_untracked_files": 20,
+   "pre_existing_files_modified_today": [],
+   "new_paths": [
+    "qwen_jarvis_phase1/",
+    "qwen_jarvis_phase2/",
+    "qwen_jarvis_phase3_4/"
+   ]
+  },
+  "S6_git_diff_empty": true,
+  "S7_import_train_loads_ml_libraries": "none",
+  "S7_production_without_unlock": {
+   "exit_code": 3,
+   "refused": true
+  },
+  "S7_unlock_env_alone_still_refused": {
+   "exit_code": 3
+  },
+  "S4_untracked_outside_our_workspaces": {
+   "count": 20,
+   "all_pre_existing_unchanged": true
+  },
+  "tiny_smoke_test_artifacts_<=5MB": 8,
+  "no_model_weights_on_disk": [],
+  "files_over_50MB_outside_venv": [],
+  "qwen_hf_cache_files": [
+   "added_tokens.json",
+   "chat_template.jinja",
+   "config.json",
+   "main",
+   "merges.txt",
+   "special_tokens_map.json",
+   "tokenizer.json",
+   "tokenizer_config.json",
+   "vocab.json"
+  ],
+  "hf_cache_exists_with_qwen_weights": false
+ },
+ "findings": [],
+ "fail": [],
+ "status": "PASS"
+}

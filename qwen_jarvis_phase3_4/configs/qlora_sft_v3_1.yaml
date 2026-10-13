@@ -1,0 +1,73 @@
+# PRODUCTION CONFIG - Qwen3-8B QLoRA SFT (Phase 5 on Kaggle).  LOCKED in Phase 3/4.
+# Every value is explained in docs/TRAINING_DESIGN.md (label: VERIFIED / ASSUMED / ESTIMATED).
+# To launch in Phase 5 (and only then): set production_locked: false (or --set production_locked=false), export
+# QWEN_PHASE5_UNLOCK=I_UNDERSTAND_THIS_STARTS_PRODUCTION_TRAINING and pass --confirm-production.
+mode: production
+banner: "PRODUCTION CONFIG - LOCKED UNTIL PHASE 5"
+production_locked: true
+
+model:
+  model_id: Qwen/Qwen3-8B            # VERIFIED official id (huggingface.co/Qwen/Qwen3-8B); the ONLY generative model
+  tokenizer_path: Qwen/Qwen3-8B      # on Kaggle the tokenizer is fetched with the model; locally _hf_meta/ holds the same files
+  local_tiny: false                  # true only in smoke_test.yaml
+  trust_remote_code: false           # Qwen3 is natively supported in transformers >= 4.51 (VERIFIED)
+  attn_implementation: sdpa          # T4/P100 have no FlashAttention-2 support; sdpa is the safe default (ASSUMED)
+
+quant:
+  enabled: true
+  quant_type: nf4                    # VERIFIED: NF4 recommended for training 4-bit base models (HF bitsandbytes docs)
+  double_quant: true                 # VERIFIED: saves ~0.4 bit/param at no quality cost
+  compute_dtype: auto                # auto -> bf16 if the GPU supports it, else fp16 (T4/P100)
+  kbit_prepare: manual               # manual = gradient checkpointing + input grads only, no blanket fp32 upcast (see design doc, ESTIMATED saving ~5 GB)
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  bias: none
+  task_type: CAUSAL_LM
+  use_rslora: false
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+data:
+  train_path: ../dataset/v3_1_remediation/train.jsonl
+  validation_path: ../dataset/v3_1_remediation/validation.jsonl
+  test_path: ../dataset/v3_1_remediation/test.jsonl
+  dataset_version: qwen_jarvis_dataset_v3_1_remediation
+  max_seq_len: 1024                  # VERIFIED by the Data agent loader stats: longest per-turn sample ~800 tokens, 0% truncation at 1024; cheapest for T4 memory
+  train_on: per_turn                 # one sample per assistant turn, prompt rendered exactly as at inference (enable_thinking=False); loss on that turn only
+  validate: strict                   # chat+tools schema validation of every record before training
+  group_by_length: true              # deterministic length bucketing inside mega-batches: less padding, same order every run
+  packing: false                     # off: packing breaks per-example masking and multi-turn boundaries
+  max_train_examples: null
+  max_eval_examples: null
+
+train:
+  epochs: 2                          # ASSUMED: 10.3k small, curated examples; more than 2-3 epochs risks memorising templates
+  max_steps: -1
+  per_device_batch: 4                # with the label-positions-only chunked loss (ESTIMATED 12.5 GiB peak, docs/MEMORY_PLAN.md). OOM ladder: --set train.per_device_batch=2 --set train.grad_accum=8, then 1 x 16
+  grad_accum: 4                      # effective batch = 16 sequences
+  learning_rate: 1.0e-4              # QLoRA paper uses 2e-4 for <=13B; 1e-4 chosen for fp16 stability + small dataset (ASSUMED)
+  lr_scheduler: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_eps: 1.0e-8
+  max_grad_norm: 1.0                 # fp16 gradient-spike guard
+  optimizer: adamw_torch             # LoRA params only (~44M) -> optimizer state < 1 GB; paged 8-bit optimizers not needed
+  precision: auto                    # bf16 if supported else fp16 with GradScaler
+  gradient_checkpointing: true
+  seed: 42
+  eval_every: 100
+  save_every: 100                    # Kaggle sessions can die: checkpoints every 100 optimizer steps
+  keep_last: 2
+  log_every: 10
+  early_stopping_patience: 4         # in evals without validation-loss improvement; best checkpoint is always kept
+  early_stopping_min_delta: 0.0
+  max_consecutive_skipped_steps: 20  # abort (clear error) after 20 consecutive non-finite-gradient skipped steps; non-finite loss without a GradScaler aborts immediately
+  assumed_tokens_per_sec: 250        # ESTIMATE ONLY (mid-range of the 130-400 tok/s T4 QLoRA estimate in docs/MEMORY_PLAN.md); NOT a measurement - Phase 5 replaces it with the measured rate
+
+output:
+  output_dir: runs
+  run_name: qwen3_8b_jarvis_v3_1_remediation

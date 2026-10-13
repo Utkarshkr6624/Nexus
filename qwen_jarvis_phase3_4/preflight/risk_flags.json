@@ -1,0 +1,4231 @@
+{
+"qj2-00118e086f50": [
+"capability_claim"
+],
+"qj2-001ee611f179": [
+"financial"
+],
+"qj2-004700d55f9a": [
+"capability_claim"
+],
+"qj2-00513f5fae4b": [
+"legal",
+"financial"
+],
+"qj2-008bf2fb8756": [
+"capability_claim"
+],
+"qj2-01064503d3fb": [
+"capability_claim"
+],
+"qj2-0122994a42cc": [
+"medical"
+],
+"qj2-0135f07da36b": [
+"capability_claim"
+],
+"qj2-0143c9bd543c": [
+"financial"
+],
+"qj2-01f661bf1769": [
+"capability_claim"
+],
+"qj2-01fd68e8c8fb": [
+"legal"
+],
+"qj2-02e78ec61d81": [
+"certainty"
+],
+"qj2-0367fae55e50": [
+"capability_claim"
+],
+"qj2-03e7c8860938": [
+"financial"
+],
+"qj2-03ee7169a5a9": [
+"capability_claim"
+],
+"qj2-04095fa5e5db": [
+"legal"
+],
+"qj2-041e70d85af9": [
+"medical"
+],
+"qj2-0428fc2fed72": [
+"financial"
+],
+"qj2-046d206e9f11": [
+"financial"
+],
+"qj2-047b7088ece0": [
+"financial"
+],
+"qj2-04cacf1c7035": [
+"security_instruction"
+],
+"qj2-0506cfc91d2f": [
+"legal"
+],
+"qj2-05602284ce77": [
+"medical"
+],
+"qj2-057dc9fc1c7b": [
+"dosage"
+],
+"qj2-05a7ec22a7b2": [
+"financial"
+],
+"qj2-05afcdc43f80": [
+"security_instruction"
+],
+"qj2-0633607c0dfe": [
+"certainty"
+],
+"qj2-0646fd299c65": [
+"medical"
+],
+"qj2-066690df45c7": [
+"medical"
+],
+"qj2-068b40ae40f6": [
+"financial"
+],
+"qj2-06a816cd3058": [
+"legal"
+],
+"qj2-06accaaae836": [
+"financial",
+"capability_claim"
+],
+"qj2-06c7216da0c9": [
+"security_instruction"
+],
+"qj2-06e2cd81dc25": [
+"financial"
+],
+"qj2-07107d6a0156": [
+"legal"
+],
+"qj2-071bc11b709b": [
+"capability_claim"
+],
+"qj2-072b5088f619": [
+"financial"
+],
+"qj2-0763b1a22449": [
+"capability_claim"
+],
+"qj2-07db5e600117": [
+"capability_claim"
+],
+"qj2-083e0a7a665a": [
+"legal"
+],
+"qj2-084d02a3e7a6": [
+"certainty"
+],
+"qj2-0859b1cc0725": [
+"medical"
+],
+"qj2-0889cea0c790": [
+"capability_claim"
+],
+"qj2-08c59e2a3a4d": [
+"certainty"
+],
+"qj2-08d7b0dfddc2": [
+"legal"
+],
+"qj2-08d975276faf": [
+"financial"
+],
+"qj2-08ff75a9b980": [
+"financial"
+],
+"qj2-0949b4c2f7e5": [
+"medical",
+"certainty"
+],
+"qj2-097aa61fa556": [
+"certainty"
+],
+"qj2-09b3f7977ca6": [
+"capability_claim"
+],
+"qj2-09cb35594295": [
+"security_instruction"
+],
+"qj2-09e64a9ca978": [
+"financial"
+],
+"qj2-09edf60b83fa": [
+"capability_claim"
+],
+"qj2-0a19d08f53ac": [
+"medical"
+],
+"qj2-0a209d49f3e4": [
+"security_instruction"
+],
+"qj2-0a44209d4b0a": [
+"legal"
+],
+"qj2-0ad0149d33d8": [
+"financial"
+],
+"qj2-0ade2ab0ed0b": [
+"financial"
+],
+"qj2-0afa3e37bd96": [
+"capability_claim"
+],
+"qj2-0b36c9c5a6a2": [
+"capability_claim"
+],
+"qj2-0b60e182c154": [
+"security_instruction"
+],
+"qj2-0b90315ec2c3": [
+"financial"
+],
+"qj2-0bc7a1dcad0e": [
+"dosage"
+],
+"qj2-0bf12ef35c2a": [
+"legal"
+],
+"qj2-0c3d1470a208": [
+"financial"
+],
+"qj2-0c8a7ed6e155": [
+"security_instruction"
+],
+"qj2-0d40ef307663": [
+"financial"
+],
+"qj2-0d835a4ec590": [
+"financial"
+],
+"qj2-0d92005c0904": [
+"certainty"
+],
+"qj2-0ddd65a10d7b": [
+"security_instruction"
+],
+"qj2-0ddfd5565116": [
+"security_instruction"
+],
+"qj2-0e4156ae447e": [
+"legal"
+],
+"qj2-0e514a437679": [
+"financial"
+],
+"qj2-0eb07f0af782": [
+"legal"
+],
+"qj2-0eb419797ef4": [
+"capability_claim"
+],
+"qj2-0ecce5a38f3c": [
+"financial"
+],
+"qj2-0f3e93606668": [
+"medical"
+],
+"qj2-0f5fdd5d1827": [
+"capability_claim"
+],
+"qj2-0f90dae4f1ee": [
+"security_instruction"
+],
+"qj2-0f9712f967fa": [
+"financial"
+],
+"qj2-0fcfc8dde5de": [
+"security_instruction"
+],
+"qj2-0fde1ee404b6": [
+"legal"
+],
+"qj2-102a3b383df1": [
+"legal"
+],
+"qj2-1057ac360273": [
+"capability_claim"
+],
+"qj2-105878cfd820": [
+"certainty",
+"capability_claim"
+],
+"qj2-107e1d4b995c": [
+"legal"
+],
+"qj2-10bde83434d6": [
+"financial",
+"certainty"
+],
+"qj2-10c26cd49b53": [
+"legal"
+],
+"qj2-10e4eba37ce2": [
+"security_instruction"
+],
+"qj2-10e69af4d460": [
+"legal"
+],
+"qj2-10eb9a4162b5": [
+"financial"
+],
+"qj2-114819f91172": [
+"financial"
+],
+"qj2-116e8065ee0a": [
+"financial"
+],
+"qj2-11d51caddf79": [
+"certainty"
+],
+"qj2-11f9c08cc782": [
+"legal"
+],
+"qj2-124030371efb": [
+"capability_claim"
+],
+"qj2-124f89fe076a": [
+"financial"
+],
+"qj2-1263989f223d": [
+"financial"
+],
+"qj2-1270918cc7d7": [
+"dosage"
+],
+"qj2-12abfb9016e8": [
+"financial"
+],
+"qj2-12d03805fa40": [
+"financial"
+],
+"qj2-12f924876235": [
+"financial"
+],
+"qj2-131407732bf7": [
+"medical"
+],
+"qj2-13eecdd2b183": [
+"financial"
+],
+"qj2-13f3e99e1fa0": [
+"financial"
+],
+"qj2-1402033e8c71": [
+"capability_claim"
+],
+"qj2-140cf133bed3": [
+"capability_claim"
+],
+"qj2-14277047e36e": [
+"medical"
+],
+"qj2-14468243577a": [
+"medical",
+"certainty"
+],
+"qj2-14500f4b444c": [
+"capability_claim"
+],
+"qj2-14776fc513a0": [
+"medical",
+"certainty"
+],
+"qj2-14778778070c": [
+"capability_claim"
+],
+"qj2-1483c55e389b": [
+"certainty"
+],
+"qj2-14b0a1c78feb": [
+"certainty"
+],
+"qj2-14e870f31162": [
+"certainty"
+],
+"qj2-14f4d21ac2fa": [
+"dosage"
+],
+"qj2-151b0f09ccd1": [
+"capability_claim"
+],
+"qj2-157c09a5c6e3": [
+"legal"
+],
+"qj2-15a50c2946c4": [
+"financial"
+],
+"qj2-15b95e029952": [
+"medical"
+],
+"qj2-15e388fb1b58": [
+"financial"
+],
+"qj2-162a86cfb41d": [
+"financial"
+],
+"qj2-162f68bcb56e": [
+"legal"
+],
+"qj2-163370019b38": [
+"legal"
+],
+"qj2-16a75636fbaa": [
+"capability_claim"
+],
+"qj2-16b4047b8a82": [
+"capability_claim"
+],
+"qj2-16b4bae9e4c1": [
+"financial"
+],
+"qj2-16fdcd55baf2": [
+"financial"
+],
+"qj2-1753a0c8bc35": [
+"financial"
+],
+"qj2-1799eccea4cd": [
+"capability_claim"
+],
+"qj2-17a175559619": [
+"certainty"
+],
+"qj2-17c4c303fb45": [
+"medical"
+],
+"qj2-17cbfccc043c": [
+"financial"
+],
+"qj2-17de3c70e064": [
+"capability_claim"
+],
+"qj2-1836648d4d41": [
+"security_instruction"
+],
+"qj2-1867b0d2fd24": [
+"legal"
+],
+"qj2-18b36cd6b8ca": [
+"medical"
+],
+"qj2-19390c84e86e": [
+"certainty"
+],
+"qj2-1947360a3676": [
+"financial"
+],
+"qj2-19944675e8b7": [
+"capability_claim"
+],
+"qj2-1a0e461dbe41": [
+"legal"
+],
+"qj2-1a164536b59e": [
+"security_instruction",
+"certainty"
+],
+"qj2-1a3dd4f82538": [
+"financial"
+],
+"qj2-1a66665f0cdc": [
+"legal",
+"financial"
+],
+"qj2-1afb744a90f4": [
+"capability_claim"
+],
+"qj2-1b627948ee79": [
+"security_instruction"
+],
+"qj2-1b6db26c8e15": [
+"financial"
+],
+"qj2-1b7712a8efe9": [
+"capability_claim"
+],
+"qj2-1b8ff1c77b9b": [
+"financial"
+],
+"qj2-1bd5a02c6c6a": [
+"medical"
+],
+"qj2-1c1945de4fc5": [
+"capability_claim"
+],
+"qj2-1c6a72a5daad": [
+"dosage"
+],
+"qj2-1cbdff6f5500": [
+"legal"
+],
+"qj2-1cfccbf4d9e0": [
+"security_instruction"
+],
+"qj2-1d0b15e14565": [
+"security_instruction"
+],
+"qj2-1d0fab1ada82": [
+"medical"
+],
+"qj2-1d2b72578d3e": [
+"legal"
+],
+"qj2-1d4e5bbdc600": [
+"capability_claim"
+],
+"qj2-1d5ab6b69b18": [
+"legal"
+],
+"qj2-1dbbef72bb2a": [
+"capability_claim"
+],
+"qj2-1dcf7a427f3b": [
+"financial"
+],
+"qj2-1de1af1af0d0": [
+"security_instruction"
+],
+"qj2-1de3ec1a333d": [
+"legal",
+"financial"
+],
+"qj2-1df6e68948a5": [
+"certainty"
+],
+"qj2-1dfed42358ed": [
+"legal"
+],
+"qj2-1e1ef0e595fb": [
+"legal"
+],
+"qj2-1e6021a7f368": [
+"financial"
+],
+"qj2-1e7580dbf2c8": [
+"financial"
+],
+"qj2-1e8de2944940": [
+"financial"
+],
+"qj2-1e93f0b1119b": [
+"security_instruction"
+],
+"qj2-1f098affd1cf": [
+"medical"
+],
+"qj2-1f94198d5aea": [
+"legal"
+],
+"qj2-201320353828": [
+"capability_claim"
+],
+"qj2-2015b8ef0115": [
+"legal"
+],
+"qj2-20163a450b8c": [
+"legal"
+],
+"qj2-20243800e22b": [
+"legal"
+],
+"qj2-2055ab9a2a9e": [
+"medical"
+],
+"qj2-208a74bc70ad": [
+"medical"
+],
+"qj2-20979b57a856": [
+"capability_claim"
+],
+"qj2-20d0fcdb956e": [
+"legal"
+],
+"qj2-20e301313a3d": [
+"financial"
+],
+"qj2-20f3325dfcb8": [
+"medical"
+],
+"qj2-212d26bf3ae6": [
+"capability_claim"
+],
+"qj2-2138e0ed6a4c": [
+"legal",
+"financial"
+],
+"qj2-21efcc5be0e7": [
+"medical"
+],
+"qj2-21f084438a1a": [
+"medical"
+],
+"qj2-2211619627c2": [
+"financial"
+],
+"qj2-2222766d19da": [
+"certainty"
+],
+"qj2-222a83a9390f": [
+"medical"
+],
+"qj2-2236cde0a9a0": [
+"security_instruction"
+],
+"qj2-223c18a07cf8": [
+"legal"
+],
+"qj2-225c759aff9b": [
+"medical"
+],
+"qj2-226b8ec05e39": [
+"capability_claim"
+],
+"qj2-2290677b3d6c": [
+"certainty"
+],
+"qj2-22a99bfe4a65": [
+"legal"
+],
+"qj2-22c969f2c04b": [
+"medical"
+],
+"qj2-22dccba290e9": [
+"dosage"
+],
+"qj2-235dc34c472e": [
+"capability_claim"
+],
+"qj2-23adfbdd3b4d": [
+"legal"
+],
+"qj2-2453f956fe3e": [
+"legal"
+],
+"qj2-24647b391193": [
+"capability_claim"
+],
+"qj2-246dbbaa274c": [
+"security_instruction"
+],
+"qj2-24da1a0fcc20": [
+"capability_claim"
+],
+"qj2-24f9c8fc0b7c": [
+"financial"
+],
+"qj2-25095099897d": [
+"medical"
+],
+"qj2-250f801d0278": [
+"capability_claim"
+],
+"qj2-250f9ddb9dd5": [
+"financial"
+],
+"qj2-2535c8316b00": [
+"financial"
+],
+"qj2-256d68b6c8e9": [
+"medical"
+],
+"qj2-25bff96aea3e": [
+"financial"
+],
+"qj2-25c275b6ee47": [
+"medical"
+],
+"qj2-260547548d88": [
+"financial"
+],
+"qj2-2606b9caf040": [
+"capability_claim"
+],
+"qj2-265d3423c3f2": [
+"financial"
+],
+"qj2-26abebf8dd72": [
+"capability_claim"
+],
+"qj2-26aea251e802": [
+"certainty"
+],
+"qj2-26af7edef596": [
+"legal"
+],
+"qj2-26e96203a066": [
+"certainty"
+],
+"qj2-2755cb1e0e8e": [
+"financial"
+],
+"qj2-2769687ea27b": [
+"certainty"
+],
+"qj2-27cb433428f4": [
+"medical"
+],
+"qj2-27d9823e5c57": [
+"security_instruction"
+],
+"qj2-280f00ea650a": [
+"capability_claim"
+],
+"qj2-2821e456b472": [
+"financial"
+],
+"qj2-282bd84b0a94": [
+"medical"
+],
+"qj2-28326ed86f54": [
+"capability_claim"
+],
+"qj2-28da78cd9696": [
+"legal"
+],
+"qj2-29475d17c903": [
+"financial"
+],
+"qj2-29de7a75c97b": [
+"financial"
+],
+"qj2-29e9921efa0e": [
+"legal"
+],
+"qj2-29ecc11e2d80": [
+"financial"
+],
+"qj2-29f6332d5e23": [
+"financial"
+],
+"qj2-2a1e0e074fac": [
+"capability_claim"
+],
+"qj2-2a4c059d2055": [
+"financial"
+],
+"qj2-2a589a807020": [
+"capability_claim"
+],
+"qj2-2a7e63748291": [
+"financial"
+],
+"qj2-2aa4f48fd373": [
+"medical"
+],
+"qj2-2ac71257e3a5": [
+"certainty"
+],
+"qj2-2b1ea751c5ba": [
+"financial"
+],
+"qj2-2b2e9480f5d7": [
+"financial"
+],
+"qj2-2b8c5e2168ea": [
+"certainty"
+],
+"qj2-2bb465087659": [
+"legal"
+],
+"qj2-2bc6f0d11fdc": [
+"legal"
+],
+"qj2-2be46e7cea58": [
+"financial",
+"security_instruction"
+],
+"qj2-2c2d089ea6d4": [
+"capability_claim"
+],
+"qj2-2c7accffd6f7": [
+"security_instruction"
+],
+"qj2-2ce07060b503": [
+"certainty"
+],
+"qj2-2d55f04d5fc6": [
+"medical"
+],
+"qj2-2d70a094476d": [
+"capability_claim"
+],
+"qj2-2d72d1cf3f51": [
+"certainty"
+],
+"qj2-2d887970d9e9": [
+"medical"
+],
+"qj2-2d91292c4523": [
+"certainty"
+],
+"qj2-2d9de043e618": [
+"legal",
+"financial"
+],
+"qj2-2da291d1b1ee": [
+"financial"
+],
+"qj2-2de1048a07cf": [
+"certainty"
+],
+"qj2-2e239f2638fc": [
+"financial"
+],
+"qj2-2e2bcd2e179a": [
+"capability_claim"
+],
+"qj2-2e3bfd7177e5": [
+"legal"
+],
+"qj2-2e60a60a0eec": [
+"legal"
+],
+"qj2-2ed0d8a8ce8a": [
+"security_instruction"
+],
+"qj2-2f4e7a452e1e": [
+"capability_claim"
+],
+"qj2-2f601f83ad32": [
+"legal"
+],
+"qj2-2ff2547272f8": [
+"medical"
+],
+"qj2-3004baf1bc17": [
+"financial"
+],
+"qj2-30118c23887e": [
+"financial"
+],
+"qj2-305eee97f2ff": [
+"legal"
+],
+"qj2-307613423305": [
+"financial"
+],
+"qj2-3079c93c9b16": [
+"certainty"
+],
+"qj2-30ef7169c552": [
+"financial"
+],
+"qj2-31348c3be45d": [
+"capability_claim"
+],
+"qj2-3150366b344f": [
+"security_instruction"
+],
+"qj2-316a1048b914": [
+"financial"
+],
+"qj2-318ba07a0a27": [
+"capability_claim"
+],
+"qj2-3190c68393a9": [
+"financial"
+],
+"qj2-319100c7e046": [
+"security_instruction"
+],
+"qj2-31a305fe9dc6": [
+"certainty"
+],
+"qj2-31b735646348": [
+"medical"
+],
+"qj2-31c20eb1379a": [
+"financial",
+"certainty"
+],
+"qj2-31cd27f73318": [
+"legal"
+],
+"qj2-31e9740e9ab2": [
+"medical"
+],
+"qj2-322013d21d37": [
+"medical"
+],
+"qj2-32301ffaba28": [
+"financial"
+],
+"qj2-327c52e167ea": [
+"capability_claim"
+],
+"qj2-32a5aff1787c": [
+"financial"
+],
+"qj2-32b54daa5ddc": [
+"financial"
+],
+"qj2-32d4ecb30f19": [
+"financial"
+],
+"qj2-32ea76a419b5": [
+"legal"
+],
+"qj2-330a076118d7": [
+"certainty"
+],
+"qj2-33cecff20e60": [
+"legal"
+],
+"qj2-33f4fd629440": [
+"security_instruction"
+],
+"qj2-33fae6ec76f5": [
+"financial"
+],
+"qj2-342e63523add": [
+"legal"
+],
+"qj2-3440a9ff2720": [
+"certainty",
+"capability_claim"
+],
+"qj2-3447760e1f43": [
+"certainty"
+],
+"qj2-347ce01cdc19": [
+"legal"
+],
+"qj2-347cf7d9cb1b": [
+"capability_claim"
+],
+"qj2-34994bf0298b": [
+"medical",
+"dosage"
+],
+"qj2-34a09305748b": [
+"certainty"
+],
+"qj2-34c91d8f1d06": [
+"capability_claim"
+],
+"qj2-351633cdb444": [
+"security_instruction"
+],
+"qj2-355f2d9e0e66": [
+"financial"
+],
+"qj2-35d2a0407cd3": [
+"financial"
+],
+"qj2-35d4ffcedb27": [
+"security_instruction"
+],
+"qj2-35e7f47c46bc": [
+"financial"
+],
+"qj2-35ee378d59db": [
+"capability_claim"
+],
+"qj2-362fad6d64cd": [
+"financial"
+],
+"qj2-363df7d730c5": [
+"financial"
+],
+"qj2-364f81b098eb": [
+"financial",
+"certainty"
+],
+"qj2-36546386b1c7": [
+"certainty"
+],
+"qj2-377939350911": [
+"financial"
+],
+"qj2-37a53c77d67f": [
+"capability_claim"
+],
+"qj2-37c45cbaa6d4": [
+"security_instruction"
+],
+"qj2-37db18379987": [
+"legal"
+],
+"qj2-37f55d463295": [
+"capability_claim"
+],
+"qj2-3813a9184738": [
+"financial"
+],
+"qj2-3829610550f0": [
+"financial"
+],
+"qj2-382cb993f74f": [
+"financial"
+],
+"qj2-38341e3926db": [
+"legal"
+],
+"qj2-38553c8bc868": [
+"medical"
+],
+"qj2-387200fe17e7": [
+"financial"
+],
+"qj2-38cb73de1a53": [
+"certainty"
+],
+"qj2-38d9607c002b": [
+"financial"
+],
+"qj2-38f0173395e3": [
+"legal"
+],
+"qj2-39384ebf243e": [
+"security_instruction"
+],
+"qj2-39387bc271ca": [
+"financial"
+],
+"qj2-395610c236fa": [
+"certainty"
+],
+"qj2-39a57e87580c": [
+"financial"
+],
+"qj2-39e214bbb8c8": [
+"financial"
+],
+"qj2-3a163e97fe5b": [
+"medical"
+],
+"qj2-3a3c88795ff1": [
+"financial"
+],
+"qj2-3b0ac6d19677": [
+"capability_claim"
+],
+"qj2-3b1d659f04cf": [
+"capability_claim"
+],
+"qj2-3b592da2fa83": [
+"certainty"
+],
+"qj2-3b79e91d82e4": [
+"financial",
+"certainty"
+],
+"qj2-3b81be177a64": [
+"financial"
+],
+"qj2-3bf02c7bc996": [
+"certainty"
+],
+"qj2-3bf6c4e5aa3a": [
+"financial"
+],
+"qj2-3c206dc50ec9": [
+"security_instruction"
+],
+"qj2-3c47164a4b69": [
+"security_instruction"
+],
+"qj2-3c80fb04cf3c": [
+"security_instruction"
+],
+"qj2-3c8b9d990ad9": [
+"capability_claim"
+],
+"qj2-3cfe73ba25f4": [
+"legal"
+],
+"qj2-3d480111d177": [
+"financial",
+"certainty"
+],
+"qj2-3d7b7780bd97": [
+"legal"
+],
+"qj2-3d9dd296a6d0": [
+"financial"
+],
+"qj2-3e08858300d6": [
+"certainty"
+],
+"qj2-3e1c37901d07": [
+"capability_claim"
+],
+"qj2-3e85b341cdfb": [
+"legal"
+],
+"qj2-3e9144f77e90": [
+"financial"
+],
+"qj2-3ebaafac599c": [
+"security_instruction"
+],
+"qj2-3eccd356341c": [
+"financial"
+],
+"qj2-3f63a83bb01c": [
+"security_instruction"
+],
+"qj2-4020ad422866": [
+"certainty"
+],
+"qj2-403683fc4251": [
+"medical"
+],
+"qj2-40a0167b7d6f": [
+"legal"
+],
+"qj2-40fcc30159fe": [
+"financial"
+],
+"qj2-4107469e8b6d": [
+"legal"
+],
+"qj2-4120ee9e44f7": [
+"financial"
+],
+"qj2-423e5a973c22": [
+"security_instruction"
+],
+"qj2-42455b11a918": [
+"financial"
+],
+"qj2-42597625197f": [
+"capability_claim"
+],
+"qj2-4280e30da5d2": [
+"legal"
+],
+"qj2-42ae8fcd7d92": [
+"capability_claim"
+],
+"qj2-43109ea40d9d": [
+"capability_claim"
+],
+"qj2-43306cb3bb17": [
+"legal"
+],
+"qj2-43bd848b6797": [
+"legal"
+],
+"qj2-43c5580179bf": [
+"capability_claim"
+],
+"qj2-43d25200ad4f": [
+"certainty"
+],
+"qj2-43f62019d71a": [
+"legal"
+],
+"qj2-440c1e2ebc79": [
+"certainty"
+],
+"qj2-446b5813ddfe": [
+"legal"
+],
+"qj2-44fc592548bb": [
+"financial"
+],
+"qj2-4515ae1e6167": [
+"financial"
+],
+"qj2-4518d1ea4f1f": [
+"financial"
+],
+"qj2-4531a56232d7": [
+"capability_claim"
+],
+"qj2-4561f8dd81a7": [
+"legal",
+"financial"
+],
+"qj2-45679ff7ccdc": [
+"medical",
+"certainty"
+],
+"qj2-4587984d6268": [
+"financial"
+],
+"qj2-459b52f77393": [
+"legal"
+],
+"qj2-45ccc444751a": [
+"capability_claim"
+],
+"qj2-45f3f7f222d3": [
+"capability_claim"
+],
+"qj2-460027eebcf4": [
+"certainty"
+],
+"qj2-4639512d1ca6": [
+"financial"
+],
+"qj2-464b13258a34": [
+"financial"
+],
+"qj2-4661c066c216": [
+"financial"
+],
+"qj2-46a6161323b1": [
+"certainty"
+],
+"qj2-46c8c9f03ba9": [
+"medical"
+],
+"qj2-46d76bc5b644": [
+"financial"
+],
+"qj2-46ed07b7818b": [
+"medical"
+],
+"qj2-4770a1c9990c": [
+"legal"
+],
+"qj2-47acbc8dbf76": [
+"legal"
+],
+"qj2-47be03b8a876": [
+"capability_claim"
+],
+"qj2-47f52437c93a": [
+"legal"
+],
+"qj2-485f2e55b292": [
+"financial",
+"security_instruction"
+],
+"qj2-48b6d4ed5f96": [
+"financial"
+],
+"qj2-48cb3bf4ee2e": [
+"security_instruction"
+],
+"qj2-48d15fdef010": [
+"capability_claim"
+],
+"qj2-49277ed8547f": [
+"financial"
+],
+"qj2-4931377a348b": [
+"security_instruction"
+],
+"qj2-494381a7d4f6": [
+"financial"
+],
+"qj2-4a22b05328c2": [
+"capability_claim"
+],
+"qj2-4a4caae23e7b": [
+"financial"
+],
+"qj2-4a99f8eec880": [
+"financial"
+],
+"qj2-4b27006305aa": [
+"legal"
+],
+"qj2-4b298aa22b4a": [
+"medical"
+],
+"qj2-4b52a6ab8e57": [
+"medical",
+"certainty"
+],
+"qj2-4b67ef4f1a13": [
+"security_instruction"
+],
+"qj2-4b9c79e9504d": [
+"financial"
+],
+"qj2-4bd0b49cef7d": [
+"medical"
+],
+"qj2-4c120b5e6773": [
+"medical"
+],
+"qj2-4c1e7ced8b00": [
+"medical"
+],
+"qj2-4cdd0fbddc00": [
+"financial"
+],
+"qj2-4ce461abddfd": [
+"legal",
+"financial"
+],
+"qj2-4d5a599df7e3": [
+"medical"
+],
+"qj2-4d7ae8eadf28": [
+"dosage"
+],
+"qj2-4d9fc2c8e40f": [
+"certainty"
+],
+"qj2-4db0bc549c43": [
+"capability_claim"
+],
+"qj2-4dbaa67800ed": [
+"capability_claim"
+],
+"qj2-4dbcfb8191a2": [
+"medical"
+],
+"qj2-4de1d2c98153": [
+"financial",
+"security_instruction"
+],
+"qj2-4e40b8036b68": [
+"legal"
+],
+"qj2-4e46385e0a2a": [
+"legal"
+],
+"qj2-4e68714f801b": [
+"certainty"
+],
+"qj2-4eac7b94eff0": [
+"capability_claim"
+],
+"qj2-4f5eaef2c82d": [
+"security_instruction"
+],
+"qj2-4f7a1fd64004": [
+"medical"
+],
+"qj2-4f918f0bc2ce": [
+"capability_claim"
+],
+"qj2-4fae568ba6b8": [
+"security_instruction"
+],
+"qj2-4fef14e00217": [
+"legal"
+],
+"qj2-4ffd5ed22cbd": [
+"financial"
+],
+"qj2-501c2a6c2440": [
+"financial"
+],
+"qj2-505fa533d72a": [
+"medical"
+],
+"qj2-5079460f879f": [
+"capability_claim"
+],
+"qj2-5112c126b093": [
+"financial"
+],
+"qj2-5115425ad235": [
+"medical"
+],
+"qj2-5180d9c77034": [
+"financial"
+],
+"qj2-51af40d033d5": [
+"certainty"
+],
+"qj2-51b646d6c9e9": [
+"capability_claim"
+],
+"qj2-51baa98036c1": [
+"medical"
+],
+"qj2-526481ba5b0b": [
+"legal"
+],
+"qj2-52673a006131": [
+"medical"
+],
+"qj2-5281804c5990": [
+"medical"
+],
+"qj2-52c7afe9489e": [
+"financial"
+],
+"qj2-530c20a066fa": [
+"legal"
+],
+"qj2-531effe0ea0a": [
+"certainty"
+],
+"qj2-5338985877ac": [
+"medical"
+],
+"qj2-533a9eb2a766": [
+"dosage"
+],
+"qj2-535a422bc786": [
+"legal"
+],
+"qj2-5372d581c9e8": [
+"legal"
+],
+"qj2-53740031fad6": [
+"legal"
+],
+"qj2-53a3dae31074": [
+"capability_claim"
+],
+"qj2-5407c3e5fef1": [
+"medical"
+],
+"qj2-544d06a070c5": [
+"medical"
+],
+"qj2-54cb16a6532c": [
+"certainty"
+],
+"qj2-54f6adb67a5f": [
+"capability_claim"
+],
+"qj2-5505f69347f3": [
+"financial"
+],
+"qj2-550ebd350a01": [
+"certainty"
+],
+"qj2-55107abedbfc": [
+"security_instruction"
+],
+"qj2-551a78d9a9fd": [
+"capability_claim"
+],
+"qj2-552242df16a6": [
+"medical"
+],
+"qj2-554e411071ec": [
+"medical"
+],
+"qj2-559a1e18a634": [
+"certainty"
+],
+"qj2-55bae1b28ace": [
+"certainty"
+],
+"qj2-55cad6aa2b16": [
+"security_instruction"
+],
+"qj2-55f1aa67ee55": [
+"financial"
+],
+"qj2-56a1f3831965": [
+"medical"
+],
+"qj2-56e5ee943a11": [
+"certainty"
+],
+"qj2-5714edcd1a4b": [
+"medical"
+],
+"qj2-5726fb5bdbe5": [
+"capability_claim"
+],
+"qj2-57cd3dc7c9f6": [
+"capability_claim"
+],
+"qj2-580352ca4c17": [
+"medical"
+],
+"qj2-5805f1a0fc31": [
+"legal"
+],
+"qj2-583dc8824114": [
+"capability_claim"
+],
+"qj2-585d7156dd1b": [
+"financial"
+],
+"qj2-5866ddba80fd": [
+"legal"
+],
+"qj2-58d24f9a0c86": [
+"capability_claim"
+],
+"qj2-58ff22d6aa3d": [
+"capability_claim"
+],
+"qj2-5919cffe5095": [
+"capability_claim"
+],
+"qj2-599e6691eb9e": [
+"legal"
+],
+"qj2-5a12ba212638": [
+"financial"
+],
+"qj2-5a7b29f27139": [
+"capability_claim"
+],
+"qj2-5a8a0f13c403": [
+"financial"
+],
+"qj2-5ae331bae674": [
+"certainty"
+],
+"qj2-5b18d91633e4": [
+"certainty"
+],
+"qj2-5b449342c260": [
+"certainty"
+],
+"qj2-5b46be9649fe": [
+"medical"
+],
+"qj2-5b5674af99f4": [
+"capability_claim"
+],
+"qj2-5b658255bdb1": [
+"medical"
+],
+"qj2-5baa8bd64866": [
+"legal"
+],
+"qj2-5bfb2f4f9fc0": [
+"financial"
+],
+"qj2-5c6d8fa26304": [
+"financial"
+],
+"qj2-5c81acbd5e73": [
+"capability_claim"
+],
+"qj2-5d0e89e9806e": [
+"financial"
+],
+"qj2-5d59c9d673d3": [
+"financial"
+],
+"qj2-5d6dfa70003f": [
+"capability_claim"
+],
+"qj2-5dc7f63ae905": [
+"medical"
+],
+"qj2-5dedc3ca1cf0": [
+"capability_claim"
+],
+"qj2-5df61454cf83": [
+"medical"
+],
+"qj2-5df8ac272561": [
+"security_instruction"
+],
+"qj2-5e0d414faff2": [
+"medical"
+],
+"qj2-5e6e6000bd67": [
+"capability_claim"
+],
+"qj2-5ead861e8681": [
+"medical"
+],
+"qj2-5eb06fce49a9": [
+"capability_claim"
+],
+"qj2-5eb2ac8fe3c2": [
+"certainty"
+],
+"qj2-5eb9deae07c2": [
+"medical"
+],
+"qj2-5f0b038fe702": [
+"medical"
+],
+"qj2-5f437f68a339": [
+"medical"
+],
+"qj2-5f602dfcdd65": [
+"certainty"
+],
+"qj2-5fdbf88161ec": [
+"financial"
+],
+"qj2-5ff88f82c268": [
+"capability_claim"
+],
+"qj2-6003acf12967": [
+"certainty"
+],
+"qj2-6016a7991fae": [
+"legal"
+],
+"qj2-6020919ab236": [
+"certainty"
+],
+"qj2-602dc4b4d47c": [
+"financial"
+],
+"qj2-6095379aed26": [
+"capability_claim"
+],
+"qj2-60c3df9b951e": [
+"financial"
+],
+"qj2-60e907b17f6d": [
+"medical"
+],
+"qj2-60e9a01f9288": [
+"financial"
+],
+"qj2-6126de88e47a": [
+"capability_claim"
+],
+"qj2-6178d6d10f9d": [
+"capability_claim"
+],
+"qj2-61953d52ceef": [
+"certainty"
+],
+"qj2-61a2aa535b75": [
+"financial"
+],
+"qj2-61bf98d52db6": [
+"medical"
+],
+"qj2-61e23873eced": [
+"financial"
+],
+"qj2-61f8c743ed74": [
+"financial"
+],
+"qj2-623b564e9bb9": [
+"financial"
+],
+"qj2-6253f9772cab": [
+"medical"
+],
+"qj2-630f55a43ebc": [
+"medical"
+],
+"qj2-631b3489d2a4": [
+"financial",
+"certainty"
+],
+"qj2-634eb9c50d62": [
+"medical"
+],
+"qj2-6354edb9ed83": [
+"medical"
+],
+"qj2-635e1f88f8d0": [
+"financial"
+],
+"qj2-63953806b104": [
+"legal"
+],
+"qj2-63a959ae484f": [
+"medical"
+],
+"qj2-63eb85732986": [
+"security_instruction"
+],
+"qj2-6406d159c43c": [
+"certainty"
+],
+"qj2-641e47f09c5a": [
+"financial",
+"security_instruction"
+],
+"qj2-64223a690d15": [
+"legal"
+],
+"qj2-643331bbd25d": [
+"security_instruction"
+],
+"qj2-645c4eeb6dd6": [
+"legal"
+],
+"qj2-64abfab836f9": [
+"legal"
+],
+"qj2-64e51d8a1d8d": [
+"certainty"
+],
+"qj2-650ce38b1132": [
+"certainty"
+],
+"qj2-65b379ca8021": [
+"capability_claim"
+],
+"qj2-65b89e7f82a2": [
+"financial"
+],
+"qj2-662175b706d5": [
+"financial"
+],
+"qj2-66648c171a85": [
+"capability_claim"
+],
+"qj2-6689baa45a7e": [
+"certainty",
+"capability_claim"
+],
+"qj2-66b22d160cba": [
+"medical"
+],
+"qj2-66eafdde4ca2": [
+"security_instruction"
+],
+"qj2-6793c9c5309a": [
+"financial"
+],
+"qj2-6799b4db39b8": [
+"medical"
+],
+"qj2-67baa9950095": [
+"dosage"
+],
+"qj2-67c10b867b30": [
+"capability_claim"
+],
+"qj2-67dd2139083c": [
+"security_instruction"
+],
+"qj2-67ef71eb181a": [
+"financial"
+],
+"qj2-67eff8f7a333": [
+"financial",
+"certainty"
+],
+"qj2-685ea4785d48": [
+"capability_claim"
+],
+"qj2-68cb953c7c17": [
+"financial"
+],
+"qj2-691eb14fe62b": [
+"financial"
+],
+"qj2-6931150a87dc": [
+"certainty"
+],
+"qj2-69447500aeae": [
+"capability_claim"
+],
+"qj2-6950b5fe97ca": [
+"security_instruction"
+],
+"qj2-6a1fe700e6a2": [
+"capability_claim"
+],
+"qj2-6a294db71e6e": [
+"legal"
+],
+"qj2-6a441a5cc23f": [
+"financial"
+],
+"qj2-6a9c342ec476": [
+"capability_claim"
+],
+"qj2-6b0ef8838159": [
+"financial"
+],
+"qj2-6b2e58a53e98": [
+"capability_claim"
+],
+"qj2-6b5387aa32c1": [
+"capability_claim"
+],
+"qj2-6b7158d60b12": [
+"financial"
+],
+"qj2-6bce5e766644": [
+"financial"
+],
+"qj2-6bd64684442f": [
+"medical"
+],
+"qj2-6bf49440215c": [
+"legal"
+],
+"qj2-6c0206ff3343": [
+"certainty"
+],
+"qj2-6c1a8cd11e13": [
+"financial"
+],
+"qj2-6c56953c391d": [
+"legal"
+],
+"qj2-6c82531503bc": [
+"legal"
+],
+"qj2-6c872048257d": [
+"medical"
+],
+"qj2-6cc2e4268f08": [
+"medical"
+],
+"qj2-6cc756058503": [
+"financial"
+],
+"qj2-6d006d08418d": [
+"financial"
+],
+"qj2-6d19d614e42e": [
+"certainty"
+],
+"qj2-6d9f9eea127d": [
+"medical"
+],
+"qj2-6db0dd64989b": [
+"capability_claim"
+],
+"qj2-6db73c4eab40": [
+"security_instruction"
+],
+"qj2-6dd49187c898": [
+"financial"
+],
+"qj2-6eb1548fc4fd": [
+"financial"
+],
+"qj2-6ebf8482aadf": [
+"legal"
+],
+"qj2-6eda94040180": [
+"capability_claim"
+],
+"qj2-6edf0efed63b": [
+"medical"
+],
+"qj2-6efbd5ca5f55": [
+"security_instruction"
+],
+"qj2-6f0e67c6ed83": [
+"capability_claim"
+],
+"qj2-6f25b4ba5a13": [
+"capability_claim"
+],
+"qj2-6f51a5e3b1a9": [
+"medical"
+],
+"qj2-6f5332952031": [
+"legal"
+],
+"qj2-6f5bab644685": [
+"legal"
+],
+"qj2-6f8fa07e03fc": [
+"legal"
+],
+"qj2-6f99ed586336": [
+"capability_claim"
+],
+"qj2-6faa7815a0c4": [
+"capability_claim"
+],
+"qj2-6fce692e6873": [
+"medical"
+],
+"qj2-6fee9862cc31": [
+"medical"
+],
+"qj2-7005000286ea": [
+"financial"
+],
+"qj2-7010b2159adc": [
+"capability_claim"
+],
+"qj2-7014e6733c9f": [
+"capability_claim"
+],
+"qj2-701511664ae6": [
+"certainty"
+],
+"qj2-7090e4f8bb87": [
+"capability_claim"
+],
+"qj2-70cad5e8b8e5": [
+"financial"
+],
+"qj2-70e4b3dbaa36": [
+"legal"
+],
+"qj2-710464a0fa4e": [
+"financial"
+],
+"qj2-7105b4273fd8": [
+"financial"
+],
+"qj2-71262cd0eb0a": [
+"medical"
+],
+"qj2-723750a801ea": [
+"security_instruction",
+"certainty"
+],
+"qj2-725594cd0951": [
+"legal"
+],
+"qj2-727c2616ad2d": [
+"financial"
+],
+"qj2-72ada6223cf6": [
+"medical"
+],
+"qj2-72d3b7821917": [
+"dosage"
+],
+"qj2-72d6f3252059": [
+"medical"
+],
+"qj2-72ee5d048762": [
+"financial"
+],
+"qj2-730c2b492297": [
+"legal",
+"financial"
+],
+"qj2-73333a20f550": [
+"legal"
+],
+"qj2-735d6c3fb4e1": [
+"capability_claim"
+],
+"qj2-73708f3a9eb4": [
+"certainty"
+],
+"qj2-73e8ccdc539e": [
+"certainty"
+],
+"qj2-73eed6b59ba9": [
+"security_instruction"
+],
+"qj2-743b4e8e3914": [
+"legal"
+],
+"qj2-749585a7e0c9": [
+"capability_claim"
+],
+"qj2-74d7353a6d2b": [
+"certainty"
+],
+"qj2-75186a809ce6": [
+"capability_claim"
+],
+"qj2-75acedb0553c": [
+"medical"
+],
+"qj2-75e10a25d46d": [
+"capability_claim"
+],
+"qj2-75f45b879165": [
+"financial"
+],
+"qj2-763bb5101c72": [
+"capability_claim"
+],
+"qj2-76ca28468de8": [
+"financial"
+],
+"qj2-76cced6985c5": [
+"legal"
+],
+"qj2-773acbbf5296": [
+"legal"
+],
+"qj2-7761fb3d3002": [
+"security_instruction"
+],
+"qj2-7793f895da85": [
+"security_instruction"
+],
+"qj2-77b01bf9b006": [
+"financial"
+],
+"qj2-77b61f821726": [
+"financial"
+],
+"qj2-77bd71b86372": [
+"legal"
+],
+"qj2-78078e9dff1c": [
+"legal"
+],
+"qj2-78603e0beb2f": [
+"financial"
+],
+"qj2-78cfe20443a1": [
+"financial"
+],
+"qj2-78eb05db1596": [
+"financial"
+],
+"qj2-790022781d16": [
+"medical"
+],
+"qj2-7917a8aca335": [
+"medical"
+],
+"qj2-79610ef89698": [
+"capability_claim"
+],
+"qj2-799d0e14f315": [
+"certainty"
+],
+"qj2-79effb7d726c": [
+"financial"
+],
+"qj2-7a0e140c8abe": [
+"medical"
+],
+"qj2-7a174cc03825": [
+"financial"
+],
+"qj2-7a467bad5079": [
+"legal"
+],
+"qj2-7a853a50ea96": [
+"medical"
+],
+"qj2-7a96c72365a6": [
+"financial"
+],
+"qj2-7ab9d095a022": [
+"financial"
+],
+"qj2-7ac410d880df": [
+"security_instruction"
+],
+"qj2-7ad4913191ce": [
+"security_instruction"
+],
+"qj2-7ad5de2df901": [
+"financial"
+],
+"qj2-7ae68162ed06": [
+"financial"
+],
+"qj2-7b0de958e1db": [
+"certainty"
+],
+"qj2-7b381234403f": [
+"capability_claim"
+],
+"qj2-7b9ab516aa29": [
+"capability_claim"
+],
+"qj2-7bf69caab3a6": [
+"capability_claim"
+],
+"qj2-7c17fccfef3a": [
+"financial"
+],
+"qj2-7c7277dd4868": [
+"certainty"
+],
+"qj2-7c859a0e48db": [
+"financial"
+],
+"qj2-7cea19560b44": [
+"legal"
+],
+"qj2-7d2b5acc7510": [
+"certainty"
+],
+"qj2-7d7cbb6d39ff": [
+"medical"
+],
+"qj2-7db29b406d35": [
+"capability_claim"
+],
+"qj2-7db86bb106dc": [
+"medical"
+],
+"qj2-7df0fc1aa64f": [
+"financial"
+],
+"qj2-7e36c123f7ff": [
+"legal",
+"financial"
+],
+"qj2-7e6389176ed2": [
+"legal",
+"certainty"
+],
+"qj2-7e99dcefeab4": [
+"medical"
+],
+"qj2-7ec827c526c3": [
+"legal"
+],
+"qj2-7f19293e8ccb": [
+"medical"
+],
+"qj2-7f5525d99536": [
+"financial"
+],
+"qj2-7f764ea08324": [
+"dosage"
+],
+"qj2-7ff3c410f2b7": [
+"medical"
+],
+"qj2-807984850e79": [
+"capability_claim"
+],
+"qj2-80835fe8a366": [
+"capability_claim"
+],
+"qj2-80914d77d863": [
+"security_instruction"
+],
+"qj2-809c09f0e99a": [
+"certainty"
+],
+"qj2-809c19aa723d": [
+"capability_claim"
+],
+"qj2-80a801966289": [
+"medical"
+],
+"qj2-80d3df9f1074": [
+"certainty"
+],
+"qj2-80f5e5b6250f": [
+"financial"
+],
+"qj2-81108b74a9cc": [
+"capability_claim"
+],
+"qj2-811194edb31b": [
+"legal",
+"financial"
+],
+"qj2-81d44353a38f": [
+"medical"
+],
+"qj2-81f12e345309": [
+"capability_claim"
+],
+"qj2-82220104776d": [
+"capability_claim"
+],
+"qj2-825499e15b22": [
+"certainty"
+],
+"qj2-8296611e80f5": [
+"certainty"
+],
+"qj2-82a3b7550005": [
+"medical"
+],
+"qj2-82b64a1eed83": [
+"security_instruction"
+],
+"qj2-82b9f0cb7b90": [
+"medical"
+],
+"qj2-83003853cce7": [
+"financial"
+],
+"qj2-8313676f530e": [
+"financial"
+],
+"qj2-8336ef71306d": [
+"financial"
+],
+"qj2-8354453fad05": [
+"capability_claim"
+],
+"qj2-835bc3979f7f": [
+"medical"
+],
+"qj2-8373991a213d": [
+"certainty"
+],
+"qj2-83967c78d3e2": [
+"capability_claim"
+],
+"qj2-83bc1fa5a3ba": [
+"financial"
+],
+"qj2-83bcc787d228": [
+"medical"
+],
+"qj2-846b4e978128": [
+"capability_claim"
+],
+"qj2-8497a4d243c4": [
+"certainty"
+],
+"qj2-84b43388df88": [
+"financial"
+],
+"qj2-84ca6413ebfc": [
+"security_instruction"
+],
+"qj2-850dd6a3a5df": [
+"security_instruction"
+],
+"qj2-852ad122c8ee": [
+"financial"
+],
+"qj2-852d5e7c4971": [
+"medical"
+],
+"qj2-855c5af812b2": [
+"legal"
+],
+"qj2-861c87694f0e": [
+"capability_claim"
+],
+"qj2-8683b5883bad": [
+"security_instruction"
+],
+"qj2-86e7fc98eb56": [
+"medical"
+],
+"qj2-86f76dcb0fb4": [
+"legal"
+],
+"qj2-8740497f90c9": [
+"financial"
+],
+"qj2-87912b44ce59": [
+"capability_claim"
+],
+"qj2-87bcbc5d8f85": [
+"certainty"
+],
+"qj2-87f6fcb9547a": [
+"financial"
+],
+"qj2-882d57fb1cab": [
+"financial"
+],
+"qj2-8843705da50c": [
+"financial"
+],
+"qj2-8846cb1bb33c": [
+"certainty"
+],
+"qj2-8866a9cc80b5": [
+"security_instruction"
+],
+"qj2-88721c5c68b1": [
+"capability_claim"
+],
+"qj2-88add080e077": [
+"financial"
+],
+"qj2-88b5449e647a": [
+"capability_claim"
+],
+"qj2-88c9232b9418": [
+"capability_claim"
+],
+"qj2-88e3b2c02bfc": [
+"financial"
+],
+"qj2-88f28c0995c0": [
+"medical"
+],
+"qj2-88f421e22e25": [
+"financial"
+],
+"qj2-88fdc5442d04": [
+"medical"
+],
+"qj2-8976b663a955": [
+"financial"
+],
+"qj2-89a50cd9dd64": [
+"capability_claim"
+],
+"qj2-89b44e214642": [
+"legal"
+],
+"qj2-8a80df9041e0": [
+"certainty"
+],
+"qj2-8a9abaf84e3f": [
+"security_instruction"
+],
+"qj2-8aba8a7ff807": [
+"legal"
+],
+"qj2-8afd3a192676": [
+"capability_claim"
+],
+"qj2-8bacf4f17f01": [
+"certainty"
+],
+"qj2-8bad189a6352": [
+"financial"
+],
+"qj2-8c2b4a6f6301": [
+"certainty"
+],
+"qj2-8c2fdb1480ef": [
+"legal"
+],
+"qj2-8c77f6c5f7f3": [
+"financial"
+],
+"qj2-8c97bc915923": [
+"financial"
+],
+"qj2-8c9ce42bfd11": [
+"capability_claim"
+],
+"qj2-8cd8563a2405": [
+"legal"
+],
+"qj2-8d46069de3f2": [
+"legal"
+],
+"qj2-8de4c0925cfa": [
+"financial"
+],
+"qj2-8e1f25fd8289": [
+"financial"
+],
+"qj2-8e2f0480404d": [
+"capability_claim"
+],
+"qj2-8e39a7db541f": [
+"financial"
+],
+"qj2-8e583a7934da": [
+"capability_claim"
+],
+"qj2-8e621f4ff9bb": [
+"financial"
+],
+"qj2-8e96aefd6d7d": [
+"financial"
+],
+"qj2-8eaea68cca8d": [
+"certainty"
+],
+"qj2-8eb674fda034": [
+"certainty"
+],
+"qj2-8edface22b43": [
+"legal"
+],
+"qj2-8ee6a6f0388a": [
+"security_instruction"
+],
+"qj2-8f0f45f6ed46": [
+"security_instruction"
+],
+"qj2-8f12710b21e8": [
+"financial"
+],
+"qj2-8f8b3a6a833a": [
+"capability_claim"
+],
+"qj2-8f8fcd7001b9": [
+"medical"
+],
+"qj2-8fa982b2d867": [
+"dosage"
+],
+"qj2-8fc61185252e": [
+"capability_claim"
+],
+"qj2-8fdf81c047ac": [
+"legal"
+],
+"qj2-9009eff87382": [
+"legal"
+],
+"qj2-9011745ffa00": [
+"capability_claim"
+],
+"qj2-905f58cbab6a": [
+"dosage"
+],
+"qj2-90a6fdee8d70": [
+"financial"
+],
+"qj2-91877ddb4f9d": [
+"medical"
+],
+"qj2-9264e90b7d71": [
+"financial"
+],
+"qj2-929b973ca141": [
+"legal"
+],
+"qj2-92e2c0b71c01": [
+"security_instruction"
+],
+"qj2-931733992971": [
+"legal"
+],
+"qj2-93af1340745d": [
+"certainty"
+],
+"qj2-9403e5cb7ec9": [
+"financial"
+],
+"qj2-9406a427aa2f": [
+"security_instruction"
+],
+"qj2-948bc7baae46": [
+"capability_claim"
+],
+"qj2-94994588f9f6": [
+"medical"
+],
+"qj2-94a8a7ea11eb": [
+"security_instruction",
+"certainty"
+],
+"qj2-9584b7213523": [
+"medical"
+],
+"qj2-95c0a3b06a3c": [
+"security_instruction"
+],
+"qj2-95efccb90a59": [
+"capability_claim"
+],
+"qj2-9629a27ba5bf": [
+"medical"
+],
+"qj2-9634755f2362": [
+"medical"
+],
+"qj2-9692ecd9d252": [
+"security_instruction"
+],
+"qj2-96c524bbf34d": [
+"medical"
+],
+"qj2-970671281dcd": [
+"medical"
+],
+"qj2-97181de9f26a": [
+"legal"
+],
+"qj2-97865768f643": [
+"certainty"
+],
+"qj2-98042df86901": [
+"financial"
+],
+"qj2-98bb6b479f65": [
+"financial"
+],
+"qj2-98c552056c53": [
+"financial"
+],
+"qj2-98eee3f6460d": [
+"financial"
+],
+"qj2-9926b1f5cf67": [
+"financial"
+],
+"qj2-994222dee972": [
+"medical"
+],
+"qj2-999c952fe2b9": [
+"financial"
+],
+"qj2-99bdfa7aadc9": [
+"legal"
+],
+"qj2-99ea2aac1e3a": [
+"security_instruction"
+],
+"qj2-9a35b4419832": [
+"financial"
+],
+"qj2-9aa804471077": [
+"medical"
+],
+"qj2-9afeff730d8d": [
+"financial"
+],
+"qj2-9b0515f7b25e": [
+"financial"
+],
+"qj2-9b72741520e5": [
+"legal"
+],
+"qj2-9bbf88bb0f5b": [
+"medical",
+"dosage"
+],
+"qj2-9c0dc866803a": [
+"legal"
+],
+"qj2-9c68c747927f": [
+"capability_claim"
+],
+"qj2-9cc5c49628bf": [
+"capability_claim"
+],
+"qj2-9cf696367dd1": [
+"security_instruction"
+],
+"qj2-9d31dff0f5fa": [
+"security_instruction"
+],
+"qj2-9d5cd418db65": [
+"medical"
+],
+"qj2-9d9fea4e5679": [
+"medical",
+"dosage"
+],
+"qj2-9da803f7f1a0": [
+"legal",
+"financial"
+],
+"qj2-9decfdad7ae6": [
+"legal"
+],
+"qj2-9deffafe62b9": [
+"capability_claim"
+],
+"qj2-9e1b9b079eb5": [
+"medical"
+],
+"qj2-9e3960287e3c": [
+"medical"
+],
+"qj2-9e64729e45bc": [
+"medical",
+"certainty"
+],
+"qj2-9ea1efaa2839": [
+"capability_claim"
+],
+"qj2-9ea4143f841b": [
+"capability_claim"
+],
+"qj2-9eb8d8111ee7": [
+"capability_claim"
+],
+"qj2-9f410d6297f3": [
+"financial"
+],
+"qj2-9f419ac218d9": [
+"financial"
+],
+"qj2-9f67340132a1": [
+"security_instruction"
+],
+"qj2-9f8979467e33": [
+"capability_claim"
+],
+"qj2-9fd0d4cb847b": [
+"capability_claim"
+],
+"qj2-a010e3d82ced": [
+"financial"
+],
+"qj2-a05f3b71c8b2": [
+"legal"
+],
+"qj2-a0743b17640f": [
+"capability_claim"
+],
+"qj2-a0a601aae99c": [
+"capability_claim"
+],
+"qj2-a10a026f6813": [
+"certainty"
+],
+"qj2-a19394af5f2e": [
+"capability_claim"
+],
+"qj2-a1f20036c23c": [
+"legal"
+],
+"qj2-a1fd19bee5c4": [
+"legal",
+"financial",
+"certainty"
+],
+"qj2-a2ad1b11cc5d": [
+"security_instruction"
+],
+"qj2-a2be36df08ef": [
+"certainty"
+],
+"qj2-a2ed4703ac56": [
+"security_instruction"
+],
+"qj2-a2fa186e34ac": [
+"financial",
+"certainty"
+],
+"qj2-a300424f9fdc": [
+"certainty"
+],
+"qj2-a30aac6b7882": [
+"capability_claim"
+],
+"qj2-a30defdc2d1c": [
+"capability_claim"
+],
+"qj2-a36f4950594f": [
+"financial"
+],
+"qj2-a377af674cfa": [
+"financial"
+],
+"qj2-a37a76b8e179": [
+"legal"
+],
+"qj2-a389c79bbb35": [
+"medical"
+],
+"qj2-a3c11e3f2c3d": [
+"capability_claim"
+],
+"qj2-a3de3bb47a71": [
+"certainty"
+],
+"qj2-a3e0b5f8440b": [
+"security_instruction"
+],
+"qj2-a4348cd6f97b": [
+"certainty"
+],
+"qj2-a4494ff61b97": [
+"certainty"
+],
+"qj2-a4be92988e03": [
+"medical"
+],
+"qj2-a4c5b6d4f91a": [
+"certainty"
+],
+"qj2-a4d2683216bc": [
+"financial"
+],
+"qj2-a4f53881afd1": [
+"financial"
+],
+"qj2-a51aa15a4495": [
+"financial"
+],
+"qj2-a5878198f3ab": [
+"financial"
+],
+"qj2-a58a54ba4a59": [
+"certainty"
+],
+"qj2-a59a8fb7e8d3": [
+"certainty"
+],
+"qj2-a5da2f57c54e": [
+"medical"
+],
+"qj2-a6422641f3a2": [
+"security_instruction"
+],
+"qj2-a72241a76093": [
+"capability_claim"
+],
+"qj2-a740539bde9e": [
+"security_instruction"
+],
+"qj2-a7a4b8545b70": [
+"legal"
+],
+"qj2-a7f447946124": [
+"capability_claim"
+],
+"qj2-a80887e89855": [
+"financial"
+],
+"qj2-a87426ac94b4": [
+"financial",
+"certainty"
+],
+"qj2-a89d039a479f": [
+"financial"
+],
+"qj2-a8dd2ebcb800": [
+"medical"
+],
+"qj2-a941944166b1": [
+"security_instruction"
+],
+"qj2-a99412192c70": [
+"dosage"
+],
+"qj2-a9ab0e84e66b": [
+"financial"
+],
+"qj2-a9bd57a5e0da": [
+"capability_claim"
+],
+"qj2-aa1fb2d0d85e": [
+"financial"
+],
+"qj2-aa211a1ca21e": [
+"medical"
+],
+"qj2-aa4e3e53e776": [
+"legal",
+"certainty"
+],
+"qj2-aa9bedf5b009": [
+"medical"
+],
+"qj2-aad298e18976": [
+"security_instruction"
+],
+"qj2-ab329d1c783c": [
+"capability_claim"
+],
+"qj2-abdac266407e": [
+"certainty"
+],
+"qj2-abef6e88a8e1": [
+"financial"
+],
+"qj2-ac4637b8816f": [
+"medical"
+],
+"qj2-ad3a95eb0c90": [
+"legal"
+],
+"qj2-ad6eab13a5aa": [
+"legal"
+],
+"qj2-aebcf5474b1f": [
+"financial"
+],
+"qj2-aed7fdd354f6": [
+"dosage"
+],
+"qj2-af9f24055d79": [
+"financial"
+],
+"qj2-b003bc2e5cef": [
+"capability_claim"
+],
+"qj2-b0695a3e203a": [
+"medical"
+],
+"qj2-b229585c6c4c": [
+"financial"
+],
+"qj2-b29b3519c3b2": [
+"medical",
+"certainty"
+],
+"qj2-b2a36bd8055f": [
+"financial"
+],
+"qj2-b2a65d1504a8": [
+"certainty"
+],
+"qj2-b31887d97f64": [
+"financial"
+],
+"qj2-b31d17601141": [
+"capability_claim"
+],
+"qj2-b3d539fc111e": [
+"financial"
+],
+"qj2-b402dd01c626": [
+"legal",
+"financial"
+],
+"qj2-b44189a7f6b7": [
+"medical"
+],
+"qj2-b450bc4ab570": [
+"certainty"
+],
+"qj2-b46b7c708011": [
+"financial"
+],
+"qj2-b47f947dcadb": [
+"legal"
+],
+"qj2-b485958831b8": [
+"financial"
+],
+"qj2-b4894c205ad2": [
+"financial"
+],
+"qj2-b48f28cf5434": [
+"capability_claim"
+],
+"qj2-b4a44a68ff28": [
+"medical"
+],
+"qj2-b4d1caa440bc": [
+"financial"
+],
+"qj2-b4e6e63035c4": [
+"financial"
+],
+"qj2-b508a6c6da64": [
+"medical"
+],
+"qj2-b51c68aeb8de": [
+"medical"
+],
+"qj2-b52c25415f39": [
+"capability_claim"
+],
+"qj2-b53701011d4b": [
+"capability_claim"
+],
+"qj2-b56ede2f9daf": [
+"capability_claim"
+],
+"qj2-b58cd1c7e40f": [
+"capability_claim"
+],
+"qj2-b599d0fde9a4": [
+"medical"
+],
+"qj2-b5be176da1da": [
+"legal"
+],
+"qj2-b65dda2c93e5": [
+"capability_claim"
+],
+"qj2-b66eabcf6d6a": [
+"financial"
+],
+"qj2-b6bac2849872": [
+"medical",
+"certainty"
+],
+"qj2-b6fedf8e8979": [
+"security_instruction"
+],
+"qj2-b735bdef65f6": [
+"legal"
+],
+"qj2-b789a5e8940e": [
+"financial"
+],
+"qj2-b79f057b2678": [
+"legal",
+"financial"
+],
+"qj2-b7e8476028a4": [
+"capability_claim"
+],
+"qj2-b81456e81b4c": [
+"certainty"
+],
+"qj2-b830c472c633": [
+"capability_claim"
+],
+"qj2-b847e0ef8e27": [
+"medical"
+],
+"qj2-b89efcdc5af6": [
+"capability_claim"
+],
+"qj2-b91e763f7b9a": [
+"financial"
+],
+"qj2-ba33d04bf248": [
+"medical"
+],
+"qj2-ba393b991074": [
+"certainty"
+],
+"qj2-ba947c6d50e0": [
+"financial"
+],
+"qj2-ba96c732c3e1": [
+"legal"
+],
+"qj2-baa444935332": [
+"certainty"
+],
+"qj2-bae251405806": [
+"financial"
+],
+"qj2-bb3a9318b6d0": [
+"dosage"
+],
+"qj2-bb7ce3f72d44": [
+"capability_claim"
+],
+"qj2-bba5bf19c114": [
+"certainty"
+],
+"qj2-bbbc6fd5cf05": [
+"financial"
+],
+"qj2-bbfe01b522cf": [
+"financial",
+"certainty"
+],
+"qj2-bc1e7a249cc8": [
+"financial"
+],
+"qj2-bc32930f595e": [
+"security_instruction"
+],
+"qj2-bcadec504978": [
+"medical"
+],
+"qj2-bd1fdb86daf7": [
+"certainty"
+],
+"qj2-bd5dead28eeb": [
+"legal"
+],
+"qj2-be4a96d47adb": [
+"financial"
+],
+"qj2-be5ea69a6090": [
+"security_instruction"
+],
+"qj2-be9630fdfb09": [
+"certainty"
+],
+"qj2-befcfe303a2c": [
+"financial"
+],
+"qj2-bf23cba2bf93": [
+"dosage"
+],
+"qj2-bfb047d0c580": [
+"capability_claim"
+],
+"qj2-c005b1100fe0": [
+"security_instruction"
+],
+"qj2-c01d331aa4b9": [
+"legal",
+"financial"
+],
+"qj2-c04cfa404b44": [
+"certainty"
+],
+"qj2-c06c2c039576": [
+"financial"
+],
+"qj2-c084b95ea48c": [
+"legal"
+],
+"qj2-c09f7aa26ea5": [
+"security_instruction"
+],
+"qj2-c0f1a1a6ab51": [
+"dosage"
+],
+"qj2-c100a3176177": [
+"legal"
+],
+"qj2-c11d85fbd643": [
+"legal"
+],
+"qj2-c126215dfdc8": [
+"legal"
+],
+"qj2-c136d196730a": [
+"financial"
+],
+"qj2-c1418655869a": [
+"capability_claim"
+],
+"qj2-c184bc41437b": [
+"medical"
+],
+"qj2-c1de3b8e1aef": [
+"security_instruction"
+],
+"qj2-c1e40da4bbd1": [
+"certainty"
+],
+"qj2-c1e75623481e": [
+"financial"
+],
+"qj2-c206b0852e21": [
+"legal"
+],
+"qj2-c2665d2bb10f": [
+"certainty"
+],
+"qj2-c2725da777ee": [
+"capability_claim"
+],
+"qj2-c2cf950cfffa": [
+"financial"
+],
+"qj2-c2d122bd2615": [
+"certainty"
+],
+"qj2-c32353bf2f4c": [
+"financial"
+],
+"qj2-c34ad73b0c73": [
+"medical"
+],
+"qj2-c34ff1f09d99": [
+"financial"
+],
+"qj2-c3579e544ccc": [
+"security_instruction"
+],
+"qj2-c3785dfc92c6": [
+"security_instruction"
+],
+"qj2-c396ba68178d": [
+"capability_claim"
+],
+"qj2-c3a9242ea026": [
+"financial"
+],
+"qj2-c3bf1e8a0812": [
+"legal"
+],
+"qj2-c3cf01dc43d1": [
+"certainty"
+],
+"qj2-c3e3dd560bef": [
+"financial"
+],
+"qj2-c42915ba90ab": [
+"financial"
+],
+"qj2-c4da609bb0af": [
+"legal"
+],
+"qj2-c4e1be08d587": [
+"legal"
+],
+"qj2-c5aabfe0afff": [
+"legal"
+],
+"qj2-c5d0b49f5ae3": [
+"legal"
+],
+"qj2-c5d7b1a477f1": [
+"financial"
+],
+"qj2-c60f12819da8": [
+"certainty"
+],
+"qj2-c68a3e495d31": [
+"financial"
+],
+"qj2-c6dd2de519c2": [
+"capability_claim"
+],
+"qj2-c710c74ae017": [
+"legal",
+"financial"
+],
+"qj2-c7178e6596f1": [
+"capability_claim"
+],
+"qj2-c75b888b5089": [
+"security_instruction"
+],
+"qj2-c78efc55e44e": [
+"certainty"
+],
+"qj2-c7ac132bc236": [
+"medical"
+],
+"qj2-c7ce325f6c24": [
+"financial"
+],
+"qj2-c96704aed8ef": [
+"capability_claim"
+],
+"qj2-c96f81c0187d": [
+"certainty"
+],
+"qj2-c9a2559c8c25": [
+"financial"
+],
+"qj2-c9ac59ac0d5d": [
+"medical"
+],
+"qj2-c9bd1f82e29e": [
+"capability_claim"
+],
+"qj2-ca25c4d9df13": [
+"security_instruction"
+],
+"qj2-ca33e45b299e": [
+"medical"
+],
+"qj2-cb720f1d36bb": [
+"financial"
+],
+"qj2-cc3a4453d168": [
+"medical"
+],
+"qj2-cc3ab4ac2a99": [
+"capability_claim"
+],
+"qj2-ccfbdbb2d52d": [
+"legal"
+],
+"qj2-cd5d6604356a": [
+"dosage"
+],
+"qj2-cd7d70901d41": [
+"capability_claim"
+],
+"qj2-cd861ab097f5": [
+"financial"
+],
+"qj2-cddc540fe436": [
+"financial"
+],
+"qj2-ce39e7603293": [
+"financial"
+],
+"qj2-ce5b8f55bf85": [
+"certainty"
+],
+"qj2-ce6689077743": [
+"capability_claim"
+],
+"qj2-ce75e69b38c8": [
+"medical"
+],
+"qj2-ceaaf0dc93e3": [
+"financial"
+],
+"qj2-cf4e388bdecb": [
+"medical"
+],
+"qj2-cf9012b3de4c": [
+"financial"
+],
+"qj2-cfa363317dc7": [
+"financial"
+],
+"qj2-cfc9371dff0d": [
+"legal"
+],
+"qj2-cfe505efb7ec": [
+"security_instruction"
+],
+"qj2-d028cb98fc89": [
+"financial"
+],
+"qj2-d06140554e52": [
+"financial"
+],
+"qj2-d0623e033aa2": [
+"financial"
+],
+"qj2-d077cdae3eb6": [
+"financial"
+],
+"qj2-d0ac40468876": [
+"security_instruction"
+],
+"qj2-d0b4a2861b17": [
+"medical"
+],
+"qj2-d0c1e6b1a681": [
+"security_instruction"
+],
+"qj2-d11df7f4bee4": [
+"legal"
+],
+"qj2-d1b60e56ab09": [
+"financial"
+],
+"qj2-d2347c352741": [
+"legal"
+],
+"qj2-d2733d3aff99": [
+"medical"
+],
+"qj2-d2883760471c": [
+"legal"
+],
+"qj2-d36a2456ef73": [
+"security_instruction",
+"certainty"
+],
+"qj2-d3dfe28a28cf": [
+"security_instruction"
+],
+"qj2-d445e9299d18": [
+"certainty"
+],
+"qj2-d49777f6192f": [
+"financial"
+],
+"qj2-d50e6513d807": [
+"legal"
+],
+"qj2-d52969226e40": [
+"capability_claim"
+],
+"qj2-d58d24171c0c": [
+"financial"
+],
+"qj2-d648b39348fe": [
+"security_instruction"
+],
+"qj2-d66625ae8253": [
+"security_instruction"
+],
+"qj2-d67b639245b3": [
+"financial"
+],
+"qj2-d6d9450fb5b7": [
+"legal"
+],
+"qj2-d726eb3cfd81": [
+"capability_claim"
+],
+"qj2-d732856d5ac2": [
+"security_instruction"
+],
+"qj2-d75eb6ce1efd": [
+"financial"
+],
+"qj2-d7ca34b13f1b": [
+"capability_claim"
+],
+"qj2-d7f8896db82d": [
+"certainty"
+],
+"qj2-d8d36f5d6d45": [
+"capability_claim"
+],
+"qj2-d8d8ac687d90": [
+"financial"
+],
+"qj2-d9125b3faa74": [
+"capability_claim"
+],
+"qj2-d9150c78f604": [
+"legal"
+],
+"qj2-d92f64d12d57": [
+"security_instruction"
+],
+"qj2-d92fadfc1825": [
+"legal"
+],
+"qj2-d9a7c92c9e56": [
+"medical"
+],
+"qj2-da04536c2872": [
+"medical"
+],
+"qj2-da60fe969688": [
+"capability_claim"
+],
+"qj2-da943af3c884": [
+"financial"
+],
+"qj2-db3eeddb5a46": [
+"capability_claim"
+],
+"qj2-db888cd1f85c": [
+"medical"
+],
+"qj2-db984eefbfac": [
+"security_instruction"
+],
+"qj2-dbe30bce9c17": [
+"capability_claim"
+],
+"qj2-dc1d73d5bd8b": [
+"financial"
+],
+"qj2-dc40c70b1186": [
+"legal"
+],
+"qj2-dc7d00e94b92": [
+"certainty",
+"capability_claim"
+],
+"qj2-dca847adaf5d": [
+"financial"
+],
+"qj2-dccae74b7abf": [
+"certainty"
+],
+"qj2-dd26aa7de3f1": [
+"capability_claim"
+],
+"qj2-dd37837d578e": [
+"financial"
+],
+"qj2-dd60bf74dc2e": [
+"financial"
+],
+"qj2-dd79df135bf8": [
+"financial"
+],
+"qj2-dd84d0fdca7b": [
+"financial"
+],
+"qj2-ddbc264bf33a": [
+"certainty"
+],
+"qj2-ddbd8f3b78ed": [
+"dosage"
+],
+"qj2-de0f4736a270": [
+"capability_claim"
+],
+"qj2-de40c711a65c": [
+"financial",
+"security_instruction"
+],
+"qj2-de5707d170ac": [
+"financial"
+],
+"qj2-deb4da094bfa": [
+"capability_claim"
+],
+"qj2-defbe0e37058": [
+"legal"
+],
+"qj2-df44e9329af1": [
+"financial"
+],
+"qj2-df63bd15478c": [
+"legal"
+],
+"qj2-df6eb96c2140": [
+"medical"
+],
+"qj2-df7fa454f326": [
+"certainty",
+"capability_claim"
+],
+"qj2-df849090e9eb": [
+"financial"
+],
+"qj2-df91d2317600": [
+"security_instruction",
+"certainty"
+],
+"qj2-df9cda6d4c97": [
+"medical"
+],
+"qj2-dfc3d69823a8": [
+"capability_claim"
+],
+"qj2-e019ad6adfb5": [
+"legal"
+],
+"qj2-e0ca19677a59": [
+"capability_claim"
+],
+"qj2-e0d53d3681d2": [
+"financial"
+],
+"qj2-e1092960bd74": [
+"capability_claim"
+],
+"qj2-e10f21a6ed64": [
+"financial"
+],
+"qj2-e123cd4ac821": [
+"legal"
+],
+"qj2-e131f00f8da6": [
+"certainty",
+"capability_claim"
+],
+"qj2-e14dd9017e0d": [
+"medical"
+],
+"qj2-e15fab46e941": [
+"certainty"
+],
+"qj2-e1bed9d940f9": [
+"financial"
+],
+"qj2-e1de7fd5d3e0": [
+"capability_claim"
+],
+"qj2-e1dfab22ec05": [
+"capability_claim"
+],
+"qj2-e2695a167135": [
+"legal"
+],
+"qj2-e28e71ee868b": [
+"security_instruction"
+],
+"qj2-e2e8cabe1c86": [
+"financial"
+],
+"qj2-e3042cd56349": [
+"capability_claim"
+],
+"qj2-e305fecb85aa": [
+"capability_claim"
+],
+"qj2-e358965bf711": [
+"medical"
+],
+"qj2-e36f253e16bd": [
+"financial"
+],
+"qj2-e3cc9fd15934": [
+"financial"
+],
+"qj2-e3d02dc60aa1": [
+"medical"
+],
+"qj2-e3f0f8c43f41": [
+"capability_claim"
+],
+"qj2-e4062b458d2f": [
+"financial"
+],
+"qj2-e418e502bd62": [
+"medical"
+],
+"qj2-e44b70c75a26": [
+"medical"
+],
+"qj2-e46e4de53974": [
+"medical"
+],
+"qj2-e488953d7041": [
+"certainty"
+],
+"qj2-e4b61c9dc616": [
+"certainty"
+],
+"qj2-e50994eb6acd": [
+"certainty"
+],
+"qj2-e51091859c17": [
+"financial"
+],
+"qj2-e56eed82de77": [
+"certainty"
+],
+"qj2-e5791b522183": [
+"capability_claim"
+],
+"qj2-e5b65b802fd2": [
+"capability_claim"
+],
+"qj2-e619e853cd3b": [
+"certainty"
+],
+"qj2-e63a27893982": [
+"legal"
+],
+"qj2-e66a8d9368f3": [
+"legal",
+"certainty"
+],
+"qj2-e6a41597fbea": [
+"financial"
+],
+"qj2-e6ed8ad14ebe": [
+"financial"
+],
+"qj2-e7204059e67a": [
+"financial"
+],
+"qj2-e793e3e8b529": [
+"financial"
+],
+"qj2-e7ae3a230af7": [
+"capability_claim"
+],
+"qj2-e7bf82b3dde4": [
+"capability_claim"
+],
+"qj2-e7c5187bc25d": [
+"legal"
+],
+"qj2-e7dfd17823dc": [
+"medical"
+],
+"qj2-e82ebf3f4e0d": [
+"financial"
+],
+"qj2-e8389eab093c": [
+"security_instruction"
+],
+"qj2-e83a229f8fd0": [
+"financial"
+],
+"qj2-e85f37cb4a80": [
+"legal"
+],
+"qj2-e88026f78e5d": [
+"certainty"
+],
+"qj2-e88e3c9ae4b8": [
+"financial"
+],
+"qj2-e894c1c68afc": [
+"legal"
+],
+"qj2-e8d3b11cd8d2": [
+"financial"
+],
+"qj2-e8d8b470defd": [
+"financial"
+],
+"qj2-e8ffb023733f": [
+"legal"
+],
+"qj2-e917312128e0": [
+"financial"
+],
+"qj2-e91982b24353": [
+"capability_claim"
+],
+"qj2-e99cbe98bc12": [
+"capability_claim"
+],
+"qj2-e9c5e9937c68": [
+"financial"
+],
+"qj2-ea1520a28d35": [
+"capability_claim"
+],
+"qj2-ea724736ec20": [
+"medical"
+],
+"qj2-eb31d8ee063b": [
+"security_instruction"
+],
+"qj2-eb478769c4b1": [
+"dosage"
+],
+"qj2-eb6fd86e1b83": [
+"security_instruction"
+],
+"qj2-eb7ce45a6fb8": [
+"financial",
+"security_instruction"
+],
+"qj2-eb845882b94c": [
+"medical"
+],
+"qj2-ec3e00adbab6": [
+"financial"
+],
+"qj2-ec43608c9fb7": [
+"security_instruction"
+],
+"qj2-ec7af42208aa": [
+"capability_claim"
+],
+"qj2-eca5e1d33285": [
+"medical"
+],
+"qj2-ece26d6e596f": [
+"medical"
+],
+"qj2-ece66d075776": [
+"capability_claim"
+],
+"qj2-ed21c0cec18f": [
+"financial"
+],
+"qj2-ed5c4bfaa91f": [
+"medical"
+],
+"qj2-edca2f198ed3": [
+"financial"
+],
+"qj2-edd2729608aa": [
+"medical"
+],
+"qj2-ede73fe83eeb": [
+"financial"
+],
+"qj2-ee05271ab355": [
+"legal"
+],
+"qj2-ee05c0dc15aa": [
+"financial"
+],
+"qj2-ee4fe5065769": [
+"financial"
+],
+"qj2-eedf8e4d2ce0": [
+"certainty"
+],
+"qj2-eeed97b53a1b": [
+"legal"
+],
+"qj2-ef49256ea874": [
+"medical"
+],
+"qj2-ef554d43ada8": [
+"financial"
+],
+"qj2-ef5df4c2e368": [
+"capability_claim"
+],
+"qj2-ef915ee8fcd0": [
+"capability_claim"
+],
+"qj2-ef93837db2e3": [
+"legal",
+"certainty"
+],
+"qj2-efbe1aad340d": [
+"financial"
+],
+"qj2-f023cc9fc2a6": [
+"financial"
+],
+"qj2-f0b18387ea27": [
+"financial"
+],
+"qj2-f0bd3bccc6e0": [
+"medical"
+],
+"qj2-f0be3938e092": [
+"medical"
+],
+"qj2-f0fcc74b4701": [
+"financial"
+],
+"qj2-f112b14b6237": [
+"financial"
+],
+"qj2-f1a84f983cc6": [
+"security_instruction"
+],
+"qj2-f1ca892dbc35": [
+"medical",
+"financial"
+],
+"qj2-f1f057acc388": [
+"financial"
+],
+"qj2-f213b692ad5e": [
+"legal"
+],
+"qj2-f23f2a10a9e7": [
+"financial"
+],
+"qj2-f24e9ebe3531": [
+"certainty",
+"capability_claim"
+],
+"qj2-f2641794342a": [
+"capability_claim"
+],
+"qj2-f277554d8759": [
+"certainty"
+],
+"qj2-f2b2e518b740": [
+"medical"
+],
+"qj2-f32b47f49e31": [
+"financial"
+],
+"qj2-f354dbdd7e66": [
+"legal"
+],
+"qj2-f35e0370fb7c": [
+"medical"
+],
+"qj2-f3c1078d9df6": [
+"legal"
+],
+"qj2-f3cc06c62494": [
+"financial"
+],
+"qj2-f3d939c588ca": [
+"capability_claim"
+],
+"qj2-f45353431c99": [
+"medical"
+],
+"qj2-f47e14e23e87": [
+"certainty"
+],
+"qj2-f4ab029962d6": [
+"security_instruction"
+],
+"qj2-f4befec693ba": [
+"financial"
+],
+"qj2-f4dbffde3660": [
+"medical"
+],
+"qj2-f4ef3a32ee74": [
+"capability_claim"
+],
+"qj2-f5350b214f79": [
+"medical"
+],
+"qj2-f5988e4d3009": [
+"medical",
+"certainty"
+],
+"qj2-f5bdc7feb7f5": [
+"capability_claim"
+],
+"qj2-f5edb8307218": [
+"legal"
+],
+"qj2-f60812fe07fa": [
+"dosage"
+],
+"qj2-f66c9e377c32": [
+"legal"
+],
+"qj2-f697f9169ec7": [
+"medical"
+],
+"qj2-f69e7b938630": [
+"financial"
+],
+"qj2-f6d7f818e7b7": [
+"legal"
+],
+"qj2-f6f4774fa31e": [
+"capability_claim"
+],
+"qj2-f708022a897c": [
+"capability_claim"
+],
+"qj2-f71c16aa28f8": [
+"legal"
+],
+"qj2-f73f0489012f": [
+"capability_claim"
+],
+"qj2-f79f4791bf7b": [
+"certainty"
+],
+"qj2-f7b105ccea7e": [
+"security_instruction"
+],
+"qj2-f7d8a2a933f9": [
+"medical"
+],
+"qj2-f7ec58fb9b82": [
+"capability_claim"
+],
+"qj2-f7f94b8001f1": [
+"financial"
+],
+"qj2-f805d4c02301": [
+"security_instruction"
+],
+"qj2-f858640dea95": [
+"certainty"
+],
+"qj2-f8a54cc31168": [
+"medical"
+],
+"qj2-f93876fb1ab8": [
+"financial"
+],
+"qj2-f961442985c8": [
+"capability_claim"
+],
+"qj2-f96c24bdec0d": [
+"security_instruction"
+],
+"qj2-f9c0593ff479": [
+"capability_claim"
+],
+"qj2-fb29b9a28a77": [
+"medical"
+],
+"qj2-fb7c1c824396": [
+"security_instruction"
+],
+"qj2-fbdb8bb0d876": [
+"capability_claim"
+],
+"qj2-fbea6826d72c": [
+"capability_claim"
+],
+"qj2-fc439d14320a": [
+"legal"
+],
+"qj2-fc50c447fa4e": [
+"capability_claim"
+],
+"qj2-fca937f78a0c": [
+"legal"
+],
+"qj2-fcbb4c8bc9a5": [
+"medical"
+],
+"qj2-fcf73909cef1": [
+"security_instruction"
+],
+"qj2-fd35021a06f3": [
+"certainty"
+],
+"qj2-fd8895a8dc04": [
+"financial"
+],
+"qj2-fe132e875219": [
+"capability_claim"
+],
+"qj2-fe1c01319dfa": [
+"capability_claim"
+],
+"qj2-fe612ffdc611": [
+"legal"
+],
+"qj2-fe67c784b730": [
+"legal"
+],
+"qj2-fee370fc5c0b": [
+"financial"
+],
+"qj2-ff04df975c04": [
+"medical"
+],
+"qj2-ff456906d700": [
+"certainty"
+],
+"qj2-0ba59cdd97f9": [
+"financial"
+],
+"qj2-121f63954baa": [
+"legal"
+],
+"qj2-123f7cee15d8": [
+"medical"
+],
+"qj2-1affdacdc95e": [
+"security_instruction"
+],
+"qj2-212503721a56": [
+"certainty"
+],
+"qj2-31cb47197fa3": [
+"financial"
+],
+"qj2-32b64a6007c6": [
+"capability_claim"
+],
+"qj2-32dc18fbfd46": [
+"certainty"
+],
+"qj2-3381b9861ec4": [
+"certainty"
+],
+"qj2-33ce72700f01": [
+"security_instruction"
+],
+"qj2-342e8dfd6a5a": [
+"legal"
+],
+"qj2-34e7ddb67731": [
+"financial"
+],
+"qj2-36548ccd65f4": [
+"capability_claim"
+],
+"qj2-3671dd936925": [
+"capability_claim"
+],
+"qj2-374aed4c6cf2": [
+"financial"
+],
+"qj2-3e5d45895763": [
+"security_instruction"
+],
+"qj2-42c211617d1d": [
+"security_instruction"
+],
+"qj2-46839ea1e8dc": [
+"security_instruction"
+],
+"qj2-487c58546be7": [
+"financial"
+],
+"qj2-4af0658a58af": [
+"financial"
+],
+"qj2-511559fa79c7": [
+"financial"
+],
+"qj2-518faed8321d": [
+"security_instruction"
+],
+"qj2-559a8de5843b": [
+"security_instruction"
+],
+"qj2-5786c7cd470a": [
+"capability_claim"
+],
+"qj2-57be5dc5384b": [
+"legal"
+],
+"qj2-5d9343eb5912": [
+"legal"
+],
+"qj2-623ffb6d4262": [
+"financial"
+],
+"qj2-67f0324e8390": [
+"medical"
+],
+"qj2-6c9eb8597716": [
+"certainty"
+],
+"qj2-6d9f0e3d34fd": [
+"legal"
+],
+"qj2-6df668d383c2": [
+"legal"
+],
+"qj2-75cd269c052b": [
+"medical"
+],
+"qj2-773e7584e860": [
+"certainty"
+],
+"qj2-7c3646c093a9": [
+"medical"
+],
+"qj2-832620ef1ea2": [
+"capability_claim"
+],
+"qj2-8821e6c54900": [
+"financial"
+],
+"qj2-921edf91bfcf": [
+"security_instruction"
+],
+"qj2-a435b9373de0": [
+"financial"
+],
+"qj2-a68627447b66": [
+"legal"
+],
+"qj2-a86d975f3699": [
+"financial"
+],
+"qj2-a9738ad82c79": [
+"legal"
+],
+"qj2-b66e5ae51566": [
+"financial"
+],
+"qj2-b735d820deec": [
+"certainty"
+],
+"qj2-b7d4d05d66f0": [
+"dosage"
+],
+"qj2-b87e2ce08f33": [
+"financial"
+],
+"qj2-b963d5bb64dc": [
+"legal"
+],
+"qj2-baafa73e1f6b": [
+"medical"
+],
+"qj2-d0195b46f857": [
+"certainty"
+],
+"qj2-d1abe27101e1": [
+"financial",
+"certainty"
+],
+"qj2-d57fcc2fe5a0": [
+"financial"
+],
+"qj2-d9f4b3c0d1d0": [
+"capability_claim"
+],
+"qj2-e42e230c8d31": [
+"financial"
+],
+"qj2-e6a268730bfc": [
+"financial"
+],
+"qj2-e95b69734fd2": [
+"security_instruction"
+],
+"qj2-e991cf0e70de": [
+"medical"
+],
+"qj2-ea57dee03c61": [
+"medical"
+],
+"qj2-eb28c520346f": [
+"certainty"
+],
+"qj2-ecf5bdde951a": [
+"medical"
+],
+"qj2-f970cd6b546c": [
+"financial"
+],
+"qj2-fa344f14f769": [
+"financial"
+],
+"qj2-fee7a887f03b": [
+"capability_claim"
+],
+"qj2-ff9b53096384": [
+"financial"
+],
+"qj2-0004f4d25fe2": [
+"financial"
+],
+"qj2-05fd15875f3f": [
+"security_instruction"
+],
+"qj2-0729f1767d9a": [
+"certainty"
+],
+"qj2-0ad602985907": [
+"financial"
+],
+"qj2-0e1c4eb493d8": [
+"financial"
+],
+"qj2-1122750c8e7c": [
+"capability_claim"
+],
+"qj2-12d51109e3c0": [
+"capability_claim"
+],
+"qj2-1752d5b11874": [
+"security_instruction"
+],
+"qj2-196b48c7769d": [
+"capability_claim"
+],
+"qj2-2465d48ce407": [
+"financial",
+"dosage"
+],
+"qj2-2589e6b2a437": [
+"legal"
+],
+"qj2-2a482cf3e705": [
+"security_instruction",
+"certainty"
+],
+"qj2-33f0f7aa3692": [
+"capability_claim"
+],
+"qj2-34cbe229aa73": [
+"legal"
+],
+"qj2-35990ff823df": [
+"security_instruction"
+],
+"qj2-396c0c30d083": [
+"medical"
+],
+"qj2-3cdef5be44f5": [
+"legal"
+],
+"qj2-3cedf212eca1": [
+"medical"
+],
+"qj2-3e5175ad292d": [
+"capability_claim"
+],
+"qj2-3f932c65f5d2": [
+"legal"
+],
+"qj2-43108ef0252f": [
+"certainty"
+],
+"qj2-48d8fe3d4bf8": [
+"financial"
+],
+"qj2-5156bfe46eaf": [
+"medical"
+],
+"qj2-521ab2072bf5": [
+"financial"
+],
+"qj2-544a5e847e0f": [
+"financial"
+],
+"qj2-55e6d4b1937c": [
+"financial"
+],
+"qj2-563b0a7a85fa": [
+"financial"
+],
+"qj2-59c0603674b4": [
+"medical"
+],
+"qj2-5ceadf1fc4bf": [
+"financial"
+],
+"qj2-61daace6e2cc": [
+"medical"
+],
+"qj2-62f6718af669": [
+"security_instruction"
+],
+"qj2-64142b22efe4": [
+"security_instruction"
+],
+"qj2-73b635220805": [
+"medical",
+"dosage"
+],
+"qj2-796b53e0f614": [
+"financial"
+],
+"qj2-797e1bf8c0ec": [
+"capability_claim"
+],
+"qj2-7e55c84d3a4b": [
+"financial"
+],
+"qj2-9000518fb7d7": [
+"legal"
+],
+"qj2-90542e8ec029": [
+"financial"
+],
+"qj2-91e8f85562f0": [
+"security_instruction",
+"certainty"
+],
+"qj2-98ecd437f150": [
+"capability_claim"
+],
+"qj2-9d4e7c472f07": [
+"medical"
+],
+"qj2-9dafc3ebfbaf": [
+"certainty"
+],
+"qj2-a232c50b7bc8": [
+"capability_claim"
+],
+"qj2-a4701ffad62b": [
+"medical"
+],
+"qj2-a4fba0fd80aa": [
+"capability_claim"
+],
+"qj2-ad75492632f1": [
+"financial"
+],
+"qj2-b330d2342f89": [
+"financial"
+],
+"qj2-b5dd4750f70f": [
+"financial"
+],
+"qj2-b6f049e23c5b": [
+"security_instruction"
+],
+"qj2-b784276080f1": [
+"financial"
+],
+"qj2-ba68298efde4": [
+"capability_claim"
+],
+"qj2-c347245889ec": [
+"financial"
+],
+"qj2-c561cc5f4173": [
+"capability_claim"
+],
+"qj2-c9adaeefd7e4": [
+"capability_claim"
+],
+"qj2-c9ffc484e63b": [
+"financial"
+],
+"qj2-cc4a22197223": [
+"legal"
+],
+"qj2-cdf08057f6db": [
+"financial"
+],
+"qj2-d00b837b3a2e": [
+"financial"
+],
+"qj2-d040e818e5f1": [
+"legal"
+],
+"qj2-d25b35db23fc": [
+"financial"
+],
+"qj2-d2a99e2f222a": [
+"security_instruction"
+],
+"qj2-d346deb7b51b": [
+"certainty"
+],
+"qj2-dbcb683cd148": [
+"financial"
+],
+"qj2-dbe9f158b780": [
+"capability_claim"
+],
+"qj2-dbfde5148400": [
+"security_instruction"
+],
+"qj2-e377e094c21c": [
+"medical"
+],
+"qj2-e56161c3835b": [
+"financial"
+],
+"qj2-e8fc034cc432": [
+"medical"
+],
+"qj2-eb0f93c42437": [
+"financial"
+],
+"qj2-ecf84a8288f0": [
+"security_instruction"
+],
+"qj2-ede5bd7dad14": [
+"legal"
+],
+"qj2-ef7d47e089c0": [
+"financial"
+],
+"qj2-f32a34962572": [
+"certainty"
+],
+"qj2-f64939f890ba": [
+"financial"
+],
+"qj2-febe8f48bc5f": [
+"financial"
+],
+"qj2-ff7e57a60c04": [
+"security_instruction"
+]
+}

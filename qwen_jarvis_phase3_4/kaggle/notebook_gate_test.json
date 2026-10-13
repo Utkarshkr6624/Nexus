@@ -1,0 +1,346 @@
+{
+ "all_pass": true,
+ "mode_switch_logic": {
+  "MODE=train, RUN_KIND=probe20, existing=None": {
+   "pass": true,
+   "train_commands": 1,
+   "resume_commands": 0,
+   "messages": [
+    "SKIPPED - MODE is 'train'; this cell needs MODE = 'resume' (continue an existing run after a killed session)."
+   ],
+   "train_command": [
+    "--config",
+    "configs/qlora_sft.yaml",
+    "--set",
+    "production_locked=false",
+    "--set",
+    "output.output_dir=<runs>",
+    "--set",
+    "train.max_steps=20",
+    "--set",
+    "output.run_name=probe20",
+    "--confirm-production"
+   ]
+  },
+  "MODE=resume, RUN_KIND=probe20, existing=None": {
+   "pass": true,
+   "train_commands": 0,
+   "resume_commands": 1,
+   "messages": [
+    "SKIPPED - MODE is 'resume'; this cell needs MODE = 'train' (a fresh run)."
+   ],
+   "train_command": null
+  },
+  "MODE=train, RUN_KIND=probe20, existing=own": {
+   "pass": true,
+   "train_commands": 0,
+   "resume_commands": 0,
+   "messages": [
+    "REFUSED - checkpoints already exist under C:\\Users\\utkar\\AppData\\Local\\Temp\\p4_mode_ndd1u17r\\runs\\probe20 - set MODE = 'resume' to continue ",
+    "SKIPPED - MODE is 'train'; this cell needs MODE = 'resume' (continue an existing run after a killed session)."
+   ],
+   "train_command": null
+  },
+  "MODE=train, RUN_KIND=full, existing=None": {
+   "pass": true,
+   "train_commands": 1,
+   "resume_commands": 0,
+   "messages": [
+    "SKIPPED - MODE is 'train'; this cell needs MODE = 'resume' (continue an existing run after a killed session)."
+   ],
+   "train_command": [
+    "--config",
+    "configs/qlora_sft.yaml",
+    "--set",
+    "production_locked=false",
+    "--set",
+    "output.output_dir=<runs>",
+    "--set",
+    "output.run_name=qwen3_8b_jarvis_full_v1",
+    "--confirm-production"
+   ]
+  },
+  "MODE=resume, RUN_KIND=full, existing=None": {
+   "pass": true,
+   "train_commands": 0,
+   "resume_commands": 1,
+   "messages": [
+    "SKIPPED - MODE is 'resume'; this cell needs MODE = 'train' (a fresh run)."
+   ],
+   "train_command": null
+  },
+  "MODE=train, RUN_KIND=full, existing=own": {
+   "pass": true,
+   "train_commands": 0,
+   "resume_commands": 0,
+   "messages": [
+    "REFUSED - checkpoints already exist under C:\\Users\\utkar\\AppData\\Local\\Temp\\p4_mode_4qhwfgsu\\runs\\qwen3_8b_jarvis_full_v1 - set MODE = 'resu",
+    "SKIPPED - MODE is 'train'; this cell needs MODE = 'resume' (continue an existing run after a killed session)."
+   ],
+   "train_command": null
+  },
+  "MODE=train, RUN_KIND=full, existing=probe_only": {
+   "pass": true,
+   "train_commands": 1,
+   "resume_commands": 0,
+   "messages": [
+    "SKIPPED - MODE is 'train'; this cell needs MODE = 'resume' (continue an existing run after a killed session)."
+   ],
+   "train_command": [
+    "--config",
+    "configs/qlora_sft.yaml",
+    "--set",
+    "production_locked=false",
+    "--set",
+    "output.output_dir=<runs>",
+    "--set",
+    "output.run_name=qwen3_8b_jarvis_full_v1",
+    "--confirm-production"
+   ]
+  },
+  "MODE=resume, RUN_KIND=full, existing=probe_only": {
+   "pass": true,
+   "train_commands": 0,
+   "resume_commands": 1,
+   "messages": [
+    "SKIPPED - MODE is 'resume'; this cell needs MODE = 'train' (a fresh run)."
+   ],
+   "train_command": null
+  }
+ },
+ "run_dir_isolation": {
+  "RUN_KIND=full": {
+   "pass": true,
+   "adapters_used": [
+    "qwen3_8b_jarvis_full_v1",
+    "qwen3_8b_jarvis_full_v1"
+   ],
+   "exported_from": "qwen3_8b_jarvis_full_v1"
+  },
+  "RUN_KIND=probe20": {
+   "pass": true,
+   "adapters_used": [
+    "probe20",
+    "probe20"
+   ],
+   "exported_from": "probe20"
+  }
+ },
+ "dataset_pin_logic": {
+  "only_new_flat": {
+   "pass": true,
+   "kind": "dir",
+   "message": ""
+  },
+  "only_new_nested": {
+   "pass": true,
+   "kind": "dir",
+   "message": ""
+  },
+  "both_attached": {
+   "pass": true,
+   "kind": null,
+   "message": "REFUSED - the stale dataset 'qwen-jarvis-phase-5-training-package' is attached. Remove it (Add data -> remove) and keep only 'qwen-jarvis-ph"
+  },
+  "only_old": {
+   "pass": true,
+   "kind": null,
+   "message": "REFUSED - the stale dataset 'qwen-jarvis-phase-5-training-package' is attached. Remove it (Add data -> remove) and keep only 'qwen-jarvis-ph"
+  },
+  "other_dataset": {
+   "pass": true,
+   "kind": null,
+   "message": "REFUSED - expected exactly one package inside the dataset 'qwen-jarvis-phase5-package', found 0 manifest(s) and 0 zip(s)."
+  },
+  "none": {
+   "pass": true,
+   "kind": null,
+   "message": "REFUSED - expected exactly one package inside the dataset 'qwen-jarvis-phase5-package', found 0 manifest(s) and 0 zip(s)."
+  },
+  "new_twice": {
+   "pass": true,
+   "kind": null,
+   "message": "REFUSED - expected exactly one package inside the dataset 'qwen-jarvis-phase5-package', found 2 manifest(s) and 0 zip(s)."
+  }
+ },
+ "note": "Local execution of notebook cells with subprocess recording. This is NOT a Kaggle run; Kaggle execution is PENDING PHASE 5.",
+ "results": [
+  {
+   "scenario": "A_defaults",
+   "launched_commands": [
+    [
+     "nvidia-smi",
+     "--query-gpu=name,memory.total,compute_cap",
+     "--format=csv,noheader"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--validate-config"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--dry-run"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--dry-run",
+     "--set",
+     "train.max_steps=20",
+     "--set",
+     "output.run_name=probe20"
+    ]
+   ],
+   "unsafe_launches": [],
+   "locked_messages_from_production_cells": 5,
+   "production_allowed_printed": [
+    "PRODUCTION ALLOWED: False"
+   ],
+   "cell_errors": [],
+   "pass": true,
+   "tail": [
+    "LOCKED - evaluation did not start: PHASE5_AUTHORIZED is False; CONFIRM_PRODUCTION is False; environment variable QWEN_PHASE5_UNLOCK is not set to the unlock value; not running on Kaggle; no CUDA GPU visible",
+    "----- end of c12-eval",
+    "LOCKED - baseline comparison did not start: PHASE5_AUTHORIZED is False; CONFIRM_PRODUCTION is False; environment variable QWEN_PHASE5_UNLOCK is not set to the unlock value; not running on Kaggle; no CUDA GPU visible",
+    "----- end of c13-compare",
+    "LOCKED - loss evaluation did not start: PHASE5_AUTHORIZED is False; CONFIRM_PRODUCTION is False; environment variable QWEN_PHASE5_UNLOCK is not set to the unlock value; not running on Kaggle; no CUDA GPU visible",
+    "----- end of c13b-loss",
+    "No best checkpoint under _local_work\\runs\\probe20 - nothing to export (no training has run).",
+    "----- end of c14-export",
+    "== run summary ==",
+    "No checkpoints found: no training has run in this session (expected during Phase 3/4: Kaggle execution is PENDING PHASE 5).",
+    "production gate was open: False",
+    "----- end of c15-summary"
+   ]
+  },
+  {
+   "scenario": "B_switches_true_no_env",
+   "launched_commands": [
+    [
+     "nvidia-smi",
+     "--query-gpu=name,memory.total,compute_cap",
+     "--format=csv,noheader"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--validate-config"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--dry-run"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--dry-run",
+     "--set",
+     "train.max_steps=20",
+     "--set",
+     "output.run_name=probe20"
+    ]
+   ],
+   "unsafe_launches": [],
+   "locked_messages_from_production_cells": 5,
+   "production_allowed_printed": [
+    "PRODUCTION ALLOWED: False"
+   ],
+   "cell_errors": [],
+   "pass": true,
+   "tail": [
+    "LOCKED - evaluation did not start: environment variable QWEN_PHASE5_UNLOCK is not set to the unlock value; not running on Kaggle; no CUDA GPU visible",
+    "----- end of c12-eval",
+    "LOCKED - baseline comparison did not start: environment variable QWEN_PHASE5_UNLOCK is not set to the unlock value; not running on Kaggle; no CUDA GPU visible",
+    "----- end of c13-compare",
+    "LOCKED - loss evaluation did not start: environment variable QWEN_PHASE5_UNLOCK is not set to the unlock value; not running on Kaggle; no CUDA GPU visible",
+    "----- end of c13b-loss",
+    "No best checkpoint under _local_work\\runs\\probe20 - nothing to export (no training has run).",
+    "----- end of c14-export",
+    "== run summary ==",
+    "No checkpoints found: no training has run in this session (expected during Phase 3/4: Kaggle execution is PENDING PHASE 5).",
+    "production gate was open: False",
+    "----- end of c15-summary"
+   ]
+  },
+  {
+   "scenario": "C_switches_true_env_set_not_kaggle",
+   "launched_commands": [
+    [
+     "nvidia-smi",
+     "--query-gpu=name,memory.total,compute_cap",
+     "--format=csv,noheader"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--validate-config"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--dry-run"
+    ],
+    [
+     "E:\\Nexo\\qwen_jarvis_phase3_4\\.venv\\Scripts\\python.exe",
+     "-m",
+     "pipeline.train.train",
+     "--config",
+     "configs/qlora_sft.yaml",
+     "--dry-run",
+     "--set",
+     "train.max_steps=20",
+     "--set",
+     "output.run_name=probe20"
+    ]
+   ],
+   "unsafe_launches": [],
+   "locked_messages_from_production_cells": 5,
+   "production_allowed_printed": [
+    "PRODUCTION ALLOWED: False"
+   ],
+   "cell_errors": [],
+   "pass": true,
+   "tail": [
+    "LOCKED - evaluation did not start: not running on Kaggle; no CUDA GPU visible",
+    "----- end of c12-eval",
+    "LOCKED - baseline comparison did not start: not running on Kaggle; no CUDA GPU visible",
+    "----- end of c13-compare",
+    "LOCKED - loss evaluation did not start: not running on Kaggle; no CUDA GPU visible",
+    "----- end of c13b-loss",
+    "No best checkpoint under _local_work\\runs\\probe20 - nothing to export (no training has run).",
+    "----- end of c14-export",
+    "== run summary ==",
+    "No checkpoints found: no training has run in this session (expected during Phase 3/4: Kaggle execution is PENDING PHASE 5).",
+    "production gate was open: False",
+    "----- end of c15-summary"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,218 @@
+{
+  "schema": 1,
+  "phase": "finalization",
+  "generated": "2026-10-10",
+  "workspace": "E:\\Nexo\\Jarvis",
+  "actions_performed": ["read-only directory listing", "read small JSON files"],
+  "observed": {
+    "disk": {"drive": "E:", "free_bytes": 169413459968, "total_bytes": 209714147328},
+    "root_files": {
+      "adapter_model.safetensors": {"bytes": 174655536, "status": "orphan_unknown_origin"},
+      "best.json": {"bytes": 274, "checkpoint": "checkpoint-800", "step": 800, "val_loss": 0.6658911464513418},
+      "latest.json": {"bytes": 51, "checkpoint": "checkpoint-1200", "step": 1200}
+    },
+    "checkpoints": {
+      "checkpoint-800": {"files": {"checkpoint_meta.json": 1496, "trainer_state.pt": 349622034, "adapter/adapter_config.json": 1146, "adapter/adapter_model.safetensors": 174655536, "adapter/README.md": 5180}},
+      "checkpoint-1100": {"files": {"checkpoint_meta.json": 1499, "trainer_state.pt": 349622034, "adapter/adapter_config.json": 1146, "adapter/adapter_model.safetensors": 174655536, "adapter/README.md": 5180}},
+      "checkpoint-1200": {"files": {"checkpoint_meta.json": 1499, "trainer_state.pt": 349622034, "adapter/adapter_config.json": 1146, "adapter/adapter_model.safetensors": 174655536, "adapter/README.md": 5180}},
+      "checkpoint-1300": {"files": {"adapter_model.safetensors": 174655536}, "misplaced": ["adapter_model.safetensors"]},
+      "checkpoint-1400": {"files": {"adapter_model.safetensors": 174655536}, "misplaced": ["adapter_model.safetensors"]},
+      "checkpoint-1500": {"files": {"adapter_model.safetensors": 174655536}, "misplaced": ["adapter_model.safetensors"]},
+      "checkpoint-1596": {"files": {"adapter_model.safetensors": 174655536}, "misplaced": ["adapter_model.safetensors"]}
+    },
+    "staging_outside_workspace": {
+      "path": "C:\\Users\\utkar\\Downloads\\JARVIS_Backup",
+      "modified": false,
+      "files": {
+        "adapter_model.safetensors": 174655536,
+        "checkpoint-1200/adapter_model.safetensors": 174655536,
+        "checkpoint-1300/adapter_model.safetensors": 174655536,
+        "checkpoint-1300/checkpoint_meta.json": 1498,
+        "checkpoint-1300/trainer_state.pt": 176160768,
+        "checkpoint-1300/trainer_state.pt.kaggle-partial": 72,
+        "checkpoint-1400/adapter_model.safetensors": 174655536,
+        "checkpoint-1500/adapter_model.safetensors": 174655536,
+        "checkpoint-1596/adapter_model.safetensors": 174655536
+      },
+      "notes": ["checkpoint-1300/trainer_state.pt truncated: 176160768 of expected 349622034 bytes (kaggle-partial marker present)"]
+    },
+    "metadata_records": {
+      "checkpoint-800": {"source": "local", "step": 800, "config_hash": "9312597956f22164", "dataset_version": "qwen_jarvis_dataset_v2_final", "val_loss": 0.6658911464513418, "is_best": true, "saved_utc": "2026-10-10T09:29:34Z",
+        "file_sha256": {"adapter/adapter_model.safetensors": "41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc", "adapter/adapter_config.json": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64", "adapter/README.md": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "trainer_state.pt": "e57880b3011b03e2f6f81ee87db1c2d378b68ff4bc0e883ced6814973d848521"}},
+      "checkpoint-1100": {"source": "local", "step": 1100, "config_hash": "9312597956f22164", "dataset_version": "qwen_jarvis_dataset_v2_final", "val_loss": 0.6743624176073134, "is_best": false, "saved_utc": "2026-10-10T10:19:14Z",
+        "file_sha256": {"adapter/adapter_model.safetensors": "35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe", "adapter/adapter_config.json": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64", "adapter/README.md": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "trainer_state.pt": "ab9d2be3a7423d9e38490ebf06966926e1e0e9686f7af1d37c552ab1ab7b7b0e"}},
+      "checkpoint-1200": {"source": "local", "step": 1200, "config_hash": "9312597956f22164", "dataset_version": "qwen_jarvis_dataset_v2_final", "val_loss": 0.6673446315759556, "is_best": false, "saved_utc": "2026-10-10T10:35:09Z",
+        "file_sha256": {"adapter/adapter_model.safetensors": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b", "adapter/adapter_config.json": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64", "adapter/README.md": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "trainer_state.pt": "67a4d6b7e2200f335524587ec3d685fe49eed4a065b45754b4500596a9e306e6"}},
+      "checkpoint-1300": {"source": "staging (outside workspace)", "step": 1300, "config_hash": "9312597956f22164", "dataset_version": "qwen_jarvis_dataset_v2_final", "val_loss": 0.6599428926175388, "is_best": true, "saved_utc": "2026-10-10T15:02:05Z",
+        "file_sha256": {"adapter/adapter_model.safetensors": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c", "adapter/adapter_config.json": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "adapter/README.md": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "trainer_state.pt": "3de2eafb922bf2eb3f268e1c44617da3314666872e6bb3a1d4630d10500faeb5"}}
+    }
+  },
+  "expected_but_missing": {
+    "checkpoint-1300": ["checkpoint_meta.json (staging copy exists)", "trainer_state.pt (staging copy truncated)", "adapter/adapter_config.json", "adapter/README.md", "adapter/adapter_model.safetensors (present at wrong location)"],
+    "checkpoint-1400": ["checkpoint_meta.json", "trainer_state.pt", "adapter/adapter_config.json", "adapter/README.md", "adapter/adapter_model.safetensors (present at wrong location)"],
+    "checkpoint-1500": ["checkpoint_meta.json", "trainer_state.pt", "adapter/adapter_config.json", "adapter/README.md", "adapter/adapter_model.safetensors (present at wrong location)"],
+    "checkpoint-1596": ["checkpoint_meta.json", "trainer_state.pt", "adapter/adapter_config.json", "adapter/README.md", "adapter/adapter_model.safetensors (present at wrong location)"]
+  },
+  "anomalies": [
+    "checkpoint-1300 meta adapter_config.json sha256 differs from 800/1100/1200 (same byte size); configs are not interchangeable",
+    "best.json -> checkpoint-800 and latest.json -> checkpoint-1200 disagree with historical final run (best 1300, final 1596)",
+    "orphan adapter_model.safetensors at workspace root, origin unknown",
+    "staging checkpoint-1300/trainer_state.pt is a partial download"
+  ],
+  "historical": {
+    "source": "user-provided records, not re-measured",
+    "dataset_version": "qwen_jarvis_dataset_v2_final",
+    "final_step": 1596,
+    "best_val_loss": 0.6599428926175388,
+    "best_step": 1300,
+    "final_val_loss": 0.6626523670572841,
+    "final_val_ppl": 1.9399309255549122,
+    "val_tokens": 36056,
+    "tokens_seen": 3731843,
+    "skipped_steps": 1,
+    "config_hash": "9312597956f22164",
+    "val_loss_by_step": {"1200": 0.6673446315759556, "1300": 0.6599428926175388, "1400": 0.6648752473479987, "1500": 0.6627904218147832, "1596": 0.6626523670572841},
+    "prior_local_adapter_sha256": {"checkpoint-1200": "8C5881D4D9A4202A85A257C1D64C30F4EF078A3FE9026E92E0FECD856243EA2B", "checkpoint-1300": "D71F9A974837CDBAF4ADE94E779ED15BFEE... (truncated)", "checkpoint-1400": "8EA48E39CFC975FDAD23AE8DC2BFC2BA19A... (truncated)", "checkpoint-1500": "B9D16C934D689952DA179C4B8B3DBDFB104... (truncated)", "checkpoint-1596": "162B97F6007E76A147833C126B11F514603... (truncated)"}
+  },
+  "verified": [],
+  "unverified": [
+    "all adapter_model.safetensors (no hashes computed in Phase A)",
+    "all trainer_state.pt",
+    "all adapter_config.json and README.md",
+    "orphan root adapter_model.safetensors",
+    "config_hash for 1400/1500/1596 (no meta available)"
+  ],
+  "phase_b": {
+    "generated": "2026-10-10",
+    "method": "hashlib.sha256 full-file read, read-only, no deserialization",
+    "errors": [],
+    "report": "PHASE_B_HASH_VERIFICATION.md",
+    "results": {
+      "checkpoint-800/adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc", "original_source": "local meta", "status": "PASS"},
+      "checkpoint-1100/adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe", "original_source": "local meta", "status": "PASS"},
+      "checkpoint-1200/adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b", "original_source": "local meta", "status": "PASS"},
+      "checkpoint-1300/adapter_model.safetensors": {"bytes": 174655536, "sha256": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c", "original_source": "staging meta copy", "status": "PASS", "note": "misplaced: belongs in adapter/"},
+      "checkpoint-1400/adapter_model.safetensors": {"bytes": 174655536, "sha256": "8ea48e39cfc975fdad23ae8dc2bfc2ba19af9b574be0600b633460f4eb7e34fe", "original_source": null, "status": "UNVERIFIED", "note": "matches prior truncated prefix only; misplaced"},
+      "checkpoint-1500/adapter_model.safetensors": {"bytes": 174655536, "sha256": "b9d16c934d689952da179c4b8b3dbdfb104172ce2e95a46ecad685d48c865e9a", "original_source": null, "status": "UNVERIFIED", "note": "matches prior truncated prefix only; misplaced"},
+      "checkpoint-1596/adapter_model.safetensors": {"bytes": 174655536, "sha256": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8", "original_source": null, "status": "UNVERIFIED", "note": "matches prior truncated prefix only; misplaced"},
+      "ROOT/adapter_model.safetensors": {"bytes": 174655536, "sha256": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b", "status": "PASS", "identified_as": "checkpoint-1200 adapter duplicate"},
+      "STAGING/adapter_model.safetensors": {"bytes": 174655536, "sha256": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b", "status": "PASS", "identified_as": "checkpoint-1200 adapter duplicate"},
+      "checkpoint-800/trainer_state.pt": {"bytes": 349622034, "sha256": "e57880b3011b03e2f6f81ee87db1c2d378b68ff4bc0e883ced6814973d848521", "original_source": "local meta", "status": "PASS"},
+      "checkpoint-1100/trainer_state.pt": {"bytes": 349622034, "sha256": "ab9d2be3a7423d9e38490ebf06966926e1e0e9686f7af1d37c552ab1ab7b7b0e", "original_source": "local meta", "status": "PASS"},
+      "checkpoint-1200/trainer_state.pt": {"bytes": 349622034, "sha256": "67a4d6b7e2200f335524587ec3d685fe49eed4a065b45754b4500596a9e306e6", "original_source": "local meta", "status": "PASS"},
+      "checkpoint-1300/trainer_state.pt": {"status": "MISSING", "note": "staging copy truncated 176160768/349622034, not hashed, not valid"},
+      "checkpoint-1400/trainer_state.pt": {"status": "MISSING"},
+      "checkpoint-1500/trainer_state.pt": {"status": "MISSING"},
+      "checkpoint-1596/trainer_state.pt": {"status": "MISSING"}
+    },
+    "verified_against_original": [
+      "checkpoint-800 adapter", "checkpoint-1100 adapter", "checkpoint-1200 adapter", "checkpoint-1300 adapter (staging meta)",
+      "checkpoint-800 trainer_state.pt", "checkpoint-1100 trainer_state.pt", "checkpoint-1200 trainer_state.pt"
+    ],
+    "still_unverified": [
+      "checkpoint-1400/1500/1596 adapters (no original hash)",
+      "adapter_config.json and README.md for 800/1100/1200 (not in Phase B scope)",
+      "checkpoint-1300 meta authenticity (staging copy, no independent hash)",
+      "per-checkpoint staging adapter copies (not hashed)"
+    ]
+  },
+  "phase_c": {
+    "generated": "2026-10-10",
+    "report": "PHASE_C_RECOVERY_REPORT.md",
+    "source_dataset": "utkarsh6624/jarvis-phase5-secure-checkpoint-backup",
+    "download_dir": "_phase_c_downloads",
+    "kaggle_errors": [],
+    "downloaded": {
+      "checkpoint-1300": {"checkpoint_meta.json": {"bytes": 1498, "sha256": "3e2739a301f6b580d2c015f18781af2473217e96401f4b0a68c9e468bee4ccec", "status": "UNVERIFIED", "note": "no external hash; identical to staging copy; all payload hashes it lists match"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "3de2eafb922bf2eb3f268e1c44617da3314666872e6bb3a1d4630d10500faeb5", "status": "PASS"}},
+      "checkpoint-1400": {"checkpoint_meta.json": {"bytes": 1498, "sha256": "eaaee64f044ad947d6ed22f21d676c4c416f5f79de2f74357b0abc22b996186b", "status": "UNVERIFIED", "note": "no external hash; all payload hashes it lists match"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "81d314ae6f3a193fee1f484e79d9d4122fbc294545aae9458017dd8df980384d", "status": "PASS"}},
+      "checkpoint-1500": {"checkpoint_meta.json": {"bytes": 1499, "sha256": "c4354c5ab816daaf319fffb08649b8a2309e28d8890aa626b137569ac5d07ec3", "status": "UNVERIFIED", "note": "no external hash; all payload hashes it lists match"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "81f36e901bdde386ac12df440e6f27749b1bd093ed5ac0ab141f2b882fe861dc", "status": "PASS"}},
+      "checkpoint-1596": {"checkpoint_meta.json": {"bytes": 1499, "sha256": "a8bef0e232fe367d308ff9c551115a29a8370af01411916beea6ca715a8a7478", "status": "UNVERIFIED", "note": "no external hash; all payload hashes it lists match"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "29c19b9c8cf9143167e4df44b25a929192a2448ade14bd6aa8c4c6fbbb38178b", "status": "PASS"}}
+    },
+    "reused": {
+      "checkpoint-1300/adapter/adapter_model.safetensors": {"from": "checkpoint-1300/adapter_model.safetensors", "sha256": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c", "status": "PASS"},
+      "checkpoint-1400/adapter/adapter_model.safetensors": {"from": "checkpoint-1400/adapter_model.safetensors", "sha256": "8ea48e39cfc975fdad23ae8dc2bfc2ba19af9b574be0600b633460f4eb7e34fe", "status": "PASS"},
+      "checkpoint-1500/adapter/adapter_model.safetensors": {"from": "checkpoint-1500/adapter_model.safetensors", "sha256": "b9d16c934d689952da179c4b8b3dbdfb104172ce2e95a46ecad685d48c865e9a", "status": "PASS"},
+      "checkpoint-1596/adapter/adapter_model.safetensors": {"from": "checkpoint-1596/adapter_model.safetensors", "sha256": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8", "status": "PASS"}
+    },
+    "final_in_place_verification": {
+      "checkpoint-800": "PASS 5/5", "checkpoint-1100": "PASS 5/5", "checkpoint-1200": "PASS 5/5",
+      "checkpoint-1300": "PASS 5/5", "checkpoint-1400": "PASS 5/5", "checkpoint-1500": "PASS 5/5", "checkpoint-1596": "PASS 5/5"
+    },
+    "config_hash_all": "9312597956f22164",
+    "adapter_config_variants": {"c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64": ["800", "1100", "1200"], "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0": ["1300", "1400", "1500", "1596"], "difference": "target_modules order only; identical set; r=16 alpha=32 dropout=0.05 LORA CAUSAL_LM Qwen/Qwen3-8B"},
+    "files_still_missing": [],
+    "remaining_unverified": [
+      "checkpoint_meta.json authenticity (no external hash, all 7)",
+      "trainer_state.pt contents / resume compatibility (Phase G)",
+      "run continuity 1200 to 1300 (two run segments)",
+      "best.json/latest.json stale (Phase H)"
+    ],
+    "preserved_not_deleted": ["checkpoint-{1300,1400,1500,1596}/adapter_model.safetensors (root)", "adapter_model.safetensors (workspace root, = checkpoint-1200)", "_phase_c_downloads/", "staging C:\\Users\\utkar\\Downloads\\JARVIS_Backup (untouched)"]
+  },
+  "finalization": {
+    "generated": "2026-10-10",
+    "reports": ["FINALIZATION_REPORT.md", "FINAL_CLEANUP_PLAN.md", "CHECKPOINT_SHA256SUMS.txt"],
+    "checkpoints_missing_required_files": [],
+    "final_inventory": {
+      "required_files_per_checkpoint": ["checkpoint_meta.json", "trainer_state.pt", "adapter/adapter_config.json", "adapter/adapter_model.safetensors", "adapter/README.md"],
+      "unexpected_files_in_checkpoints": [],
+      "sha256sums_file": "CHECKPOINT_SHA256SUMS.txt",
+      "sha256sum_c_result": "35/35 OK",
+      "checkpoints": {
+        "checkpoint-800": {"checkpoint_meta.json": {"bytes": 1496, "sha256": "10b6fe8e3977b172867716da98157e55b21700a3dc4da3080120fbd41e251a17", "status": "UNVERIFIED"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "e57880b3011b03e2f6f81ee87db1c2d378b68ff4bc0e883ced6814973d848521", "status": "PASS"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64", "status": "PASS"}, "adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}},
+        "checkpoint-1100": {"checkpoint_meta.json": {"bytes": 1499, "sha256": "8b46970ddadf1b6a28f88ce16a329ea2869d2e3309fe8a33daf3ce4caa8c4a0d", "status": "UNVERIFIED"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "ab9d2be3a7423d9e38490ebf06966926e1e0e9686f7af1d37c552ab1ab7b7b0e", "status": "PASS"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64", "status": "PASS"}, "adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}},
+        "checkpoint-1200": {"checkpoint_meta.json": {"bytes": 1499, "sha256": "edc1737c8745f8c1e29b67ba10fbf4814d5a51ddabb3294764b664ef0ef34fbd", "status": "UNVERIFIED", "note": "byte-identical to primary dataset checkpoint-1200/checkpoint_meta.json"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "67a4d6b7e2200f335524587ec3d685fe49eed4a065b45754b4500596a9e306e6", "status": "PASS"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64", "status": "PASS"}, "adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}},
+        "checkpoint-1300": {"checkpoint_meta.json": {"bytes": 1498, "sha256": "3e2739a301f6b580d2c015f18781af2473217e96401f4b0a68c9e468bee4ccec", "status": "UNVERIFIED"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "3de2eafb922bf2eb3f268e1c44617da3314666872e6bb3a1d4630d10500faeb5", "status": "PASS"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "status": "PASS"}, "adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}},
+        "checkpoint-1400": {"checkpoint_meta.json": {"bytes": 1498, "sha256": "eaaee64f044ad947d6ed22f21d676c4c416f5f79de2f74357b0abc22b996186b", "status": "UNVERIFIED"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "81d314ae6f3a193fee1f484e79d9d4122fbc294545aae9458017dd8df980384d", "status": "PASS"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "status": "PASS"}, "adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "8ea48e39cfc975fdad23ae8dc2bfc2ba19af9b574be0600b633460f4eb7e34fe", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}},
+        "checkpoint-1500": {"checkpoint_meta.json": {"bytes": 1499, "sha256": "c4354c5ab816daaf319fffb08649b8a2309e28d8890aa626b137569ac5d07ec3", "status": "UNVERIFIED"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "81f36e901bdde386ac12df440e6f27749b1bd093ed5ac0ab141f2b882fe861dc", "status": "PASS"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "status": "PASS"}, "adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "b9d16c934d689952da179c4b8b3dbdfb104172ce2e95a46ecad685d48c865e9a", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}},
+        "checkpoint-1596": {"checkpoint_meta.json": {"bytes": 1499, "sha256": "a8bef0e232fe367d308ff9c551115a29a8370af01411916beea6ca715a8a7478", "status": "UNVERIFIED"}, "trainer_state.pt": {"bytes": 349622034, "sha256": "29c19b9c8cf9143167e4df44b25a929192a2448ade14bd6aa8c4c6fbbb38178b", "status": "PASS"}, "adapter/adapter_config.json": {"bytes": 1146, "sha256": "f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0", "status": "PASS"}, "adapter/adapter_model.safetensors": {"bytes": 174655536, "sha256": "162b97f6007e76a147833c126b11f5146034c1315c08024414464b1bd4564dc8", "status": "PASS"}, "adapter/README.md": {"bytes": 5180, "sha256": "85e2b3a3fae33eab459538a9f1ce2d9ad6bd9fb7c6b97f9ee97e07923ad3e57a", "status": "PASS"}}
+      }
+    },
+    "training_state": {
+      "inspection_method": "static: zipfile listing + pickletools opcode scan of trainer_state/data.pkl; no unpickling, no torch.load",
+      "pickle_globals": ["collections.OrderedDict", "torch.FloatStorage", "torch.ByteStorage", "torch._utils._rebuild_tensor_v2"],
+      "non_allowlisted_globals": [],
+      "embedded_keys": ["optimizer", "scheduler", "scaler", "rng(python,numpy,torch_cpu,torch_cuda)", "loop(step,epoch,tokens_seen,stopper,total_steps,skipped_steps,consecutive_skipped)"],
+      "separate_rng_or_optimizer_files_expected": false,
+      "trainer": "custom loop, qwen_jarvis_phase3_4/pipeline/train/train.py + checkpoint.py (not HF Trainer, not TRL)",
+      "optimizer": "torch.optim.AdamW (LoRA params)", "scheduler": "transformers get_scheduler cosine, warmup_ratio 0.03", "grad_scaler": "torch.amp.GradScaler fp16, scale 32768.0",
+      "config": "configs/qlora_sft.yaml: lr 1e-4, batch 4x4, max_seq_len 1024, seed 42, eval/save every 100, keep_last 2, patience 4",
+      "libraries_recorded_all_7": {"torch": "2.11.0+cu128", "transformers": "5.16.1", "peft": "0.20.0", "accelerate": "1.14.0", "bitsandbytes": "0.50.2", "datasets": "4.8.5", "tokenizers": "0.23.1", "numpy": "2.1.3", "trl": "not importable"},
+      "loop_values": {"800": {"tokens_seen": 1870131, "stopper_best_step": 800, "bad": 0}, "1100": {"tokens_seen": 2592628, "stopper_best_step": 800, "bad": 3}, "1200": {"tokens_seen": 2820859, "stopper_best_step": 800, "bad": 4}, "1300": {"tokens_seen": 3045120, "stopper_best_step": 1300, "bad": 0}, "1400": {"tokens_seen": 3273147, "stopper_best_step": 1300, "bad": 1}, "1500": {"tokens_seen": 3495243, "stopper_best_step": 1300, "bad": 2}, "1596": {"tokens_seen": 3731843, "stopper_best_step": 1300, "bad": 3}},
+      "run_continuity_800_1200_vs_1300_1596": "continuous, resumed from checkpoint-1200: strongly supported (identical remote/local checkpoint-1200 meta, stopper/scheduler/tokens_seen continuity, identical identity+libraries); not cryptographically proven",
+      "readiness": {"inference_file_integrity": "PASS (all 7)", "inference_load": "UNVERIFIED (not run)", "resume_training": "UNVERIFIED (all saved state present; no resume test; needs code, config, dataset, base model, GPU, matching libs)", "audit_metrics_trail": "PASS", "exact_reproduction": "UNVERIFIED"}
+    },
+    "best_latest": {
+      "schema_source": "qwen_jarvis_phase3_4/pipeline/train/checkpoint.py save_checkpoint + repro.write_json_atomic (indent=1, sort_keys=True)",
+      "original_origin": "byte-identical to older dataset qwen3_8b_jarvis_full_v3/best.json and latest.json (first segment, frozen at step 1200)",
+      "consumers_in_workspace": [],
+      "backups": "_finalization_backups/ (byte-identical)",
+      "best.json": {"original_sha256": "9fe8b74e7e85bff8c5f39067a2fc70d08829d0d7f143eb707c4eceae56573c2f", "original_target": "checkpoint-800", "final_sha256": "e4f51740aef1356ccfdfc5caf8dbfa8f64465c3433182346731dad4909b3d1d9", "final_target": "checkpoint-1300", "justification": "most recent is_best save; matches training_results best_step"},
+      "latest.json": {"original_sha256": "df3a78c380be8949bd61d537f6a511eea4f5f9df506874127257fc36b9eff205", "original_target": "checkpoint-1200", "final_sha256": "89a82037cc34cb72123cda710a24b6415e14f0d3afe5436db054b0aa82b1c5e3", "final_target": "checkpoint-1596", "justification": "most recent save; final step"}
+    },
+    "training_results_json": {"available": true, "path": "_finalization_downloads/primary/training_results.json", "bytes": 348, "sha256": "c0ca5647a1b09b09d66f6bca9bcc06045c112023d8ba074fc1c0ba5ab825e929", "kaggle_rc": 0, "size_matches_listing": true, "values_match_history": true, "integrity_vs_trusted_hash": "UNVERIFIED (none exists)"},
+    "cleanup": {
+      "plan": "FINAL_CLEANUP_PLAN.md",
+      "deleted_count": 21, "skipped_count": 0, "bytes_recovered": 2271797114,
+      "deleted": [
+        "checkpoint-1300/adapter_model.safetensors", "checkpoint-1400/adapter_model.safetensors", "checkpoint-1500/adapter_model.safetensors", "checkpoint-1596/adapter_model.safetensors", "adapter_model.safetensors",
+        "_phase_c_downloads/checkpoint-1300/checkpoint_meta.json", "_phase_c_downloads/checkpoint-1300/trainer_state.pt", "_phase_c_downloads/checkpoint-1300/adapter/adapter_config.json", "_phase_c_downloads/checkpoint-1300/adapter/README.md",
+        "_phase_c_downloads/checkpoint-1400/checkpoint_meta.json", "_phase_c_downloads/checkpoint-1400/trainer_state.pt", "_phase_c_downloads/checkpoint-1400/adapter/adapter_config.json", "_phase_c_downloads/checkpoint-1400/adapter/README.md",
+        "_phase_c_downloads/checkpoint-1500/checkpoint_meta.json", "_phase_c_downloads/checkpoint-1500/trainer_state.pt", "_phase_c_downloads/checkpoint-1500/adapter/adapter_config.json", "_phase_c_downloads/checkpoint-1500/adapter/README.md",
+        "_phase_c_downloads/checkpoint-1596/checkpoint_meta.json", "_phase_c_downloads/checkpoint-1596/trainer_state.pt", "_phase_c_downloads/checkpoint-1596/adapter/adapter_config.json", "_phase_c_downloads/checkpoint-1596/adapter/README.md"
+      ],
+      "preserved": ["_phase_c_downloads/*.log", "_finalization_downloads/*", "_finalization_backups/*", "staging outside workspace (never eligible)"],
+      "outside_workspace_modified": false
+    },
+    "metadata_authenticity_externally_verified": false,
+    "exact_resume_demonstrated": false,
+    "remaining_limitations": [
+      "checkpoint_meta.json files have no external trusted hash",
+      "training_results.json has no trusted hash",
+      "trainer_state.pt inspected statically only; tensor deserialization untested",
+      "resume requires code/config/dataset/base model/GPU/matching libraries not in workspace; no resume test run",
+      "only 7 checkpoints retained by backups (keep_last=2 pruning); 900/1000 absent by design",
+      "staging C:\\Users\\utkar\\Downloads\\JARVIS_Backup still holds partial 1300 trainer_state.pt and duplicate adapters (untouched)"
+    ]
+  }
+}

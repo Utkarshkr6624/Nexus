@@ -1,0 +1,23 @@
+{
+ "base_model": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_1100": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_1200": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "checkpoint_800": {
+  "items": 16,
+  "repeats": 2,
+  "nondeterministic_items": []
+ },
+ "cross_run": {}
+}

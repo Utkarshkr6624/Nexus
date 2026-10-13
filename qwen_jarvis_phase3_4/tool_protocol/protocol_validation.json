@@ -1,0 +1,8 @@
+{
+ "dir": "dataset\\v2_final",
+ "records": 11288,
+ "tool_calls": 261,
+ "rendered_with_chat_template": 705,
+ "violations": 0,
+ "examples": []
+}

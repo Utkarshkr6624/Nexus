@@ -1,0 +1,592 @@
+{
+ "protocol_version": "toolproto-1",
+ "status": "ILLUSTRATIVE. None of these tools exists in the current NEXUS application (Phase 1 audit: no tool registry, no generic file/terminal/web/http/db tools). They define the conceptual protocol that a FUTURE NEXUS tool layer would implement.",
+ "naming": {
+  "rule": "canonical_name = dotted_name with '.' replaced by '_' ; canonical names match ^[a-z][a-z0-9_]{0,63}$ and are what appears in `tools`, `tool_calls` and `tool` messages. Dotted names exist only in the Phase 2 source text.",
+  "pattern": "^[a-z][a-z0-9_]{0,63}$"
+ },
+ "result_envelope": {
+  "description": "Every `tool` message content is a compact JSON string (separators (',',':'), ensure_ascii=False, key order as shown) with exactly one of two shapes.",
+  "schema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "oneOf": [
+    {
+     "type": "object",
+     "properties": {
+      "ok": {
+       "const": true
+      },
+      "data": {}
+     },
+     "required": [
+      "ok",
+      "data"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "object",
+     "properties": {
+      "ok": {
+       "const": false
+      },
+      "error": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "message": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "code",
+        "message"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "required": [
+      "ok",
+      "error"
+     ],
+     "additionalProperties": false
+    }
+   ]
+  },
+  "error_codes": [
+   "permission_denied",
+   "not_found",
+   "timeout",
+   "connection_failed",
+   "invalid_arguments",
+   "nonzero_exit",
+   "confirmation_required",
+   "denied_by_user",
+   "rate_limited",
+   "unavailable",
+   "error"
+  ],
+  "error_code_note": "Codes beginning with 'http_' followed by a status (for example http_503) and snake_case exception names (for example value_error) are also allowed."
+ },
+ "tools": [
+  {
+   "dotted_name": "app.create_event",
+   "name": "app_create_event",
+   "side_effect": "write",
+   "requires_confirmation": true,
+   "description": "Create a calendar event.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "description": "Event title."
+     },
+     "start": {
+      "type": "string",
+      "description": "Start time, natural language or ISO 8601."
+     },
+     "minutes": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Duration in minutes."
+     }
+    },
+    "required": [
+     "title",
+     "start"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "app.create_task",
+   "name": "app_create_task",
+   "side_effect": "write",
+   "requires_confirmation": true,
+   "description": "Create a task.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "description": "Task title."
+     },
+     "due": {
+      "type": "string",
+      "description": "Due date, natural language or ISO 8601."
+     }
+    },
+    "required": [
+     "title"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "app.list_tasks",
+   "name": "app_list_tasks",
+   "side_effect": "read",
+   "requires_confirmation": false,
+   "description": "List tasks, optionally filtered.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "filter": {
+      "type": "string",
+      "description": "Filter such as 'open', 'done' or 'overdue'."
+     }
+    },
+    "required": [],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "app.read_calendar",
+   "name": "app_read_calendar",
+   "side_effect": "read",
+   "requires_confirmation": false,
+   "description": "Read calendar entries for a time range.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "range": {
+      "type": "string",
+      "description": "Time range, for example 'tomorrow' or 'next Monday'."
+     }
+    },
+    "required": [
+     "range"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "app.send_message",
+   "name": "app_send_message",
+   "side_effect": "external_write",
+   "requires_confirmation": true,
+   "description": "Send a message to a person or channel.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "recipient": {
+      "type": "string",
+      "description": "Person or channel."
+     },
+     "text": {
+      "type": "string",
+      "description": "Message text."
+     }
+    },
+    "required": [
+     "recipient",
+     "text"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "app.update_event",
+   "name": "app_update_event",
+   "side_effect": "write",
+   "requires_confirmation": true,
+   "description": "Change an existing calendar event.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "event": {
+      "type": "string",
+      "description": "Event title or id."
+     },
+     "title": {
+      "type": "string",
+      "description": "New title."
+     },
+     "start": {
+      "type": "string",
+      "description": "New start time."
+     },
+     "minutes": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "New duration in minutes."
+     }
+    },
+    "required": [
+     "event"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "app.update_goal",
+   "name": "app_update_goal",
+   "side_effect": "write",
+   "requires_confirmation": true,
+   "description": "Update progress on a goal.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "goal": {
+      "type": "string",
+      "description": "Goal title or id."
+     },
+     "progress": {
+      "type": "string",
+      "description": "New progress value, for example '60%'."
+     }
+    },
+    "required": [
+     "goal",
+     "progress"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "app.update_task",
+   "name": "app_update_task",
+   "side_effect": "write",
+   "requires_confirmation": true,
+   "description": "Change a task: rename it, move its due date, set its status, or delete it.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "task": {
+      "type": "string",
+      "description": "Task title or id."
+     },
+     "title": {
+      "type": "string",
+      "description": "New title."
+     },
+     "due": {
+      "type": "string",
+      "description": "New due date."
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "open",
+       "done"
+      ],
+      "description": "New status."
+     },
+     "action": {
+      "type": "string",
+      "enum": [
+       "delete"
+      ],
+      "description": "Destructive action."
+     }
+    },
+    "required": [
+     "task"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "code.run_python",
+   "name": "code_run_python",
+   "side_effect": "execute",
+   "requires_confirmation": true,
+   "description": "Run a short Python snippet in a sandbox and return its output.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "code": {
+      "type": "string",
+      "description": "Python source code."
+     }
+    },
+    "required": [
+     "code"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "db.describe",
+   "name": "db_describe",
+   "side_effect": "read",
+   "requires_confirmation": false,
+   "description": "Describe the columns of a database table.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "table": {
+      "type": "string",
+      "description": "Table name."
+     }
+    },
+    "required": [
+     "table"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "db.execute",
+   "name": "db_execute",
+   "side_effect": "destructive_write",
+   "requires_confirmation": true,
+   "description": "Execute a data-changing SQL statement (INSERT, UPDATE, DELETE, DDL).",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "sql": {
+      "type": "string",
+      "description": "SQL statement."
+     }
+    },
+    "required": [
+     "sql"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "db.query",
+   "name": "db_query",
+   "side_effect": "read",
+   "requires_confirmation": false,
+   "description": "Run a read-only SQL query.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "sql": {
+      "type": "string",
+      "description": "A SELECT statement."
+     }
+    },
+    "required": [
+     "sql"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "fs.delete_file",
+   "name": "fs_delete_file",
+   "side_effect": "destructive_write",
+   "requires_confirmation": true,
+   "description": "Delete a file, or files matching a description inside a path.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "File or directory path."
+     },
+     "match": {
+      "type": "string",
+      "description": "Optional pattern or description of which files to delete."
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "fs.move_file",
+   "name": "fs_move_file",
+   "side_effect": "write",
+   "requires_confirmation": true,
+   "description": "Move or rename a file.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "source": {
+      "type": "string",
+      "description": "Current path."
+     },
+     "destination": {
+      "type": "string",
+      "description": "New path."
+     }
+    },
+    "required": [
+     "source",
+     "destination"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "fs.read_file",
+   "name": "fs_read_file",
+   "side_effect": "read",
+   "requires_confirmation": false,
+   "description": "Read a text file.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "File path."
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "fs.search",
+   "name": "fs_search",
+   "side_effect": "read",
+   "requires_confirmation": false,
+   "description": "Search for files by name or content.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string",
+      "description": "File name pattern or text to find."
+     },
+     "path": {
+      "type": "string",
+      "description": "Directory to search in."
+     }
+    },
+    "required": [
+     "query"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "fs.write_file",
+   "name": "fs_write_file",
+   "side_effect": "write",
+   "requires_confirmation": true,
+   "description": "Write text to a file, replacing existing content.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "File path."
+     },
+     "content": {
+      "type": "string",
+      "description": "Full file content."
+     }
+    },
+    "required": [
+     "path",
+     "content"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "http.request",
+   "name": "http_request",
+   "side_effect": "external_write",
+   "requires_confirmation": true,
+   "description": "Send an HTTP request. Requires confirmation unless the method is GET.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "method": {
+      "type": "string",
+      "enum": [
+       "GET",
+       "POST",
+       "PUT",
+       "PATCH",
+       "DELETE"
+      ],
+      "description": "HTTP method."
+     },
+     "url": {
+      "type": "string",
+      "description": "Request URL."
+     },
+     "body": {
+      "type": "string",
+      "description": "Optional request body."
+     }
+    },
+    "required": [
+     "method",
+     "url"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "shell.run",
+   "name": "shell_run",
+   "side_effect": "execute",
+   "requires_confirmation": true,
+   "description": "Run a shell command and return its output and exit status.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string",
+      "description": "Command line."
+     },
+     "cwd": {
+      "type": "string",
+      "description": "Working directory."
+     }
+    },
+    "required": [
+     "command"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "web.fetch",
+   "name": "web_fetch",
+   "side_effect": "read",
+   "requires_confirmation": false,
+   "description": "Fetch a web page and return its text.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "url": {
+      "type": "string",
+      "description": "Page URL."
+     }
+    },
+    "required": [
+     "url"
+    ],
+    "additionalProperties": false
+   }
+  },
+  {
+   "dotted_name": "web.search",
+   "name": "web_search",
+   "side_effect": "read",
+   "requires_confirmation": false,
+   "description": "Search the web and return result snippets.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string",
+      "description": "Search query."
+     }
+    },
+    "required": [
+     "query"
+    ],
+    "additionalProperties": false
+   }
+  }
+ ]
+}

@@ -1,0 +1,38 @@
+{
+  "title": "Jarvis V3.1 remediation extras draft",
+  "status": "DRAFT_FOR_PROJECT_VALIDATION",
+  "total_records": 318,
+  "counts": {
+    "safety_benign": 150,
+    "safety_fiction": 80,
+    "safety_ambiguous": 40,
+    "safety_crisis": 48
+  },
+  "files": {
+    "safety_benign": {
+      "file": "safety_benign.jsonl",
+      "records": 150,
+      "sha256": "4935612664840165555acc6340ff5b060a1945bf7ccd2560ea84e2ea26cfe90a"
+    },
+    "safety_fiction": {
+      "file": "safety_fiction.jsonl",
+      "records": 80,
+      "sha256": "d635f5e35fd1f455feb8cff7b6af398526c4e89cdeb5397887c79862f34f043a"
+    },
+    "safety_ambiguous": {
+      "file": "safety_ambiguous.jsonl",
+      "records": 40,
+      "sha256": "e70808c201a0e63240673e320cd88f0611bccf8a5b6fd6bd0e6aba0038beb007"
+    },
+    "safety_crisis": {
+      "file": "safety_crisis.jsonl",
+      "records": 48,
+      "sha256": "0f9e1c5930fd8ddbfebe7897d4f2a76e7c594fb7f421f6ea0a1c7eabe9d5279c"
+    }
+  },
+  "notes": [
+    "Drafted to the user-provided schema.",
+    "Not yet run through the project local build_v31.py validator.",
+    "Must be checked for duplicates against V2/V3 and held-out evaluation prompts before use."
+  ]
+}

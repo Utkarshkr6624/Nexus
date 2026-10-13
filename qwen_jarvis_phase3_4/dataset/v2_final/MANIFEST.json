@@ -1,0 +1,50 @@
+{
+ "version": "qwen_jarvis_dataset_v2_final",
+ "baseline": "qwen_jarvis_dataset_v2 (11,332 examples)",
+ "stages": [
+  "preflight corrections (preflight/changelog.jsonl)",
+  "tool protocol conversion (tool_protocol/convert.py, toolproto-1)",
+  "32 canonical protocol examples",
+  "freeze (this script)"
+ ],
+ "records": 11288,
+ "files": {
+  "train.jsonl": {
+   "records": 10298,
+   "sha256": "8b066c83b8adaac7dcb5a123d27a698262b3121d6dbc6febced134a5d7163c3c"
+  },
+  "validation.jsonl": {
+   "records": 497,
+   "sha256": "add305738bf469c68da1e35328466a4d87d7dc05d5c900f418a527bbb010fd7e"
+  },
+  "test.jsonl": {
+   "records": 493,
+   "sha256": "a9444018acef14c782cf2f0621665c3103e16f20b34a8f6a20050d896dacd906"
+  }
+ },
+ "categories": {
+  "instruction_following": 750,
+  "general_conversation": 1090,
+  "multi_turn_context": 492,
+  "nexus_knowledge": 944,
+  "reasoning": 1483,
+  "jarvis_assistant": 985,
+  "general_knowledge": 1173,
+  "mathematics": 728,
+  "capability_boundaries": 649,
+  "programming": 1500,
+  "tool_aware": 1002,
+  "safety": 492
+ },
+ "multi_turn": 1413,
+ "with_tools": 705,
+ "with_tool_calls": 257,
+ "tool_messages": 148,
+ "freeze_actions": {
+  "protocol_examples_added": 32,
+  "exact_duplicates_dropped": 6,
+  "moved_to_train_for_leakage": 41
+ },
+ "tool_protocol": "toolproto-1",
+ "status": "FROZEN FOR TRAINING PIPELINE DEVELOPMENT - do not edit; make a new version instead"
+}

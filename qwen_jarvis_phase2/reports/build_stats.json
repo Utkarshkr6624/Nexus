@@ -1,0 +1,182 @@
+{
+ "version": "qwen_jarvis_dataset_v2",
+ "generated_total": 17905,
+ "generated_by_file": {
+  "boundaries3": 682,
+  "context": 534,
+  "conv21_a": 68,
+  "conv21_b": 52,
+  "conv21_c": 86,
+  "conv21_d": 77,
+  "conv21_e": 75,
+  "conv21_f": 47,
+  "conv21_g": 87,
+  "conv21_h": 41,
+  "conversation": 563,
+  "conversation2": 452,
+  "conversation3": 186,
+  "instruction": 909,
+  "instruction21": 497,
+  "jarvis": 801,
+  "jarvis2": 422,
+  "knowledge": 792,
+  "knowledge2": 192,
+  "math": 1259,
+  "math21": 450,
+  "multiturn": 560,
+  "multiturn21": 151,
+  "nexus": 469,
+  "nexus2": 235,
+  "nexus21": 349,
+  "nexus3": 114,
+  "prog21_algo": 135,
+  "prog21_errors": 48,
+  "prog21_py": 59,
+  "prog21_sql": 33,
+  "prog21_web": 176,
+  "prog_concepts1": 131,
+  "prog_concepts2": 115,
+  "prog_debug": 100,
+  "prog_extra": 168,
+  "prog_multi": 198,
+  "prog_py": 576,
+  "prog_sql_git": 90,
+  "reasoning": 1980,
+  "reasoning21": 882,
+  "safety": 152,
+  "safety2": 424,
+  "safety3": 236,
+  "tools": 442,
+  "tools2": 1810
+ },
+ "validation_rejected": 2,
+ "validation_reasons": {
+  "capability-boundary answer lacks an explicit limitation/failure statement": 2
+ },
+ "duplicates_removed": {
+  "exact_duplicate": 1008,
+  "same_prompt_normalised": 768,
+  "identical_answer_cap": 479,
+  "near_duplicate": 1267
+ },
+ "duplicates_removed_total": 3522,
+ "template_trimmed": {
+  "mathematics": 230,
+  "programming": 283,
+  "reasoning": 940,
+  "multi_turn_context": 127,
+  "jarvis_assistant": 119,
+  "general_conversation": 65,
+  "capability_boundaries": 100,
+  "tool_aware": 52,
+  "safety": 19,
+  "instruction_following": 9
+ },
+ "template_trimmed_total": 1944,
+ "balance_dropped": {
+  "capability_boundaries": 9,
+  "instruction_following": 509,
+  "tool_aware": 216,
+  "mathematics": 371
+ },
+ "leakage_moved_to_train": {
+  "test": 50,
+  "validation": 58
+ },
+ "final_total": 11332,
+ "category_counts": {
+  "general_conversation": 1090,
+  "general_knowledge": 1173,
+  "reasoning": 1500,
+  "programming": 1500,
+  "mathematics": 750,
+  "instruction_following": 750,
+  "jarvis_assistant": 1000,
+  "nexus_knowledge": 944,
+  "tool_aware": 975,
+  "capability_boundaries": 650,
+  "multi_turn_context": 500,
+  "safety": 500
+ },
+ "category_targets": {
+  "general_conversation": 1000,
+  "general_knowledge": 1000,
+  "reasoning": 1500,
+  "programming": 1500,
+  "mathematics": 750,
+  "instruction_following": 750,
+  "jarvis_assistant": 1000,
+  "nexus_knowledge": 750,
+  "tool_aware": 750,
+  "capability_boundaries": 500,
+  "multi_turn_context": 500,
+  "safety": 500
+ },
+ "split_counts": {
+  "train": 10296,
+  "test": 518,
+  "validation": 518
+ },
+ "split_by_category": {
+  "train": {
+   "instruction_following": 668,
+   "general_conversation": 987,
+   "multi_turn_context": 454,
+   "nexus_knowledge": 865,
+   "reasoning": 1358,
+   "general_knowledge": 1095,
+   "jarvis_assistant": 902,
+   "mathematics": 678,
+   "capability_boundaries": 589,
+   "tool_aware": 900,
+   "programming": 1351,
+   "safety": 449
+  },
+  "test": {
+   "jarvis_assistant": 48,
+   "general_conversation": 51,
+   "instruction_following": 37,
+   "reasoning": 73,
+   "nexus_knowledge": 41,
+   "tool_aware": 36,
+   "mathematics": 38,
+   "programming": 74,
+   "general_knowledge": 41,
+   "capability_boundaries": 32,
+   "multi_turn_context": 22,
+   "safety": 25
+  },
+  "validation": {
+   "tool_aware": 39,
+   "jarvis_assistant": 50,
+   "multi_turn_context": 24,
+   "reasoning": 69,
+   "instruction_following": 45,
+   "general_conversation": 52,
+   "mathematics": 34,
+   "general_knowledge": 37,
+   "programming": 75,
+   "nexus_knowledge": 38,
+   "capability_boundaries": 29,
+   "safety": 26
+  }
+ },
+ "multi_turn_examples": 1465,
+ "multi_turn_by_split": {
+  "train": 1369,
+  "test": 46,
+  "validation": 50
+ },
+ "source_types": {
+  "computed": 3393,
+  "authored": 4029,
+  "composed": 2866,
+  "verified": 1044
+ },
+ "with_system_message": 6328,
+ "difficulty": {
+  "easy": 2348,
+  "medium": 7937,
+  "hard": 1047
+ }
+}

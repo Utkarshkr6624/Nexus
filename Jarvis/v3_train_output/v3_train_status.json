@@ -1,0 +1,78 @@
+{
+ "started_utc": "2026-10-11T18:40:29Z",
+ "max_steps": 700,
+ "learning_rate": 5e-05,
+ "guard_min": 160,
+ "package_gate": "PASS",
+ "init_adapter": {
+  "path": "/kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1300/adapter",
+  "sha256": "d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c",
+  "gate": "PASS"
+ },
+ "pip_rc": 0,
+ "libraries": {
+  "torch": "2.11.0+cu128",
+  "transformers": "5.16.1",
+  "peft": "0.20.0",
+  "accelerate": "1.14.0",
+  "bitsandbytes": "0.50.2"
+ },
+ "gpus": "Tesla T4, 15360 MiB\nTesla T4, 15360 MiB",
+ "elapsed_min": 128.1,
+ "command": "/usr/bin/python3 -m pipeline.train.train --config configs/qlora_sft_v3.yaml --set production_locked=false --set output.output_dir=/kaggle/working/runs --set train.max_steps=700 --set train.learning_rate=5e-05 --confirm-production --init-adapter /kaggle/input/datasets/utkarsh6624/jarvis-phase5-secure-checkpoint-backup/checkpoint-1300/adapter --init-adapter-sha256 d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c",
+ "train_rc": 0,
+ "train_minutes": 127.9,
+ "checkpoints": {
+  "checkpoint-600": {
+   "step": 600,
+   "metrics": {
+    "lora_B_norm": 15.248325833240967,
+    "metrics_step": 600,
+    "skipped_steps": 0,
+    "train_loss": 0.532624464482069,
+    "val_loss": 0.6087250159576675,
+    "val_ppl": 1.8380863733698423,
+    "val_tokens": 40969
+   },
+   "adapter_sha256": "39f626cdf50a143a55e9b88f4b6711f2c067b5498295f25bcaa86b3a4afe35ae"
+  },
+  "checkpoint-700": {
+   "step": 700,
+   "metrics": {
+    "lora_B_norm": 15.250351839960844,
+    "metrics_step": 700,
+    "skipped_steps": 0,
+    "train_loss": 0.17465660255402327,
+    "val_loss": 0.6078193067475739,
+    "val_ppl": 1.8364223552845373,
+    "val_tokens": 40969
+   },
+   "adapter_sha256": "0bc6c192baab1e84c5e92da389c17ca04c358450189ba264a7a567604ca97ca9"
+  }
+ },
+ "best.json": {
+  "checkpoint": "checkpoint-700",
+  "metrics": {
+   "lora_B_norm": 15.250351839960844,
+   "metrics_step": 700,
+   "skipped_steps": 0,
+   "train_loss": 0.17465660255402327,
+   "val_loss": 0.6078193067475739,
+   "val_ppl": 1.8364223552845373,
+   "val_tokens": 40969
+  },
+  "step": 700
+ },
+ "latest.json": {
+  "checkpoint": "checkpoint-700",
+  "step": 700
+ },
+ "metrics_tail": [
+  "{\"step\": 660, \"epoch\": 0.691, \"loss\": 0.17436365596950054, \"grad_norm\": 1.8902238607406616, \"lr\": 4.26923669566659e-07, \"tokens\": 1568950, \"tok_per_s\": 223.9, \"skipped\": 0, \"t\": 7009.22}",
+  "{\"step\": 670, \"epoch\": 0.702, \"loss\": 0.5323375165462494, \"grad_norm\": 2.3523812294006348, \"lr\": 2.4044476699843223e-07, \"tokens\": 1591418, \"tok_per_s\": 224.2, \"skipped\": 0, \"t\": 7099.53}",
+  "{\"step\": 680, \"epoch\": 0.712, \"loss\": 0.6385500431060791, \"grad_norm\": 2.2458655834198, \"lr\": 1.0695972504730922e-07, \"tokens\": 1614180, \"tok_per_s\": 224.5, \"skipped\": 0, \"t\": 7190.86}",
+  "{\"step\": 690, \"epoch\": 0.723, \"loss\": 0.49967222660779953, \"grad_norm\": 3.2035820484161377, \"lr\": 2.6754247056537396e-08, \"tokens\": 1638469, \"tok_per_s\": 224.9, \"skipped\": 0, \"t\": 7287.76}",
+  "{\"step\": 700, \"epoch\": 0.733, \"loss\": 0.17465660255402327, \"grad_norm\": 1.4616752862930298, \"lr\": 0.0, \"tokens\": 1661607, \"tok_per_s\": 225.2, \"skipped\": 0, \"t\": 7380.37}",
+  "{\"step\": 700, \"val_loss\": 0.6078193067475739, \"val_ppl\": 1.8364223552845373, \"val_tokens\": 40969, \"best_val_loss\": 0.6078193067475739, \"bad_evals\": 0, \"t\": 7504.36}"
+ ]
+}

@@ -1,0 +1,104 @@
+JARVIS Phase 5 Checkpoint Recovery - PHASE A Inventory (read-only)
+Generated: 2026-10-10
+Scope: E:\Nexo\Jarvis (read), staging C:\Users\utkar\Downloads\JARVIS_Backup (read only, not modified)
+No downloads, moves, copies, deletions or hashing performed in Phase A.
+
+------------------------------------------------------------
+DISK
+------------------------------------------------------------
+E: free  169413459968 bytes (~157.8 GiB)
+E: total 209714147328 bytes (~195.3 GiB)
+
+------------------------------------------------------------
+E:\Nexo\Jarvis ROOT FILES (not inside a checkpoint)
+------------------------------------------------------------
+adapter_model.safetensors   174655536   ORPHAN - checkpoint origin unknown; not hashed yet
+best.json                   274         points to checkpoint-800 (val_loss 0.6658911464513418)
+latest.json                 51          points to checkpoint-1200 (step 1200)
+NOTE: best.json/latest.json appear to come from the older backup run state,
+not from the final run (historical best = step 1300, final = step 1596). Preserved, not edited.
+
+------------------------------------------------------------
+PER-CHECKPOINT (E:\Nexo\Jarvis)
+------------------------------------------------------------
+Required: checkpoint_meta.json, trainer_state.pt, adapter\adapter_config.json,
+          adapter\adapter_model.safetensors, adapter\README.md
+
+checkpoint-800      COMPLETE (5/5)
+  checkpoint_meta.json                 1496
+  trainer_state.pt                     349622034
+  adapter\adapter_config.json          1146
+  adapter\adapter_model.safetensors    174655536
+  adapter\README.md                    5180
+
+checkpoint-1100     COMPLETE (5/5)
+  checkpoint_meta.json                 1499
+  trainer_state.pt                     349622034
+  adapter\adapter_config.json          1146
+  adapter\adapter_model.safetensors    174655536
+  adapter\README.md                    5180
+
+checkpoint-1200     COMPLETE (5/5)
+  checkpoint_meta.json                 1499
+  trainer_state.pt                     349622034
+  adapter\adapter_config.json          1146
+  adapter\adapter_model.safetensors    174655536
+  adapter\README.md                    5180
+  (root-level duplicate adapter confirmed ABSENT - prior removal held)
+
+checkpoint-1300     INCOMPLETE (adapter only, misplaced)
+  adapter_model.safetensors (ROOT, not in adapter\)  174655536
+  MISSING: checkpoint_meta.json, trainer_state.pt, adapter\adapter_config.json,
+           adapter\README.md, adapter\adapter_model.safetensors (correct location)
+
+checkpoint-1400     INCOMPLETE (adapter only, misplaced)
+  adapter_model.safetensors (ROOT)     174655536
+  MISSING: checkpoint_meta.json, trainer_state.pt, adapter\adapter_config.json, adapter\README.md
+
+checkpoint-1500     INCOMPLETE (adapter only, misplaced)
+  adapter_model.safetensors (ROOT)     174655536
+  MISSING: checkpoint_meta.json, trainer_state.pt, adapter\adapter_config.json, adapter\README.md
+
+checkpoint-1596     INCOMPLETE (adapter only, misplaced)
+  adapter_model.safetensors (ROOT)     174655536
+  MISSING: checkpoint_meta.json, trainer_state.pt, adapter\adapter_config.json, adapter\README.md
+
+No adapter\ subdirectory exists in 1300/1400/1500/1596.
+No duplicate adapter files inside 800/1100/1200.
+
+------------------------------------------------------------
+STAGING C:\Users\utkar\Downloads\JARVIS_Backup (outside workspace, read-only)
+------------------------------------------------------------
+adapter_model.safetensors                         174655536  origin unknown
+checkpoint-1200\adapter_model.safetensors         174655536
+checkpoint-1300\adapter_model.safetensors         174655536
+checkpoint-1300\checkpoint_meta.json              1498       VALID JSON, step 1300
+checkpoint-1300\trainer_state.pt                  176160768  TRUNCATED (expected 349622034; 50.4%)
+checkpoint-1300\trainer_state.pt.kaggle-partial   72         Kaggle resume marker, expected size 349622034
+checkpoint-1400\adapter_model.safetensors         174655536
+checkpoint-1500\adapter_model.safetensors         174655536
+checkpoint-1596\adapter_model.safetensors         174655536
+=> Earlier report that 1300 trainer_state.pt "downloaded" is FALSE: download was interrupted.
+
+------------------------------------------------------------
+KEY FINDINGS FROM checkpoint_meta.json (read, not yet verified against files)
+------------------------------------------------------------
+- Each meta contains trusted original SHA-256 + byte size for all 4 payload files.
+  This enables real original-hash comparison in Phase B.
+- config_hash 9312597956f22164 present in meta for 800, 1100, 1200, 1300 (staging copy).
+  1400/1500/1596: no meta available locally -> UNVERIFIED.
+- dataset_version qwen_jarvis_dataset_v2_final in all 4 readable metas.
+- Recorded val_loss: 800=0.6658911464513418, 1100=0.6743624176073134,
+  1200=0.6673446315759556, 1300=0.6599428926175388 (is_best=true).
+- Meta-recorded adapter sha256:
+    800  41ee6d98ded59aec8ed641cd294bca0110ca3703358fbad003def9cd4eeed1fc
+    1100 35b8707b6b2dfcbfa1862751d1ce56ea4499ce939bcec4f7345ea5b0e62beebe
+    1200 8c5881d4d9a4202a85a257c1d64c30f4ef078a3fe9026e92e0fecd856243ea2b
+    1300 d71f9a974837cdbaf4ade94e779ed15bfeee67bb215b77c14db9333926ef570c
+- ANOMALY: checkpoint-1300 meta records adapter_config.json sha256
+  f5f0c671d8840894ceb384bdaa765c09adbc235678e57433954498477acb86f0,
+  while 800/1100/1200 record c9a0eda987ace5085658eaa80f253a0ccf31beb1c03f39be9545053b1f0e9d64
+  (same 1146 bytes). Config content differs between runs. Do NOT substitute
+  another checkpoint's adapter_config.json for 1300+. Must recover from 1300's own Kaggle path.
+- 800/1100/1200 saved_utc 09:29-10:35Z; 1300 saved_utc 15:02Z -> likely different run/session
+  (consistent with 800/1100/1200 coming from the older backup dataset).

@@ -1,0 +1,6 @@
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_jarvis_tools.py:247: symlinks need developer mode on Windows
+SKIPPED [1] tests\test_jarvis_tools.py:308: symlinks need developer mode on Windows
+326 passed, 2 skipped, 100 warnings in 111.46s (0:01:51)

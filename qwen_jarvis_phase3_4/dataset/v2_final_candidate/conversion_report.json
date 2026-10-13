@@ -1,0 +1,16 @@
+{
+ "protocol_version": "toolproto-1",
+ "records": 11262,
+ "by_kind": {
+  "unchanged": 10581,
+  "direct_read": 13,
+  "text_only": 210,
+  "confirm_preview_text": 226,
+  "flow_confirm_then_call": 47,
+  "read_proposal_to_call": 113,
+  "direct_write_with_inserted_confirmation": 31,
+  "flow_read_direct": 39,
+  "no_tools_renamed": 2
+ },
+ "unconverted": []
+}

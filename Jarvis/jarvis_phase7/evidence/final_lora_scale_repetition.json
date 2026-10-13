@@ -1,0 +1,119 @@
+{
+  "label": "INTEGRATION (real model, direct llama-server)",
+  "started": "2026-10-13T13:19:34",
+  "lora_adapters": [
+    {
+      "id": 0,
+      "path": "E:\\Nexo\\Jarvis\\jarvis_phase7\\runtime\\models\\jarvis_v31_139_lora.gguf",
+      "scale": 1.0,
+      "task_name": "",
+      "prompt_prefix": ""
+    }
+  ],
+  "runs": {
+    "scale1.0|fact": {
+      "text": "At sea level, water boils boiling point at 100 degrees CelsiusCelsius, or 212 degrees Fahrenheit. The boiling point depends on the atmospheric: at higher elevation, water boils boils at about 95 C, and at pressure, it boils boiling at about 105 C.",
+      "secs": 6.1,
+      "adjacent_repeats": [
+        "boils"
+      ],
+      "tokens": 64,
+      "stop_type": "eos"
+    },
+    "scale1.0|plan": {
+      "text": "Here's a short 3-step plan:\n\n1. List List list the topics and estimate by date.\n2. Make daily study blocks of about 90 to 120 minutes.\n3. Do low-stakes practice on the day before and a light review on the morning of the exam.\n\nIf you give me your exam date, I can make this more more specific.",
+      "secs": 7.5,
+      "adjacent_repeats": [
+        "list",
+        "list",
+        "more"
+      ],
+      "tokens": 78,
+      "stop_type": "eos"
+    },
+    "scale1.0|chat": {
+      "text": "I'm NEXO, your AI assistant. I can help with general, explain, drafting, editing, explaining, summarmarising, note-taking, planning, scheduling, debugging, explaining, and general, among other things. I'm not a replacement, so I can't fix technical or replace, but I can explain, troub, and help you think through a problem. Tell me what you're working on, and I'll tell you how to approach it, and help you work it out step by step.",
+      "secs": 10.4,
+      "adjacent_repeats": [],
+      "tokens": 105,
+      "stop_type": "eos"
+    },
+    "scale1.0|explain": {
+      "text": "A hash map stores stores key-value-value pairs an array. The key is passed through into an index, which a function only from into an index in the array, and the value is stored at that position. The same key always maps to the same index, and when many keys map to the same index (a collision), the entries are stored in a linked list or similar structure at that position.",
+      "secs": 7.9,
+      "adjacent_repeats": [
+        "stores",
+        "value"
+      ],
+      "tokens": 81,
+      "stop_type": "eos"
+    },
+    "scale1.0|capital": {
+      "text": "Paris is the capital of France France.",
+      "secs": 1.2,
+      "adjacent_repeats": [
+        "france"
+      ],
+      "tokens": 9,
+      "stop_type": "eos"
+    },
+    "scale1.0|long": {
+      "text": "The water cycle is the continuous movement of water on, over, and under the surface of Earth. Evaporation, transpiration, and sublimation turn liquid water into vapour, which rises, cools, and falls back as rain or snow, feeding rivers, lakes and oceans. Water also moves underground underground underground through plants and soil, and underground and storage in ice and groundwater. The cycle is driven by solar energy and the difference of temperature and elevation between, and it supports the distribution of fresh water.",
+      "secs": 10.2,
+      "adjacent_repeats": [
+        "underground",
+        "underground"
+      ],
+      "tokens": 104,
+      "stop_type": "eos"
+    },
+    "scale0.0|fact": {
+      "text": "The boiling point of water at sea level is 100\u00b0C (212\u00b0F). This is a well-established physical property of water under standard atmospheric pressure (1 atmosphere). No tool is required to answer this question, as it is a known scientific fact.",
+      "secs": 4.7,
+      "adjacent_repeats": [],
+      "tokens": 55,
+      "stop_type": "eos"
+    },
+    "scale0.0|plan": {
+      "text": "I don't have access to tools that provide exam preparation plans. However, here's a general 3-step plan you can follow:\n\n1. **Review Key Concepts**: Go through your notes and textbooks to identify the main topics and concepts you need to understand.\n\n2. **Practice with Past Papers**: Work through previous exam papers to get a sense of the question style and to identify areas where you need more practice.\n\n3. **Revise and Stay Healthy**: Dedicate time to revise what you've learned, and make sure to get enough rest, eat well, and stay positive.",
+      "secs": 10.4,
+      "adjacent_repeats": [],
+      "tokens": 118,
+      "stop_type": "eos"
+    },
+    "scale0.0|chat": {
+      "text": "I am NEXO, an advanced AI assistant designed to assist with a wide range of tasks. I can help with:\n\n- Answering questions\n- Providing explanations\n- Writing and editing text\n- Creating content\n- Solving problems\n- Offering guidance and support\n\nLet me know what you need help with!",
+      "secs": 5.6,
+      "adjacent_repeats": [],
+      "tokens": 65,
+      "stop_type": "eos"
+    },
+    "scale0.0|explain": {
+      "text": "A hash map is a data structure that stores key-value pairs. It uses a hash function to compute an index (or hash code) for each key, which determines where the corresponding value is stored. This allows for efficient insertion, deletion, and lookup operations, typically in constant time, O(1), on average. If multiple keys hash to the same index, collision resolution techniques like chaining or open addressing are used to handle them.",
+      "secs": 7.5,
+      "adjacent_repeats": [],
+      "tokens": 88,
+      "stop_type": "eos"
+    },
+    "scale0.0|capital": {
+      "text": "The capital of France is Paris.",
+      "secs": 1.0,
+      "adjacent_repeats": [],
+      "tokens": 8,
+      "stop_type": "eos"
+    },
+    "scale0.0|long": {
+      "text": "The water cycle, also known as the hydrological cycle, is a continuous process by which water circulates through the Earth's atmosphere, surface, and underground. It begins with evaporation, where water from oceans, lakes, and rivers turns into vapor and rises into the atmosphere. As the vapor cools, it condenses into clouds. When the clouds become heavy, precipitation occurs, releasing water as rain, snow, sleet, or hail. This water then flows over the land as runoff, feeding rivers, lakes, and oceans, or infiltrates the ground to replenish groundwater. Plants also play a role through transpiration, releasing water vapor into the air. The cycle is driven by solar energy and gravity, ensuring the distribution and renewal of water resources across the planet.",
+      "secs": 14.2,
+      "adjacent_repeats": [],
+      "tokens": 157,
+      "stop_type": "eos"
+    }
+  },
+  "totals": {
+    "scale1.0": 9,
+    "scale0.0": 0
+  },
+  "unload": 200,
+  "delete_user": 204
+}

@@ -1,0 +1,16 @@
+{
+  "id": "utkarsh6624/jarvis-v31-remediation-train",
+  "title": "jarvis-v31-remediation-train",
+  "code_file": "jarvis_v31_train.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": ["utkarsh6624/qwen-jarvis-v31-package"],
+  "competition_sources": [],
+  "kernel_sources": ["utkarsh6624/jarvis-v3-remediation-train"],
+  "model_sources": []
+}

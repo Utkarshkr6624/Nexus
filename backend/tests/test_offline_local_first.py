@@ -56,6 +56,8 @@ from __future__ import annotations
 
 import ast
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -173,6 +175,23 @@ ALLOWED_IMPORTS: dict[str, frozenset[str] | None] = {
     ),
     "http": frozenset({"HTTPStatus"}),
 }
+
+#: Phase 7, revised deliberately here as ``qwen_jarvis_phase1/QWEN_INTEGRATION_PLAN.md``
+#: requires. The Jarvis development integration is the one part of NEXUS that talks
+#: over HTTP: to its own separate model server, to this app's own routes in-process,
+#: and (for the web tools) to public hosts. It is **off by default**
+#: (``JARVIS_ENABLED=false``), and ``httpx`` stays out of the runtime dependency
+#: set, so the shipped image is still offline: these modules import ``httpx``
+#: behind a guard and report Jarvis unavailable without it. Exempted by exact
+#: file, never by directory, so a fourth file has to be argued for here.
+#: Phase 7b, revised deliberately: the on-demand NEXO model manager starts and stops the
+#: configured model server (and reads nvidia-smi, taskkill on Windows), and the added
+#: workspace tools run git and the operator-approved project commands. All are argv-only,
+#: no shell, and reachable only with Jarvis enabled. Exempted by exact path.
+JARVIS_PROCESS_FILES = frozenset({"app/jarvis/model_manager.py", "app/jarvis/workspace_tools.py"})
+JARVIS_EGRESS_FILES = frozenset(
+    {"app/jarvis/model_client.py", "app/jarvis/tools.py", "app/api/v1/jarvis.py"}
+)
 
 #: The git subcommands ``app/services/developer/git.py`` is allowed to run. Every
 #: one reads the work tree on disk and none contacts a remote.
@@ -348,8 +367,41 @@ def test_no_module_imports_a_network_client():
     422 means, or a comment naming ``socket``, cannot fail this, and
     ``import socket as s`` cannot evade it.
     """
-    offences = _offending_imports(_scanned_files())
+    paths = [
+        p
+        for p in _scanned_files()
+        if p.relative_to(BACKEND_ROOT).as_posix() not in JARVIS_EGRESS_FILES
+    ]
+    offences = _offending_imports(paths)
     assert not offences, "outbound-capable imports found:\n" + "\n".join(offences)
+
+
+def test_the_jarvis_exemption_is_exact_off_by_default_and_needs_no_runtime_client():
+    """The Phase 7 exemption cannot quietly widen, and NEXUS still ships offline.
+
+    Every exempted file exists and really does need it; Jarvis is disabled unless
+    an operator turns it on; and the app imports with ``httpx`` unavailable, which
+    is what the Docker runtime image (no dev section) gives it.
+    """
+    from app.core.config import Settings
+
+    for rel in JARVIS_EGRESS_FILES:
+        path = BACKEND_ROOT / rel
+        assert path.is_file(), rel
+        assert _offending_imports([path]), f"{rel} no longer needs its exemption; remove it"
+    assert Settings.model_fields["jarvis_enabled"].default is False
+    probe = (
+        "import sys; sys.modules['httpx'] = None\n"
+        "from app.main import app\n"
+        "from app.jarvis.tools import available_tools\n"
+        "from app.core.config import get_settings\n"
+        "assert not any(t.name.startswith(('app_', 'web_', 'http_')) for t in available_tools(get_settings()))\n"
+        "print('ok')"
+    )
+    run = subprocess.run(  # noqa: S603 - fixed argv: this interpreter and a literal probe
+        [sys.executable, "-c", probe], cwd=BACKEND_ROOT, capture_output=True, text=True, timeout=120
+    )
+    assert run.returncode == 0 and run.stdout.strip().endswith("ok"), run.stderr[-2000:]
 
 
 def test_the_network_import_allowlist_is_exactly_what_this_repository_needs():
@@ -657,8 +709,15 @@ def test_the_only_external_process_started_is_git_or_this_interpreter():
     # build it as ``[sys.executable, "ml.scripts.train_small_local", ...]`` or
     # ``[str(interpreter), "-c", ...]``, so the first element is this interpreter.
     local_argv = {"GIT_EXECUTABLE", GIT_EXECUTABLE, "str(interpreter)", "command", "sys.executable"}
-    suspicious = {where: argv for where, argv in found.items() if argv not in local_argv}
+    suspicious = {
+        where: argv
+        for where, argv in found.items()
+        if argv not in local_argv
+        and Path(where.rsplit(":", 1)[0]).relative_to(BACKEND_ROOT).as_posix()
+        not in JARVIS_PROCESS_FILES
+    }
     assert not suspicious, suspicious
+    assert all((BACKEND_ROOT / f).is_file() for f in JARVIS_PROCESS_FILES), "stale exemption"
     assert any("manifest.py" in where for where in found), "the Phase 10 manifest git call vanished"
 
 

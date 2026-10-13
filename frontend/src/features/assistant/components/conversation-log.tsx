@@ -48,7 +48,7 @@ const INTENT_LABEL: Record<IntentName, string> = {
   knowledge_capture: 'Save something to knowledge',
   knowledge_lookup: 'Look something up',
   learning_track: 'Plan my learning',
-  out_of_scope: 'Outside NEXO',
+  out_of_scope: 'Outside NEXUS',
   project_manage: 'Manage a project',
   risk_query: 'Ask about risks',
   schedule_plan: 'Plan my schedule',
@@ -116,14 +116,14 @@ export function RoutingOutcome({ decision, className }: RoutingOutcomeProps) {
           )}
           {decision.status === 'out_of_scope' && (
             <>
-              NEXUS has no surface for this, so there is nowhere to route it. NEXO does have
+              NEXUS has no surface for this, so there is nowhere to route it. The AI Assistant does have
               surfaces for tasks and projects, planning, knowledge, analytics, risks and
               recommendations, developer and learning work, career, and account settings.
             </>
           )}
           {decision.status === 'generation_unavailable' && (
             <>
-              This request needs a free-form answer. NEXO runs one model — a fourteen-class
+              This request needs a free-form answer. The AI Assistant runs one model — a fourteen-class
               intent classifier — and no generative model, so nothing here can write it. Code
               assistance and deep reasoning both land on this outcome.
             </>

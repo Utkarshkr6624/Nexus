@@ -1,0 +1,16 @@
+{
+  "id": "utkarsh6624/jarvis-phase6-eval-run4",
+  "title": "jarvis-phase6-eval-run4",
+  "code_file": "phase6_run3.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": ["utkarsh6624/qwen-jarvis-phase5-package", "utkarsh6624/jarvis-phase6-eval-v31"],
+  "competition_sources": [],
+  "kernel_sources": ["utkarsh6624/jarvis-v31-remediation-train"],
+  "model_sources": []
+}

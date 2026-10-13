@@ -1,0 +1,277 @@
+{
+ "steps": [
+  {
+   "http": 200,
+   "body": {
+    "intent": "task_manage",
+    "confidence": 0.9859660267829895,
+    "status": "accepted"
+   },
+   "name": "deberta_with_nexo_off"
+  },
+  {
+   "state": "ready",
+   "seconds": 14,
+   "name": "loaded"
+  },
+  {
+   "http": 201,
+   "name": "project_created"
+  },
+  {
+   "http": 200,
+   "outcome": "confirmation_required",
+   "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please approve or decline.",
+   "proposal": [
+    {
+     "name": "app_create_task",
+     "arguments": {
+      "title": "NEXO e2e check"
+     }
+    }
+   ],
+   "trace": [
+    [
+     "app_create_task",
+     "pending_confirmation"
+    ]
+   ],
+   "name": "task"
+  },
+  {
+   "http": 200,
+   "outcome": "tool_completed",
+   "trace": [
+    [
+     "app_create_task",
+     "executed_ok",
+     true
+    ]
+   ],
+   "text": "The task was created: id 2786ed7c-8455-4ea4-8374-b3badbc31411, title NEXO e2e check, status todo, priority medium, no due date. I haven't changed anything in your task list - nothing has been done to ",
+   "name": "task_approve"
+  },
+  {
+   "http": 404,
+   "outcome": null,
+   "trace": [],
+   "text": "",
+   "name": "task_repeat"
+  },
+  {
+   "http": 404,
+   "name": "repeat_confirm"
+  },
+  {
+   "tasks": [
+    "NEXO e2e check"
+   ],
+   "files": [],
+   "name": "task_state"
+  },
+  {
+   "http": 200,
+   "outcome": "confirmation_required",
+   "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please approve or decline.",
+   "proposal": [
+    {
+     "name": "app_create_task",
+     "arguments": {
+      "title": "NEXO task"
+     }
+    }
+   ],
+   "trace": [
+    [
+     "app_create_task",
+     "pending_confirmation"
+    ]
+   ],
+   "name": "task_declined"
+  },
+  {
+   "http": 200,
+   "outcome": "denied_by_user",
+   "trace": [
+    [
+     "app_create_task",
+     "denied",
+     false
+    ]
+   ],
+   "text": "The call failed because the user didn't confirm it. I haven't created anything. To proceed, I'd need their confirmation. Want me to try again with a confirmation prompt?",
+   "name": "task_declined_decline"
+  },
+  {
+   "tasks": [
+    "NEXO e2e check"
+   ],
+   "files": [],
+   "name": "task_declined_state"
+  },
+  {
+   "http": 200,
+   "outcome": "response",
+   "text": "I'll use `app_update_task` for this.\n\nProposedosing a change: update a task: rename it, move its due date, set its status, or delete it. Changes state or has side effects; show the user the exact call",
+   "proposal": null,
+   "trace": [],
+   "name": "task_update"
+  },
+  {
+   "http": 200,
+   "outcome": "response",
+   "text": "I'll use `app_create_event` for this.\n\nProposedosing a change: create an event called NEXO e2e event from 2026-10-20 10:00 for 30 minutes. Is that correct you want? I'll only report what it actually r",
+   "proposal": null,
+   "trace": [],
+   "name": "event"
+  },
+  {
+   "http": 200,
+   "outcome": "confirmation_required",
+   "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please approve or decline.",
+   "proposal": [
+    {
+     "name": "fs_write_file",
+     "arguments": {
+      "path": "e2e/hello.txt",
+      "content": "hello from NEXO"
+     }
+    }
+   ],
+   "trace": [
+    [
+     "fs_write_file",
+     "pending_confirmation"
+    ]
+   ],
+   "name": "file_write"
+  },
+  {
+   "http": 200,
+   "outcome": "tool_completed",
+   "trace": [
+    [
+     "fs_write_file",
+     "executed_ok",
+     true
+    ]
+   ],
+   "text": "The file was written successfully: `e2e/hello.txt` (15 bytes). I can't guarantee it myself, so if something goes wrong, the error will show.",
+   "name": "file_write_approve"
+  },
+  {
+   "tasks": [
+    "NEXO e2e check"
+   ],
+   "files": [
+    "e2e/hello.txt"
+   ],
+   "name": "file_write_state"
+  },
+  {
+   "http": 200,
+   "outcome": "confirmation_required",
+   "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please approve or decline.",
+   "proposal": [
+    {
+     "name": "fs_move_file",
+     "arguments": {
+      "source": "e2e/hello.txt",
+      "destination": "e2e/movedoved.txt"
+     }
+    }
+   ],
+   "trace": [
+    [
+     "fs_move_file",
+     "pending_confirmation"
+    ]
+   ],
+   "name": "file_move"
+  },
+  {
+   "http": 200,
+   "outcome": "tool_completed",
+   "trace": [
+    [
+     "fs_move_file",
+     "executed_ok",
+     true
+    ]
+   ],
+   "text": "The file was moved. I haven't done anything else, so if there are more steps I'll need to do them from scratch.",
+   "name": "file_move_approve"
+  },
+  {
+   "tasks": [
+    "NEXO e2e check"
+   ],
+   "files": [
+    "e2e/movedoved.txt"
+   ],
+   "name": "file_move_state"
+  },
+  {
+   "http": 200,
+   "outcome": "confirmation_required",
+   "text": "I described this action in words instead of calling the tool, so nothing has run. Here is the exact call for you to check. Nothing has been done yet; please approve or decline.",
+   "proposal": [
+    {
+     "name": "fs_delete_file",
+     "arguments": {
+      "path": "e2e/moved.txt"
+     }
+    }
+   ],
+   "trace": [
+    [
+     "fs_delete_file",
+     "pending_confirmation"
+    ]
+   ],
+   "name": "file_delete"
+  },
+  {
+   "http": 200,
+   "outcome": "tool_failed",
+   "trace": [
+    [
+     "fs_delete_file",
+     "executed_failed",
+     false
+    ]
+   ],
+   "text": "The call failed: the file or folder at `e2e/moved.txt` doesn't exist (the server returned it). I haven't changed anything in your data. Want me to try another path?",
+   "name": "file_delete_approve"
+  },
+  {
+   "tasks": [
+    "NEXO e2e check"
+   ],
+   "files": [
+    "e2e/movedoved.txt"
+   ],
+   "name": "file_delete_state"
+  },
+  {
+   "state": "off",
+   "last_unload": {
+    "reason": "user",
+    "process_exited": true,
+    "server_still_answers": false,
+    "generations_interrupted": 0,
+    "gpu_used_mb_before": 3668,
+    "gpu_used_mb_after": 944
+   },
+   "gpu_before": 3668,
+   "gpu_after": 944,
+   "llama": 0,
+   "name": "unloaded"
+  },
+  {
+   "http": 200,
+   "intent": "task_manage",
+   "name": "deberta_after_unload"
+  }
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "gates": {
+  "schema_valid": true,
+  "strict_json_targets_valid": true,
+  "tool_arguments_valid": true,
+  "no_new_example_near_eval_prompt": true,
+  "no_contradictory_targets": true,
+  "no_new_group_across_splits": true,
+  "v2_split_membership_unchanged": true,
+  "unique_ids": true
+ },
+ "schema_problems": [],
+ "generated_before_dedup": 3030,
+ "duplicate_prompts_dropped": 819,
+ "new_prompts_colliding_with_v2_dropped": 4,
+ "repeated_assistant_answers_in_new_data(>4 uses)": {
+  "i don t have access to your orders or any tracking service in this conversation ": 17,
+  "no problem i haven t created anything and your task list is unchanged": 16,
+  "i have no internet access in this conversation so i can t check whether a site i": 14,
+  "yes": 13,
+  "": 11,
+  "no": 6,
+  "a null true": 5,
+  "no booking or web tool is connected here so i can t search restaurants or make a": 5,
+  "no nothing was saved this session has no file or storage tool and i don t keep d": 5,
+  "i can t run anything on your laptop this session has no access to your device or": 5,
+  "no smart home tool is connected to this session so i can t control any device if": 5,
+  "i can t access files on your computer no file tool is connected in this conversa": 5,
+  "there s no messaging or chat tool connected to this session so nothing has been ": 5,
+  "no reminder or calendar tool is connected to this session so i can t set it your": 5,
+  "i don t have access to your bank account or any banking tool in this conversatio": 5
+ }
+}

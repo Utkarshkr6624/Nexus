@@ -63,7 +63,7 @@ const STATE_ANNOUNCEMENT: Record<VoiceState, string> = {
   unsupported: '',
   idle: '',
   listening: 'Listening.',
-  processing: 'Working out which part of NEXO you meant.',
+  processing: 'Working out which part of NEXUS you meant.',
   speaking: 'Reading the outcome aloud.',
   error: '',
 }
@@ -105,11 +105,11 @@ function UnsupportedNotice() {
         </p>
         <p className="text-sm leading-relaxed text-muted-foreground">
           Speech recognition is a Chrome and Edge feature. Firefox does not implement it at all,
-          and NEXO will not ask you to install anything to work around that — type your request
+          and the AI Assistant will not ask you to install anything to work around that — type your request
           below instead, and it is classified exactly as speech would be.
         </p>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          A local recogniser would have to be a speech model of our own, and NEXO runs exactly
+          A local recogniser would have to be a speech model of our own, and the AI Assistant runs exactly
           one model: a fourteen-class intent classifier. Shipping a second is not on the table, so
           this is said plainly rather than worked around.
         </p>
@@ -237,11 +237,11 @@ export function VoiceAssistant({ className }: VoiceAssistantProps) {
         <CardHeader>
           <div className="flex flex-wrap items-center gap-2.5">
             <MicVocal aria-hidden="true" className="size-4 text-muted-foreground" />
-            <CardTitle>Ask NEXO</CardTitle>
+            <CardTitle>Ask the AI Assistant</CardTitle>
             <VoiceStatePill state={state} />
           </div>
           <CardDescription>
-            NEXO listens to one request and names the part of the product you meant. When it can
+            The AI Assistant listens to one request and names the part of the product you meant. When it can
             also tell what you were asking to create, it says so in its own words and waits for you
             to agree. It classifies what you said; it does not write an answer.
           </CardDescription>
@@ -310,7 +310,7 @@ export function VoiceAssistant({ className }: VoiceAssistantProps) {
               <span className="font-medium text-foreground">
                 You last routed {suggestion.label}.
               </span>{' '}
-              NEXO cannot carry context into the next request — the classifier reads one utterance
+              The AI Assistant cannot carry context into the next request — the classifier reads one utterance
               and nothing else — so if this is the same request again, say it in those words.
             </p>
           )}

@@ -1,0 +1,13 @@
+{
+ "checkpoint": "checkpoint-139",
+ "metrics": {
+  "lora_B_norm": 15.29471186767834,
+  "metrics_step": 139,
+  "skipped_steps": 0,
+  "train_loss": 0.6003884635865688,
+  "val_loss": 0.8493209176902539,
+  "val_ppl": 2.33805857848303,
+  "val_tokens": 5098
+ },
+ "step": 139
+}

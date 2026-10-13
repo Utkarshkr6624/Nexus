@@ -1,0 +1,457 @@
+{"id": "qj2-01fd68e8c8fb", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-1c389dc83bb1", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-223c18a07cf8", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-25c275b6ee47", "op": "delete", "reason": "ungrammatical slot-filled prompt", "detail": ""}
+{"id": "qj2-2d4085b86ce4", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-329b777ee0e5", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-3f369b047bbc", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-403683fc4251", "op": "delete", "reason": "ungrammatical slot-filled prompt", "detail": ""}
+{"id": "qj2-443f3918e268", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-4653656a2383", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-48f55c9dd834", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-4b66c1feee28", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-4d4411634fb5", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-4d5a599df7e3", "op": "delete", "reason": "ungrammatical slot-filled prompt", "detail": ""}
+{"id": "qj2-505fa533d72a", "op": "delete", "reason": "ungrammatical slot-filled prompt", "detail": ""}
+{"id": "qj2-585d7156dd1b", "op": "delete", "reason": "template cluster: identical 'name again' dialogue repeated with different names (kept 4)", "detail": ""}
+{"id": "qj2-63676d88ff42", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-6ed8a64d19ac", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-6f10c664fe67", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-73de654fb7b4", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-751f285708d1", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-772ec0a7d4bd", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-77b61f821726", "op": "delete", "reason": "template cluster: identical 'name again' dialogue repeated with different names (kept 4)", "detail": ""}
+{"id": "qj2-845c6fd91c50", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 18)", "detail": ""}
+{"id": "qj2-84f8dbf3ea2a", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-8740497f90c9", "op": "delete", "reason": "template cluster: identical 'name again' dialogue repeated with different names (kept 4)", "detail": ""}
+{"id": "qj2-88f28c0995c0", "op": "delete", "reason": "ungrammatical slot-filled prompt", "detail": ""}
+{"id": "qj2-8aaf7f64cb59", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 18)", "detail": ""}
+{"id": "qj2-8e0af6a56074", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-920c8b5a9005", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-9ac2e8d548d6", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 19)", "detail": ""}
+{"id": "qj2-9c120a00e8d1", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 18)", "detail": ""}
+{"id": "qj2-a34f8ed4dbf5", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-a389c79bbb35", "op": "delete", "reason": "ungrammatical slot-filled prompt", "detail": ""}
+{"id": "qj2-a9ab0e84e66b", "op": "delete", "reason": "template cluster: identical 'name again' dialogue repeated with different names (kept 4)", "detail": ""}
+{"id": "qj2-aca2aac16673", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 19)", "detail": ""}
+{"id": "qj2-accdd21f692b", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-ad3a95eb0c90", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-b194041188fe", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-b229585c6c4c", "op": "delete", "reason": "template cluster: identical 'name again' dialogue repeated with different names (kept 4)", "detail": ""}
+{"id": "qj2-b29c5ad2498d", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 19)", "detail": ""}
+{"id": "qj2-b3206c900fbf", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-b62261f09e7a", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 19)", "detail": ""}
+{"id": "qj2-b6aa5de869b0", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-ba947c6d50e0", "op": "delete", "reason": "template cluster: identical 'name again' dialogue repeated with different names (kept 4)", "detail": ""}
+{"id": "qj2-bb421511cd78", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 18)", "detail": ""}
+{"id": "qj2-bfb9ec5c9146", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 16)", "detail": ""}
+{"id": "qj2-c1612c463d5f", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 16)", "detail": ""}
+{"id": "qj2-c3b2d8dd5b54", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-c67b3d0cb00d", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 18)", "detail": ""}
+{"id": "qj2-c7239322102a", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-c73c29bafcb4", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-c8f9169c54ac", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 18)", "detail": ""}
+{"id": "qj2-c9ac59ac0d5d", "op": "delete", "reason": "ungrammatical slot-filled prompt", "detail": ""}
+{"id": "qj2-cf7c9c286770", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-d05af9093daa", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-e418e502bd62", "op": "delete", "reason": "ungrammatical slot-filled prompt", "detail": ""}
+{"id": "qj2-e4a8918ce42b", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-e56081708405", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-e6981bf69da5", "op": "delete", "reason": "reasoning: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-ed21c0cec18f", "op": "delete", "reason": "template cluster: identical 'name again' dialogue repeated with different names (kept 4)", "detail": ""}
+{"id": "qj2-f1cc1f3f84c3", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-f345e4f67d59", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 19)", "detail": ""}
+{"id": "qj2-f390ecbe8ec2", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 23)", "detail": ""}
+{"id": "qj2-f70a88ede7c8", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 19)", "detail": ""}
+{"id": "qj2-f7f94b8001f1", "op": "delete", "reason": "template cluster: identical 'name again' dialogue repeated with different names (kept 4)", "detail": ""}
+{"id": "qj2-f86a441de236", "op": "delete", "reason": "slot-filled draft with semantically incoherent topic (interview/resignation/reference about a project)", "detail": ""}
+{"id": "qj2-faee3e72914a", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 16)", "detail": ""}
+{"id": "qj2-fbc68b107fc5", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 16)", "detail": ""}
+{"id": "qj2-fdf9785601c7", "op": "delete", "reason": "mathematics: prompt-shape cluster capped at 12 (cluster size 19)", "detail": ""}
+{"id": "qj2-0b36c9c5a6a2", "op": "edit", "reason": "NEXUS fact: 11 intents map to a service (backend/app/ml/router.py SERVICE_TARGETS), not 12", "detail": ""}
+{"id": "qj2-32dc18fbfd46", "op": "edit", "reason": "factual: Iceland March daylight hours", "detail": ""}
+{"id": "qj2-38b1a9b7ad31", "op": "edit", "reason": "NEXUS fact: 11 intents map to a service, not 12", "detail": ""}
+{"id": "qj2-3bf02c7bc996", "op": "edit", "reason": "factual: absolute tax claim softened", "detail": ""}
+{"id": "qj2-4ce461abddfd", "op": "edit", "reason": "context mismatch", "detail": ""}
+{"id": "qj2-4ce461abddfd", "op": "edit", "reason": "context mismatch: generic debt prompt answered with landlord wording", "detail": ""}
+{"id": "qj2-555e27377677", "op": "edit", "reason": "A9 clumsy sentence in writing-coach example fixed", "detail": ""}
+{"id": "qj2-8b9768a9980f", "op": "edit", "reason": "NEXUS fact: 11 intents map to a service, not 12", "detail": ""}
+{"id": "qj2-9e64729e45bc", "op": "edit", "reason": "answer/question mismatch (bleach text on a baking-soda question)", "detail": ""}
+{"id": "qj2-a08b42250d15", "op": "edit", "reason": "wording: stray 'No.' answering a how-question", "detail": ""}
+{"id": "qj2-a300424f9fdc", "op": "edit", "reason": "factual: unhedged honey/tomb claim", "detail": ""}
+{"id": "qj2-b29b3519c3b2", "op": "edit", "reason": "answer/question mismatch (baking-soda text on a bleach question)", "detail": ""}
+{"id": "qj2-c34ad73b0c73", "op": "edit", "reason": "medical/safety: absolute claim about turbulence", "detail": ""}
+{"id": "qj2-c4cfccdd0471", "op": "edit", "reason": "NEXUS fact: 11 intents map to a service, not 12", "detail": ""}
+{"id": "qj2-028fbaec6ed5", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-03516c5d0d5b", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-042e59375fb3", "op": "regex", "reason": "grammar in safety template", "detail": "I'd don't "}
+{"id": "qj2-0519c86b4583", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-05609dd913b6", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-06c7216da0c9", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-06e08a9efbb7", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-072b5088f619", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-07489bb33c03", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-08b2761e9d7e", "op": "regex", "reason": "grammar in safety template", "detail": "I'd don't "}
+{"id": "qj2-08d975276faf", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-09064f70c89d", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-09c0784bf256", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-09ea4b1d24ff", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-0ba59cdd97f9", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-0bc5f6ce440d", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-0d02055ee108", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-0d05a62d8a82", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-0d92005c0904", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-0e50137a8ea1", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-0e80aa429f9f", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-0e9288796863", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\b[Hh]elp me help me\\b"}
+{"id": "qj2-107e1d4b995c", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-11c9d1eae6b9", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-131407732bf7", "op": "regex", "reason": "garbled template", "detail": "otherwise (?:I'd see |talk to )urgent medical care"}
+{"id": "qj2-13258b3bada8", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-14f72772e422", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-151f826181f7", "op": "regex", "reason": "doubled negative after status prefix", "detail": "^(That is absent|It does not exist today|Not present in the "}
+{"id": "qj2-1882d38e9a25", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-1947360a3676", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-194bad222f7a", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-194e2f7e1967", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-19ce77058898", "op": "regex", "reason": "unverified NEXUS detail removed", "detail": " Running an evaluation is a write, so it is a POST and is id"}
+{"id": "qj2-1a08bd150719", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-1a3dd4f82538", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-1ac2b873ce55", "op": "regex", "reason": "template slip in prompt", "detail": "(?i)\\bwhat is how (bridges carry loads)\\?"}
+{"id": "qj2-1ae3aa8b7518", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-1b8ff1c77b9b", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-1ba2e70d9a3f", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-1c389dc83bb1", "op": "regex", "reason": "duplicated word", "detail": "\\bthe the\\b"}
+{"id": "qj2-1c42f3b2cf81", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-1d274f5809da", "op": "regex", "reason": "status prefix + yes", "detail": "^(Today|Implemented today|In the current codebase|As things "}
+{"id": "qj2-1dc5981728d7", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-1dd23126538d", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-1e6021a7f368", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-1e963bb636f0", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-1ee1cadbe2b4", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-1f098affd1cf", "op": "regex", "reason": "garbled template", "detail": "otherwise (?:I'd see |talk to )?emergency care for allergic "}
+{"id": "qj2-1f822c7b868e", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-1fb79142241e", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-1ffaae61353c", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you you booked\\b"}
+{"id": "qj2-20e301313a3d", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-20f3325dfcb8", "op": "regex", "reason": "grammar in template", "detail": "a doctor, especially if they recur is the right person"}
+{"id": "qj2-212503721a56", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-21af631d8b5a", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-22302d1c1f92", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-223c18a07cf8", "op": "regex", "reason": "duplicated word", "detail": "\\bthe the\\b"}
+{"id": "qj2-233226f83b64", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-23e9411613b2", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-24bab2ec2bd7", "op": "regex", "reason": "template slip in prompt", "detail": "\\bWhat is how (bridges carry loads)\\?"}
+{"id": "qj2-25060bdaa33b", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-260c43913aa6", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-27416c18abd9", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-2769e6d5d3dd", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-29475d17c903", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-299891d0d759", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-29ecc11e2d80", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-2a176522227a", "op": "regex", "reason": "unverified NEXUS detail removed", "detail": " Running an evaluation is a write, so it is a POST and is id"}
+{"id": "qj2-2abc8312891d", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-2ac71257e3a5", "op": "regex", "reason": "doubled yes/no after status prefix", "detail": "Based on the audit, no: no\\."}
+{"id": "qj2-2bc3110c92a7", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-2d08bd6f9ad3", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\b[Hh]elp me help me\\b"}
+{"id": "qj2-2d08bd6f9ad3", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-2d887970d9e9", "op": "regex", "reason": "garbled template", "detail": "Otherwise, urgent care if any of those appear is the right p"}
+{"id": "qj2-2db17f8a99ac", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-2e3c25879ff6", "op": "regex", "reason": "unverified NEXUS detail removed", "detail": " Running an evaluation is a write, so it is a POST and is id"}
+{"id": "qj2-2e510b48d2b9", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-2f784afdf176", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-3004baf1bc17", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-307613423305", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-30a6cc721021", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\bPlease please\\b"}
+{"id": "qj2-3152d086aaf5", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-32b54daa5ddc", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-33e74a887e4b", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-33fae6ec76f5", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-3557dcb510c7", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-35e7f47c46bc", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-36b73d972975", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-37ce25d46606", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-37ceadd12675", "op": "regex", "reason": "template slip in prompt", "detail": "\\bWhat is how (bridges carry loads)\\?"}
+{"id": "qj2-381252ea69af", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-38cfc5637782", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-39489930f920", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-39e214bbb8c8", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-39e4c8d3d158", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-3a11a068bcba", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-3b603f219a6f", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-3bf6c4e5aa3a", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-3c085c4faa69", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-3cc5e439bdfc", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-3cea660475c8", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-3d90badc0e58", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-3da08b62d8be", "op": "regex", "reason": "doubled negative after status prefix", "detail": "^(That is absent|It does not exist today|Not present in the "}
+{"id": "qj2-3e5175ad292d", "op": "regex", "reason": "doubled negative after status prefix", "detail": "^(That is absent|It does not exist today|Not present in the "}
+{"id": "qj2-3e6bf3f5a98f", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-3eccd356341c", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-3f180820a601", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-3f3018dc4e4a", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-3f8cd78efe99", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-4086a50fa81c", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-40a4c983c5f2", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-40ea88bde4fe", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-4184f76c0bdd", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-4199a2aef0cf", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-41f55c07cc7c", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-42597625197f", "op": "regex", "reason": "doubled negative after status prefix", "detail": "^(That is absent|It does not exist today|Not present in the "}
+{"id": "qj2-42bfcb940691", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-42c211617d1d", "op": "regex", "reason": "grammar in safety template", "detail": "I'd don't "}
+{"id": "qj2-42eeec972c2e", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-45679ff7ccdc", "op": "regex", "reason": "medical: absolute claim", "detail": "it will not go away on its own"}
+{"id": "qj2-46d76bc5b644", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-4b52a6ab8e57", "op": "regex", "reason": "medical: absolute claim", "detail": "it will not go away on its own"}
+{"id": "qj2-4bca8fe5a80f", "op": "regex", "reason": "grammar in safety template", "detail": "I'd don't "}
+{"id": "qj2-4d9fc2c8e40f", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-500355b07759", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-51d6be0a4a50", "op": "regex", "reason": "template slip in prompt", "detail": "(?i)\\bwhat is how (vaccines) are scheduled\\?"}
+{"id": "qj2-52521c03807f", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-54d9bb639637", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-5543cb5410f6", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-55f1aa67ee55", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-57a6870a0426", "op": "regex", "reason": "template slip in prompt", "detail": "(?i)\\bwhat is how (thermostats and home energy use) work\\?"}
+{"id": "qj2-583355ada7a0", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-5923ed97aa59", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-5985ec644a80", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-59eed6fc6534", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-5a12ba212638", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-5c1cb5dc10fb", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-5c6d8fa26304", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-5e0a4350c361", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-5e0d414faff2", "op": "regex", "reason": "garbled template", "detail": "otherwise (?:I'd see |talk to )?emergency care for allergic "}
+{"id": "qj2-5ed2eea8fd74", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-5eeda870d21c", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-5f437f68a339", "op": "regex", "reason": "garbled template", "detail": "for ordinary follow-up, emergency care for allergic signs, o"}
+{"id": "qj2-5f474446e138", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-60ab574c8e24", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-60b53ca53412", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\b[Hh]elp me help me\\b"}
+{"id": "qj2-614679bd1f28", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-62b9720b4c0f", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-63246db92ecd", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-64adc2abbdb9", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-652084aa06d2", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-65242bc4a389", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-6594acc3d791", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-662175b706d5", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-6633342f2d98", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-66af149b54a1", "op": "regex", "reason": "grammar in safety template", "detail": "I'd don't "}
+{"id": "qj2-66d7d15b3f44", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-676060d3dff0", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-686ea65af597", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-6a1819dde703", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-6a298cdf381d", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-6aa4f2df919f", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-6cb0f33783f3", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-6cc756058503", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-6d3c54c712a9", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-6d819dc2ba74", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-6db7843c51b7", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-6ed279b67887", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-6f10c664fe67", "op": "regex", "reason": "duplicated word", "detail": "\\bthe the\\b"}
+{"id": "qj2-6f5d348456f2", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-70eec2b1ced6", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-7105b4273fd8", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-7106463d5e2f", "op": "regex", "reason": "duplicated word", "detail": "\\bthe the\\b"}
+{"id": "qj2-7161e9ab6b64", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-71c92fd84c36", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-71f275f098c4", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-73249fc3efbe", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-7344fe6ed8e7", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-73522537aa02", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-746b561995a9", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-751f285708d1", "op": "regex", "reason": "duplicated word", "detail": "\\bthe the\\b"}
+{"id": "qj2-75b2b132c0c8", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-765e3cd68057", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-770759ea39db", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-772ec0a7d4bd", "op": "regex", "reason": "duplicated word", "detail": "\\bthe the\\b"}
+{"id": "qj2-7901f30aa15d", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-79effb7d726c", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-7a77177ba051", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-7b416dcbded0", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-7bb29ef9977a", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-7c17fccfef3a", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-7d5e35144e20", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-7ea60f3714d6", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-7ed026069840", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\b[Hh]elp me help me\\b"}
+{"id": "qj2-807b22097208", "op": "regex", "reason": "template slip in prompt", "detail": "(?i)\\bwhat is how to (read a nutrition label)\\?"}
+{"id": "qj2-80f5e5b6250f", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-84010b66b3d2", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-845a10e33a8d", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-853ef7c3ecc5", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-85cbf29f9a93", "op": "regex", "reason": "grammar in safety template", "detail": "I'd don't "}
+{"id": "qj2-86cd7bce96d8", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-87aaf97e226a", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-87ae1fd92d44", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-87f6fcb9547a", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-8821e6c54900", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-88f28c0995c0", "op": "regex", "reason": "garbled template", "detail": "Otherwise, I'd speak to emergency care if sudden, otherwise "}
+{"id": "qj2-893636b70350", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-8bad189a6352", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-8c5a77ac69c1", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-8c80bf26ec61", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-8c97bc915923", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-8dd327017863", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-8de4c0925cfa", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-8f248b141d44", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-8fe4d868f955", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-909ca166c54b", "op": "regex", "reason": "unverified NEXUS detail removed", "detail": " Running an evaluation is a write, so it is a POST and is id"}
+{"id": "qj2-90c2aa4a0e08", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-929b973ca141", "op": "regex", "reason": "lowercase pronoun in template", "detail": "\\bbecause i'm\\b"}
+{"id": "qj2-929e67f528ed", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-940f7bb275a5", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-95909196b2c0", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-95cc1b188b08", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-95fe5bc2b402", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-975051c373da", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-985d7d3cd17c", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-986e86f4b704", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-98762ee35220", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-9881368348ca", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-98eee3f6460d", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-992fe5ec6724", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-99ab107ac99e", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-9a35b4419832", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-9b8dc3ae6b9e", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-9c2c2dbf3c12", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-9d370142d417", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-9e0da12f01d7", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-9e9b23a11924", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-a0276b81b1d0", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-a1607eb40848", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-a17992e9a3e1", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-a377af674cfa", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-a41145140982", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-a4454f603784", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-a4dbe61dcfb5", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-a58646c45051", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-a6e45d1629d8", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-a70e1b5691fb", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-a75d17de532c", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-a7a4b8545b70", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-a89d039a479f", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-a9596c8cabea", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-a960aa30d3a5", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-aac2e22cce55", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-ac3bc7d28f8c", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-ac59d08fecf7", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-acd5dbe4d481", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-aea68eb46372", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-aebcf5474b1f", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-af1a350d70ab", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-af65ccc99ca6", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-affce76bc9df", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\bPlease please\\b"}
+{"id": "qj2-b0695a3e203a", "op": "regex", "reason": "garbled template", "detail": "Otherwise, urgent care if any of those appear is the right p"}
+{"id": "qj2-b40dd2f9053f", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-b46b7c708011", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-b4894c205ad2", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\b[Hh]elp me help me\\b"}
+{"id": "qj2-b4a68784df5b", "op": "regex", "reason": "grammar in slot template", "detail": "\\bon early next week\\b"}
+{"id": "qj2-b512a3516f99", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-b583478ba0d5", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-b62d0f8d1cce", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-b66ce0c264f8", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-b6aa5de869b0", "op": "regex", "reason": "duplicated word", "detail": "\\bthe the\\b"}
+{"id": "qj2-b6bac2849872", "op": "regex", "reason": "medical: absolute claim", "detail": "it will not go away on its own"}
+{"id": "qj2-b6c21d2e9248", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-b735d820deec", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-b784276080f1", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-b8b04a0d1775", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-b8d752ed3f9d", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-b9309039b7c2", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-ba7f50c61c93", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-bbaa1dbd7bc0", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-bc3d32f7307b", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-bc7ee6207fc6", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-bcf39d784298", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-bd6c66e9c942", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-bf63ef6c2251", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-c0200f1a7e6e", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-c06cdc1c99fb", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-c0d7781e19da", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-c100a3176177", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-c12a254e1a91", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-c135dd3010e9", "op": "regex", "reason": "redundant clause", "detail": "(No, I don't have access to [^.,\\n]*?), so I can't access it"}
+{"id": "qj2-c1458bc2957c", "op": "regex", "reason": "duplicated word", "detail": "\\bthe the\\b"}
+{"id": "qj2-c34e03eadc04", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-c3e3dd560bef", "op": "regex", "reason": "grammar in safety template", "detail": "I'd don't "}
+{"id": "qj2-c438106beaf4", "op": "regex", "reason": "odd generated query", "detail": "query=\"price the S&P 500\""}
+{"id": "qj2-c4abecd7ee3d", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-c53402ab48c2", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-c61d7090b359", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-c88c6087fa5f", "op": "regex", "reason": "unperformed-action claim ('a search ... finds')", "detail": "A search of n = 1 to 2000 finds no counterexample, but the r"}
+{"id": "qj2-c9ac59ac0d5d", "op": "regex", "reason": "garbled template", "detail": "Otherwise, emergency care if sudden, otherwise their doctor "}
+{"id": "qj2-ca33e45b299e", "op": "regex", "reason": "garbled template", "detail": "otherwise (?:I'd see |talk to )urgent medical care"}
+{"id": "qj2-ca3e58797f33", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\b[Hh]elp me help me\\b"}
+{"id": "qj2-cb720f1d36bb", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-cc13d771fe80", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-cca7f1d8f140", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-cd2e956c6c28", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-ce39e7603293", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-cf0025097b49", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-cfa115b34dc5", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-d0a0354aee18", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-d1b47d2b1cee", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-d21dd79c7d2a", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-d25b35db23fc", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-d36a2456ef73", "op": "regex", "reason": "status prefix + yes", "detail": "^(Today|Implemented today|In the current codebase|As things "}
+{"id": "qj2-d48d632338df", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-d49777f6192f", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-d501a5fd6515", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-d6be9d75ddc0", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-da0d17717c3b", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-da943af3c884", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-dab56fd7391c", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-dacbaf2f5186", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-db888cd1f85c", "op": "regex", "reason": "garbled template", "detail": "for ordinary follow-up, see urgent care if any of those appe"}
+{"id": "qj2-de936210cb2b", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e06010c25c68", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e16da4b2bda3", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e1b7815845f4", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e255eb23b7cd", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e28e71ee868b", "op": "regex", "reason": "grammar in safety template", "detail": "I'd don't "}
+{"id": "qj2-e418e502bd62", "op": "regex", "reason": "garbled template", "detail": "for ordinary follow-up, see emergency care if sudden, otherw"}
+{"id": "qj2-e46d07a33f43", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e5086a3eabd2", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-e57ee506f07a", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-e6ed8ad14ebe", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e737220373bb", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-e7cd997504d6", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-e811585a9065", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-e84b2c1428ed", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e93b3d63a6e4", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-e9465ed53fe1", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-ebad3792dc0f", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-ebdb3864d77c", "op": "regex", "reason": "lowercase pronoun in template", "detail": "(?<=[.:;,] )i (?=[a-z])"}
+{"id": "qj2-ecf3e5abdeff", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-ede73fe83eeb", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-ee05c0dc15aa", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-ee2f542cf3cd", "op": "regex", "reason": "duplicated words in prompt", "detail": "\\b[Hh]elp me help me\\b"}
+{"id": "qj2-eeb67870fc6c", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-eec846b3706d", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-efbe1aad340d", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-efef18e3d23f", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-f0cf1dff3185", "op": "regex", "reason": "numbered list started at 2 (step 1 folded into the intro)", "detail": "(After that the rough sequence is:\\n)((?:\\d+\\. [^\\n]*(?:\\n|$"}
+{"id": "qj2-f0d49efd8909", "op": "regex", "reason": "ungrammatical prompt", "detail": "\\bCould you (what|how|where|who)"}
+{"id": "qj2-f224a6afe06f", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-f313835fc9b4", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-f3382ff0c410", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-f35e0370fb7c", "op": "regex", "reason": "garbled template", "detail": "for ordinary follow-up, see urgent care if any of those appe"}
+{"id": "qj2-f4dbffde3660", "op": "regex", "reason": "garbled template", "detail": "for ordinary follow-up, urgent medical care is the right per"}
+{"id": "qj2-f500b78fb2dd", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-f7c0f7e5892c", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-f7f8eddc9a1b", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-f92ad3278b88", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-fbc6470f776e", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-fe612ffdc611", "op": "regex", "reason": "grammar in slot template", "detail": "\\bon early next week\\b"}
+{"id": "qj2-feb3dacbc3e7", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-febe8f48bc5f", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-fecea4400850", "op": "regex", "reason": "template slip in prompt", "detail": "\\bWhat is how (thermostats and home energy use) work\\?"}
+{"id": "qj2-ff9b53096384", "op": "regex", "reason": "ungrammatical task phrase in jarvis template", "detail": "spare few minutes, ([^.\\n]*?) is quick"}
+{"id": "qj2-fff5f6d87ed9", "op": "regex", "reason": "pronoun slip in slot template ('help you ... my ...')", "detail": "(To help you [^,\\n.]*?)\\bmy\\b"}
+{"id": "qj2-741e6cdb0873", "op": "replace", "reason": "js timing dependence removed: timing-dependent comparison (timeit) replaced by deterministic comparison counting", "detail": ""}
+{"id": "qj2-8d46069de3f2", "op": "replace", "reason": "js timing dependence removed: wall-clock (Date.now/setTimeout) example made deterministic with an injected clock", "detail": ""}
+{"id": "qj2-b156e4c1035c", "op": "replace", "reason": "js timing dependence removed: elapsed-time thresholds (Date.now) replaced by a concurrency counter", "detail": ""}
+{"id": "qj2-e74fe2c541a7", "op": "replace", "reason": "js timing dependence removed: busy-wait on Date.now replaced by a fixed-iteration loop", "detail": ""}
+{"id": "qj2-6ac50d8a941e", "op": "split", "reason": "moved validation -> train to remove near-duplicate/identical-answer leakage after edits", "detail": ""}

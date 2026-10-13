@@ -1,0 +1,584 @@
+{
+ "v2_records": 11288,
+ "v2_records_corrected": 81,
+ "by_correction": {
+  "json_only_unfenced": 21,
+  "draft_no_inability_claim": 51,
+  "json_only_fenced_not_single_value_kept": 9
+ },
+ "changes": [
+  {
+   "id": "qj2f-011a2a326774",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-048e83591aee",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-056ff7e91eae",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-0f0e8c433915",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-10ad7b157c58",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-14ad36bf4dab",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-150d33b76dd2",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-1786d6bbcb28",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-18720498412c",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-18e80a1726de",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-1ae73229dfe7",
+   "split": "train",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-1c776cf41c04",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-2077d96a1583",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-25e1ebe307a6",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-2abe376dc645",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-2c8b9c0eac02",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-2ce49d7b0e92",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-2cecd554d322",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-2e5f3fcb4d4b",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-2fdb030422f8",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-2fe2231fdc8e",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-31e13be3e421",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-3329f0ad78ad",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-3dea29445d8e",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-3ff55d40274b",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-482f4b9c957e",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-4c1bd0291885",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-4c47418e5f4d",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-4f97ef6d4d4c",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-53480266b84d",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-54a8c131deea",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-557cef30c2da",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-58f831d58b60",
+   "split": "train",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-5a73b0a9123b",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-5b16b0e40c38",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-5b4a87bb102d",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-6188fb4a1af0",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-63941c46a654",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-662b87e17e28",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-6e1b653cd496",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-707b40705a36",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-71e3ee747389",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-774e07987906",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-77b595dba893",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-7c07f705e15f",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-7f953d2f6996",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-83dec84caa17",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-87192e6b909b",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-88c6743955fe",
+   "split": "train",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-89079c4fbcce",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-932c4a7eb149",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-9629f5db0737",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-969ceaf2539b",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-9a451f9ad46f",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-a2fa60fd2cc0",
+   "split": "train",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-a3eceac0608b",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-a80c4da81d42",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-a9be9c8e95a1",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-abe9d8959333",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-ad32a778edd9",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-b0bab2a55fab",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-b93ec199ba79",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-bb5c6a680245",
+   "split": "train",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-bf72ca5eb587",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-c6f4d4956d7c",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-d13955bc27e4",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-d6810d2d2205",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-d6e705a9ce96",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-e14c3f5f72d9",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-e409aa7f6c3f",
+   "split": "train",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-e5245323a2ab",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-e728186deb26",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-e8a5ecc1a8fe",
+   "split": "train",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-ec8c2e234e03",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-f3ba8fbdf3e8",
+   "split": "train",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-f4701916be56",
+   "split": "train",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  },
+  {
+   "id": "qj2f-a41a94e2b800",
+   "split": "validation",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-c796d76cb59b",
+   "split": "validation",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-cf12cd93e8e1",
+   "split": "validation",
+   "corrections": [
+    "json_only_fenced_not_single_value_kept"
+   ]
+  },
+  {
+   "id": "qj2f-d973d143680f",
+   "split": "validation",
+   "corrections": [
+    "draft_no_inability_claim"
+   ]
+  },
+  {
+   "id": "qj2f-69ef343aac2c",
+   "split": "test",
+   "corrections": [
+    "json_only_unfenced"
+   ]
+  }
+ ],
+ "new_records_added": 2194,
+ "new_by_split": {
+  "train": 2032,
+  "validation": 85,
+  "test": 77
+ }
+}

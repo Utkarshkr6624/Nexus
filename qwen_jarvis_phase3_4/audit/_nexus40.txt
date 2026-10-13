@@ -1,0 +1,197 @@
+
+=== qj2f-987689893f80
+[user] Which of these exist in NEXUS today and which don't: a separate inference process for Qwen; propose and confirm actions; a generative chat model; browser-based voice input?
+[assistant] - a separate inference process for Qwen: planned, not built
+- propose and confirm actions: exists today
+- a generative chat model: does not exist today
+- browser-based voice input: exists today
+
+One caution: the README's wording is broader than the code for some AI features, so I am going by the code audit.
+
+=== qj2f-7d5d3d15eee4
+[user] Draft one sentence for our docs that answers: Does NEXUS have a tool system for files, terminal or browser? (state this as not existing today)
+[assistant] Suggested wording, written as an absence: "No generic tool system exists yet: no tool registry, and no file, terminal or browser tools. Its capabilities are its own REST services plus the propose/confirm action flow."
+
+=== qj2f-284e5b4751d8
+[user] Is there a streaming endpoint for chat?
+[assistant] Today's endpoints return a single JSON response. The integration plan describes a chat endpoint with server-sent events, request limits like ML_MAX_INPUT_CHARS and no logging of message text, but none of that exists yet.
+[user] Okay. And does NEXUS store my chats on the server?
+[assistant] No. The assistant keeps at most 20 turns in the browser, never persists them, and there is no server-side conversation table.
+
+=== qj2f-0943dbc686b8
+[user] What is the NEXUS machine learning model?
+[assistant] The only model in NEXUS today is microsoft/deberta-v3-base, fine-tuned in Phase 10 as a 14-class intent classifier. It reads one sentence and predicts which NEXUS capability the request belongs to, with a confidence. It cannot write answers, hold a conversation or explain anything, because it is a classifier and not a language model.
+[user] Interesting. is the classifier reliable on real user phrasing?
+[assistant] It scored about 0.974 accuracy on a held-out synthetic test set, but only 42 of 56 (75%) on hand-written natural-language requests, so real-world accuracy is noticeably lower.
+
+=== qj2f-b6c851644975
+[user] Sort these into built, planned, or not present: a file-editing tool; a DeBERTa intent classifier; a PostgreSQL database layer; conversation history stored on the server.
+[assistant] - a file-editing tool: does not exist today
+- a DeBERTa intent classifier: exists today
+- a PostgreSQL database layer: exists today
+- conversation history stored on the server: planned, not built
+
+One caution: the README's wording is broader than the code for some AI features, so I am going by the code audit.
+
+=== qj2f-770c75d26d3a
+[user] Where does the training code for DeBERTa live?
+[assistant] In backend/ml: dataset schema and taxonomy, training configuration, checkpoint and manifest handling, evaluation, train.py and a small-model config. Datasets and artifacts are gitignored.
+
+=== qj2f-74ba3b5d3559
+[user] What is the plan for Qwen in NEXUS?
+[assistant] The plan is to fine-tune Qwen3-8B as NEXUS's single generative model: the brain that converses, reasons and decides when to use tools, while NEXUS provides the environment and tools.
+
+=== qj2f-61bf770896a0
+[user] Is the confidence number a percentage chance of being right?
+[assistant] No. The 0.90 value is an integration threshold chosen from a synthetic held-out set. It isn't a calibrated probability, and some wrong predictions have scored above it.
+
+=== qj2f-52f4c90398e2
+[user] Will the Qwen dataset include the Phase 10 DeBERTa data?
+[assistant] No. The Phase 2 dataset is a new, separate, isolated one for assistant behaviour, and it doesn't reuse the DeBERTa intent datasets.
+
+=== qj2f-38f8ff4b666c
+[user] What is the NEXUS machine learning model?
+[assistant] The only model in NEXUS today is microsoft/deberta-v3-base, fine-tuned in Phase 10 as a 14-class intent classifier. It reads one sentence and predicts which NEXUS capability the request belongs to, with a confidence. It cannot write answers, hold a conversation or explain anything, because it is a classifier and not a language model.
+[user] Understood. Now, is there an LLM inside NEXUS today
+[assistant] No. Today NEXUS has no generative language model and no chat backend; its AI is the DeBERTa intent classifier plus hand-written action parsers.
+
+=== qj2f-9b10c92c1bbf
+[user] Where will Qwen be trained?
+[assistant] Training is planned on a free Kaggle GPU with QLoRA, because the local RTX 3050 laptop GPU (about 4 GB) cannot train an 8B model.
+
+=== qj2f-94c44e4e187b
+[user] I want to add a new REST module. Does it show up in the assistant automatically?
+[assistant] No. The assistant routes to areas known by the 14-intent taxonomy, and actions only exist for a closed set of kinds. A new module would need new intents, retraining and action definitions to be reachable by sentence. In the planned design, a new tool wrapper would be needed.
+
+=== qj2f-071a85561560
+[user] Will training Qwen change the DeBERTa training data?
+[assistant] No. The Qwen work is isolated, and the plan says not to touch backend/ml or its artifacts. The DeBERTa datasets, which are gitignored, remain separate.
+
+=== qj2f-f6cb4da44afa
+[user] What should I know about where NEXUS configuration lives? Bullet points, please.
+[assistant] - You copy .env.example to .env at the repository root.
+- The backend's Settings class also checks ../.env and ../../.env, backend/run.py resolves the root file from its own location, and frontend/vite.config.ts points envDir at the repo root, so both processes find the same file regardless of the working directory.
+- Real secrets must not be committed.
+
+=== qj2f-8c48a2a92d90
+[user] List the 14 intent classes.
+[assistant] The taxonomy, called nexo_intents.v1, has 14 classes: task_manage, project_manage, schedule_plan, knowledge_capture, knowledge_lookup, analytics_insight, risk_query, developer_intel, learning_track, career_track, account_admin, code_assist, deep_reasoning and out_of_scope. Eleven of them point at an existing NEXUS service, out_of_scope gets a list of the surfaces NEXUS does have, and code_assist and deep_reasoning have no destination today.
+
+=== qj2f-2eb6ed8f62cc
+[user] Why does NEXUS answer 'generation_unavailable' instead of just failing?
+[assistant] Because it is a known gap, not an error. Two of the 14 intents, code_assist and deep_reasoning, were designed for a language model that doesn't exist yet. Reporting the gap honestly is better than a generic failure or a made-up reply.
+
+=== qj2f-2e51ed14a876
+[user] Is training loss enough to say the model is ready?
+[assistant] No. The plan says loss alone is not accepted. Behaviour on held-out, differently written test sets matters, especially because template-generated data once produced 97% in-distribution and 75% on real phrasing in the DeBERTa project.
+
+=== qj2f-aab2d7ade4a8
+[user] Why is there a generate_dataset.py in NEXUS?
+[assistant] The Phase 1 audit found about twenty untracked scripts such as generate_dataset.py and scripts/write_*.py. They targeted E:/Nexo/qwen3-agent/phase2/dataset/v2_final/, which isn't present. The Qwen work uses a separate, isolated workspace instead.
+
+=== qj2f-e5b36f1c662c
+[user] Explain NEXUS to me like I'm new, then tell me what's missing.
+[assistant] NEXUS is a personal intelligence and decision platform: projects, tasks, a planner, notes, analytics, risks, developer activity from git, learning and career tracking, and a Command Center. You can also type or speak a request, and a small classifier routes it to the right area.
+[user] what's missing?
+[assistant] For the AI side: any generative model or chat, a tool layer (file, terminal and web tools included), and a server-side conversation store. The README's claims about Ollama and web intelligence aren't backed by code either. The Qwen3-8B assistant is the planned answer, but it hasn't been built.
+
+=== qj2f-c92e373de5ac
+[user] Explain the 'out_of_scope' intent.
+[assistant] It's the classifier's label for requests that don't belong to any NEXUS area, for example small talk or general trivia. Since NEXUS has no model to answer such things, they currently get no useful answer.
+
+=== qj2f-8eb29ee39f4b
+[user] Which speech recognition does NEXUS use?
+[assistant] Speech-to-text is the browser's own SpeechRecognition (webkit-prefixed in Safari). NEXUS does not ship or run a speech model, and does not use Whisper. In Chrome and Edge the audio is sent to the browser vendor's servers for transcription, and Firefox has no speech recognition at all, so typing is always available as a fallback.
+[user] Understood. Now, does my voice stay on my device in NEXUS?
+[assistant] Not necessarily. With Chrome or Edge your audio is transcribed on Google's or Microsoft's servers, and NEXUS's own backend only receives the resulting text.
+
+=== qj2f-24292506c39c
+[user] I just joined the team. Can you give me the 30-second version of NEXUS?
+[assistant] NEXUS is a full-stack personal intelligence and decision platform. It pulls projects, tasks, planning, notes, analytics, learning, career records and git activity into one app, then uses that data to surface risks, recommendations and what to work on next. The frontend is React with TypeScript, the backend is FastAPI on PostgreSQL, and the only AI model in it today is a small intent classifier.
+
+=== qj2f-09240664bbae
+[user] I asked it to help me debug a Python error and got generation_unavailable.
+[assistant] That's the expected response today. The classifier recognised a code_assist request, but NEXUS has no language model to hand it to. It's a stated capability gap and not a bug, and a fine-tuned Qwen model is planned to fill it.
+
+=== qj2f-25b019046c70
+[user] Tell me about ML error handling in the UI in NEXUS.
+[assistant] Implemented today: a 503 ml_unavailable names the missing classifier and says everything else still works; 401 and 403 show distinct messages about authentication and permission.
+
+=== qj2f-98806d0a7e3a
+[user] Does the classifier need a GPU?
+[assistant] No. The backend uses a pinned CPU build of PyTorch, and the ML device setting defaults to auto, using CUDA only if a working build exists. The classifier is small enough that NEXUS doesn't require a GPU.
+
+=== qj2f-2ab89573bc9b
+[user] Quick status check on Whisper speech recognition; a DeBERTa intent classifier; Ollama integration; conversation history stored on the server. What's real right now?
+[assistant] - Whisper speech recognition: does not exist today
+- a DeBERTa intent classifier: exists today
+- Ollama integration: does not exist today
+- conversation history stored on the server: planned, not built
+
+One caution: the README's wording is broader than the code for some AI features, so I am going by the code audit.
+
+=== qj2f-3793880d2be8
+[user] Do I need to install Qwen to run NEXUS?
+[assistant] No. Nothing in NEXUS depends on Qwen, and the requirements file deliberately excludes Ollama, Qwen packages and cloud LLM SDKs. Qwen is a planned addition, developed in isolation.
+
+=== qj2f-68e0388cc362
+[user] What should I know about the local dry run?
+[assistant] This is planned, not built yet: dataset building, validation, tokenizer and template checks, and a tiny dry run on a small model such as Qwen3-0.6B, before any big GPU run.
+
+=== qj2f-250f54e6c236
+[user] I'm using Firefox and the mic button doesn't work. Is that a bug?
+[assistant] Probably not a bug: Firefox has no SpeechRecognition support, so voice input isn't available there. You can still type your request on the /assistant page.
+
+=== qj2f-3358bc160233
+[user] Steps to explain the classifier's limits to a stakeholder?
+[assistant] 1. Say what it is: a 14-label sentence classifier, not a chat model.
+2. Give both numbers: about 0.974 on synthetic data, 75% on hand-written requests.
+3. Explain the 0.90 threshold as a routing guard.
+4. Mention that confirm steps protect data-changing actions.
+5. Point to the plan for a generative model as future work.
+
+=== qj2f-da2f0137f4ff
+[user] Sort these into built, planned, or not present: a Command Center page; a file-editing tool; global search; a DeBERTa intent classifier.
+[assistant] - a Command Center page: exists today
+- a file-editing tool: does not exist today
+- global search: exists today
+- a DeBERTa intent classifier: exists today
+
+One caution: the README's wording is broader than the code for some AI features, so I am going by the code audit.
+
+=== qj2f-49f5e60da669
+[user] Quick check before I rely on this: how does NEXUS's AI send emails for me?
+[assistant] Worth checking, because the premise is off. It doesn't. NEXUS has no email capability and no tool for sending messages. Its confirmed actions are limited to creating and changing its own records, such as tasks and projects.
+
+=== qj2f-9ff5d415ecff
+[user] Can NEXUS track my learning goals and skills today?
+[assistant] Yes, the learning module covers goals, skills, activities, progress and skill gaps.
+
+=== qj2f-ce7c826065cc
+[user] What should I know about the planned fine-tuning method?
+[assistant] This is planned, not built yet: with QLoRA: the base model is loaded in 4-bit and small low-rank adapters are trained, which fits a free 16 GB Kaggle GPU.
+
+=== qj2f-a9c4fd1fd6ea
+[user] I need doc wording for this question: Can NEXUS currently chat with me? (state this as not existing today)
+[assistant] Suggested wording, written as an absence: "No. Today NEXUS has no generative language model and no chat backend; its AI is the DeBERTa intent classifier plus hand-written action parsers."
+
+=== qj2f-c7dc9be11c1c
+[user] Will the classifier stay when Qwen arrives?
+[assistant] That's undecided. It's kept for now, and the decision follows the Qwen evaluation.
+
+=== qj2f-ba11fd2d1fe0
+[user] I want to know if NEXUS can explain why a risk was flagged. Does that work at the moment?
+[assistant] Yes. Each detected risk keeps the evidence it was scored from, so the Risk Center can show what triggered it.
+
+=== qj2f-49b247a25ac4
+[user] Tell me about stored conversations in NEXUS.
+[assistant] Based on the audit, no. The assistant keeps at most 20 turns in the browser, never persists them, and there is no server-side conversation table.
+
+=== qj2f-ba178f216d1c
+[user] Will file and terminal tools exist?
+[assistant] They are part of the future plan, each as a separate gate that is off by default. Paths would be allowlisted, modelled on the developer module's allowlist, and terminal commands would need an allowlist and confirmation. Today none of these tools exist.
+
+=== qj2f-867c1f93aa3a
+[user] What should I know about the local dry run? Bullet points, please.
+[assistant] - The local machine has about 4 GB of GPU memory, so it handles preparation only.
+- The goal is to catch format and configuration errors for free before spending any Kaggle quota.

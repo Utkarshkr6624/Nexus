@@ -1,0 +1,10 @@
+{
+ "counts": {
+  "train": 12330,
+  "validation": 582,
+  "test": 570
+ },
+ "v2_membership_unchanged": true,
+ "new_groups_across_splits": [],
+ "preexisting_v2_groups_across_splits": 37
+}

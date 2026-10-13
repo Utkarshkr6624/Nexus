@@ -1,0 +1,204 @@
+{
+ "status": "READY_FOR_TRAINING_REVIEW",
+ "by_split": {
+  "train": 1901,
+  "validation": 100,
+  "test": 23
+ },
+ "by_role": {
+  "replay": 1352,
+  "targeted": 354,
+  "targeted_extra": 318
+ },
+ "replay_quotas": {
+  "targeted_safety_internal/train": {
+   "requested": 260,
+   "pool": 383,
+   "taken": 260
+  },
+  "targeted_safety_internal/validation": {
+   "requested": 12,
+   "pool": 26,
+   "taken": 12
+  },
+  "json_and_exact_format/train": {
+   "requested": 200,
+   "pool": 936,
+   "taken": 200
+  },
+  "json_and_exact_format/validation": {
+   "requested": 10,
+   "pool": 41,
+   "taken": 10
+  },
+  "capability_honesty/train": {
+   "requested": 170,
+   "pool": 802,
+   "taken": 170
+  },
+  "capability_honesty/validation": {
+   "requested": 10,
+   "pool": 39,
+   "taken": 10
+  },
+  "tools/train": {
+   "requested": 170,
+   "pool": 1120,
+   "taken": 170
+  },
+  "tools/validation": {
+   "requested": 10,
+   "pool": 44,
+   "taken": 10
+  },
+  "vetted_safety/train": {
+   "requested": 60,
+   "pool": 207,
+   "taken": 60
+  },
+  "vetted_safety/validation": {
+   "requested": 4,
+   "pool": 15,
+   "taken": 4
+  },
+  "nexus_knowledge/train": {
+   "requested": 110,
+   "pool": 662,
+   "taken": 110
+  },
+  "nexus_knowledge/validation": {
+   "requested": 6,
+   "pool": 37,
+   "taken": 6
+  },
+  "instruction_following_v2/train": {
+   "requested": 90,
+   "pool": 643,
+   "taken": 90
+  },
+  "instruction_following_v2/validation": {
+   "requested": 6,
+   "pool": 41,
+   "taken": 6
+  },
+  "multi_turn/train": {
+   "requested": 80,
+   "pool": 575,
+   "taken": 80
+  },
+  "multi_turn/validation": {
+   "requested": 5,
+   "pool": 24,
+   "taken": 5
+  },
+  "math_reasoning_code/train": {
+   "requested": 80,
+   "pool": 3628,
+   "taken": 80
+  },
+  "math_reasoning_code/validation": {
+   "requested": 5,
+   "pool": 185,
+   "taken": 5
+  },
+  "general/train": {
+   "requested": 60,
+   "pool": 2987,
+   "taken": 60
+  },
+  "general/validation": {
+   "requested": 4,
+   "pool": 133,
+   "taken": 4
+  }
+ },
+ "new_by_subcategory": {
+  "schedule_with_breaks": 68,
+  "time_duration": 50,
+  "date_offset": 40,
+  "change_due": 49,
+  "mean": 50,
+  "unit_convert": 30,
+  "remainder": 40,
+  "percent": 27,
+  "access_legitimacy": 1,
+  "persuasion_context": 1,
+  "household_chemicals": 1,
+  "privacy_clarification": 1,
+  "cybersecurity_authority": 1,
+  "digital_access": 1,
+  "medicine_context": 1,
+  "stage_effects": 1,
+  "interpersonal": 1,
+  "fiction_context": 1,
+  "data_deletion": 1,
+  "consumer_dispute": 1,
+  "account_restriction": 1,
+  "chemical_safety": 1,
+  "fiction_or_real": 1,
+  "monitoring_authority": 1,
+  "neighbour_conflict": 1,
+  "photo_privacy": 1,
+  "file_privacy": 1,
+  "assessment_context": 1,
+  "security_system": 1,
+  "document_integrity": 1,
+  "review_truthfulness": 1,
+  "copyright_context": 1,
+  "personal_boundaries": 1,
+  "prank_safety": 1,
+  "privacy_research": 1,
+  "automation_scope": 1,
+  "suspicious_object": 1,
+  "exposure_context": 1,
+  "password_help": 1,
+  "apology_context": 1,
+  "server_access": 1,
+  "leak_type": 1,
+  "secret_message": 1,
+  "private_content": 1,
+  "room_safety": 1,
+  "scam_assessment": 1,
+  "social_context": 1,
+  "lock_testing": 1,
+  "household_safety": 10,
+  "medicine_disposal": 10,
+  "digital_security": 10,
+  "scam_awareness": 10,
+  "health_literacy": 10,
+  "chess": 10,
+  "photography": 10,
+  "programming": 10,
+  "food_safety": 10,
+  "fire_weather": 10,
+  "history_media_literacy": 10,
+  "privacy_workplace": 10,
+  "environment_recycling": 10,
+  "chess_and_games": 10,
+  "everyday_science": 10,
+  "crisis_support_generic": 36,
+  "crisis_us": 1,
+  "crisis_uk": 1,
+  "crisis_ireland": 1,
+  "crisis_canada": 1,
+  "crisis_country_unknown": 1,
+  "crisis_multiturn_immediate": 1,
+  "crisis_multiturn_uncertain": 1,
+  "crisis_multiturn_supporting_friend": 1,
+  "crisis_multiturn_self_harm": 1,
+  "crisis_multiturn_ideation": 1,
+  "crisis_multiturn_family": 1,
+  "crisis_multiturn_panic": 1,
+  "dark_fiction_general": 61,
+  "dark_fiction_villain": 19
+ },
+ "extra_files": [
+  "safety_ambiguous.jsonl",
+  "safety_benign.jsonl",
+  "safety_crisis.jsonl",
+  "safety_fiction.jsonl"
+ ],
+ "train_mix": {
+  "targeted_share": 0.327
+ }
+}

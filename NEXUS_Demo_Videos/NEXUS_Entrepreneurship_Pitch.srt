@@ -1,0 +1,68 @@
+1
+00:00:00,438 --> 00:00:03,388
+Every student founder knows this feeling.
+
+2
+00:00:03,462 --> 00:00:08,275
+Deadlines in one app, notes in
+another, and ideas everywhere.
+
+3
+00:00:08,325 --> 00:00:10,700
+Important work slips through the cracks.
+
+4
+00:00:11,600 --> 00:00:13,638
+NEXUS brings it all together.
+
+5
+00:00:13,700 --> 00:00:16,548
+The Command Center ranks what
+needs your attention next,
+
+6
+00:00:16,588 --> 00:00:19,612
+and every score shows exactly why.
+
+7
+00:00:20,333 --> 00:00:24,833
+NEXUS checks your deadlines and
+workload, and flags risks early.
+
+8
+00:00:25,700 --> 00:00:29,800
+Then the planner finds real free
+time in your week to get it done.
+
+9
+00:00:31,088 --> 00:00:33,250
+Need something done? Just ask.
+
+10
+00:00:33,300 --> 00:00:37,775
+NEXUS uses its own trained AI
+model to understand your request,
+
+11
+00:00:37,850 --> 00:00:41,600
+shows you what it understood,
+and acts only when you confirm.
+
+12
+00:00:42,333 --> 00:00:45,983
+And every note and meeting
+is one keystroke away.
+
+13
+00:00:47,200 --> 00:00:50,875
+Because it runs on your own
+machine, your data stays yours.
+
+14
+00:00:50,925 --> 00:00:53,635
+NEXUS. Less juggling, more doing.
+
+15
+00:00:53,675 --> 00:00:55,137
+Come and explore it.
+

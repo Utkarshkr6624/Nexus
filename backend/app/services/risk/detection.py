@@ -1099,7 +1099,7 @@ class RiskDetectionService:
             pairs = [
                 (int(estimated), int(actual))
                 for _task_id, estimated, actual, _due, _completed in rows
-                if estimated
+                if estimated and actual is not None
             ]
         return _Finding(
             result=estimation_risk(pairs=pairs),

@@ -1,0 +1,247 @@
+1
+00:00:00,450 --> 00:00:02,485
+This is a full walkthrough of NEXUS,
+
+2
+00:00:02,525 --> 00:00:05,222
+a local-first workspace
+that brings projects,
+
+3
+00:00:05,262 --> 00:00:08,425
+planning, knowledge and AI together.
+
+4
+00:00:08,487 --> 00:00:12,675
+We will follow Alex, a student
+building a campus marketplace.
+
+5
+00:00:13,600 --> 00:00:16,438
+Alex starts each day
+in the Command Center.
+
+6
+00:00:16,488 --> 00:00:20,838
+It gathers risks, suggestions
+and deadlines from every module,
+
+7
+00:00:20,888 --> 00:00:22,525
+and ranks them on one list.
+
+8
+00:00:24,554 --> 00:00:26,892
+Every item is scored out of one hundred.
+
+9
+00:00:26,942 --> 00:00:30,829
+Open Why, and NEXUS lays
+out the exact arithmetic:
+
+10
+00:00:30,879 --> 00:00:33,827
+severity, priority and freshness.
+
+11
+00:00:33,867 --> 00:00:35,442
+Nothing is a black box.
+
+12
+00:00:36,554 --> 00:00:38,989
+On the right is an intent classifier,
+
+13
+00:00:39,029 --> 00:00:42,467
+trained for NEXUS and running
+locally on this laptop.
+
+14
+00:00:42,529 --> 00:00:46,277
+Type a sentence, and it names
+the part of NEXUS you meant,
+
+15
+00:00:46,317 --> 00:00:47,654
+with its confidence.
+
+16
+00:00:49,354 --> 00:00:51,477
+Projects hold the bigger goals.
+
+17
+00:00:51,517 --> 00:00:54,314
+Each one has a priority, a target date,
+
+18
+00:00:54,354 --> 00:00:57,267
+and live progress
+calculated from its tasks.
+
+19
+00:00:58,488 --> 00:01:00,222
+Tasks are where the work happens.
+
+20
+00:01:00,262 --> 00:01:04,262
+Every task carries a priority,
+an estimate and a due date,
+
+21
+00:01:04,362 --> 00:01:07,112
+and anything overdue is flagged in red.
+
+22
+00:01:08,333 --> 00:01:11,871
+The same tasks also work
+as a board, from to do,
+
+23
+00:01:11,983 --> 00:01:14,721
+through in progress and
+blocked, to completed.
+
+24
+00:01:16,046 --> 00:01:18,081
+The planner lays out Alex's day against
+
+25
+00:01:18,121 --> 00:01:20,433
+the working hours Alex has declared.
+
+26
+00:01:21,667 --> 00:01:26,429
+Ask for suggestions, and NEXUS finds
+free slots before each deadline,
+
+27
+00:01:26,504 --> 00:01:28,804
+then explains why it picked every one.
+
+28
+00:01:30,333 --> 00:01:32,971
+The Risk Center is the
+early-warning system.
+
+29
+00:01:33,033 --> 00:01:36,681
+NEXUS scans deadlines,
+workload and projects,
+
+30
+00:01:36,721 --> 00:01:40,471
+and scores every risk with its
+evidence and a suggested action.
+
+31
+00:01:41,700 --> 00:01:46,125
+Those findings become recommendations
+that Alex can accept or turn down.
+
+32
+00:01:46,188 --> 00:01:50,237
+NEXUS records the answer, but
+never changes the work on its own.
+
+33
+00:01:51,467 --> 00:01:55,442
+Knowledge keeps notes, concepts
+and resources in one place.
+
+34
+00:01:55,517 --> 00:01:58,227
+Here are Alex's customer
+interview insights,
+
+35
+00:01:58,267 --> 00:02:00,642
+ready to link to related ideas.
+
+36
+00:02:01,954 --> 00:02:05,154
+Learning tracks skills,
+goals and study time,
+
+37
+00:02:05,242 --> 00:02:09,017
+so progress toward each target
+level is always visible.
+
+38
+00:02:10,333 --> 00:02:13,946
+The AI Assistant takes a
+typed or spoken request.
+
+39
+00:02:14,008 --> 00:02:16,071
+Ask how productive you were this week,
+
+40
+00:02:16,171 --> 00:02:20,133
+and it recognises an analytics
+question and points to the right page.
+
+41
+00:02:21,421 --> 00:02:23,058
+Ask it to create a note,
+
+42
+00:02:23,196 --> 00:02:26,296
+and it shows exactly what
+it read from your sentence.
+
+43
+00:02:26,358 --> 00:02:29,196
+Nothing is saved until
+Alex presses Confirm.
+
+44
+00:02:30,321 --> 00:02:34,271
+Confirmed. The note is
+now saved in Knowledge.
+
+45
+00:02:35,638 --> 00:02:38,573
+For open-ended questions there is NEXO,
+
+46
+00:02:38,612 --> 00:02:42,598
+an experimental chat assistant built
+on a local Qwen language model.
+
+47
+00:02:42,638 --> 00:02:45,038
+Alex asks which tasks are overdue.
+
+48
+00:02:46,267 --> 00:02:50,417
+NEXO looks up Alex's task list
+and answers in plain English.
+
+49
+00:02:50,479 --> 00:02:54,454
+Anything it wants to change
+still waits for Alex's approval.
+
+50
+00:02:55,804 --> 00:02:59,754
+Finally, press Control K
+anywhere to jump to a module,
+
+51
+00:02:59,842 --> 00:03:02,417
+or to search every record Alex owns.
+
+52
+00:03:03,571 --> 00:03:06,118
+NEXUS brings projects, planning,
+
+53
+00:03:06,158 --> 00:03:09,608
+knowledge and AI into
+one private workspace.
+
+54
+00:03:09,683 --> 00:03:10,746
+Thanks for watching.
+

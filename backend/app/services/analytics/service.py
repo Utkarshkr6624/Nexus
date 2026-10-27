@@ -1826,7 +1826,7 @@ class AnalyticsService:
         return [
             (int(estimated), int(actual))
             for _task_id, estimated, actual, _due, _completed in pairs
-            if estimated
+            if estimated and actual is not None
         ]
 
     async def _project_names(self, owner_id: uuid.UUID) -> dict[uuid.UUID, str]:
